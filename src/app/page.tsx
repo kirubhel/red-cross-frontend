@@ -62,6 +62,7 @@ function FallingDroplets({ color, count = 6 }: { color: string; count?: number }
   const [droplets, setDroplets] = useState<{ id: number; left: string; size: number; duration: number; delay: number }[]>([]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDroplets([...Array(count)].map((_, i) => ({
       id: i,
       left: Math.random() * 100 + "%",
@@ -581,7 +582,7 @@ export default function LandingPage() {
                             color: i === 0 ? tier.color : '#000',
                             '--hover-bg': tier.color,
                             '--hover-text': 'white'
-                          } as any}
+                          } as React.CSSProperties}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = tier.color;
                             e.currentTarget.style.borderColor = tier.color;

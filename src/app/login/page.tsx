@@ -53,7 +53,7 @@ export default function LoginPage() {
       } else {
         router.push("/dashboard");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setError("Those credentials don't look right. Please try again.");
       setLoading(false);

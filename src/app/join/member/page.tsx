@@ -142,7 +142,7 @@ export default function MemberRegistrationPage() {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="fatherName" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">Father's Name</Label>
+                                        <Label htmlFor="fatherName" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">Father&apos;s Name</Label>
                                         <Input id="fatherName" required className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30" placeholder="e.g. Kebede" value={formData.fatherName} onChange={handleChange} />
                                     </div>
                                 </div>
