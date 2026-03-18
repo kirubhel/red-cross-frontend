@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: 'redcrosseth.org',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.redcrosseth.org',
+        pathname: '/**',
+      },
     ],
   },
 };
