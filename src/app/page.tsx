@@ -29,6 +29,8 @@ import {
 import { translations, Language } from "@/lib/translations";
 import { useEffect, useRef, useState } from "react";
 import { useInView, useMotionValue, useSpring, useTransform } from "framer-motion";
+import WhoWeAre from "@/components/WhoWeAre";
+import NewsSection from "@/components/NewsSection";
 
 const MotionHeart = motion(Heart);
 
@@ -182,7 +184,8 @@ export default function LandingPage() {
               { label: t.nav.about, href: "#about" },
               { label: t.nav.services, href: "#services" },
               { label: t.nav.impact, href: "#impact" },
-              { label: t.nav.news, href: "#news" }
+              { label: t.nav.news, href: "#news" },
+              { label: t.nav.organizations, href: "/organizations" }
             ].map((item) => (
               <Link 
                 key={item.label} 
@@ -199,11 +202,11 @@ export default function LandingPage() {
             <div className="relative" ref={langRef}>
               <button 
                 onClick={() => setShowLangDropdown(!showLangDropdown)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[#ED1C24] hover:text-[#ED1C24] transition-all text-xs font-black uppercase tracking-wider cursor-pointer bg-white"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[#ED1C24] hover:text-[#ED1C24] transition-all text-xs font-black uppercase tracking-wider cursor-pointer bg-white text-black"
               >
-                <Languages className="h-3.5 w-3.5" />
+                <Languages className="h-3.5 w-3.5 text-black group-hover:text-[#ED1C24]" />
                 {lang === 'en' ? 'English' : lang === 'am' ? 'አማርኛ' : 'Afaan Oromoo'}
-                <ChevronDown className={`h-3 w-3 transition-transform duration-300 ${showLangDropdown ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-3 w-3 transition-transform duration-300 text-black ${showLangDropdown ? 'rotate-180' : ''}`} />
               </button>
 
               <AnimatePresence>
@@ -410,6 +413,9 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Who We Are & About Section */}
+        <WhoWeAre lang={lang} />
+
         {/* Services Section */}
         <section id="services" className="py-32 px-6">
           <div className="container mx-auto">
@@ -508,6 +514,9 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* News & Updates Section */}
+        <NewsSection lang={lang} />
 
         {/* Donation Section */}
         <section className="py-32 px-6">

@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         hostname: 'www.redcrosseth.org',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
     ],
   },
 };

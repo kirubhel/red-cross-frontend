@@ -7,6 +7,7 @@ export const translations = {
       services: "Services",
       impact: "Impact",
       news: "News",
+      organizations: "Organizations",
       portal: "Portal Access",
       join: "Join Volunteer"
     },
@@ -95,6 +96,7 @@ export const translations = {
       services: "አገልግሎቶች",
       impact: "ተጽዕኖ",
       news: "ዜናዎች",
+      organizations: "ድርጅቶች",
       portal: "የፖርታል መግቢያ",
       join: "በበጎ ፈቃደኝነት ይቀላቀሉ"
     },
@@ -183,6 +185,7 @@ export const translations = {
       services: "Tajaajila",
       impact: "Dhiibbaa",
       news: "Oduu",
+      organizations: "Dhaabbilee",
       portal: "Galfata Poortaalii",
       join: "Fedhaan Hirmaadhu"
     },
