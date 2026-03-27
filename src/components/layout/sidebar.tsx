@@ -15,7 +15,8 @@ import {
   ChevronRight,
   UserCheck,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  ClipboardList
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,8 @@ const menuItems = [
   { href: "/admin/missions", label: "Missions", icon: UserCheck },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
+  { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList },
+  { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
@@ -103,25 +106,6 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User / Sign Out Footer */}
-      <div className={cn("border-t border-gray-900", isCollapsed ? "p-4" : "p-6")}>
-        <button
-          onClick={() => {
-            localStorage.removeItem("token");
-            window.location.href = "/login";
-          }}
-          title={isCollapsed ? "Sign Out" : undefined}
-          className={cn(
-            "flex w-full items-center text-gray-500 hover:bg-red-950/30 hover:text-[#ED1C24] transition-all rounded-2xl",
-            isCollapsed ? "justify-center p-3" : "justify-center gap-3 px-4 py-3.5"
-          )}
-        >
-          <LogOut className="h-5 w-5 shrink-0" />
-          <span className={cn("text-[10px] font-black uppercase tracking-widest whitespace-nowrap overflow-hidden transition-all duration-300", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
-            Sign Out
-          </span>
-        </button>
-      </div>
     </div>
   );
 }

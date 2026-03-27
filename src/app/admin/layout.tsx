@@ -1,5 +1,15 @@
+"use client";
+
 import { Sidebar } from "@/components/layout/sidebar";
-import { Bell, Search, User, Menu } from "lucide-react";
+import { 
+  Bell, 
+  Search, 
+  Menu, 
+  User, 
+  ChevronDown,
+  ChevronRight,
+  LogOut
+} from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -41,13 +51,36 @@ export default function AdminLayout({
             </button>
             
             {/* User Profile */}
-            <div className="flex items-center gap-3 cursor-pointer p-1.5 pr-4 rounded-[20px] hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all select-none group">
-              <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-red-100 text-[#ED1C24] group-hover:scale-105 transition-transform">
-                <User className="h-5 w-5" />
+            <div className="relative group/profile">
+              <div className="flex items-center gap-3 cursor-pointer p-1.5 pr-4 rounded-[20px] hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all select-none group">
+                <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-red-100 text-[#ED1C24] group-hover:scale-105 transition-transform shadow-inner">
+                  <User className="h-5 w-5" />
+                </div>
+                <div className="hidden flex-col sm:flex">
+                  <span className="text-sm font-black text-black leading-tight">Admin User</span>
+                  <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase flex items-center gap-1">
+                    System Admin <ChevronRight className="h-2 w-2 text-gray-300 group-hover:text-[#ED1C24] transition-colors" />
+                  </span>
+                </div>
               </div>
-              <div className="hidden flex-col sm:flex">
-                <span className="text-sm font-black text-black leading-tight">Admin User</span>
-                <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">System Admin</span>
+
+              {/* Account Dropdown */}
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-[24px] shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] border border-gray-100 py-3 opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible translate-y-4 group-hover/profile:translate-y-0 transition-all z-50 overflow-hidden">
+                  <div className="px-6 py-2 mb-2 border-b border-gray-50">
+                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Account Actions</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      localStorage.removeItem("token");
+                      window.location.href = "/login";
+                    }}
+                    className="w-full flex items-center gap-3 px-6 py-4 text-gray-500 hover:text-[#ED1C24] hover:bg-red-50/50 transition-all text-[11px] font-black uppercase tracking-[0.15em] border-l-2 border-transparent hover:border-[#ED1C24]"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-white shadow-sm transition-colors">
+                      <LogOut className="h-4 w-4" /> 
+                    </div>
+                    Sign Out System
+                  </button>
               </div>
             </div>
           </div>
@@ -55,7 +88,7 @@ export default function AdminLayout({
 
         {/* Dashboard Content Region */}
         <main className="flex-1 overflow-y-auto w-full relative">
-           <div className="p-8 md:p-12 pb-24 mx-auto max-w-7xl">
+           <div className="p-4 md:p-6 pb-20 mx-auto max-w-[1920px]">
               {children}
            </div>
         </main>

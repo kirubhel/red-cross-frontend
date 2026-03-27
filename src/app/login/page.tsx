@@ -33,29 +33,42 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    // Demo admin bypass
-    if (email.toLowerCase().includes("admin") || password === "admin") {
-      setTimeout(() => {
-        localStorage.setItem("token", "mock-admin-token");
-        localStorage.setItem("user_role", "ADMIN"); 
-        router.push("/admin");
-      }, 1000);
-      return;
-    }
-
     try {
       const res = await api.post("/auth/login", { identifier: email, password });
-      localStorage.setItem("token", res.data.access_token);
-      localStorage.setItem("user_role", res.data.role); 
       
-      if (res.data.role === "ADMIN") {
+      const { access_token, role } = res.data;
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("access_token", access_token);
+      localStorage.setItem("user_role", role); 
+      
+      // Handle both string and numeric enum values from the API
+      const isAdmin = role === "SUPER_ADMIN" || role === "REGIONAL_ADMIN" || role === 1 || role === 2;
+      
+      if (isAdmin) {
         router.push("/admin");
       } else {
         router.push("/dashboard");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("Those credentials don't look right. Please try again.");
+      
+      const rawMessage = typeof err.response?.data === 'string' 
+        ? err.response.data 
+        : err.response?.data?.message || "";
+
+      // Map technical gRPC errors to user-friendly messages
+      let friendlyMessage = "Sign in failed. Please check your connection and try again.";
+      
+      if (rawMessage.includes("invalid credentials") || rawMessage.includes("Unauthenticated")) {
+        friendlyMessage = "Those credentials don't look right. Please double-check your ID and password.";
+      } else if (rawMessage.includes("not found")) {
+        friendlyMessage = "We couldn't find an account with that identifier.";
+      } else if (rawMessage.includes("deadline exceeded")) {
+        friendlyMessage = "The server is taking too long to respond. Please try again in a moment.";
+      }
+        
+      setError(friendlyMessage);
+    } finally {
       setLoading(false);
     }
   };
@@ -133,12 +146,12 @@ export default function LoginPage() {
                 <div className="space-y-3">
                   <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">Identifier</Label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-black/60" />
                     <Input
                       id="email"
                       type="text"
                       placeholder="Email or Volunteer ID"
-                      className="h-16 pl-12 rounded-2xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-lg placeholder:text-black/30"
+                      className="h-16 pl-12 rounded-2xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-lg placeholder:text-black/30 text-black"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -152,12 +165,12 @@ export default function LoginPage() {
                     <Link href="#" className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">Forgot?</Link>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-black/60" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="h-16 pl-12 pr-12 rounded-2xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-lg placeholder:text-black/30"
+                      className="h-16 pl-12 pr-12 rounded-2xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-lg placeholder:text-black/30 text-black"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
@@ -165,7 +178,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-black/40 hover:text-black transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-black/60 hover:text-black transition-colors"
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}

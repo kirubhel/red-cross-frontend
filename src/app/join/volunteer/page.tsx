@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,31 +19,91 @@ import {
   Plus,
   ChevronRight
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import api from "@/lib/api";
+import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS } from "@/lib/constants";
 
-export default function JoinPage() {
+export default function VolunteerJoinPage() {
   const [step, setStep] = useState(1); // 1: Personal, 2: Skills, 3: Success
-  const [formData, setFormData] = useState({
-    firstName: "",
-    fatherName: "",
-    email: "",
-    phone: "",
-    region: "ADDIS_ABABA",
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [formConfig, setFormConfig] = useState<any[]>([]);
+  const [membershipPlans, setMembershipPlans] = useState<any[]>([]);
+  const [formData, setFormData] = useState<Record<string, string>>({
+    password: "",
+    confirmPassword: "",
+    region: "REGION_addis_ababa",
     skills: "",
     interests: "",
   });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [configRes, plansRes] = await Promise.all([
+          api.get("/config/form?type=VOLUNTEER"),
+          api.get("/config/membership")
+        ]);
+        
+        const fields = JSON.parse(configRes.data.fields_json);
+        setFormConfig(fields);
+        setMembershipPlans(plansRes.data);
+        
+        const initialData: Record<string, string> = { ...formData };
+        fields.forEach((f: any) => {
+           if (!initialData[f.id]) initialData[f.id] = "";
+        });
+        setFormData(initialData);
+      } catch (err) {
+        console.error("Failed to load data:", err);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     if (step === 1) {
+        // Validate required fields
+        const missingFields = formConfig.filter(f => f.required && !formData[f.id]);
+        if (missingFields.length > 0) {
+            setError(`Please fill in: ${missingFields.map(f => f.label).join(", ")}`);
+            return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+            setError("Passwords do not match.");
+            return;
+        }
         setStep(2);
     } else {
-        // TODO: Call API to register
-        console.log("Submitting:", formData);
-        setStep(3); // Mock success
+        setLoading(true);
+        try {
+            // Register User
+            await api.post("/auth/register", {
+                first_name: formData.firstName,
+                father_name: formData.fatherName,
+                grandfather_name: formData.grandfatherName,
+                email: formData.email,
+                phone_number: formData.phone,
+                password: formData.password,
+                region: REGION_MAP_VALUE_TO_ID[formData.region] || 1,
+                role: 5, // ROLE_volunteer
+            });
+
+            setStep(3);
+        } catch (err: any) {
+            console.error(err);
+            setError(err.response?.data?.message || "Something went wrong. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     }
   };
 
@@ -75,15 +135,15 @@ export default function JoinPage() {
        </header>
 
        <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-4xl grid lg:grid-cols-[1fr_480px] gap-12 items-center">
+        <div className="w-full max-w-6xl grid lg:grid-cols-[1fr_520px] gap-12 items-start pt-10">
             
             {/* Context Side */}
-            <div className="hidden lg:flex flex-col space-y-10">
+            <div className="hidden lg:flex flex-col space-y-10 sticky top-20">
                 <div className="space-y-6">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
                         <Star className="h-3 w-3 fill-current" /> Join the Mission
                     </div>
-                    <h1 className="text-7xl font-black text-black leading-[0.9] tracking-tighter">
+                    <h1 className="text-8xl font-black text-black leading-[0.8] tracking-tighter">
                         Become a <br />
                         <span className="text-[#ED1C24]">Force for Good.</span>
                     </h1>
@@ -92,16 +152,11 @@ export default function JoinPage() {
                     </p>
                 </div>
 
-                <div className="space-y-6">
-                    <div className="flex items-center gap-4 text-black/40 font-black uppercase tracking-[0.2em] text-[10px]">
-                        <span className="h-px flex-1 bg-gray-100"></span>
-                        Why Volunteer?
-                        <span className="h-px flex-1 bg-gray-100"></span>
-                    </div>
+                <div className="space-y-6 pt-10 border-t border-gray-100">
                     {[
-                        { icon: Heart, text: "Make a direct impact in your community" },
-                        { icon: Star, text: "Gain professional experience and skills" },
-                        { icon: User, text: "Be part of a global movement" }
+                        { icon: Heart, text: "Direct Community Impact" },
+                        { icon: Star, text: "Gain Professional Experience" },
+                        { icon: User, text: "Global Humanitarian Network" }
                     ].map((item, idx) => (
                         <div key={idx} className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
@@ -117,96 +172,109 @@ export default function JoinPage() {
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-full bg-white p-6 md:p-10 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-gray-100"
+                className="w-full bg-white p-6 md:p-10 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-gray-100 h-fit"
             >
                 <AnimatePresence mode="wait">
                     {step === 1 && (
                         <motion.div key="step1" {...stepVariants}>
                             <div className="space-y-1 mb-8">
                                 <h2 className="text-3xl font-black text-black tracking-tighter">Personal Details</h2>
-                                <p className="text-black/60 font-black text-xs uppercase tracking-widest">Step 1 of 2</p>
+                                <p className="text-black/60 font-black text-[10px] uppercase tracking-widest bg-gray-50 inline-block px-3 py-1 rounded-full border border-gray-100">Step 1 of 2</p>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-5">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="firstName" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">First Name</Label>
-                                        <div className="relative">
-                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40" />
-                                            <Input id="firstName" required className="h-12 pl-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30" placeholder="e.g. Abebe" value={formData.firstName} onChange={handleChange} />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="fatherName" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">Father&apos;s Name</Label>
-                                        <Input id="fatherName" required className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30" placeholder="e.g. Kebede" value={formData.fatherName} onChange={handleChange} />
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                    <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">Email Address</Label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40" />
-                                        <Input id="email" type="email" required className="h-12 pl-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30" placeholder="abebe@example.com" value={formData.email} onChange={handleChange} />
-                                    </div>
-                                </div>
+                             <form onSubmit={handleSubmit} className="space-y-5 text-left">
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                                     {formConfig.map((field: any) => (
+                                         <div key={field.id} className={cn("space-y-2 group", field.type === 'textarea' ? "md:col-span-2" : "")}>
+                                             <Label htmlFor={field.id} className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
+                                             <div className="relative">
+                                                 {field.type === 'select' ? (
+                                                      <select 
+                                                          id={field.id} 
+                                                          required={field.required} 
+                                                          className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
+                                                          value={formData[field.id] || ""}
+                                                          onChange={handleChange}
+                                                      >
+                                                          <option value="" disabled>{field.placeholder}</option>
+                                                          {(
+                                                            field.dataSource === 'REGIONS' 
+                                                              ? REGIONS.map(r => ({ label: r.name, value: r.value })) : 
+                                                            field.dataSource === 'MEMBERSHIP_TYPES'
+                                                              ? membershipPlans.map(p => ({ label: p.name, value: p.short_code })) :
+                                                            field.dataSource === 'GENDER'
+                                                              ? GENDER_OPTIONS :
+                                                            (field.options || [])
+                                                          ).map((opt: any, i: number) => (
+                                                              <option key={i} value={opt.value}>{opt.label}</option>
+                                                          ))}
+                                                      </select>
+                                                 ) : (
+                                                     <Input 
+                                                        id={field.id} 
+                                                        type={field.type} 
+                                                        required={field.required} 
+                                                        className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-left" 
+                                                        placeholder={field.placeholder} 
+                                                        value={formData[field.id] || ""} 
+                                                        onChange={handleChange} 
+                                                     />
+                                                 )}
+                                             </div>
+                                         </div>
+                                     ))}
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">Phone Number</Label>
-                                    <div className="relative">
-                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40" />
-                                        <Input id="phone" type="tel" placeholder="+251 9..." required className="h-12 pl-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30" value={formData.phone} onChange={handleChange} />
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                    <Label htmlFor="region" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">Region</Label>
-                                    <div className="relative">
-                                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-black/40 z-10" />
-                                        <select 
-                                            id="region" 
-                                            className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-12 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative"
-                                            value={formData.region}
-                                            onChange={handleChange}
-                                        >
-                                            <option value="ADDIS_ABABA">Addis Ababa</option>
-                                            <option value="OROMIA">Oromia</option>
-                                            <option value="AMHARA">Amhara</option>
-                                            <option value="TIGRAY">Tigray</option>
-                                            <option value="SIDAMA">Sidama</option>
-                                            <option value="SOMALI">Somali</option>
-                                        </select>
-                                    </div>
-                                </div>
+                                     <div className="space-y-2 group">
+                                         <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Password</Label>
+                                         <Input id="password" type="password" required className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.password} onChange={handleChange} />
+                                     </div>
+                                     <div className="space-y-2 group">
+                                         <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Confirm Password</Label>
+                                         <Input id="confirmPassword" type="password" required className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
+                                     </div>
+                                 </div>
 
-                                <Button type="submit" className="w-full h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl text-lg font-black shadow-2xl shadow-red-500/20 transition-all flex items-center justify-center gap-2">
-                                    Continue <ChevronRight className="h-5 w-5" />
-                                </Button>
-                            </form>
+                                 {error && (
+                                     <div className="bg-red-50 text-[#ED1C24] p-3 rounded-xl text-xs font-bold text-center border border-red-100 italic">
+                                         {error}
+                                     </div>
+                                 )}
+
+                                 <Button type="submit" className="w-full h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl text-lg font-black shadow-2xl shadow-red-500/20 transition-all flex items-center justify-center gap-2">
+                                     Continue <ChevronRight className="h-5 w-5" />
+                                 </Button>
+                             </form>
                         </motion.div>
                     )}
 
                     {step === 2 && (
                         <motion.div key="step2" {...stepVariants}>
-                            <div className="space-y-1 mb-8">
+                             <div className="space-y-1 mb-8">
                                 <h2 className="text-3xl font-black text-black tracking-tighter">Skills & Interests</h2>
-                                <p className="text-black/60 font-black text-xs uppercase tracking-widest">Step 2 of 2</p>
-                            </div>
+                                <p className="text-black/60 font-black text-[10px] uppercase tracking-widest bg-gray-50 inline-block px-3 py-1 rounded-full border border-gray-100">Step 2 of 2</p>
+                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-6">
+                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="skills" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">Key Skills</Label>
-                                    <Input id="skills" placeholder="e.g. First Aid, Driving, Translation" className="h-14 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30" value={formData.skills} onChange={handleChange} />
+                                    <Label htmlFor="skills" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black">Key Skills</Label>
+                                    <Input id="skills" placeholder="e.g. First Aid, Driving, Translation" className="h-14 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black" value={formData.skills} onChange={handleChange} />
                                 </div>
                                 
                                 <div className="space-y-2">
-                                    <Label htmlFor="interests" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">Primary Interests</Label>
-                                    <Input id="interests" placeholder="e.g. Disaster Relief, Health Services" className="h-14 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30" value={formData.interests} onChange={handleChange} />
+                                    <Label htmlFor="interests" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black">Primary Interests</Label>
+                                    <Input id="interests" placeholder="e.g. Disaster Relief, Health Services" className="h-14 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black" value={formData.interests} onChange={handleChange} />
                                 </div>
 
+                                {error && (
+                                    <div className="bg-red-50 text-[#ED1C24] p-3 rounded-xl text-xs font-bold text-center border border-red-100 italic">
+                                        {error}
+                                    </div>
+                                )}
+
                                 <div className="flex gap-4 pt-2">
-                                    <Button type="button" variant="ghost" className="h-14 rounded-xl font-black px-6" onClick={() => setStep(1)}>Back</Button>
-                                    <Button type="submit" className="flex-1 h-14 bg-[#ED1C24] hover:bg-black text-white rounded-xl text-lg font-black shadow-2xl shadow-red-500/20 transition-all flex items-center justify-center gap-2">
-                                        Finish <Plus className="h-5 w-5" />
+                                    <Button type="button" variant="ghost" className="h-16 rounded-2xl font-black px-8" onClick={() => setStep(1)} disabled={loading}>Back</Button>
+                                    <Button type="submit" className="flex-1 h-16 bg-[#ED1C24] hover:bg-black text-white rounded-2xl text-xl font-black shadow-2xl shadow-red-500/20 transition-all flex items-center justify-center gap-2" disabled={loading}>
+                                        {loading ? "Processing..." : "Finish Registration"} <Plus className="h-5 w-5 ml-1" />
                                     </Button>
                                 </div>
                             </form>
@@ -218,19 +286,20 @@ export default function JoinPage() {
                             key="step3" 
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="text-center py-8 space-y-8"
+                            className="text-center py-12 space-y-10"
                         >
-                            <div className="mx-auto h-24 w-24 bg-green-50 rounded-full flex items-center justify-center shadow-inner">
-                                <CheckCircle className="h-12 w-12 text-green-500" strokeWidth={3} />
+                            <div className="mx-auto h-28 w-28 bg-green-50 rounded-[40px] flex items-center justify-center shadow-inner relative">
+                                <CheckCircle className="h-14 w-14 text-green-500" strokeWidth={3} />
+                                <div className="absolute -inset-2 rounded-[44px] border-2 border-green-100 animate-ping opacity-20" />
                             </div>
-                            <div className="space-y-3">
-                                <h2 className="text-4xl font-black text-black tracking-tighter">Welcome to the family.</h2>
-                                <p className="text-black/60 font-medium text-lg leading-relaxed">
-                                    Your application has been received! We&apos;ll review your details and contact you shortly.
+                            <div className="space-y-4">
+                                <h2 className="text-5xl font-black text-black tracking-tighter">Welcome home.</h2>
+                                <p className="text-black/60 font-medium text-xl leading-relaxed max-w-sm mx-auto">
+                                    Your humanitarian journey has officially begun! We&apos;ll review your details and contact you shortly.
                                 </p>
                             </div>
                             <Link href="/">
-                                <Button className="h-16 bg-black hover:bg-[#ED1C24] text-white rounded-2xl px-12 text-lg font-black shadow-2xl transition-all">
+                                <Button className="h-16 bg-black hover:bg-[#ED1C24] text-white rounded-3xl px-16 text-xl font-black shadow-2xl transition-all">
                                     Back to Home
                                 </Button>
                             </Link>
@@ -241,8 +310,8 @@ export default function JoinPage() {
         </div>
        </main>
 
-       <footer className="relative z-10 px-6 py-8 text-center">
-            <p className="text-[10px] font-black text-black/20 uppercase tracking-[0.3em]"> Ethiopian Red Cross Society · Alleviating Human Suffering </p>
+       <footer className="relative z-10 px-6 py-10 text-center border-t border-gray-50 mt-10">
+            <p className="text-[10px] font-black text-black/20 uppercase tracking-[0.4em]"> Ethiopian Red Cross Society · Alleviating Human Suffering Since 1935 </p>
        </footer>
     </div>
   );

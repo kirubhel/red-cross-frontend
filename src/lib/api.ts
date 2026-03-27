@@ -24,7 +24,7 @@ api.interceptors.request.use((config) => {
 // Interceptor to handle 401 (Unauthorized)
 api.interceptors.response.use((response) => response, (error) => {
   if (error.response && error.response.status === 401) {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
         localStorage.removeItem('token');
         window.location.href = '/login';
     }
