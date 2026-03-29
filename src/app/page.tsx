@@ -135,8 +135,36 @@ const heartVariants: Variants = {
 export default function LandingPage() {
   const [lang, setLang] = useState<Language>('en');
   const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const [dynamicContent, setDynamicContent] = useState<Record<Language, typeof translations.en> | null>(null);
   const langRef = useRef<HTMLDivElement>(null);
-  const t = translations[lang];
+  
+  // Use dynamic content if available, else fallback to static translations
+  const t: typeof translations.en = dynamicContent?.[lang] || translations[lang];
+
+  useEffect(() => {
+    const fetchCMS = async () => {
+      try {
+        const languages: Language[] = ['en', 'am', 'om'];
+        const results = await Promise.all(
+          languages.map(code => 
+            fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'}/config/landing-page?lang=${code}`)
+              .then(res => res.json())
+              .then(res => ({ code, data: JSON.parse(res.content_json) }))
+              .catch(() => ({ code, data: translations[code] }))
+          )
+        );
+        
+        const contentMap: any = {};
+        results.forEach(r => {
+          contentMap[r.code] = r.data;
+        });
+        setDynamicContent(contentMap);
+      } catch (e) {
+        console.error("Failed to load CMS content:", e);
+      }
+    };
+    fetchCMS();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -361,7 +389,7 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-[#ED1C24]/10 rounded-[40px] translate-x-4 translate-y-4 blur-3xl opacity-50" />
               <div className="relative h-full w-full bg-white border-8 border-white rounded-[40px] shadow-2xl overflow-hidden group">
                  <Image 
-                    src="https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"
+                    src={t.hero.imageUrl}
                     alt="ERCS 90 Years"
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -434,9 +462,9 @@ export default function LandingPage() {
               className="grid grid-cols-1 md:grid-cols-3 gap-8"
             >
               {[
-                { title: t.services.emergency.title, desc: t.services.emergency.desc, icon: Flame, color: "text-ercs-red", bg: "bg-red-50" },
-                { title: t.services.health.title, desc: t.services.health.desc, icon: Activity, color: "text-ercs-red", bg: "bg-red-50" },
-                { title: t.services.water.title, desc: t.services.water.desc, icon: Droplets, color: "text-blue-500", bg: "bg-blue-50" }
+                { data: t.services.emergency, icon: Flame, color: "text-ercs-red", bg: "bg-red-50" },
+                { data: t.services.health, icon: Activity, color: "text-ercs-red", bg: "bg-red-50" },
+                { data: t.services.water, icon: Droplets, color: "text-blue-500", bg: "bg-blue-50" }
               ].map((service, i) => (
                 <motion.div 
                   key={i}
@@ -446,9 +474,9 @@ export default function LandingPage() {
                   <div className={`h-16 w-16 ${service.bg} ${service.color} rounded-2xl flex items-center justify-center mb-8 rotate-3 group-hover:rotate-12 transition-transform duration-500`}>
                     <service.icon className="h-8 w-8" />
                   </div>
-                  <h4 className={`${lang === 'en' ? 'text-2xl' : 'text-xl'} font-black text-black mb-4`}>{service.title}</h4>
+                  <h4 className={`${lang === 'en' ? 'text-2xl' : 'text-xl'} font-black text-black mb-4`}>{service.data.title}</h4>
                   <p className="text-black/60 leading-relaxed mb-8">
-                    {service.desc}
+                    {service.data.desc}
                   </p>
                   <Button variant="ghost" className="p-0 hover:bg-transparent text-black font-black flex items-center gap-2 group/btn">
                     {t.services.learnMore} <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-2" />
@@ -527,38 +555,7 @@ export default function LandingPage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-               {[
-                 { 
-                   amount: "100", 
-                   label: "Medical Supplies", 
-                   desc: "Provides essential first-aid kits for emergency responders.",
-                   icon: Plus,
-                   color: "#ED1C24",
-                   bg: "bg-red-50",
-                   accent: "rgba(237, 28, 36, 0.1)",
-                   showDroplets: false
-                 },
-                 { 
-                   amount: "500", 
-                   label: "Clean Water", 
-                   desc: "Supports community WASH projects in drought-affected areas.",
-                   icon: Droplets,
-                   color: "#0EA5E9",
-                   bg: "bg-blue-50",
-                   accent: "rgba(14, 165, 233, 0.1)",
-                   showDroplets: true
-                 },
-                 { 
-                   amount: "2000", 
-                   label: "Blood Drive", 
-                   desc: "Funds regional blood center operations for one day.",
-                   icon: Heart,
-                   color: "#991B1B",
-                   bg: "bg-rose-50",
-                   accent: "rgba(153, 27, 27, 0.1)",
-                   showDroplets: true
-                 }
-               ].map((tier, i) => (
+               {t.donation.tiers.map((tier, i) => (
                  <motion.div 
                     key={i} 
                     whileHover={{ y: -10 }}
@@ -566,14 +563,13 @@ export default function LandingPage() {
                  >
                     {/* Decorative Background Pattern */}
                     <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-20 transition-transform duration-500 group-hover:scale-150" 
-                         style={{ backgroundColor: tier.color }} />
+                         style={{ backgroundColor: i === 0 ? "#ED1C24" : i === 1 ? "#0EA5E9" : "#991B1B" }} />
                     
-                    {tier.showDroplets && <FallingDroplets color={tier.color} />}
+                    {(i === 1 || i === 2) && <FallingDroplets color={i === 1 ? "#0EA5E9" : "#991B1B"} />}
                     
                     <div className="relative z-10">
-                      <div className={`h-16 w-16 mb-8 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:rotate-12`}
-                           style={{ backgroundColor: tier.bg }}>
-                        <tier.icon className="h-8 w-8" style={{ color: tier.color }} />
+                      <div className={`h-16 w-16 mb-8 rounded-2xl flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 ${i === 0 ? 'bg-red-50 text-[#ED1C24]' : i === 1 ? 'bg-blue-50 text-sky-500' : 'bg-rose-50 text-rose-800'}`}>
+                        {i === 0 ? <Plus className="h-8 w-8" /> : i === 1 ? <Droplets className="h-8 w-8" /> : <Heart className="h-8 w-8" />}
                       </div>
                       
                       <div className="text-xs font-black text-black/40 uppercase tracking-[0.2em] mb-2">{tier.label}</div>
@@ -585,23 +581,10 @@ export default function LandingPage() {
                       </p>
                       <Link href="/donate" className="block">
                         <Button 
-                          className="w-full h-16 rounded-2xl font-black transition-all duration-300 shadow-lg border-2"
+                          className="w-full h-16 rounded-2xl font-black transition-all duration-300 shadow-lg border-2 bg-white"
                           style={{ 
-                            backgroundColor: 'white',
-                            borderColor: i === 0 ? tier.color : '#000',
-                            color: i === 0 ? tier.color : '#000',
-                            '--hover-bg': tier.color,
-                            '--hover-text': 'white'
-                          } as React.CSSProperties}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = tier.color;
-                            e.currentTarget.style.borderColor = tier.color;
-                            e.currentTarget.style.color = 'white';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'white';
-                            e.currentTarget.style.borderColor = i === 0 ? tier.color : '#000';
-                            e.currentTarget.style.color = i === 0 ? tier.color : '#000';
+                            borderColor: i === 0 ? "#ED1C24" : i === 1 ? "#0EA5E9" : "#991B1B",
+                            color: i === 0 ? "#ED1C24" : i === 1 ? "#0EA5E9" : "#991B1B"
                           }}
                         >
                           {t.donation.selectGift}

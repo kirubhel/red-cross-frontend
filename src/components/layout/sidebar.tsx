@@ -29,8 +29,10 @@ const menuItems = [
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList },
   { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard },
+  { href: "/admin/cms", label: "Landing Page CMS", icon: LayoutDashboard },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
+
 
 export function Sidebar() {
   const pathname = usePathname();

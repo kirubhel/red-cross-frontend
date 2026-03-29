@@ -20,7 +20,8 @@ export const translations = {
       ctaPrimary: "Get Started",
       ctaSecondary: "Donate Now",
       volunteers: "Volunteers",
-      anniversary: "Celebrating 90 Years of Humanitarian Excellence"
+      anniversary: "Celebrating 90 Years of Humanitarian Excellence",
+      imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"
     },
     stats: {
       volunteers: "Volunteers",
@@ -28,6 +29,20 @@ export const translations = {
       impact: "Humanitarian Impact",
       founded: "Founded",
       impactValue: "High"
+    },
+    whoWeAre: {
+      badge: "Who We Are",
+      title: "Leading humanitarian organization in Ethiopia",
+      storyTitle: "Our Story",
+      storyText1: "The Ethiopian Red Cross Society has been at the forefront of humanitarian action in Ethiopia for decades. As part of the International Red Cross and Red Crescent Movement, we are committed to preventing and alleviating human suffering.",
+      storyText2: "We work tirelessly to protect life and health, ensure respect for human beings, and prevent and alleviate human suffering. Guided by the seven Fundamental Principles.",
+      missionTitle: "Our Mission",
+      missionText: "To prevent and alleviate human suffering, protect life and health, and ensure respect for the human being, without any discrimination.",
+      visionTitle: "Our Vision",
+      visionText: "To be a leading, strong, and self-reliant humanitarian organization that provides effective and efficient services to the vulnerable.",
+      valuesTitle: "Our Values",
+      valuesText: "Guided by the 7 Principles: Humanity, Impartiality, Neutrality, Independence, Voluntary Service, Unity, and Universality.",
+      imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200"
     },
     services: {
       badge: "What we do",
@@ -68,13 +83,24 @@ export const translations = {
         { name: "Corporate Partnership", price: "Contact Us" }
       ]
     },
+    news: {
+      badge: "News & Media",
+      title: "Latest From The Field",
+      viewAll: "View All News",
+      readStory: "Read Story"
+    },
     donation: {
       badge: "Immediate Action",
       title: "Your Gift Saves Lives.",
       customCta: "Custom Donation",
       customTitle: "Want to give a custom amount?",
       customDesc: "Every contribution, no matter the size, makes a difference.",
-      selectGift: "Select Gift"
+      selectGift: "Select Gift",
+      tiers: [
+        { amount: "100", label: "Medical Supplies", desc: "Provides essential first-aid kits for emergency responders." },
+        { amount: "500", label: "Clean Water", desc: "Supports community WASH projects in drought-affected areas." },
+        { amount: "2000", label: "Blood Drive", desc: "Funds regional blood center operations for one day." }
+      ]
     },
     ctaBanner: {
       title: "Together We Can Make Humanity Stronger.",
@@ -109,7 +135,8 @@ export const translations = {
       ctaPrimary: "ይጀምሩ",
       ctaSecondary: "አሁን ይለግሱ",
       volunteers: "በጎ ፈቃደኞች",
-      anniversary: "የ90 ዓመታት የሰብአዊ አገልግሎት ልቀት በዓል"
+      anniversary: "የ90 ዓመታት የሰብአዊ አገልግሎት ልቀት በዓል",
+      imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"
     },
     stats: {
       volunteers: "በጎ ፈቃደኞች",
@@ -117,6 +144,20 @@ export const translations = {
       impact: "ሰብአዊ ተጽዕኖ",
       founded: "የተመሰረተበት",
       impactValue: "ከፍተኛ"
+    },
+    whoWeAre: {
+      badge: "እኛ ማን ነን",
+      title: "በኢትዮጵያ ቀዳሚው ሰብአዊ ድርጅት",
+      storyTitle: "የእኛ ታሪክ",
+      storyText1: "የኢትዮጵያ ቀይ መስቀል ማህበር ለበርካታ አስርት ዓመታት በኢትዮጵያ የሰብአዊ እርምጃ ግንባር ቀደም ሆኖ ቆይቷል. የዓለም አቀፉ ቀይ መስቀል እና ቀይ ጨረቃ ንቅናቄ አካል በመሆን የሰውን ልጅ ስቃይ ለመከላከል እና ለማቃለል ቆርጠን ተነስተናል.",
+      storyText2: "ሕይወትንና ጤናን ለመጠበቅ፣ ለሰው ልጆች መከባበርን ለማረጋገጥ እና የሰውን ልጅ ስቃይ ለመከላከልና ለማቃለል ደከመኝ ሰለቸኝ ሳይሉ እንሰራለን። በሰባቱ የቀይ መስቀል ንቅናቄ መርሆዎች የሚመራ።",
+      missionTitle: "የእኛ ተልዕኮ",
+      missionText: "የሰውን ልጅ ስቃይ መከላከልና ማቃለል፣ ሕይወትንና ጤናን መጠበቅ፣ ያለ ምንም አድልዎ ሰብአዊነትን ማክበር",
+      visionTitle: "የእኛ ራዕይ",
+      visionText: "ለተጎዱ ወገኖች ውጤታማ ድጋፍ የሚሰጥ ጠንካራ እና ራሱን የቻለ ድርጅት መሆን",
+      valuesTitle: "እሴቶቻችን",
+      valuesText: "በ7ቱ መርሆች ይመራል፡- ሰብአዊነት፣ አድልዎ የለሽነት፣ ገለልተኝነት፣ ነፃነት፣ በጎ ፈቃደኝነት፣ አንድነት፣ ሁለንተናዊነት",
+      imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200"
     },
     services: {
       badge: "የምንሰራቸው ስራዎች",
@@ -157,13 +198,24 @@ export const translations = {
         { name: "የድርጅት አጋርነት", price: "ያግኙን" }
       ]
     },
+    news: {
+      badge: "ዜና እና ሚዲያ",
+      title: "የቅርብ ጊዜ ክስተቶች",
+      viewAll: "ሁሉንም ዜናዎች ይመልከቱ",
+      readStory: "ታሪኩን ያንብቡ"
+    },
     donation: {
       badge: "አፋጣኝ እርምጃ",
       title: "የእርስዎ ስጦታ ሕይወትን ያድናል!",
       customCta: "የራስዎን ይለግሱ",
       customTitle: "የተወሰነ መጠን መለገስ ይፈልጋሉ?",
       customDesc: "እያንዳንዱ መዋጮ መጠኑ ምንም ይሁን ምን ለውጥ ያመጣል።",
-      selectGift: "ስጦታውን ይምረጡ"
+      selectGift: "ስጦታውን ይምረጡ",
+      tiers: [
+        { amount: "100", label: "የህክምና አቅርቦቶች", desc: "ለድንገተኛ ጊዜ ሰራተኞች የመጀመሪያ እርዳታ መስጫ ቁሳቁሶችን ያቀርባል." },
+        { amount: "500", label: "ንጹህ ውሃ", desc: "በድርቅ ለተጎዱ አካባቢዎች የማህበረሰብ የንጹህ ውሃ ፕሮጀክቶችን ይደግፋል." },
+        { amount: "2000", label: "የደም ልገሳ", desc: "ለአንድ ቀን የክልል የደም ማእከል ስራዎችን በገንዘብ ይደግፋል." }
+      ]
     },
     ctaBanner: {
       title: "አንድ ላይ በመሆን የሰው ልጅን እናጠናክራለን።",
@@ -198,7 +250,8 @@ export const translations = {
       ctaPrimary: "Eegali",
       ctaSecondary: "Amma Arjoomi",
       volunteers: "Tajaajiltoota",
-      anniversary: "Baga Waggaa 90ffaa Milkaa'ina Namoomaa Geessan"
+      anniversary: "Baga Waggaa 90ffaa Milkaa'ina Namoomaa Geessan",
+      imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"
     },
     stats: {
       volunteers: "Tajaajiltoota",
@@ -206,6 +259,20 @@ export const translations = {
       impact: "Dhiibbaa Namoomaa",
       founded: "Kan Hundeeffame",
       impactValue: "Olaana"
+    },
+    whoWeAre: {
+      badge: "Eenyu Nu'i",
+      title: "Dhaabbata namoomaa jalqabaa Itiyoophiyaa",
+      storyTitle: "Seenaa Keenya",
+      storyText1: "Waldaan Fannoo Diimaa Itiyoophiyaa waggoota kurnan hedduuf Itiyoophiyaa keessatti tarkaanfii namoomaa irratti shoora guddaa taphachaa jira.",
+      storyText2: "Lubbuu fi fayyaa eeguuf, namoota kabajuu mirkaneessuuf, akkasumas dhiphuu namoomaa ittisuu fi hir'isuuf jabaannee hojjenna. Qajeeltoo 7n Fannoo Diimaatiin geggeeffama.",
+      missionTitle: "Ergama Keenya",
+      missionText: "Dhiphuu namoomaa ittisuu fi hir'isuu, lubbuu fi fayyaa eeguu, akkasumas korniyaa fi loogii malee nama kabajuu.",
+      visionTitle: "Mul'ata Keenya",
+      visionText: "Dhaabbata namoomaa cimaa fi of danda'e ta'anii tajaajila bu'a qabeessa kennuu",
+      valuesTitle: "Gatataa Keenya",
+      valuesText: "Qajeeltoo 7n geggeeffama: Namooma, Wal-qixxummaa, Giddu-galeessummaa, Of-danda'uu, Fedhaan Tajaajiluu, Tokkummaa, Universality",
+      imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200"
     },
     services: {
       badge: "Maal Hojjenna",
@@ -246,13 +313,24 @@ export const translations = {
         { name: "Michummaa Korporeetii", price: "Nu Quunnamaa" }
       ]
     },
+    news: {
+      badge: "Oduu & Miidiyaa",
+      title: "Wanta Haaraa",
+      viewAll: "Oduu Hunda Ilaali",
+      readStory: "Sheekkoo Dubbisi"
+    },
     donation: {
       badge: "Tarkaanfii Ariifachiisaa",
       title: "Kennaan Keessan Lubbuu Baraara.",
       customCta: "Arjooma Addaa",
       customTitle: "Hamma addaa arjoomuu barbaadduu?",
       customDesc: "Gargaarsi kamiyyuu, hamma isaa irratti hundaa'uun jijjiirama ni fida.",
-      selectGift: "Kennaa Filadhu"
+      selectGift: "Kennaa Filadhu",
+      tiers: [
+        { amount: "100", label: "Wantoota Fayyaa", desc: "Namoota deebii ariifachiisaa kennaniif meeshaalee jalqabaa kenna." },
+        { amount: "500", label: "Bishaan Qulqulluu", desc: "Naannolee hongeen miidhamaniif pirojeektii bishaan hawaasaa deeggara." },
+        { amount: "2000", label: "Dhiiga Arjoomuu", desc: "Guyyaa tokkoof socho''ii gidduu gala dhiigaa naannoo deeggara." }
+      ]
     },
     ctaBanner: {
       title: "Waliin Ta'uun Namooma Ni Jabeessina.",
