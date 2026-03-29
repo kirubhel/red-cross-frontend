@@ -17,11 +17,24 @@ import {
   MapPin, 
   Star,
   Plus,
-  ChevronRight
+  ChevronRight,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS } from "@/lib/constants";
+
+const COUNTRY_CODES = [
+  { code: "+251", label: "🇪🇹 +251" },
+  { code: "+254", label: "🇰🇪 +254" },
+  { code: "+252", label: "🇸🇴 +252" },
+  { code: "+253", label: "🇩🇯 +253" },
+  { code: "+249", label: "🇸🇩 +249" },
+  { code: "+256", label: "🇺🇬 +256" },
+  { code: "+1", label: "🇺🇸 +1" },
+  { code: "+44", label: "🇬🇧 +44" },
+];
 
 export default function VolunteerJoinPage() {
   const [step, setStep] = useState(1); // 1: Personal, 2: Skills, 3: Success
@@ -36,6 +49,9 @@ export default function VolunteerJoinPage() {
     skills: "",
     interests: "",
   });
+  const [countryCode, setCountryCode] = useState("+251");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,13 +101,17 @@ export default function VolunteerJoinPage() {
     } else {
         setLoading(true);
         try {
+            // Normalize: strip leading 0s and duplicate country code
+            const cleanPhone = formData.phone.replace(/^0+/, "").replace(countryCode, "");
+            const finalPhone = `${countryCode}${cleanPhone}`;
+
             // Register User
             await api.post("/auth/register", {
                 first_name: formData.firstName,
                 father_name: formData.fatherName,
                 grandfather_name: formData.grandfatherName,
                 email: formData.email,
-                phone_number: formData.phone,
+                phone_number: finalPhone,
                 password: formData.password,
                 region: REGION_MAP_VALUE_TO_ID[formData.region] || 1,
                 role: 5, // ROLE_volunteer
@@ -209,6 +229,25 @@ export default function VolunteerJoinPage() {
                                                               <option key={i} value={opt.value}>{opt.label}</option>
                                                           ))}
                                                       </select>
+                                                 ) : field.id === 'phone' ? (
+                                                     <div className="flex gap-2">
+                                                         <select 
+                                                            value={countryCode} 
+                                                            onChange={(e) => setCountryCode(e.target.value)}
+                                                            className="w-24 h-12 rounded-xl bg-gray-50 border-none font-bold text-sm text-black focus:ring-2 focus:ring-[#ED1C24]/10 transition-all appearance-none px-3"
+                                                         >
+                                                             {COUNTRY_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                                                         </select>
+                                                         <Input 
+                                                            id={field.id} 
+                                                            type={field.type} 
+                                                            required={field.required} 
+                                                            className="flex-1 h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all" 
+                                                            placeholder={field.placeholder} 
+                                                            value={formData[field.id] || ""} 
+                                                            onChange={handleChange} 
+                                                         />
+                                                     </div>
                                                  ) : (
                                                      <Input 
                                                         id={field.id} 
@@ -226,11 +265,45 @@ export default function VolunteerJoinPage() {
 
                                      <div className="space-y-2 group">
                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Password</Label>
-                                         <Input id="password" type="password" required className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.password} onChange={handleChange} />
+                                         <div className="relative">
+                                             <Input 
+                                                id="password" 
+                                                type={showPassword ? "text" : "password"} 
+                                                required 
+                                                className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" 
+                                                placeholder="••••••••" 
+                                                value={formData.password} 
+                                                onChange={handleChange} 
+                                             />
+                                             <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors"
+                                             >
+                                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                             </button>
+                                         </div>
                                      </div>
                                      <div className="space-y-2 group">
                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Confirm Password</Label>
-                                         <Input id="confirmPassword" type="password" required className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
+                                         <div className="relative">
+                                             <Input 
+                                                id="confirmPassword" 
+                                                type={showConfirmPassword ? "text" : "password"} 
+                                                required 
+                                                className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" 
+                                                placeholder="••••••••" 
+                                                value={formData.confirmPassword} 
+                                                onChange={handleChange} 
+                                             />
+                                             <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors"
+                                             >
+                                                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                             </button>
+                                         </div>
                                      </div>
                                  </div>
 

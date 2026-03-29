@@ -13,7 +13,47 @@ const data = [
   { name: 'Somali', volunteers: 2390 },
 ];
 
+import { useEffect, useState } from "react";
+import api from "@/lib/api";
+
 export default function DashboardPage() {
+  const [stats, setStats] = useState({
+    members: 0,
+    volunteers: 0,
+    revenue: 0,
+    incidents: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [membersRes, volunteersRes] = await Promise.all([
+          api.get("/person?page=1&page_size=1"),
+          api.get("/volunteers?page=1&page_size=1"),
+        ]);
+        setStats({
+          members: membersRes.data.pagination?.total_items || 0,
+          volunteers: volunteersRes.data.pagination?.total_items || 0,
+          revenue: 1200000, // Placeholder revenue
+          incidents: 12, // Placeholder incidents
+        });
+      } catch (err) {
+        console.error("Failed to fetch dashboard stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const statsItems = [
+    { title: "Total Members", count: stats.members.toLocaleString(), trend: "+20.1%", icon: Users, color: "text-blue-500", bg: "bg-blue-50" },
+    { title: "Active Volunteers", count: stats.volunteers.toLocaleString(), trend: "+15.0%", icon: HandHeart, color: "text-[#ED1C24]", bg: "bg-red-50" },
+    { title: "Monthly Revenue", count: `ETB ${(stats.revenue / 1000000).toFixed(1)}M`, trend: "+35.5%", icon: CreditCard, color: "text-emerald-500", bg: "bg-emerald-50" },
+    { title: "Active Incidents", count: stats.incidents, trend: "Critical", icon: Activity, color: "text-orange-500", bg: "bg-orange-50" },
+  ];
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
@@ -24,12 +64,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          { title: "Total Members", count: "6,231,892", trend: "+20.1%", icon: Users, color: "text-blue-500", bg: "bg-blue-50" },
-          { title: "Active Volunteers", count: "45,231", trend: "+15.0%", icon: HandHeart, color: "text-[#ED1C24]", bg: "bg-red-50" },
-          { title: "Monthly Revenue", count: "ETB 1.2M", trend: "+35.5%", icon: CreditCard, color: "text-emerald-500", bg: "bg-emerald-50" },
-          { title: "Active Incidents", count: "12", trend: "Critical", icon: Activity, color: "text-orange-500", bg: "bg-orange-50" },
-        ].map((stat, i) => (
+        {statsItems.map((stat, i) => (
           <Card key={i} className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-3xl overflow-hidden hover:-translate-y-1 transition-transform duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-white pt-6 px-6">
               <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-gray-500">{stat.title}</CardTitle>
@@ -38,7 +73,9 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent className="px-6 pb-6 pt-2">
-              <div className="text-3xl font-black text-black tracking-tighter">{stat.count}</div>
+              <div className="text-3xl font-black text-black tracking-tighter">
+                {loading ? "..." : stat.count}
+              </div>
               <p className="text-xs font-bold mt-2 flex items-center gap-1 text-emerald-500">
                  {stat.trend.includes('+') ? <ArrowUpRight className="h-3 w-3" /> : null}
                  {stat.trend} <span className="text-gray-400 font-medium ml-1">last month</span>
@@ -47,6 +84,8 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
+      {/* Remaining content... */}
+
 
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
         

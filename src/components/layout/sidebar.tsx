@@ -17,7 +17,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ClipboardList,
-  Newspaper
+  Newspaper,
+  ShieldCheck,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,10 +27,11 @@ const menuItems = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/members", label: "Members", icon: Users },
   { href: "/admin/volunteers", label: "Volunteers", icon: HandHeart },
-  { href: "/admin/missions", label: "Missions", icon: UserCheck },
+  { href: "/admin/organizations", label: "Organizations", icon: Building2 },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/news", label: "News & Media", icon: Newspaper },
+  { href: "/admin/user-management", label: "User Management", icon: ShieldCheck },
   { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList },
   { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard },
   { href: "/admin/cms", label: "Landing Page CMS", icon: LayoutDashboard },

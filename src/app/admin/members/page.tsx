@@ -16,12 +16,13 @@ import api from "@/lib/api";
 
 type Member = {
   id: string;
-  firstName: string;
-  fatherName: string;
-  region: string;
+  first_name: string;
+  father_name: string;
+  region_id: string;
   status: string;
-  ercsId: string;
+  ercs_id: string;
 };
+
 
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -113,10 +114,11 @@ export default function MembersPage() {
             ) : (
               members.map((member) => (
                 <TableRow key={member.id} className="hover:bg-gray-50/50 transition-colors border-gray-50">
-                  <TableCell className="px-8 py-6 font-black text-black text-xs">{member.ercsId}</TableCell>
-                  <TableCell className="px-8 py-6 font-bold text-gray-700">{member.firstName}</TableCell>
-                  <TableCell className="px-8 py-6 font-bold text-gray-700">{member.fatherName}</TableCell>
-                  <TableCell className="px-8 py-6 font-black text-[10px] uppercase tracking-wider text-gray-400">{member.region ? member.region.toString().replace('_', ' ') : 'N/A'}</TableCell>
+                  <TableCell className="px-8 py-6 font-black text-black text-xs">{member.ercs_id}</TableCell>
+                  <TableCell className="px-8 py-6 font-bold text-gray-700">{member.first_name}</TableCell>
+                  <TableCell className="px-8 py-6 font-bold text-gray-700">{member.father_name}</TableCell>
+                  <TableCell className="px-8 py-6 font-black text-[10px] uppercase tracking-wider text-gray-400">{member.region_id || 'N/A'}</TableCell>
+
                   <TableCell className="px-8 py-6">
                     <span
                       className={cn(
