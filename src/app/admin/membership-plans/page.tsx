@@ -206,7 +206,7 @@ export default function MembershipPlansPage() {
                         <Input 
                             value={selectedPlan.name} 
                             onChange={(e) => handleUpdate({ name: e.target.value })}
-                            className="h-14 rounded-2xl bg-gray-50 border-none font-bold text-lg"
+                            className="h-14 rounded-2xl bg-black text-white border-none font-bold text-lg"
                         />
                       </div>
                       
@@ -217,7 +217,7 @@ export default function MembershipPlansPage() {
                         <Input 
                             value={selectedPlan.short_code} 
                             onChange={(e) => handleUpdate({ short_code: e.target.value })}
-                            className="h-14 rounded-2xl bg-gray-50 border-none font-bold text-lg uppercase"
+                            className="h-14 rounded-2xl bg-black text-white border-none font-bold text-lg uppercase"
                         />
                       </div>
 
@@ -230,7 +230,7 @@ export default function MembershipPlansPage() {
                             type="number"
                             value={selectedPlan.amount} 
                             onChange={(e) => handleUpdate({ amount: parseFloat(e.target.value) })}
-                            className="h-14 rounded-2xl bg-gray-50 border-none font-bold text-lg"
+                            className="h-14 rounded-2xl bg-black text-white border-none font-bold text-lg"
                         />
                       </div>
 
@@ -241,7 +241,7 @@ export default function MembershipPlansPage() {
                         <select 
                           value={selectedPlan.subscription_type}
                           onChange={(e) => handleUpdate({ subscription_type: e.target.value })}
-                          className="flex h-14 w-full rounded-2xl bg-gray-50 border-none px-6 py-2 text-lg font-bold focus:ring-1 focus:ring-red-500/10 appearance-none"
+                          className="flex h-14 w-full rounded-2xl bg-black text-white border-none px-6 py-2 text-lg font-bold focus:ring-1 focus:ring-red-500/10 appearance-none"
                         >
                           <option value="WEEKLY">Weekly</option>
                           <option value="MONTHLY">Monthly</option>
@@ -258,7 +258,7 @@ export default function MembershipPlansPage() {
                         <Input 
                             value={selectedPlan.description} 
                             onChange={(e) => handleUpdate({ description: e.target.value })}
-                            className="h-14 rounded-2xl bg-gray-50 border-none font-bold text-lg"
+                            className="h-14 rounded-2xl bg-black text-white border-none font-bold text-lg"
                         />
                       </div>
 
@@ -269,7 +269,7 @@ export default function MembershipPlansPage() {
                         <textarea 
                             value={selectedPlan.plan_features} 
                             onChange={(e) => handleUpdate({ plan_features: e.target.value })}
-                            className="w-full min-h-[100px] rounded-2xl bg-gray-50 border-none p-6 font-bold text-black"
+                            className="w-full min-h-[100px] rounded-2xl bg-black text-white border-none p-6 font-bold"
                             placeholder="e.g. Benefit A, Benefit B, Benefit C"
                         />
                       </div>

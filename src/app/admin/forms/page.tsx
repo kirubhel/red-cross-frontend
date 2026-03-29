@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
+import { toast } from "sonner";
 
 type FormField = {
   id: string;
@@ -82,9 +83,11 @@ export default function FormConfigurationPage() {
         fields_json: JSON.stringify(fields)
       });
       setSuccess(true);
+      toast.success(`${formType.toLowerCase().replace(/^\w/, (c) => c.toUpperCase())} form configuration saved successfully.`);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error("Failed to save config:", err);
+      toast.error("Failed to save form configuration. Please try again.");
     } finally {
       setSaving(false);
     }

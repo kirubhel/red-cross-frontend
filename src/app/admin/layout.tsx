@@ -79,7 +79,7 @@ export default function AdminLayout({
                     <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-white shadow-sm transition-colors">
                       <LogOut className="h-4 w-4" /> 
                     </div>
-                    Sign Out System
+                    Sign Out
                   </button>
               </div>
             </div>

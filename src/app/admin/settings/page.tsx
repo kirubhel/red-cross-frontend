@@ -40,7 +40,6 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: "notifications", label: "Notification Templates", icon: BellRing },
-    { id: "landing", label: "Landing Page Content", icon: Globe },
     { id: "contact", label: "Contact Us", icon: MessageSquare },
     { id: "system", label: "System Settings", icon: Cpu },
   ];
@@ -383,41 +382,6 @@ export default function SettingsPage() {
             </motion.div>
           )}
 
-          {activeTab === 'landing' && (
-            <motion.div 
-              key="landing"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="bg-white p-12 rounded-[40px] border border-gray-100 shadow-sm space-y-8"
-            >
-               <div className="space-y-2">
-                 <h3 className="text-2xl font-black tracking-tighter text-black">Landing Page Content</h3>
-                 <p className="text-gray-500 font-medium italic text-sm">Update the welcome message and heroic headers of the landing page.</p>
-               </div>
-               
-               <div className="grid grid-cols-1 gap-8">
-                 <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Main Hero Title</Label>
-                    <Input defaultValue="Saving lives, changing minds." className="h-14 bg-gray-50 border-none rounded-2xl font-black text-2xl text-black px-6" />
-                 </div>
-                 <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Mission Description</Label>
-                    <textarea 
-                        className="w-full h-40 bg-gray-50 border-none rounded-3xl p-6 font-bold text-lg text-black focus:ring-2 focus:ring-red-100"
-                        defaultValue="The Ethiopian Red Cross Society (ERCS) was established by government decree on 8 July 1935 with the mission of alleviating human suffering during the second Italo-Ethiopian war."
-                    ></textarea>
-                 </div>
-                 <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Hero Image URL</Label>
-                    <div className="flex gap-4">
-                        <Input defaultValue="/hero-image.jpg" className="h-14 bg-gray-50 border-none rounded-2xl font-bold flex-1 px-6 text-black" />
-                        <Button className="h-14 bg-black rounded-2xl px-8 font-black uppercase text-xs tracking-widest">Update Asset</Button>
-                    </div>
-                 </div>
-               </div>
-            </motion.div>
-          )}
 
           {activeTab === 'contact' && (
             <motion.div 

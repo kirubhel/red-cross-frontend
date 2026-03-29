@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { ArrowRight, Calendar, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Language, translations } from "@/lib/translations";
@@ -15,101 +16,47 @@ export default function NewsSection({ lang }: NewsSectionProps) {
   const t = translations[lang];
   const local = t.news;
 
-  // Static articles for demo, labels are now from CMS
-  const articles = lang === 'am' ? [
-    {
-      id: 1,
-      category: "ድንገተኛ",
-      date: "መጋቢት 11, 2018",
-      author: "ኮሙኒኬሽን",
-      title: "በጎርፍ ለተጎዱ አካባቢዎች ወሳኝ እርዳታ ተሰራጨ",
-      desc: "የምላሽ ቡድኖቻችን በደቡብ ኢትዮጵያ በቅርብ ጊዜ በተከሰተው የጎርፍ አደጋ ለተጎዱ ከ5,000 በላይ አባወራዎች አስፈላጊ አቅርቦቶችን አሰራጭተዋል።",
-      image: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800",
-      color: "bg-red-500",
-    },
-    {
-      id: 2,
-      category: "ጤና",
-      date: "መጋቢት 6, 2018",
-      author: "የደምና ደዋይ",
-      title: "የዓለም የደም ለጋሾች ቀን፡ ሕይወትን ለማዳን ጥሪ",
-      desc: "ለጋሾቻችንን ለማክበር እና በአገር አቀፍ ደረጃ ደህንነቱ የተጠበቀ የደም ፍላጎትን በተመለከተ ግንዛቤ ማሳደግ ላይ ይቀላቀሉን።",
-      image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800",
-      color: "bg-blue-500",
-    },
-    {
-      id: 3,
-      category: "ወጣቶች",
-      date: "መጋቢት 1, 2018",
-      author: "በጎ ፈቃደኝነት",
-      title: "የወጣት በጎ ፈቃደኞች የአየር ንብረት መቋቋም ፕሮጀክት ጀመሩ",
-      desc: "በ4 ክልሎች ውስጥ ከ500 በላይ ወጣት በጎ ፈቃደኞች ዛፎችን በመትከል እና በአካባቢ ጥበቃ ላይ ስልጠናዎችን እየመሩ ይገኛሉ።",
-      image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800",
-      color: "bg-green-500",
+  const [liveArticles, setLiveArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+        const res = await fetch(`${apiUrl}/news?page=1&page_size=3&only_published=true`);
+        const data = await res.json();
+        if (data && data.articles) {
+          setLiveArticles(data.articles);
+        }
+      } catch (err) {
+        console.error("Failed to fetch live news:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
+  }, []);
+
+  const displayArticles = liveArticles.map((a, idx) => {
+    const colors = ["bg-red-500", "bg-blue-500", "bg-green-500"];
+    
+    // Fix local docker hostname for Next.js image optimization
+    let imageUrl = a.thumbnail_url;
+    if (imageUrl && imageUrl.includes('minio:9000')) {
+        imageUrl = imageUrl.replace('minio:9000', 'localhost:9000');
     }
-  ] : lang === 'om' ? [
-    {
-      id: 1,
-      category: "Ariifachiisaa",
-      date: "March 20, 2026",
-      author: "Kominikeeshinii",
-      title: "Gargaarsi Murtteessaan Naannolee Balaa Lafaatiin Miidhamaniif Raabsame",
-      desc: "Garee deebii keenyaa maatii 5,000 oliif wantoota barbaachisoo ta'an naannoo kibba Itiyoophiyaatti raabsaniiru.",
-      image: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800",
-      color: "bg-red-500",
-    },
-    {
-      id: 2,
-      category: "Fayyaa",
-      date: "March 15, 2026",
-      author: "Dhiiga",
-      title: "Guyyaa Arjoomtota Dhiigaa Addunyaa: Waamicha Lubbuu Baraaruu",
-      desc: "Arjoomtota keenya kabajuu fi dhiiga qulqulluu barbaachisummaa isaa irratti hubannoo uumuu irratti nu waliin hirmaadhaa.",
-      image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800",
-      color: "bg-blue-500",
-    },
-    {
-      id: 3,
-      category: "Dargaggoota",
-      date: "March 10, 2026",
-      author: "Fedhaan Tajaajiluu",
-      title: "Dargaggoonni Karee Dandamannaa Qilleensaa Jalqabsiisaniiru",
-      desc: "Tajaajiltoonni dargaggootaa 500 oli naannoo 4 keessatti mukkeen dhaabaa fi barnoota naannoo irratti workshop geggeessaa jiru.",
-      image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800",
-      color: "bg-green-500",
-    }
-  ] : [
-    {
-      id: 1,
-      category: "Emergency",
-      date: "March 20, 2026",
-      author: "ERCS Communications",
-      title: "Critical Aid Distributed to Flood-Affected Regions",
-      desc: "Our response teams have distributed essential supplies to over 5,000 households affected by recent flooding in southern Ethiopia.",
-      image: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800",
-      color: "bg-red-500",
-    },
-    {
-      id: 2,
-      category: "Health",
-      date: "March 15, 2026",
-      author: "Blood Bank Division",
-      title: "World Blood Donor Day: A Call to Save Lives",
-      desc: "Join us in celebrating our donors and raising awareness about the continuous need for safe blood products across the nation.",
-      image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800",
-      color: "bg-blue-500",
-    },
-    {
-      id: 3,
-      category: "Youth",
-      date: "March 10, 2026",
-      author: "Volunteer Network",
-      title: "Youth Volunteers Launch Climate Resilience Project",
-      desc: "Over 500 youth volunteers across 4 regions are planting trees and leading workshops on sustainable environmental practices.",
-      image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800",
-      color: "bg-green-500",
-    }
-  ];
+
+    return {
+      id: a.id,
+      category: a.category,
+      date: a.published_at ? new Date(a.published_at).toLocaleDateString() : 'Recent',
+      author: a.author || 'ERCS Communications',
+      title: a.title,
+      desc: a.excerpt,
+      image: imageUrl || "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800",
+      color: colors[idx % colors.length]
+    };
+  });
 
   return (
     <section id="news" className="py-32 bg-gray-50/50 relative overflow-hidden">
@@ -136,58 +83,65 @@ export default function NewsSection({ lang }: NewsSectionProps) {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {articles.map((post, idx) => (
-            <motion.article
-              key={post.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              viewport={{ once: true }}
-              className="group bg-white rounded-3xl overflow-hidden border border-black/[0.03] hover:shadow-2xl hover:shadow-black/10 transition-all duration-500"
-            >
-              <div className="relative h-64 overflow-hidden">
-                <Image
-                  src={post.image}
-                  alt={post.title}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute top-6 left-6">
-                  <span className={`${post.color} text-white text-[10px] font-black uppercase tracking-wider px-4 py-2 rounded-full`}>
-                    {post.category}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-8">
-                <div className="flex items-center gap-6 mb-6 text-[10px] font-black uppercase tracking-widest text-black/40">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-3 h-3" />
-                    {post.date}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <User className="w-3 h-3" />
-                    {post.author}
+          {displayArticles.length === 0 && !loading ? (
+             <div className="col-span-1 md:col-span-3 text-center py-12 bg-white rounded-3xl border border-black/[0.05]">
+                <h3 className="text-2xl font-black text-black tracking-tighter mb-2">No Stories Available</h3>
+                <p className="text-sm font-bold text-black/50">There are currently no published news articles. Check back soon for updates!</p>
+             </div>
+          ) : (
+            displayArticles.map((post, idx) => (
+              <motion.article
+                key={post.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                viewport={{ once: true }}
+                className="group bg-white rounded-3xl overflow-hidden border border-black/[0.03] hover:shadow-2xl hover:shadow-black/10 transition-all duration-500"
+              >
+                <div className="relative h-64 overflow-hidden">
+                  <Image
+                    src={post.image}
+                    alt={post.title}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  <div className="absolute top-6 left-6">
+                    <span className={`${post.color} text-white text-[10px] font-black uppercase tracking-wider px-4 py-2 rounded-full`}>
+                      {post.category}
+                    </span>
                   </div>
                 </div>
 
-                <h4 className="text-xl font-black text-black mb-4 line-clamp-2 min-h-[3.5rem] leading-tight group-hover:text-[#ED1C24] transition-colors">
-                  {post.title}
-                </h4>
-                
-                <p className="text-black/60 font-medium text-sm mb-8 line-clamp-3 leading-relaxed">
-                  {post.desc}
-                </p>
+                <div className="p-8">
+                  <div className="flex items-center gap-6 mb-6 text-[10px] font-black uppercase tracking-widest text-black/40">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3 h-3" />
+                      {post.date}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <User className="w-3 h-3" />
+                      {post.author}
+                    </div>
+                  </div>
 
-                <div className="pt-8 border-t border-black/[0.05]">
-                  <Link href={`/news/${post.id}`} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-black group-hover:gap-4 transition-all">
-                    {local.readStory}
-                    <ArrowRight className="w-4 h-4 text-[#ED1C24]" />
-                  </Link>
+                  <h4 className="text-xl font-black text-black mb-4 line-clamp-2 min-h-[3.5rem] leading-tight group-hover:text-[#ED1C24] transition-colors">
+                    {post.title}
+                  </h4>
+                  
+                  <p className="text-black/60 font-medium text-sm mb-8 line-clamp-3 leading-relaxed">
+                    {post.desc}
+                  </p>
+
+                  <div className="pt-8 border-t border-black/[0.05]">
+                    <Link href={`/news/${post.id}`} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-black group-hover:gap-4 transition-all">
+                      {local.readStory}
+                      <ArrowRight className="w-4 h-4 text-[#ED1C24]" />
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            </motion.article>
-          ))}
+              </motion.article>
+            ))
+          )}
         </div>
       </div>
     </section>

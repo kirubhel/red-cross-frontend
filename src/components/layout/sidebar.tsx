@@ -16,7 +16,8 @@ import {
   UserCheck,
   PanelLeftClose,
   PanelLeftOpen,
-  ClipboardList
+  ClipboardList,
+  Newspaper
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ const menuItems = [
   { href: "/admin/missions", label: "Missions", icon: UserCheck },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
+  { href: "/admin/news", label: "News & Media", icon: Newspaper },
   { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList },
   { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard },
   { href: "/admin/cms", label: "Landing Page CMS", icon: LayoutDashboard },
