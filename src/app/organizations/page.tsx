@@ -22,18 +22,14 @@ import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
+import en from 'react-phone-number-input/locale/en.json';
 import { cn } from "@/lib/utils";
 
-const COUNTRY_CODES = [
-  { code: "+251", label: "🇪🇹 +251" },
-  { code: "+254", label: "🇰🇪 +254" },
-  { code: "+252", label: "🇸🇴 +252" },
-  { code: "+253", label: "🇩🇯 +253" },
-  { code: "+249", label: "🇸🇩 +249" },
-  { code: "+256", label: "🇺🇬 +256" },
-  { code: "+1", label: "🇺🇸 +1" },
-  { code: "+44", label: "🇬🇧 +44" },
-];
+const ALL_COUNTRY_CODES = getCountries().map(country => ({
+  code: `+${getCountryCallingCode(country)}`,
+  name: (en as any)[country] || country
+}));
 
 type Organization = {
   id: string;
@@ -349,9 +345,11 @@ export default function OrganizationsPage() {
                                         <select 
                                             value={countryCode} 
                                             onChange={(e) => setCountryCode(e.target.value)}
-                                            className="w-24 px-3 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-xs font-bold text-white shadow-xl appearance-none"
+                                            className="w-32 px-3 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-[10px] font-bold text-white shadow-xl appearance-none"
                                         >
-                                            {COUNTRY_CODES.map(c => <option key={c.code} value={c.code} className="bg-black">{c.label}</option>)}
+                                            {ALL_COUNTRY_CODES.sort((a,b) => a.name.localeCompare(b.name)).map((c, i) => (
+                                                <option key={`${c.code}-${i}`} value={c.code} className="bg-black">{c.name} ({c.code})</option>
+                                            ))}
                                         </select>
                                         <input 
                                             type="tel" 

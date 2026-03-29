@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
+import en from 'react-phone-number-input/locale/en.json';
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -108,6 +110,10 @@ const ROLE_COLORS: Record<string | number, string> = {
   "MEMBER": "bg-gray-100 text-gray-700",
 };
 
+const ALL_COUNTRY_CODES = getCountries().map(country => ({
+  code: `+${getCountryCallingCode(country)}`,
+  name: (en as any)[country] || country
+}));
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<SystemUser[]>([]);
@@ -117,6 +123,7 @@ export default function UserManagementPage() {
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
   const [form, setForm] = useState<NewUserForm>({ ...DEFAULT_FORM });
   const [saving, setSaving] = useState(false);
+  const [countryCode, setCountryCode] = useState("+251");
   const [showPassword, setShowPassword] = useState(false);
   const [editRole, setEditRole] = useState<number>(5);
   const [editStatus, setEditStatus] = useState<string>("ACTIVE");
@@ -146,9 +153,13 @@ export default function UserManagementPage() {
     }
     setSaving(true);
     try {
+      // Normalize: strip leading 0s and duplicate country code
+      const cleanPhone = form.phone_number.replace(/^0+/, "").replace(countryCode, "");
+      const finalPhone = `${countryCode}${cleanPhone}`;
+
       await api.post("/users/create", {
         email: form.email,
-        phone_number: form.phone_number,
+        phone_number: finalPhone,
         password: form.password,
         role: form.role,
         region: form.region,
@@ -369,13 +380,24 @@ export default function UserManagementPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Phone</Label>
-                      <Input
-                        value={form.phone_number}
-                        onChange={e => setForm(f => ({ ...f, phone_number: e.target.value }))}
-                        placeholder="+251..."
-                        className="h-14 rounded-2xl bg-black text-white border-none font-bold"
-                      />
+                       <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Phone</Label>
+                       <div className="flex gap-2">
+                           <select 
+                               value={countryCode} 
+                               onChange={(e) => setCountryCode(e.target.value)}
+                               className="w-32 h-14 rounded-2xl bg-black text-white border-none font-bold text-[10px] appearance-none px-3 focus:ring-1 focus:ring-red-500/20 shadow-xl"
+                           >
+                               {ALL_COUNTRY_CODES.sort((a, b) => (a.name || "").localeCompare(b.name || "")).map((c, i) => (
+                                   <option key={`${c.code}-${i}`} value={c.code} className="bg-zinc-900">{c.name} ({c.code})</option>
+                               ))}
+                           </select>
+                           <Input
+                               value={form.phone_number}
+                               onChange={e => setForm(f => ({ ...f, phone_number: e.target.value }))}
+                               placeholder="912345678"
+                               className="flex-1 h-14 rounded-2xl bg-black text-white border-none font-bold"
+                           />
+                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Password</Label>

@@ -22,20 +22,16 @@ import {
   Eye,
   EyeOff
 } from "lucide-react";
+import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
+import en from 'react-phone-number-input/locale/en.json';
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS } from "@/lib/constants";
 
-const COUNTRY_CODES = [
-  { code: "+251", label: "🇪🇹 +251" },
-  { code: "+254", label: "🇰🇪 +254" },
-  { code: "+252", label: "🇸🇴 +252" },
-  { code: "+253", label: "🇩🇯 +253" },
-  { code: "+249", label: "🇸🇩 +249" },
-  { code: "+256", label: "🇺🇬 +256" },
-  { code: "+1", label: "🇺🇸 +1" },
-  { code: "+44", label: "🇬🇧 +44" },
-];
+const ALL_COUNTRY_CODES = getCountries().map(country => ({
+  code: `+${getCountryCallingCode(country)}`,
+  name: (en as any)[country] || country
+}));
 
 export default function MemberRegistrationPage() {
   const [step, setStep] = useState(1); // 1: Personal, 2: Membership Type/Payment, 3: Success
@@ -172,7 +168,7 @@ export default function MemberRegistrationPage() {
        </header>
 
        <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-6xl grid lg:grid-cols-[1fr_520px] gap-12 items-start pt-10">
+        <div className="w-full max-w-7xl grid lg:grid-cols-[1fr_640px] gap-20 items-start pt-10">
             
             {/* Context Side */}
             <div className="hidden lg:flex flex-col space-y-10 sticky top-20">
@@ -248,13 +244,15 @@ export default function MemberRegistrationPage() {
                                                      </select>
                                                  ) : field.type === 'tel' ? (
                                                      <div className="flex gap-2">
-                                                         <select 
-                                                            value={countryCode} 
-                                                            onChange={(e) => setCountryCode(e.target.value)}
-                                                            className="w-24 h-12 rounded-xl bg-gray-50 border-none font-bold text-sm text-black focus:ring-2 focus:ring-[#ED1C24]/10 transition-all appearance-none px-3"
-                                                         >
-                                                             {COUNTRY_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-                                                         </select>
+                                                          <select 
+                                                             value={countryCode} 
+                                                             onChange={(e) => setCountryCode(e.target.value)}
+                                                             className="w-32 h-12 rounded-xl bg-gray-50 border-none font-bold text-[10px] text-black focus:ring-2 focus:ring-[#ED1C24]/10 transition-all appearance-none px-3"
+                                                          >
+                                                              {ALL_COUNTRY_CODES.sort((a, b) => (a.name || "").localeCompare(b.name || "")).map((c, i) => (
+                                                                <option key={`${c.code}-${i}`} value={c.code}>{c.name} ({c.code})</option>
+                                                              ))}
+                                                          </select>
                                                          <Input 
                                                             id={field.id} 
                                                             type={field.type} 
