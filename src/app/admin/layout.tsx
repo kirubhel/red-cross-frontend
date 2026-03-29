@@ -52,32 +52,30 @@ export default function AdminLayout({
             
             {/* User Profile */}
             <div className="relative group/profile">
-              <div className="flex items-center gap-3 cursor-pointer p-1.5 pr-4 rounded-[20px] hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all select-none group">
-                <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-red-100 text-[#ED1C24] group-hover:scale-105 transition-transform shadow-inner">
-                  <User className="h-5 w-5" />
+              <div className="flex items-center gap-2 cursor-pointer p-1 pr-3 rounded-full hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all select-none group">
+                <div className="h-8 w-8 flex items-center justify-center rounded-full bg-gradient-to-br from-red-50 to-red-100 text-[#ED1C24] group-hover:scale-105 transition-transform shadow-inner shrink-0">
+                  <User className="h-4 w-4" />
                 </div>
-                <div className="hidden flex-col sm:flex">
-                  <span className="text-sm font-black text-black leading-tight">Admin User</span>
-                  <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase flex items-center gap-1">
-                    System Admin <ChevronRight className="h-2 w-2 text-gray-300 group-hover:text-[#ED1C24] transition-colors" />
+                <div className="hidden items-center gap-2.5 sm:flex">
+                  <span className="text-xs font-black text-black leading-none">Admin User</span>
+                  <div className="h-3 w-px bg-gray-200" />
+                  <span className="text-[9px] font-bold text-gray-400 tracking-widest uppercase flex items-center gap-1 leading-none mt-px">
+                    System Admin <ChevronRight className="h-3 w-3 text-gray-300 group-hover:text-[#ED1C24] transition-colors ml-0.5" />
                   </span>
                 </div>
               </div>
 
               {/* Account Dropdown */}
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-[24px] shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] border border-gray-100 py-3 opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible translate-y-4 group-hover/profile:translate-y-0 transition-all z-50 overflow-hidden">
-                  <div className="px-6 py-2 mb-2 border-b border-gray-50">
-                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Account Actions</p>
-                  </div>
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 py-1 opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible translate-y-2 group-hover/profile:translate-y-0 transition-all z-50 overflow-hidden">
                   <button 
                     onClick={() => {
                       localStorage.removeItem("token");
                       window.location.href = "/login";
                     }}
-                    className="w-full flex items-center gap-3 px-6 py-4 text-gray-500 hover:text-[#ED1C24] hover:bg-red-50/50 transition-all text-[11px] font-black uppercase tracking-[0.15em] border-l-2 border-transparent hover:border-[#ED1C24]"
+                    className="w-full flex items-center gap-2 px-4 py-3 text-gray-500 hover:text-[#ED1C24] hover:bg-red-50/50 transition-all text-xs font-bold border-l-2 border-transparent hover:border-[#ED1C24]"
                   >
-                    <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-white shadow-sm transition-colors">
-                      <LogOut className="h-4 w-4" /> 
+                    <div className="h-6 w-6 rounded-md bg-gray-50 flex items-center justify-center group-hover:bg-white shadow-sm transition-colors">
+                      <LogOut className="h-3 w-3" /> 
                     </div>
                     Sign Out
                   </button>

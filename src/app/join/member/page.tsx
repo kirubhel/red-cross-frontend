@@ -37,6 +37,7 @@ export default function MemberRegistrationPage() {
   const [step, setStep] = useState(1); // 1: Personal, 2: Membership Type/Payment, 3: Success
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [memberId, setMemberId] = useState<string | null>(null);
   const [formConfig, setFormConfig] = useState<any[]>([]);
   const [membershipPlans, setMembershipPlans] = useState<any[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({
@@ -119,7 +120,7 @@ export default function MemberRegistrationPage() {
             const finalPhone = `${countryCode}${cleanPhone}`;
 
             // 1. Register User in Auth Service with role=ROLE_member (6)
-            await api.post("/auth/register", {
+            const res = await api.post("/auth/register", {
                 first_name: formData.firstName,
                 father_name: formData.fatherName,
                 grandfather_name: formData.grandfatherName,
@@ -130,6 +131,10 @@ export default function MemberRegistrationPage() {
                 role: 6,
             });
             
+            const generatedId = res.data?.ercsId || res.data?.ercs_id;
+            if (generatedId) {
+               setMemberId(generatedId);
+            }
             setStep(3); // Success! (Mock Payment)
         } catch (err: any) {
              console.error(err);
@@ -432,6 +437,15 @@ export default function MemberRegistrationPage() {
                                     Your humanitarian journey has officially begun! Check your phone for your temporary credentials.
                                 </p>
                             </div>
+
+                            {memberId && (
+                                <div className="mx-auto max-w-sm bg-gray-50 border border-gray-100 p-6 rounded-[28px] space-y-2">
+                                     <div className="text-[10px] uppercase font-black tracking-widest text-[#ED1C24]">Your Member ID</div>
+                                     <div className="text-4xl font-black text-black tracking-tight" style={{ fontVariantNumeric: "tabular-nums" }}>{memberId}</div>
+                                     <div className="text-xs text-gray-500 font-bold">You can login using this ID.</div>
+                                </div>
+                            )}
+
                             <Link href="/">
                                 <Button className="h-16 bg-black hover:bg-[#ED1C24] text-white rounded-3xl px-16 text-xl font-black shadow-2xl transition-all">
                                     Back to Home
