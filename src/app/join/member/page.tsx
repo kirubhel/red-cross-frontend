@@ -119,16 +119,33 @@ export default function MemberRegistrationPage() {
             const cleanPhone = rawPhone.replace(/^0+/, "").replace(countryCode, "");
             const finalPhone = `${countryCode}${cleanPhone}`;
 
-            // 1. Register User in Auth Service with role=ROLE_member (6)
-            const res = await api.post("/auth/register", {
-                first_name: formData.firstName,
-                father_name: formData.fatherName,
-                grandfather_name: formData.grandfatherName,
-                email: formData.email,
+            // Dynamically extract variables based on Config Labels rather than unpredictable field_ IDs
+            const getVal = (keyword: string) => {
+                const f = formConfig.find(f => f.label.toLowerCase().includes(keyword.toLowerCase()));
+                return f ? (formData[f.id] || "") : "";
+            };
+
+            const extractedName = getVal("name");
+            const extractedEmail = getVal("email");
+            const extractedNationalId = getVal("national");
+            const extractedDOB = getVal("date") || getVal("birth");
+            const extractedGender = getVal("gender");
+            const extractedRegion = parseInt(getVal("region")) || 1;
+
+            // 1. Register Member collectively (Auth User + Core Person)
+            const res = await api.post("/join/member", {
+                first_name: extractedName,
+                father_name: getVal("father"),
+                grandfather_name: getVal("grandfather"),
+                email: extractedEmail,
                 phone_number: finalPhone,
+                national_id: extractedNationalId,
+                date_of_birth: extractedDOB,
+                gender: extractedGender,
                 password: formData.password,
-                region: REGION_MAP_VALUE_TO_ID[formData.region] || 1,
+                region: extractedRegion,
                 role: 6,
+                membershipType: formData.membershipType
             });
             
             const generatedId = res.data?.ercsId || res.data?.ercs_id;
