@@ -332,6 +332,38 @@ export default function OrganizationsPage() {
                                         placeholder="contact@org.et"
                                     />
                                 </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Organization Website</label>
+                                    <input 
+                                        type="url" 
+                                        name="website"
+                                        value={formData.website}
+                                        onChange={handleChange}
+                                        className="w-full px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white shadow-xl placeholder:text-gray-600"
+                                        placeholder="https://example.com"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Phone Number</label>
+                                    <div className="flex gap-2">
+                                        <select 
+                                            value={countryCode} 
+                                            onChange={(e) => setCountryCode(e.target.value)}
+                                            className="w-24 px-3 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-xs font-bold text-white shadow-xl appearance-none"
+                                        >
+                                            {COUNTRY_CODES.map(c => <option key={c.code} value={c.code} className="bg-black">{c.label}</option>)}
+                                        </select>
+                                        <input 
+                                            type="tel" 
+                                            name="phone"
+                                            required
+                                            value={formData.phone}
+                                            onChange={handleChange}
+                                            className="flex-1 px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white shadow-xl placeholder:text-gray-600"
+                                            placeholder="912345678"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Description & Goals</label>

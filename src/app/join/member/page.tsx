@@ -113,8 +113,13 @@ export default function MemberRegistrationPage() {
     } else {
         setLoading(true);
         try {
+            // Find the phone field to get its ID from config if it varies
+            const phoneField = formConfig.find(f => f.type === 'tel');
+            const phoneFieldId = phoneField ? phoneField.id : 'phone';
+            const rawPhone = formData[phoneFieldId] || "";
+
             // Normalize: strip leading 0s and duplicate country code
-            const cleanPhone = formData.phone.replace(/^0+/, "").replace(countryCode, "");
+            const cleanPhone = rawPhone.replace(/^0+/, "").replace(countryCode, "");
             const finalPhone = `${countryCode}${cleanPhone}`;
 
             // 1. Register User in Auth Service with role=ROLE_member (6)
@@ -241,7 +246,7 @@ export default function MemberRegistrationPage() {
                                                              <option key={i} value={opt.value}>{opt.label}</option>
                                                          ))}
                                                      </select>
-                                                 ) : field.id === 'phone' ? (
+                                                 ) : field.type === 'tel' ? (
                                                      <div className="flex gap-2">
                                                          <select 
                                                             value={countryCode} 
