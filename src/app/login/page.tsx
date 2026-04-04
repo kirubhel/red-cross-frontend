@@ -43,9 +43,12 @@ export default function LoginPage() {
       
       // Handle both string and numeric enum values from the API
       const isAdmin = role === "SUPER_ADMIN" || role === "REGIONAL_ADMIN" || role === 1 || role === 2;
+      const isOrg = role === "ORGANIZATION" || role === 8;
       
       if (isAdmin) {
         router.push("/admin");
+      } else if (isOrg) {
+        router.push("/organization/portal");
       } else {
         router.push("/dashboard");
       }

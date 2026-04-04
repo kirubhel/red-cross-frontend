@@ -23,6 +23,7 @@ import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
+import { toast } from "sonner";
 import en from 'react-phone-number-input/locale/en.json';
 import { cn } from "@/lib/utils";
 
@@ -48,21 +49,39 @@ export default function OrganizationsPage() {
   const [loading, setLoading] = useState(true);
   const [countryCode, setCountryCode] = useState("+251");
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [activeTab, setActiveTab] = useState("partners");
+  const [orgTypes, setOrgTypes] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     orgName: "",
     orgType: "",
+    otherOrgType: "",
     contactPerson: "",
     email: "",
     phone: "",
+    password: "",
     website: "",
     description: "",
-    volunteersNeeded: "",
-    requirements: ""
   });
 
   useEffect(() => {
-    fetchApprovedOrganizations();
+    if (typeof window !== "undefined" && window.location.hash === "#register") {
+      setActiveTab("register");
+    }
   }, []);
+
+  useEffect(() => {
+    fetchApprovedOrganizations();
+    fetchOrganizationTypes();
+  }, []);
+
+  const fetchOrganizationTypes = async () => {
+    try {
+      const res = await api.get("/organizations/types");
+      setOrgTypes(res.data.types || []);
+    } catch (err) {
+      console.error("Failed to fetch organization types:", err);
+    }
+  };
 
   const fetchApprovedOrganizations = async () => {
     try {
@@ -84,36 +103,43 @@ export default function OrganizationsPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      // Normalize: strip leading 0s and duplicate country code
       const cleanPhone = formData.phone.replace(/^0+/, "").replace(countryCode, "");
       const finalPhone = `${countryCode}${cleanPhone}`;
+      const finalOrgType = formData.orgType === "other" ? formData.otherOrgType : formData.orgType;
 
       await api.post("/organizations/register", {
         name: formData.orgName,
-        type: formData.orgType,
+        type: finalOrgType,
         contact_person: formData.contactPerson,
         email: formData.email,
         phone: finalPhone,
+        password: formData.password,
         website: formData.website,
         description: formData.description,
-        volunteers_needed: Number(formData.volunteersNeeded),
-        requirements: formData.requirements,
       });
-      alert("Registration submitted successfully! We will review your application soon.");
+      toast.success("Organization registration submitted! You can now log in to the portal.");
+      
+      // Add the new type to the list if it was "other"
+      if (formData.orgType === "other" && formData.otherOrgType) {
+        fetchOrganizationTypes();
+      }
+
       setFormData({
         orgName: "",
         orgType: "",
+        otherOrgType: "",
         contactPerson: "",
         email: "",
         phone: "",
+        password: "",
         website: "",
         description: "",
-        volunteersNeeded: "",
-        requirements: ""
       });
+
+      router.push("/login");
     } catch (err) {
       console.error("Failed to submit organization registration:", err);
-      alert("Failed to submit registration. Please try again.");
+      toast.error("Failed to submit registration. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -156,13 +182,13 @@ export default function OrganizationsPage() {
             transition={{ duration: 0.6 }}
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#ED1C24]/10 border border-[#ED1C24]/20 rounded-full text-[#ED1C24] text-xs font-black uppercase tracking-widest mb-8">
-              <Building2 className="h-3 w-3" /> External Partnerships
+              <Building2 className="h-3 w-3" /> Request Volunteers
             </div>
             <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6 leading-tight">
-                Volunteer <span className="text-[#ED1C24]">Hub</span> Partner Network
+                Get <span className="text-[#ED1C24]">Volunteers</span> for Your Mission
             </h1>
             <p className="text-gray-400 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
-              We connect approved humanitarian organizations with the resources and volunteers they need to serve Ethiopia.
+              We connect organizations with dedicated Red Cross volunteers to support humanitarian efforts across Ethiopia.
             </p>
           </motion.div>
         </div>
@@ -170,14 +196,14 @@ export default function OrganizationsPage() {
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-12 flex-1">
-        <Tabs defaultValue="partners" className="space-y-12">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-12">
           <div className="flex flex-col items-center gap-6">
             <TabsList className="bg-white p-2 rounded-3xl h-16 shadow-xl shadow-black/5 border border-gray-100 inline-flex items-center overflow-hidden">
                 <TabsTrigger value="partners" className="rounded-[20px] px-10 h-full font-black text-sm data-[state=active]:bg-[#ED1C24] data-[state=active]:text-white data-[state=active]:shadow-lg transition-all flex items-center gap-2">
-                   <Users className="h-4 w-4" /> Active Partners ({organizations.length})
+                   <Users className="h-4 w-4" /> Supported Organizations ({organizations.length})
                 </TabsTrigger>
                 <TabsTrigger value="register" className="rounded-[20px] px-10 h-full font-black text-sm data-[state=active]:bg-[#ED1C24] data-[state=active]:text-white data-[state=active]:shadow-lg transition-all flex items-center gap-2">
-                   <Plus className="h-4 w-4" /> Register Organization
+                   <Plus className="h-4 w-4" /> Request Volunteers
                 </TabsTrigger>
             </TabsList>
           </div>
@@ -192,10 +218,10 @@ export default function OrganizationsPage() {
             ) : organizations.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-32 text-center bg-white rounded-[40px] border border-dashed border-gray-200">
                    <Building2 className="h-20 w-20 text-gray-200 mb-6" />
-                   <h3 className="text-2xl font-black text-black tracking-tight">No active partners yet</h3>
-                   <p className="text-gray-400 font-medium max-w-sm mx-auto mt-2">Our network is growing. If you represent an organization, apply to become our first partner!</p>
-                   <Button onClick={() => router.push("#register")} className="mt-8 bg-black hover:bg-[#ED1C24] text-white rounded-2xl h-14 px-8 font-black transition-all">
-                      Apply Today
+                   <h3 className="text-2xl font-black text-black tracking-tight">No requests processed yet</h3>
+                   <p className="text-gray-400 font-medium max-w-sm mx-auto mt-2">If you represent an organization in need of support, submit your first volunteer request!</p>
+                   <Button onClick={() => setActiveTab("register")} className="mt-8 bg-black hover:bg-[#ED1C24] text-white rounded-2xl h-14 px-8 font-black transition-all">
+                      Request Now
                    </Button>
                 </div>
             ) : (
@@ -264,8 +290,8 @@ export default function OrganizationsPage() {
                 >
                     <div className="absolute top-0 left-0 w-full h-2 bg-[#ED1C24]" />
                     <div className="mb-12">
-                        <h2 className="text-4xl font-black text-black tracking-tighter mb-2">Partner Onboarding</h2>
-                        <p className="text-gray-400 font-medium">Join our network to receive volunteer and logistical support.</p>
+                        <h2 className="text-4xl font-black text-black tracking-tighter mb-2">Volunteer Request Form</h2>
+                        <p className="text-gray-400 font-medium">Submit your request to receive Red Cross volunteer support for your organization.</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-10">
@@ -283,7 +309,7 @@ export default function OrganizationsPage() {
                                         required
                                         value={formData.orgName}
                                         onChange={handleChange}
-                                        className="w-full px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white shadow-xl placeholder:text-gray-600"
+                                        className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm placeholder:text-gray-400"
                                         placeholder="Full legal name"
                                     />
                                 </div>
@@ -294,15 +320,40 @@ export default function OrganizationsPage() {
                                         required
                                         value={formData.orgType}
                                         onChange={handleChange}
-                                        className="w-full px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white shadow-xl"
+                                        className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm"
                                     >
                                         <option value="" disabled>Select category</option>
-                                        <option value="corporate">Corporate / Business</option>
-                                        <option value="ngo">NGO / Non-Profit</option>
-                                        <option value="government">Government Institution</option>
-                                        <option value="educational">Educational Institution</option>
-                                        <option value="other">Other</option>
+                                        {orgTypes.map(t => (
+                                            <option key={t} value={t}>{t}</option>
+                                        ))}
+                                        <option value="other">Other (Specify)</option>
                                     </select>
+                                </div>
+                                {formData.orgType === "other" && (
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Specify Type</label>
+                                        <input 
+                                            type="text" 
+                                            name="otherOrgType"
+                                            required
+                                            value={formData.otherOrgType}
+                                            onChange={handleChange}
+                                            className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm placeholder:text-gray-400"
+                                            placeholder="Enter organization type"
+                                        />
+                                    </div>
+                                )}
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Portal Password</label>
+                                    <input 
+                                        type="password" 
+                                        name="password"
+                                        required
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm placeholder:text-gray-400"
+                                        placeholder="••••••••"
+                                    />
                                 </div>
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Contact Person</label>
@@ -312,7 +363,7 @@ export default function OrganizationsPage() {
                                         required
                                         value={formData.contactPerson}
                                         onChange={handleChange}
-                                        className="w-full px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white shadow-xl placeholder:text-gray-600"
+                                        className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm placeholder:text-gray-400"
                                         placeholder="Full name of representative"
                                     />
                                 </div>
@@ -324,7 +375,7 @@ export default function OrganizationsPage() {
                                         required
                                         value={formData.email}
                                         onChange={handleChange}
-                                        className="w-full px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white shadow-xl placeholder:text-gray-600"
+                                        className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm placeholder:text-gray-400"
                                         placeholder="contact@org.et"
                                     />
                                 </div>
@@ -335,7 +386,7 @@ export default function OrganizationsPage() {
                                         name="website"
                                         value={formData.website}
                                         onChange={handleChange}
-                                        className="w-full px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white shadow-xl placeholder:text-gray-600"
+                                        className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm placeholder:text-gray-400"
                                         placeholder="https://example.com"
                                     />
                                 </div>
@@ -345,10 +396,10 @@ export default function OrganizationsPage() {
                                         <select 
                                             value={countryCode} 
                                             onChange={(e) => setCountryCode(e.target.value)}
-                                            className="w-32 px-3 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-[10px] font-bold text-white shadow-xl appearance-none"
+                                            className="w-32 px-3 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-[10px] font-bold text-black shadow-sm appearance-none"
                                         >
                                             {ALL_COUNTRY_CODES.sort((a,b) => a.name.localeCompare(b.name)).map((c, i) => (
-                                                <option key={`${c.code}-${i}`} value={c.code} className="bg-black">{c.name} ({c.code})</option>
+                                                <option key={`${c.code}-${i}`} value={c.code} className="bg-white text-black">{c.name} ({c.code})</option>
                                             ))}
                                         </select>
                                         <input 
@@ -357,7 +408,7 @@ export default function OrganizationsPage() {
                                             required
                                             value={formData.phone}
                                             onChange={handleChange}
-                                            className="flex-1 px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white shadow-xl placeholder:text-gray-600"
+                                            className="flex-1 px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm placeholder:text-gray-400"
                                             placeholder="912345678"
                                         />
                                     </div>
@@ -371,43 +422,9 @@ export default function OrganizationsPage() {
                                     rows={4}
                                     value={formData.description}
                                     onChange={handleChange}
-                                    className="w-full px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white resize-none shadow-xl placeholder:text-gray-600"
+                                    className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black resize-none shadow-sm placeholder:text-gray-400"
                                     placeholder="Briefly describe your humanitarian mission..."
                                 />
-                            </div>
-                        </div>
-
-                        {/* Section 2: Volunteer Requirements */}
-                        <div className="space-y-8">
-                            <h3 className="text-xs font-black text-gray-300 uppercase tracking-[0.3em] flex items-center gap-3">
-                                <div className="h-px bg-gray-100 flex-1" /> Field Requirements
-                            </h3>
-                            <div className="grid md:grid-cols-3 gap-8">
-                                <div className="space-y-3 md:col-span-1">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Headcount</label>
-                                    <input 
-                                        type="number" 
-                                        name="volunteersNeeded"
-                                        required
-                                        min="1"
-                                        value={formData.volunteersNeeded}
-                                        onChange={handleChange}
-                                        className="w-full px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white shadow-xl placeholder:text-gray-600"
-                                        placeholder="e.g. 10"
-                                    />
-                                </div>
-                                <div className="space-y-3 md:col-span-2">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Activities & Skills</label>
-                                    <textarea 
-                                        name="requirements"
-                                        required
-                                        rows={1}
-                                        value={formData.requirements}
-                                        onChange={handleChange}
-                                        className="w-full px-6 py-4 bg-black border-none rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 transition-all text-sm font-bold text-white resize-none shadow-xl placeholder:text-gray-600"
-                                        placeholder="Primary tasks for volunteers..."
-                                    />
-                                </div>
                             </div>
                         </div>
 
@@ -417,7 +434,7 @@ export default function OrganizationsPage() {
                                 disabled={submitting}
                                 className="w-full bg-[#ED1C24] hover:bg-black text-white rounded-[24px] h-20 text-lg font-black uppercase tracking-widest transition-all shadow-xl shadow-[#ED1C24]/20 cursor-pointer disabled:opacity-50"
                             >
-                                {submitting ? "Processing Application..." : "Submit Partnership Request"}
+                                {submitting ? "Registering..." : "Register Organization & Access Portal"}
                             </Button>
                         </div>
                     </form>
