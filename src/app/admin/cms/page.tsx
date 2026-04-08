@@ -366,60 +366,62 @@ export default function CMSPage() {
               </div>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-8 pt-4 border-t border-gray-50">
-              <div className="space-y-4">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24]">Emergency</h4>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-300 uppercase">Title</Label>
-                  <Input value={current.services.emergency.title} onChange={(e) => {
-                    const newValue = { ...current.services.emergency, title: e.target.value };
-                    updateField('services', 'emergency', newValue);
-                  }} className="rounded-xl h-12 font-bold" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-6 border-t border-gray-100">
+              {current.services.items.map((service, index) => (
+                <div key={service.id} className="space-y-4 p-6 rounded-3xl border border-gray-100 bg-gray-50/30">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24]">{service.id}</h4>
+                    <div className={`h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center opacity-50`}>
+                      {/* Placeholder for Icon */}
+                      <Activity className="h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black text-gray-300 uppercase">Title</Label>
+                    <Input 
+                      value={service.title} 
+                      onChange={(e) => {
+                        const newItems = [...current.services.items];
+                        newItems[index] = { ...newItems[index], title: e.target.value };
+                        
+                        setContents(prev => ({
+                          ...prev,
+                          [activeLang]: {
+                            ...prev[activeLang],
+                            services: {
+                              ...prev[activeLang].services,
+                              items: newItems
+                            }
+                          }
+                        }));
+                      }} 
+                      className="rounded-xl h-10 text-sm font-bold" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black text-gray-300 uppercase">Description</Label>
+                    <textarea 
+                      value={service.desc} 
+                      onChange={(e) => {
+                        const newItems = [...current.services.items];
+                        newItems[index] = { ...newItems[index], desc: e.target.value };
+                        
+                        setContents(prev => ({
+                          ...prev,
+                          [activeLang]: {
+                            ...prev[activeLang],
+                            services: {
+                              ...prev[activeLang].services,
+                              items: newItems
+                            }
+                          }
+                        }));
+                      }} 
+                      className="w-full min-h-[100px] p-3 rounded-xl border border-gray-100 bg-black text-white font-bold text-[10px] leading-relaxed" 
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-300 uppercase">Description</Label>
-                  <textarea value={current.services.emergency.desc} onChange={(e) => {
-                    const newValue = { ...current.services.emergency, desc: e.target.value };
-                    updateField('services', 'emergency', newValue);
-                  }} className="w-full min-h-[80px] p-4 rounded-xl border border-gray-100 bg-black text-white font-bold text-xs" />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Health</h4>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-300 uppercase">Title</Label>
-                  <Input value={current.services.health.title} onChange={(e) => {
-                    const newValue = { ...current.services.health, title: e.target.value };
-                    updateField('services', 'health', newValue);
-                  }} className="rounded-xl h-12 font-bold" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-300 uppercase">Description</Label>
-                  <textarea value={current.services.health.desc} onChange={(e) => {
-                    const newValue = { ...current.services.health, desc: e.target.value };
-                    updateField('services', 'health', newValue);
-                  }} className="w-full min-h-[80px] p-4 rounded-xl border border-gray-100 bg-black text-white font-bold text-xs" />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">Water</h4>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-300 uppercase">Title</Label>
-                  <Input value={current.services.water.title} onChange={(e) => {
-                    const newValue = { ...current.services.water, title: e.target.value };
-                    updateField('services', 'water', newValue);
-                  }} className="rounded-xl h-12 font-bold" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-300 uppercase">Description</Label>
-                  <textarea value={current.services.water.desc} onChange={(e) => {
-                    const newValue = { ...current.services.water, desc: e.target.value };
-                    updateField('services', 'water', newValue);
-                  }} className="w-full min-h-[80px] p-4 rounded-xl border border-gray-100 bg-black text-white font-bold text-xs" />
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>

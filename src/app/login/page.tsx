@@ -53,14 +53,20 @@ export default function LoginPage() {
         router.push("/dashboard");
       }
     } catch (err: any) {
-      console.error(err);
+      console.error("Login detail err:", err);
       
       const rawMessage = typeof err.response?.data === 'string' 
         ? err.response.data 
-        : err.response?.data?.message || "";
+        : err.response?.data?.message || err.response?.data || "";
+
+      // Extract the clean description from gRPC error if present
+      let cleanMessage = rawMessage;
+      if (rawMessage.includes("desc = ")) {
+        cleanMessage = rawMessage.split("desc = ")[1];
+      }
 
       // Map technical gRPC errors to user-friendly messages
-      let friendlyMessage = "Sign in failed. Please check your connection and try again.";
+      let friendlyMessage = cleanMessage || "Sign in failed. Please check your connection and try again.";
       
       if (rawMessage.includes("invalid credentials") || rawMessage.includes("Unauthenticated")) {
         friendlyMessage = "Those credentials don't look right. Please double-check your ID and password.";
@@ -68,6 +74,8 @@ export default function LoginPage() {
         friendlyMessage = "We couldn't find an account with that identifier.";
       } else if (rawMessage.includes("deadline exceeded")) {
         friendlyMessage = "The server is taking too long to respond. Please try again in a moment.";
+      } else if (rawMessage.includes("PENDING")) {
+        friendlyMessage = cleanMessage || "Your account is currently pending approval from ERCS administrators.";
       }
         
       setError(friendlyMessage);

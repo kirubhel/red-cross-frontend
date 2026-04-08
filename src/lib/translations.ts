@@ -47,18 +47,72 @@ export const translations = {
     services: {
       badge: "What we do",
       title: "Our Core Service Areas.",
-      emergency: {
-        title: "Emergency Response",
-        desc: "Providing immediate life-saving assistance during natural and man-made disasters across Ethiopia."
-      },
-      health: {
-        title: "Health & Resilience",
-        desc: "Promoting community health through ambulances, blood banks, and disease prevention programs."
-      },
-      water: {
-        title: "Clean Water Access",
-        desc: "Building sustainable water systems (WASH) to prevent disease and support rural development."
-      },
+      items: [
+        {
+          id: "drm",
+          title: "Disaster Risk Management (DRM)",
+          desc: "Emergency preparedness and response; Disaster risk reduction (DRR); Early warning systems and community resilience building; Relief distribution (food, shelter, non-food items)",
+          icon: "ShieldCheck",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "health",
+          title: "Health and Care Services",
+          desc: "First aid training and emergency medical services; Community-based health and nutrition programs; Epidemic prevention and response; Maternal and child health support",
+          icon: "Activity",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "wash",
+          title: "Water, Sanitation and Hygiene (WASH)",
+          desc: "Provision of safe drinking water; Sanitation facility construction and promotion; Hygiene awareness campaigns; Emergency WASH interventions",
+          icon: "Droplets",
+          color: "text-blue-500",
+          bg: "bg-blue-50"
+        },
+        {
+          id: "volunteer",
+          title: "Volunteer and Youth Engagement",
+          desc: "Recruitment, training, and deployment of volunteers; Youth programs and community service initiatives; Capacity building and retention strategies",
+          icon: "Users",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "rfl",
+          title: "Restoring Family Links (RFL)",
+          desc: "Tracing and reunification of separated family members; Support for migrants, refugees, and internally displaced persons; Communication services between families",
+          icon: "Heart",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "food",
+          title: "Food Security and Livelihoods",
+          desc: "Support to vulnerable households; Livelihood diversification programs; Cash and voucher assistance; Climate resilience initiatives",
+          icon: "Plus",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "blood",
+          title: "Blood Services",
+          desc: "Blood donation campaigns; Blood bank support and management; Promotion of voluntary, non-remunerated blood donation",
+          icon: "Activity",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "values",
+          title: "Humanitarian Values and Principles",
+          desc: "Promotion of Red Cross principles (humanity, neutrality, impartiality, independence, voluntary service, unity, universality); Community awareness and advocacy",
+          icon: "Globe",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        }
+      ],
       learnMore: "Learn more"
     },
     membership: {
@@ -162,18 +216,72 @@ export const translations = {
     services: {
       badge: "የምንሰራቸው ስራዎች",
       title: "ዋና ዋና የአገልግሎት ዘርፎቻችን።",
-      emergency: {
-        title: "የአደጋ ጊዜ ምላሽ",
-        desc: "በኢትዮጵያ ውስጥ በተፈጥሮ እና በሰው ሰራሽ አደጋዎች ወቅት አስቸኳይ የሕይወት አድን ድጋፍ መስጠት።"
-      },
-      health: {
-        title: "ጤና እና ፅናት",
-        desc: "በአምቡላንስ፣ በደም ባንክ እና በበሽታ መከላከያ ፕሮግራሞች አማካኝነት የማህበረሰቡን ጤና ማሳደግ።"
-      },
-      water: {
-        title: "ንጹህ የውሃ አቅርቦት",
-        desc: "በሽታዎችን ለመከላከል እና የገጠር ልማትን ለመደገፍ ዘላቂ የውሃ ስርዓቶችን (WASH) መገንባት።"
-      },
+      items: [
+        {
+          id: "drm",
+          title: "የአደጋ ስጋት ስራ አመራር (DRM)",
+          desc: "የአደጋ ዝግጁነት እና ምላሽ፣ የአደጋ ስጋት ቅነሳ (DRR)፣ የቀድሞ ማስጠንቀቂያ ስርዓቶች እና የማህበረሰብ ፅናት ግንባታ፣ የእርዳታ ስርጭት (ምግብ፣ መጠለያ፣ ምግብ ነክ ያልሆኑ ቁሳቁሶች)",
+          icon: "ShieldCheck",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "health",
+          title: "የጤና እና ክብካቤ አገልግሎቶች",
+          desc: "የመጀመሪያ እርዳታ ስልጠና እና ድንገተኛ የህክምና አገልግሎቶች፣ በማህበረሰብ ላይ የተመሰረቱ የጤና እና የተመጣጠነ ምግብ ፕሮግራሞች፣ ወረርሽኝ መከላከል እና ምላሽ፣ የእናቶች እና ህጻናት ጤና ድጋፍ",
+          icon: "Activity",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "wash",
+          title: "ውሃ፣ ሳኒቴሽን እና ንጽህና (WASH)",
+          desc: "ንጹህ የመጠጥ ውሃ አቅርቦት፣ የሳኒቴሽን ተቋማት ግንባታ እና ማስተዋወቅ፣ የንጽህና ግንባታ ዘመቻዎች፣ የአደጋ ጊዜ የWASH ጣልቃ ገብነቶች",
+          icon: "Droplets",
+          color: "text-blue-500",
+          bg: "bg-blue-50"
+        },
+        {
+          id: "volunteer",
+          title: "የበጎ ፈቃደኞች እና የወጣቶች ተሳትፎ",
+          desc: "የበጎ ፈቃደኞች ምልመላ፣ ስልጠና እና ስምሪት፣ የወጣቶች ፕሮግራሞች እና የማህበረሰብ አገልግሎት ተነሳሽነቶች፣ የአቅም ግንባታ እና የማቆያ ስልቶች",
+          icon: "Users",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "rfl",
+          title: "ለተለያዩ ቤተሰቦች ግንኙነት መመለስ (RFL)",
+          desc: "የተለያዩ የቤተሰብ አባላትን መፈለግ እና ማገናኘት፣ ለስደተኞች፣ ለተፈናቃዮች እና ለሚሰደዱ ሰዎች ድጋፍ፣ በቤተሰቦች መካከል የግንኙነት አገልግሎቶች",
+          icon: "Heart",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "food",
+          title: "የምግብ ዋስትና እና ኑሮ ማሻሻል",
+          desc: "ለተጋላጭ ቤተሰቦች ድጋፍ፣ የኑሮ አማራጭ ማሻሻያ ፕሮግራሞች፣ የገንዘብ እና የቫውቸር እርዳታ፣ የአየር ንብረት ለውጥ መቋቋሚያ ተነሳሽነቶች",
+          icon: "Plus",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "blood",
+          title: "የደም አገልግሎት",
+          desc: "የደም ልገሳ ዘመቻዎች፣ የደም ባንክ ድጋፍ እና አስተዳደር፣ በፈቃደኝነት ላይ የተመሰረተ የደም ልገሳ ማስተዋወቅ",
+          icon: "Activity",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "values",
+          title: "የሰብአዊነት እሴቶች እና መርሆዎች",
+          desc: "የቀይ መስቀል መርሆዎችን (ሰብአዊነት፣ አድልዎ የለሽነት፣ ገለልተኝነት፣ ነፃነት፣ በጎ ፈቃደኝነት፣ አንድነት፣ ሁለንተናዊነት) ማስተዋወቅ፣ የማህበረሰብ ግንባታ እና ቅስቀሳ",
+          icon: "Globe",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        }
+      ],
       learnMore: "ተጨማሪ ያንብቡ"
     },
     membership: {
@@ -277,18 +385,72 @@ export const translations = {
     services: {
       badge: "Maal Hojjenna",
       title: "Bakka Tajaajila Keenya Ijoo.",
-      emergency: {
-        title: "Deebii Ariifachiisaa",
-        desc: "Itiyoophiyaa keessatti balaawwan uumamaa fi nam-tolchee keessatti deeggarsa lubbuu baraaruu ariifachiisaa kennuu."
-      },
-      health: {
-        title: "Fayyaa fi Resilience",
-        desc: "Ambulaansii, baankii dhiigaa fi sagantaalee ittisa dhukkubaa kanaan fayyaa hawaasaa guddisuu."
-      },
-      water: {
-        title: "Bishaan Qulqulluu",
-        desc: "Dhukkuba ittisuu fi misooma baadiyyaa deeggaruuf sirna bishaan qulqulluu (WASH) ijaaruu."
-      },
+      items: [
+        {
+          id: "drm",
+          title: "Bulchiinsa Sodaa Balaa (DRM)",
+          desc: "Qophaa''ummaa fi deebii ariifachiisaa balaa, hir''isuu sodaa balaa (DRR), sirna akeekkachiisa duraa fi ijaarsa danda''amummaa hawaasaa, raabsawwan gargaarsaa",
+          icon: "ShieldCheck",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "health",
+          title: "Tajaajila Fayyaa fi Kunuunsaa",
+          desc: "Leenjii gargaarsa jalqabaa fi tajaajila wal''aansa ariifachiisaa, sagantaalee fayyaa fi soorataa hawaasa irratti hundaa''an, ittisa fi deebii dhibee daddarbaa",
+          icon: "Activity",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "wash",
+          title: "Bishaan, Saaniteeshinii fi Qulqullina (WASH)",
+          desc: "Dhiyeessii bishaan dhugaatii qulqulluu, ijaarsa fi beeksisa tajaajila saaniteeshinii, duula hubannoo qulqullinaa, gidduu-seensa WASH ariifachiisaa",
+          icon: "Droplets",
+          color: "text-blue-500",
+          bg: "bg-blue-50"
+        },
+        {
+          id: "volunteer",
+          title: "Fedhaan-laattotaa fi Hirmaanna Dargaggootaa",
+          desc: "Miseensomsuu, leenjisuu fi bobbaasuu fedhaan-laattotaa, sagantaalee dargaggootaa fi tabaqaalee tajaajila hawaasaa, ijaarsa dandeettii",
+          icon: "Users",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "rfl",
+          title: "Wal-qunnamsiisuu Miseensota Maatii (RFL)",
+          desc: "Barbaaduu fi wal-qunnamsiisuu miseensota maatii addaan galanii, deeggarsa godaantotaa, baqattootaa fi namoota biyya keessatti buqa''aniif",
+          icon: "Heart",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "food",
+          title: "Wabii Nyaataa fi Jireenyaa",
+          desc: "Deeggarsa maatiiwwan miidhamoo ta''aniif, sagantaalee bal''ina jireenyaa, gargaarsa maallaqaa fi voocherii, tabaqaalee danda''amummaa qilleensaa",
+          icon: "Plus",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "blood",
+          title: "Tajaajila Dhiigaa",
+          desc: "Duulota dhiiga arjoomuu, deeggarsa fi bulchiinsa baankii dhiigaa, beeksisa fedhaan dhiiga arjoomuu",
+          icon: "Activity",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        },
+        {
+          id: "values",
+          title: "Gatattowwan fi Qajeeltoowwan Namoomaa",
+          desc: "Beeksisa qajeeltoowwan Fannoo Diimaa (namooma, wal-qixxummaa, giddu-galeessummaa, of-danda''uu, fedhaan tajaajiluu, tokkummaa)",
+          icon: "Globe",
+          color: "text-ercs-red",
+          bg: "bg-red-50"
+        }
+      ],
       learnMore: "Bal'inaan Dubbisi"
     },
     membership: {

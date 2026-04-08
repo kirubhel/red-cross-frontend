@@ -32,7 +32,7 @@ import { useInView, useMotionValue, useSpring, useTransform } from "framer-motio
 import WhoWeAre from "@/components/WhoWeAre";
 import NewsSection from "@/components/NewsSection";
 
-const MotionHeart = motion(Heart);
+const MotionHeart = motion.create(Heart);
 
 
 function CountUp({ value, suffix = "" }: { value: number; suffix?: string }) {
@@ -459,30 +459,39 @@ export default function LandingPage() {
               initial="initial"
               whileInView="animate"
               viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-8"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
             >
-              {[
-                { data: t.services.emergency, icon: Flame, color: "text-ercs-red", bg: "bg-red-50" },
-                { data: t.services.health, icon: Activity, color: "text-ercs-red", bg: "bg-red-50" },
-                { data: t.services.water, icon: Droplets, color: "text-blue-500", bg: "bg-blue-50" }
-              ].map((service, i) => (
-                <motion.div 
-                  key={i}
-                  variants={fadeIn}
-                  className="group relative bg-white p-10 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden"
-                >
-                  <div className={`h-16 w-16 ${service.bg} ${service.color} rounded-2xl flex items-center justify-center mb-8 rotate-3 group-hover:rotate-12 transition-transform duration-500`}>
-                    <service.icon className="h-8 w-8" />
-                  </div>
-                  <h4 className={`${lang === 'en' ? 'text-2xl' : 'text-xl'} font-black text-black mb-4`}>{service.data.title}</h4>
-                  <p className="text-black/60 leading-relaxed mb-8">
-                    {service.data.desc}
-                  </p>
-                  <Button variant="ghost" className="p-0 hover:bg-transparent text-black font-black flex items-center gap-2 group/btn">
-                    {t.services.learnMore} <ArrowRight className="h-5 w-5 transition-transform group-hover/btn:translate-x-2" />
-                  </Button>
-                </motion.div>
-              ))}
+              {((t.services as any).items || []).filter(Boolean).map((service: any, i: number) => {
+                const iconName = service.icon || 'Activity';
+                const IconComponent = (({
+                  Flame,
+                  Activity,
+                  Droplets,
+                  ShieldCheck,
+                  Users,
+                  Heart,
+                  Plus,
+                  Globe
+                } as Record<string, any>)[iconName]) || Activity;
+
+                const MotionIcon = motion.create(IconComponent);
+
+                return (
+                  <motion.div 
+                    key={service.id || i}
+                    variants={fadeIn}
+                    className="group relative bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden flex flex-col"
+                  >
+                    <div className={`h-14 w-14 ${service.bg || 'bg-red-50'} ${service.color || 'text-ercs-red'} rounded-2xl flex items-center justify-center mb-6 rotate-3 group-hover:rotate-12 transition-transform duration-500`}>
+                      <MotionIcon className="h-7 w-7" />
+                    </div>
+                    <h4 className={`${lang === 'en' ? 'text-xl' : 'text-lg'} font-black text-black mb-3 line-clamp-2`}>{service.title || 'Service Title'}</h4>
+                    <p className="text-black/60 text-sm leading-relaxed mb-2 line-clamp-4 flex-grow">
+                      {service.desc || 'Service description goes here...'}
+                    </p>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           </div>
         </section>

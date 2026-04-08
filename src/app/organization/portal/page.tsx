@@ -18,7 +18,8 @@ import {
   TrendingUp,
   ShieldCheck,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,11 @@ type VolunteerRequest = {
   activities_skills: string;
   status: string;
   created_at: string;
+  men_count: number;
+  women_count: number;
+  min_experience: number;
+  qualifications: string;
+  activities: { name: string; count: number }[];
 };
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -65,8 +71,18 @@ export default function OrganizationPortal() {
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<VolunteerRequest[]>([]);
   const [showForm, setShowForm] = useState(false);
+  
+  // Form State
   const [headcount, setHeadcount] = useState("");
-  const [skills, setSkills] = useState("");
+  const [qualifications, setQualifications] = useState("");
+  const [menCount, setMenCount] = useState("");
+  const [womenCount, setWomenCount] = useState("");
+  const [minExperience, setMinExperience] = useState("");
+  const [activities, setActivities] = useState<{ name: string; count: number }[]>([
+    { name: "", count: 1 }
+  ]);
+  const [volunteerType, setVolunteerType] = useState("General Volunteer");
+  
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -95,20 +111,34 @@ export default function OrganizationPortal() {
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!headcount || !skills) {
-      toast.error("Please fill in all fields");
+    if (!headcount || !qualifications) {
+      toast.error("Please fill in basic mission fields");
       return;
     }
     setSubmitting(true);
     try {
       await api.post("/organizations/requests", {
         headcount: Number(headcount),
-        activities_skills: skills,
+        activities_skills: qualifications, // backward compatibility label
+        qualifications: qualifications,
+        men_count: Number(menCount) || 0,
+        women_count: Number(womenCount) || 0,
+        min_experience: Number(minExperience) || 0,
+        activities: activities.filter(a => a.name !== ""),
+        volunteer_type: volunteerType,
       });
       toast.success("Volunteer request created!");
       setShowForm(false);
+      
+      // Reset
       setHeadcount("");
-      setSkills("");
+      setQualifications("");
+      setMenCount("");
+      setWomenCount("");
+      setMinExperience("");
+      setVolunteerType("General Volunteer");
+      setActivities([{ name: "", count: 1 }]);
+      
       fetchPortalData();
     } catch (err) {
       console.error(err);
@@ -116,6 +146,20 @@ export default function OrganizationPortal() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const addActivity = () => {
+    setActivities([...activities, { name: "", count: 1 }]);
+  };
+
+  const removeActivity = (index: number) => {
+    setActivities(activities.filter((_, i) => i !== index));
+  };
+
+  const updateActivity = (index: number, field: "name" | "count", value: string | number) => {
+    const newActivities = [...activities];
+    newActivities[index] = { ...newActivities[index], [field]: value };
+    setActivities(newActivities);
   };
 
   const handleLogout = () => {
@@ -300,30 +344,119 @@ export default function OrganizationPortal() {
                 <p className="text-white/40 font-bold">Specify your mission needs to find the right volunteers.</p>
               </div>
 
-              <form onSubmit={handleCreateRequest} className="space-y-8">
-                <div className="grid md:grid-cols-3 gap-8">
-                  <div className="space-y-3 md:col-span-1">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Headcount</Label>
+              <form onSubmit={handleCreateRequest} className="space-y-10">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Total Headcount needed</Label>
                     <Input 
                       type="number"
-                      placeholder="e.g. 5"
+                      placeholder="e.g. 10"
                       value={headcount}
                       onChange={(e) => setHeadcount(e.target.value)}
                       className="h-16 bg-white/5 border-none rounded-2xl focus-visible:ring-2 focus-visible:ring-[#ED1C24]/20 font-bold text-lg"
                     />
                   </div>
-                  <div className="space-y-3 md:col-span-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Main Activities</Label>
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Min Years of Experience</Label>
                     <Input 
-                      placeholder="e.g. Emergency response support"
-                      value={skills}
-                      onChange={(e) => setSkills(e.target.value)}
+                      type="number"
+                      placeholder="e.g. 2"
+                      value={minExperience}
+                      onChange={(e) => setMinExperience(e.target.value)}
                       className="h-16 bg-white/5 border-none rounded-2xl focus-visible:ring-2 focus-visible:ring-[#ED1C24]/20 font-bold text-lg"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Volunteer Type</Label>
+                    <select 
+                      value={volunteerType}
+                      onChange={(e) => setVolunteerType(e.target.value)}
+                      className="w-full h-16 bg-white/5 border-none rounded-2xl focus:ring-2 focus:ring-[#ED1C24]/20 font-bold text-lg px-6 appearance-none text-white outline-none"
+                    >
+                      <option value="General Volunteer" className="bg-[#0A0A0A]">General Volunteer</option>
+                      <option value="Professional Volunteer" className="bg-[#0A0A0A]">Professional Volunteer</option>
+                    </select>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8 border-t border-white/5 pt-8">
+                   <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Men Count</Label>
+                    <Input 
+                      type="number"
+                      placeholder="e.g. 5"
+                      value={menCount}
+                      onChange={(e) => setMenCount(e.target.value)}
+                      className="h-16 bg-white/5 border-none rounded-2xl focus-visible:ring-2 focus-visible:ring-[#ED1C24]/20 font-bold text-lg"
+                    />
+                  </div>
+                   <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Women Count</Label>
+                    <Input 
+                      type="number"
+                      placeholder="e.g. 5"
+                      value={womenCount}
+                      onChange={(e) => setWomenCount(e.target.value)}
+                      className="h-16 bg-white/5 border-none rounded-2xl focus-visible:ring-2 focus-visible:ring-[#ED1C24]/20 font-bold text-lg"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-6 border-t border-white/5">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Generic Qualification Requirements</Label>
+                  <Input 
+                    placeholder="e.g. Medical background, First Aid certified, Fluency in Amharic"
+                    value={qualifications}
+                    onChange={(e) => setQualifications(e.target.value)}
+                    className="h-16 bg-white/5 border-none rounded-2xl focus-visible:ring-2 focus-visible:ring-[#ED1C24]/20 font-bold text-lg"
+                  />
+                </div>
+
+                <div className="space-y-6 pt-6 border-t border-white/5">
+                   <div className="flex items-center justify-between">
+                     <Label className="text-[10px] font-black uppercase tracking-widest text-white/40">Specific Activities & Headcounts</Label>
+                     <Button type="button" onClick={addActivity} variant="ghost" className="h-8 text-[10px] font-black uppercase tracking-widest text-[#ED1C24] hover:bg-[#ED1C24]/10">
+                       <Plus className="h-3 w-3 mr-1" /> Add Activity
+                     </Button>
+                   </div>
+                   
+                   <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                     {activities.map((activity, index) => (
+                       <div key={index} className="flex gap-4 items-end animate-in slide-in-from-right-4 duration-300">
+                         <div className="flex-1 space-y-2">
+                           <Input 
+                             placeholder="Activity name..."
+                             value={activity.name}
+                             onChange={(e) => updateActivity(index, "name", e.target.value)}
+                             className="h-14 bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 font-medium text-sm"
+                           />
+                         </div>
+                         <div className="w-24 space-y-2">
+                           <Input 
+                             type="number"
+                             placeholder="Qty"
+                             value={activity.count}
+                             onChange={(e) => updateActivity(index, "count", Number(e.target.value))}
+                             className="h-14 bg-white/5 border-none rounded-xl focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 font-medium text-sm text-center"
+                           />
+                         </div>
+                         {activities.length > 1 && (
+                           <Button 
+                             type="button" 
+                             onClick={() => removeActivity(index)}
+                             variant="ghost" 
+                             className="h-14 w-14 rounded-xl bg-rose-500/5 text-rose-500 hover:bg-rose-500/20"
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         )}
+                       </div>
+                     ))}
+                   </div>
+                </div>
+
+                <div className="space-y-4 pt-10">
                   <Button 
                     type="submit" 
                     disabled={submitting}

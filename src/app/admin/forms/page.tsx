@@ -27,6 +27,7 @@ type FormField = {
   label: string;
   type: "text" | "email" | "tel" | "select" | "number" | "date";
   required: boolean;
+  unique: boolean;
   placeholder: string;
   options?: { label: string; value: string }[];
   dataSource?: string;
@@ -63,11 +64,21 @@ export default function FormConfigurationPage() {
       label: "New Field", 
       type: "text", 
       required: false, 
+      unique: false,
       placeholder: "Enter value..." 
     }]);
   };
 
+  const isCoreField = (id: string) => {
+    const coreIds = ["firstName", "fatherName", "grandfatherName", "email", "phone", "region"];
+    return coreIds.includes(id);
+  };
+
   const removeField = (id: string) => {
+    if (isCoreField(id)) {
+      toast.error("Core fields cannot be removed.");
+      return;
+    }
     setFields(fields.filter(f => f.id !== id));
   };
 
@@ -205,6 +216,22 @@ export default function FormConfigurationPage() {
                         </div>
                       </div>
 
+                      <div className="flex flex-col justify-center gap-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Unique</Label>
+                        <div 
+                          onClick={() => updateField(field.id, { unique: !field.unique })}
+                          className={cn(
+                            "w-12 h-6 rounded-full transition-all cursor-pointer relative",
+                            field.unique ? "bg-blue-600" : "bg-gray-200"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                            field.unique ? "left-7" : "left-1"
+                          )} />
+                        </div>
+                      </div>
+
                       {field.type === 'select' && (
                         <div className="md:col-span-4 mt-8 p-8 bg-gray-50/80 rounded-[32px] border border-gray-100 space-y-6 shadow-inner">
                             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
@@ -292,7 +319,11 @@ export default function FormConfigurationPage() {
 
                     <button 
                       onClick={() => removeField(field.id)}
-                      className="p-2 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      disabled={isCoreField(field.id)}
+                      className={cn(
+                        "p-2 transition-colors opacity-0 group-hover:opacity-100",
+                        isCoreField(field.id) ? "text-gray-100 cursor-not-allowed" : "text-gray-300 hover:text-red-500"
+                      )}
                     >
                       <Trash2 className="h-5 w-5" />
                     </button>
