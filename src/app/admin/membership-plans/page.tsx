@@ -36,6 +36,7 @@ type MembershipPlan = {
   is_featured: boolean;
   plan_features: string;
   is_active: boolean;
+  tier_type: string;
 };
 
 export default function MembershipPlansPage() {
@@ -98,7 +99,8 @@ export default function MembershipPlansPage() {
       icon: "ShieldCheck",
       is_featured: false,
       plan_features: "Benefit 1, Benefit 2",
-      is_active: true
+      is_active: true,
+      tier_type: "INDIVIDUAL"
     };
     setSelectedPlan(newPlan);
     setPlans([newPlan, ...plans]);
@@ -132,47 +134,99 @@ export default function MembershipPlansPage() {
       <div className="grid lg:grid-cols-[400px_1fr] gap-10">
         
         {/* Plans List Column */}
-        <div className="space-y-5">
-           <h3 className="font-black text-black uppercase tracking-widest text-xs px-2">Active Plans</h3>
-           <div className="space-y-3">
-             <AnimatePresence mode="popLayout">
-               {plans.map((plan) => (
-                 <motion.div 
-                   key={plan.short_code}
-                   layout
-                   initial={{ opacity: 0, x: -20 }}
-                   animate={{ opacity: 1, x: 0 }}
-                   onClick={() => setSelectedPlan(plan)}
-                   className={cn(
-                     "group cursor-pointer p-6 rounded-[28px] border transition-all relative overflow-hidden",
-                     selectedPlan?.short_code === plan.short_code 
-                       ? "bg-white border-[#ED1C24] shadow-[0_20px_50px_rgba(237,28,36,0.1)]" 
-                       : "bg-gray-50/50 border-gray-100 hover:border-gray-300"
-                   )}
-                 >
-                   {plan.is_featured && (
-                      <div className="absolute top-0 right-0 px-4 py-1.5 bg-[#ED1C24] text-white text-[8px] font-black uppercase tracking-widest rounded-bl-xl shadow-sm">Featured</div>
-                   )}
-                   
-                   <div className="flex items-center justify-between gap-4">
-                     <div className="space-y-1">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">{plan.short_code}</div>
-                        <h4 className="text-xl font-black text-black tracking-tighter leading-tight">{plan.name}</h4>
-                        <div className="flex items-center gap-2 pt-1">
-                           <span className="text-sm font-black text-[#ED1C24]">{plan.amount} {plan.currency}</span>
-                           <span className="text-[10px] font-bold text-gray-400">/ {plan.subscription_type.toLowerCase()}</span>
+        <div className="space-y-10">
+           {/* Individual Tiers */}
+           <div className="space-y-4">
+              <h3 className="font-black text-[#ED1C24] uppercase tracking-widest text-[10px] px-2 flex items-center gap-2">
+                 <Star className="h-3 w-3" /> Individual Tiers
+              </h3>
+              <div className="space-y-3">
+                <AnimatePresence mode="popLayout">
+                  {plans.filter(p => !p.tier_type || p.tier_type === "INDIVIDUAL").map((plan) => (
+                    <motion.div 
+                      key={plan.id || plan.short_code}
+                      layout
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      onClick={() => setSelectedPlan(plan)}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-[28px] border transition-all relative overflow-hidden",
+                        selectedPlan?.short_code === plan.short_code 
+                          ? "bg-white border-[#ED1C24] shadow-[0_20px_50px_rgba(237,28,36,0.1)]" 
+                          : "bg-gray-50/50 border-gray-100 hover:border-gray-300"
+                      )}
+                    >
+                      {plan.is_featured && (
+                         <div className="absolute top-0 right-0 px-4 py-1.5 bg-[#ED1C24] text-white text-[8px] font-black uppercase tracking-widest rounded-bl-xl shadow-sm">Featured</div>
+                      )}
+                      
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="space-y-1">
+                           <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">{plan.short_code}</div>
+                           <h4 className="text-xl font-black text-black tracking-tighter leading-tight">{plan.name}</h4>
+                           <div className="flex items-center gap-2 pt-1">
+                              <span className="text-sm font-black text-[#ED1C24]">{plan.amount} {plan.currency}</span>
+                              <span className="text-[10px] font-bold text-gray-400">/ {plan.subscription_type.toLowerCase()}</span>
+                           </div>
                         </div>
-                     </div>
-                     <div className={cn(
-                        "h-12 w-12 rounded-2xl flex items-center justify-center transition-all",
-                        selectedPlan?.short_code === plan.short_code ? "bg-red-50 text-[#ED1C24]" : "bg-gray-100 text-gray-400 group-hover:bg-red-50 group-hover:text-[#ED1C24]"
-                     )}>
-                        <CreditCard className="h-6 w-6" />
-                     </div>
-                   </div>
-                 </motion.div>
-               ))}
-             </AnimatePresence>
+                        <div className={cn(
+                           "h-12 w-12 rounded-2xl flex items-center justify-center transition-all",
+                           selectedPlan?.short_code === plan.short_code ? "bg-red-50 text-[#ED1C24]" : "bg-gray-100 text-gray-400 group-hover:bg-red-50 group-hover:text-[#ED1C24]"
+                        )}>
+                           <CreditCard className="h-6 w-6" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+           </div>
+
+           {/* Corporate Tiers */}
+           <div className="space-y-4">
+              <h3 className="font-black text-purple-600 uppercase tracking-widest text-[10px] px-2 flex items-center gap-2">
+                 <Layers className="h-3 w-3" /> Corporate Tiers
+              </h3>
+              <div className="space-y-3">
+                <AnimatePresence mode="popLayout">
+                  {plans.filter(p => p.tier_type === "CORPORATE").map((plan) => (
+                    <motion.div 
+                      key={plan.id || plan.short_code}
+                      layout
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      onClick={() => setSelectedPlan(plan)}
+                      className={cn(
+                        "group cursor-pointer p-6 rounded-[28px] border transition-all relative overflow-hidden",
+                        selectedPlan?.short_code === plan.short_code 
+                          ? "bg-white border-purple-600 shadow-[0_20px_50px_rgba(147,51,234,0.1)]" 
+                          : "bg-gray-50/50 border-gray-100 hover:border-gray-300"
+                      )}
+                    >
+                      {plan.is_featured && (
+                         <div className="absolute top-0 right-0 px-4 py-1.5 bg-purple-600 text-white text-[8px] font-black uppercase tracking-widest rounded-bl-xl shadow-sm">Featured</div>
+                      )}
+                      
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="space-y-1">
+                           <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">{plan.short_code}</div>
+                           <h4 className="text-xl font-black text-black tracking-tighter leading-tight">{plan.name}</h4>
+                           <div className="flex items-center gap-2 pt-1">
+                              <span className="text-sm font-black text-purple-600">{plan.amount} {plan.currency}</span>
+                              <span className="text-[10px] font-bold text-gray-400">/ {plan.subscription_type.toLowerCase()}</span>
+                           </div>
+                        </div>
+                        <div className={cn(
+                           "h-12 w-12 rounded-2xl flex items-center justify-center transition-all",
+                           selectedPlan?.short_code === plan.short_code ? "bg-purple-50 text-purple-600" : "bg-gray-100 text-gray-400 group-hover:bg-purple-50 group-hover:text-purple-600"
+                        )}>
+                           <CreditCard className="h-6 w-6" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
            </div>
         </div>
 
@@ -247,6 +301,20 @@ export default function MembershipPlansPage() {
                           <option value="MONTHLY">Monthly</option>
                           <option value="YEARLY">Yearly</option>
                           <option value="ONE_TIME">One-Time (Life)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                            <Layers className="h-3 w-3" /> Plan Category
+                        </Label>
+                        <select 
+                          value={selectedPlan.tier_type}
+                          onChange={(e) => handleUpdate({ tier_type: e.target.value })}
+                          className="flex h-14 w-full rounded-2xl bg-black text-white border-none px-6 py-2 text-lg font-bold focus:ring-1 focus:ring-red-500/10 appearance-none"
+                        >
+                          <option value="INDIVIDUAL">Individual</option>
+                          <option value="CORPORATE">Corporate</option>
                         </select>
                       </div>
 

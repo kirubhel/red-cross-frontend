@@ -31,6 +31,7 @@ import { useEffect, useRef, useState } from "react";
 import { useInView, useMotionValue, useSpring, useTransform } from "framer-motion";
 import WhoWeAre from "@/components/WhoWeAre";
 import NewsSection from "@/components/NewsSection";
+import WelcomeModal from "@/components/WelcomeModal";
 
 const MotionHeart = motion.create(Heart);
 
@@ -138,8 +139,15 @@ export default function LandingPage() {
   const [dynamicContent, setDynamicContent] = useState<Record<Language, typeof translations.en> | null>(null);
   const langRef = useRef<HTMLDivElement>(null);
   
-  // Use dynamic content if available, else fallback to static translations
-  const t: typeof translations.en = dynamicContent?.[lang] || translations[lang];
+  // Use dynamic content if available, but merge with local translations so new keys are never missing
+  const t: typeof translations.en = {
+    ...translations[lang],
+    ...(dynamicContent?.[lang] || {}),
+    hero: {
+      ...translations[lang].hero,
+      ...(dynamicContent?.[lang]?.hero || {})
+    }
+  };
 
   useEffect(() => {
     const fetchCMS = async () => {
@@ -178,6 +186,9 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white selection:bg-ercs-red selection:text-white overflow-x-hidden">
+      {/* Welcome Pathway Modal */}
+      <WelcomeModal lang={lang} />
+
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-ercs-red/5 rounded-full blur-[120px]" />
@@ -286,7 +297,7 @@ export default function LandingPage() {
 
       <main className="relative z-10">
         {/* Hero Section */}
-        <section className="relative pt-20 pb-32 px-6 overflow-hidden">
+        <section className="relative pt-12 pb-20 px-6 overflow-hidden">
           {/* Decorative Hero Swoosh */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-0 overflow-visible">
             <svg viewBox="0 0 1000 600" className="w-[150%] h-[150%] -translate-x-[15%]">
@@ -328,12 +339,12 @@ export default function LandingPage() {
             </svg>
           </div>
 
-          <div className="container mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10">
+          <div className="container mx-auto grid lg:grid-cols-[0.9fr_1.1fr] gap-8 xl:gap-16 items-center relative z-10">
             <motion.div 
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
-              className="space-y-8"
+              className="space-y-6"
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-ercs-light text-ercs-red rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
                 <Plus className="h-4 w-4" strokeWidth={4} /> {t.hero.tagline}
@@ -359,24 +370,62 @@ export default function LandingPage() {
               <p className={`${lang === 'en' ? 'text-xl' : 'text-lg'} text-black/70 max-w-lg leading-relaxed font-medium`}>
                 {t.hero.subtitle}
               </p>
-              <div className="flex flex-col sm:flex-row gap-5 pt-4">
-                <Link href="/join">
-                  <Button size="lg" className="bg-[#ED1C24] hover:bg-black text-white rounded-2xl h-16 px-10 text-lg font-black flex items-center gap-3 transition-all hover:translate-y-[-4px] shadow-xl shadow-[#ED1C24]/20 cursor-pointer">
-                    {t.hero.ctaPrimary} <ChevronRight className="h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link href="/donate">
-                  <div className="inline-block">
-                    <Button size="lg" className="bg-black hover:bg-[#ED1C24] text-white rounded-2xl h-16 px-10 text-lg font-black flex items-center gap-3 transition-all hover:translate-y-[-4px] shadow-xl shadow-black/10 cursor-pointer w-full">
-                      <MotionHeart 
-                        variants={heartVariants}
-                        animate="heartbeat"
-                        className="h-5 w-5" 
-                      />
-                      {t.hero.ctaSecondary}
-                    </Button>
-                  </div>
-                </Link>
+              {/* Hero CTA Pathway Buttons */}
+              <div className="space-y-5 pt-8">
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.35 }}
+                  className="text-xs font-black uppercase tracking-[0.22em] text-black/40"
+                >
+                  {(t.hero as any).pathwaysLabel}
+                </motion.p>
+
+                <div className="flex flex-row items-center gap-3 pt-2">
+                  {/* Volunteer */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.45, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <Link href="/join/volunteer">
+                      <button className="group flex items-center gap-2 sm:gap-4 bg-[#ED1C24] hover:bg-black
+                        text-white rounded-full h-12 sm:h-16 px-4 sm:px-6 font-black text-sm sm:text-lg
+                        shadow-2xl shadow-[#ED1C24]/30 transition-all duration-500
+                        hover:-translate-y-1.5 hover:shadow-[#ED1C24]/40 cursor-pointer whitespace-nowrap">
+                        <div className="h-10 w-10 rounded-full bg-white/20 flex items-center
+                          justify-center group-hover:bg-white/30 transition-colors flex-shrink-0">
+                          <Users className="h-5 w-5" />
+                        </div>
+                        {t.hero.ctaVolunteer || translations[lang].hero.ctaVolunteer || "Volunteer"}
+                      </button>
+                    </Link>
+                  </motion.div>
+
+                  {/* Donate */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.55, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <Link href="/donate">
+                      <button className="group flex items-center gap-2 sm:gap-4 bg-black hover:bg-[#ED1C24]
+                        text-white rounded-full h-12 sm:h-16 px-4 sm:px-6 font-black text-sm sm:text-lg
+                        shadow-2xl shadow-black/20 transition-all duration-500
+                        hover:-translate-y-1.5 hover:shadow-[#ED1C24]/30 cursor-pointer whitespace-nowrap">
+                        <div className="h-10 w-10 rounded-full bg-white/15 group-hover:bg-white/25
+                          flex items-center justify-center transition-colors flex-shrink-0">
+                          <MotionHeart
+                            variants={heartVariants}
+                            animate="heartbeat"
+                            className="h-5 w-5"
+                          />
+                        </div>
+                        {t.hero.ctaDonate || translations[lang].hero.ctaDonate || "Donate"}
+                      </button>
+                    </Link>
+                  </motion.div>
+                </div>
               </div>
             </motion.div>
 
@@ -399,6 +448,41 @@ export default function LandingPage() {
                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
                     <p className="text-white font-bold text-lg">{t.hero.anniversary}</p>
                  </div>
+
+                  {/* Floating Membership Button */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ 
+                      opacity: 1, 
+                      scale: 1,
+                      y: [0, -15, 0] 
+                    }}
+                    transition={{ 
+                      opacity: { duration: 0.8, delay: 0.8 },
+                      scale: { duration: 0.8, delay: 0.8 },
+                      y: { 
+                        duration: 6, 
+                        repeat: Infinity, 
+                        ease: "easeInOut",
+                        delay: 1.6
+                      }
+                    }}
+                    className="absolute bottom-6 right-6 z-30"
+                  >
+                    <Link href="/join/member">
+                      <button className="group flex items-center gap-4 bg-white hover:bg-[#ED1C24]
+                        text-black hover:text-white rounded-3xl h-16 pl-6 pr-8 font-black text-lg
+                        border-2 border-black/10 hover:border-[#ED1C24]
+                        shadow-2xl shadow-black/10 transition-all duration-500
+                        hover:-translate-y-2 cursor-pointer whitespace-nowrap">
+                        <div className="h-10 w-10 rounded-full bg-black/5 group-hover:bg-white/20
+                          flex items-center justify-center transition-colors flex-shrink-0">
+                          <ShieldCheck className="h-5 w-5" />
+                        </div>
+                        {t.hero.ctaMembership || translations[lang].hero.ctaMembership || "Membership"}
+                      </button>
+                    </Link>
+                  </motion.div>
               </div>
 
               {/* Stats Floaties */}
@@ -442,7 +526,7 @@ export default function LandingPage() {
         </section>
 
         {/* Who We Are & About Section */}
-        <WhoWeAre lang={lang} />
+        <WhoWeAre lang={lang} content={t.whoWeAre} />
 
         {/* Services Section */}
         <section id="services" className="py-32 px-6">
@@ -536,15 +620,34 @@ export default function LandingPage() {
                              <div className="text-xs font-black text-black/40 uppercase tracking-widest">{t.membership.activeMembers}</div>
                           </div>
                        </div>
-                       <div className="h-px bg-gray-100" />
-                       <div className="space-y-4">
-                          {t.membership.tiers.map((tier, idx) => (
-                            <div key={idx} className="flex justify-between items-center py-1 group cursor-default">
-                              <span className="font-bold text-black group-hover:text-[#ED1C24] transition-colors">{tier.name}</span>
-                              <span className="font-black text-[#ED1C24]">{tier.price}</span>
-                            </div>
-                          ))}
-                       </div>
+                        <div className="h-px bg-gray-100" />
+                        <div className="space-y-8">
+                           {/* Individual Tiers */}
+                           <div className="space-y-4">
+                              <h6 className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] mb-2">Individual Tiers</h6>
+                              <div className="space-y-3">
+                                {(t.membership.tiers?.individual || []).map((tier: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between items-center group cursor-default">
+                                    <span className="font-bold text-black group-hover:text-[#ED1C24] transition-colors">{tier.name}</span>
+                                    <span className="font-black text-[#ED1C24] bg-red-50 px-3 py-1 rounded-lg text-xs">{tier.price}</span>
+                                  </div>
+                                ))}
+                              </div>
+                           </div>
+
+                             {/* Corporate Tiers */}
+                           <div className="space-y-4">
+                              <h6 className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] mb-2">Corporate Tiers</h6>
+                              <div className="space-y-3">
+                                {(t.membership.tiers?.corporate || []).map((tier: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between items-center group cursor-default">
+                                    <span className="font-bold text-black group-hover:text-[#ED1C24] transition-colors">{tier.name}</span>
+                                    <span className="font-black text-[#ED1C24] bg-red-50 px-3 py-1 rounded-lg text-xs">{tier.price}</span>
+                                  </div>
+                                ))}
+                              </div>
+                           </div>
+                        </div>
                     </div>
                  </div>
               </div>
@@ -553,7 +656,7 @@ export default function LandingPage() {
         </section>
 
         {/* News & Updates Section */}
-        <NewsSection lang={lang} />
+        <NewsSection lang={lang} content={t.news} />
 
         {/* Donation Section */}
         <section className="py-32 px-6">

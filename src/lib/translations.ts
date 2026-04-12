@@ -19,6 +19,10 @@ export const translations = {
       subtitle: "Join the Ethiopian Red Cross Society (ERCS) to make a difference in your community. We believe in the power of humanity to overcome any challenge.",
       ctaPrimary: "Get Started",
       ctaSecondary: "Donate Now",
+      ctaVolunteer: "Volunteer",
+      ctaMembership: "Membership",
+      ctaDonate: "Donate",
+      pathwaysLabel: "Choose your path to help:",
       volunteers: "Volunteers",
       anniversary: "Celebrating 90 Years of Humanitarian Excellence",
       imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"
@@ -42,7 +46,9 @@ export const translations = {
       visionText: "To be a leading, strong, and self-reliant humanitarian organization that provides effective and efficient services to the vulnerable.",
       valuesTitle: "Our Values",
       valuesText: "Guided by the 7 Principles: Humanity, Impartiality, Neutrality, Independence, Voluntary Service, Unity, and Universality.",
-      imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200"
+      imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200",
+      historyLink: "https://www.redcrosseth.org/who-we-are/background-and-history",
+      historyLinkLabel: "Read Full History"
     },
     services: {
       badge: "What we do",
@@ -128,14 +134,18 @@ export const translations = {
       cta: "Join Membership",
       activeMembers: "Active Members",
       tiersLabel: "Membership Tiers",
-      tiers: [
-        { name: "Individual Life Member", price: "ETB 500 / Yr" },
-        { name: "Youth Member", price: "ETB 50 / Yr" },
-        { name: "Institutional Member", price: "ETB 1000 / Yr" },
-        { name: "Premium Member", price: "ETB 2500 / Yr" },
-        { name: "Annual Member", price: "ETB 200 / Yr" },
-        { name: "Corporate Partnership", price: "Contact Us" }
-      ]
+      tiers: {
+        individual: [
+          { name: "Regular Member", price: "50-999 ETB" },
+          { name: "Individual Lifetime", price: "1000-1999 ETB" },
+          { name: "Family Lifetime", price: "≥ 2000 ETB" }
+        ],
+        corporate: [
+          { name: "Regular Corporate", price: "5,000 ETB" },
+          { name: "High Corporate", price: "25,000 ETB" },
+          { name: "Special Corporate", price: "≥ 50,000 ETB" }
+        ]
+      }
     },
     news: {
       badge: "News & Media",
@@ -188,6 +198,10 @@ export const translations = {
       subtitle: "በማህበረሰቡ ውስጥ ለውጥ ለማምጣት የኢትዮጵያ ቀይ መስቀል ማህበርን ይቀላቀሉ። ማንኛውንም ፈተና ለማሸነፍ በሰው ልጅ ኃይል እናምናለን።",
       ctaPrimary: "ይጀምሩ",
       ctaSecondary: "አሁን ይለግሱ",
+      ctaVolunteer: "በጎ ፈቃደኝነት",
+      ctaMembership: "አባልነት",
+      ctaDonate: "ልገሳ",
+      pathwaysLabel: "ለመርዳት መንገድዎን ይምረጡ፡",
       volunteers: "በጎ ፈቃደኞች",
       anniversary: "የ90 ዓመታት የሰብአዊ አገልግሎት ልቀት በዓል",
       imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"
@@ -210,8 +224,10 @@ export const translations = {
       visionTitle: "የእኛ ራዕይ",
       visionText: "ለተጎዱ ወገኖች ውጤታማ ድጋፍ የሚሰጥ ጠንካራ እና ራሱን የቻለ ድርጅት መሆን",
       valuesTitle: "እሴቶቻችን",
-      valuesText: "በ7ቱ መርሆች ይመራል፡- ሰብአዊነት፣ አድልዎ የለሽነት፣ ገለልተኝነት፣ ነፃነት፣ በጎ ፈቃደኝነት፣ አንድነት፣ ሁለንተናዊነት",
-      imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200"
+      valuesText: "በ7ቱ መርሆች የሚመራ፡ ሰብአዊነት፣ አድልዎ አለማድረግ፣ ገለልተኝነት፣ ነጻነት፣ የበጎ ፈቃድ አገልግሎት፣ አንድነት እና አለምአቀፋዊነት።",
+      imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200",
+      historyLink: "https://www.redcrosseth.org/who-we-are/background-and-history",
+      historyLinkLabel: "ሙሉ ታሪኩን ያንብቡ"
     },
     services: {
       badge: "የምንሰራቸው ስራዎች",
@@ -297,14 +313,18 @@ export const translations = {
       cta: "አባልነትን ይቀላቀሉ",
       activeMembers: "ንቁ አባላት",
       tiersLabel: "የአባልነት ደረጃዎች",
-      tiers: [
-        { name: "የግል የዕድሜ ልክ አባል", price: "500 ብር / ዓመት" },
-        { name: "የወጣቶች አባል", price: "50 ብር / ዓመት" },
-        { name: "የተቋማት አባል", price: "1,000 ብር / ዓመት" },
-        { name: "ፕሪሚየም አባል", price: "2,500 ብር / ዓመት" },
-        { name: "የዓመታዊ አባል", price: "200 ብር / ዓመት" },
-        { name: "የድርጅት አጋርነት", price: "ያግኙን" }
-      ]
+      tiers: {
+        individual: [
+          { name: "መደበኛ አባል", price: "50-999 ETB" },
+          { name: "የግል የህይወት ዘመን", price: "1000-1999 ETB" },
+          { name: "የቤተሰብ የህይወት ዘመን", price: "≥ 2000 ETB" }
+        ],
+        corporate: [
+          { name: "መደበኛ ድርጅታዊ", price: "5,000 ETB" },
+          { name: "ከፍተኛ ድርጅታዊ", price: "25,000 ETB" },
+          { name: "ልዩ ድርጅታዊ", price: "≥ 50,000 ETB" }
+        ]
+      }
     },
     news: {
       badge: "ዜና እና ሚዲያ",
@@ -357,6 +377,10 @@ export const translations = {
       subtitle: "Hawaasa keessatti jijjiirama fiduuf Waldaa Fannoo Diimaa Itiyoophiyaa (ERCS) tti makamaa. Nuti humna namoomaa kanaan qormaata kamiyyuu mo'achuu ni dandeenya jennee amanna.",
       ctaPrimary: "Eegali",
       ctaSecondary: "Amma Arjoomi",
+      ctaVolunteer: "Fedhaan Tajaajiluu",
+      ctaMembership: "Miseensummaa",
+      ctaDonate: "Arjooma",
+      pathwaysLabel: "Gargaaruuf karaa keessan filadhaa:",
       volunteers: "Tajaajiltoota",
       anniversary: "Baga Waggaa 90ffaa Milkaa'ina Namoomaa Geessan",
       imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"
@@ -379,8 +403,10 @@ export const translations = {
       visionTitle: "Mul'ata Keenya",
       visionText: "Dhaabbata namoomaa cimaa fi of danda'e ta'anii tajaajila bu'a qabeessa kennuu",
       valuesTitle: "Gatataa Keenya",
-      valuesText: "Qajeeltoo 7n geggeeffama: Namooma, Wal-qixxummaa, Giddu-galeessummaa, Of-danda'uu, Fedhaan Tajaajiluu, Tokkummaa, Universality",
-      imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200"
+      valuesText: "Qajeelfama torban kanaan qajeelfama: Namummaa, Wal-caalmaa dhabuu, Giddu-galeessummaa, Bilisummaa, Tajaajila Fedhii, Tokkummaa fi Addunyaa hundaa.",
+      imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200",
+      historyLink: "https://www.redcrosseth.org/who-we-are/background-and-history",
+      historyLinkLabel: "Seenaa Guutuu Dubbisi"
     },
     services: {
       badge: "Maal Hojjenna",
@@ -466,14 +492,18 @@ export const translations = {
       cta: "Miseensummaan Makami",
       activeMembers: "Miseensota Sosocho'an",
       tiersLabel: "Sadarkaa Miseensummaa",
-      tiers: [
-        { name: "Miseensa Jireenya Guyyaa", price: "ETB 500 / Waggaatti" },
-        { name: "Miseensa Dargaggootaa", price: "ETB 50 / Waggaatti" },
-        { name: "Miseensa Dhaabbataa", price: "ETB 1000 / Waggaatti" },
-        { name: "Miseensa Priimiyaamii", price: "ETB 2500 / Waggaatti" },
-        { name: "Miseensa Waggaa", price: "ETB 200 / Waggaatti" },
-        { name: "Michummaa Korporeetii", price: "Nu Quunnamaa" }
-      ]
+      tiers: {
+        individual: [
+          { name: "Miriitii Idilee", price: "50-999 ETB" },
+          { name: "Umrii Guutuu Dhuunfaa", price: "1000-1999 ETB" },
+          { name: "Umrii Guutuu Maatii", price: "≥ 2,000 ETB" }
+        ],
+        corporate: [
+          { name: "Dhaabbata Idilee", price: "5,000 ETB" },
+          { name: "Dhaabbata Olaanaa", price: "25,000 ETB" },
+          { name: "Dhaabbata Addaa", price: "≥ 50,000 ETB" }
+        ]
+      }
     },
     news: {
       badge: "Oduu & Miidiyaa",

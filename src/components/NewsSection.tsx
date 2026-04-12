@@ -10,11 +10,12 @@ import { Language, translations } from "@/lib/translations";
 
 interface NewsSectionProps {
   lang: Language;
+  content?: typeof translations.en.news;
 }
 
-export default function NewsSection({ lang }: NewsSectionProps) {
+export default function NewsSection({ lang, content }: NewsSectionProps) {
   const t = translations[lang];
-  const local = t.news;
+  const local = content || t.news;
 
   const [liveArticles, setLiveArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

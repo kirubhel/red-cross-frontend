@@ -153,11 +153,11 @@ export default function CMSPage() {
           <CardContent className="p-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Object.keys(current.nav).map(key => (
               <div key={key} className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">{key}</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">{key}</Label>
                 <Input 
                   value={(current.nav as any)[key]} 
                   onChange={(e) => updateField('nav', key, e.target.value)}
-                  className="rounded-xl border-gray-100 bg-black text-white focus:ring-[#ED1C24]/10 h-12 font-bold"
+                  className="rounded-xl border-gray-200 bg-white text-black focus:ring-[#ED1C24]/10 h-12 font-bold shadow-sm"
                 />
               </div>
             ))}
@@ -177,54 +177,54 @@ export default function CMSPage() {
           <CardContent className="p-8 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Tagline</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Tagline</Label>
                 <Input 
                   value={current.hero.tagline} 
                   onChange={(e) => updateField('hero', 'tagline', e.target.value)}
-                  className="rounded-xl h-12 font-bold"
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Anniversary Text</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Anniversary Text</Label>
                 <Input 
                   value={current.hero.anniversary} 
                   onChange={(e) => updateField('hero', 'anniversary', e.target.value)}
-                  className="rounded-xl h-12 font-bold"
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
                 />
               </div>
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Title Line 1</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Title Line 1</Label>
                 <Input 
                   value={current.hero.title1} 
                   onChange={(e) => updateField('hero', 'title1', e.target.value)}
-                  className="rounded-xl h-12 font-bold"
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Title Line 2 (Red)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Title Line 2 (Red Accent)</Label>
                 <Input 
                   value={current.hero.title2} 
                   onChange={(e) => updateField('hero', 'title2', e.target.value)}
-                  className="rounded-xl h-12 font-bold text-[#ED1C24]"
+                  className="rounded-xl h-12 font-bold text-[#ED1C24] bg-white border-gray-200"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Title Line 3</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Title Line 3</Label>
                 <Input 
                   value={current.hero.title3} 
                   onChange={(e) => updateField('hero', 'title3', e.target.value)}
-                  className="rounded-xl h-12 font-bold"
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Subtitle</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Subtitle</Label>
               <Input 
                 value={current.hero.subtitle} 
                 onChange={(e) => updateField('hero', 'subtitle', e.target.value)}
-                className="rounded-xl h-12 font-bold"
+                className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
               />
             </div>
             <div className="space-y-2">
@@ -233,7 +233,7 @@ export default function CMSPage() {
                 <Input 
                   value={current.hero.imageUrl} 
                   onChange={(e) => updateField('hero', 'imageUrl', e.target.value)}
-                  className="rounded-xl h-12 font-bold border-[#ED1C24]/20 flex-1"
+                  className="rounded-xl h-12 font-bold border-gray-200 bg-white text-black flex-1"
                 />
                 <div className="relative">
                   <input
@@ -275,47 +275,94 @@ export default function CMSPage() {
           <CardContent className="p-8 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Badge</Label>
-                <Input value={current.whoWeAre.badge} onChange={(e) => updateField('whoWeAre', 'badge', e.target.value)} className="rounded-xl h-12 font-bold" />
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Badge</Label>
+                <Input value={current.whoWeAre.badge} onChange={(e) => updateField('whoWeAre', 'badge', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Title</Label>
-                <Input value={current.whoWeAre.title} onChange={(e) => updateField('whoWeAre', 'title', e.target.value)} className="rounded-xl h-12 font-bold" />
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Main Section Title</Label>
+                <Input value={current.whoWeAre.title} onChange={(e) => updateField('whoWeAre', 'title', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
               </div>
             </div>
+            
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Story Text 1</Label>
-              <textarea 
-                value={current.whoWeAre.storyText1} 
-                onChange={(e) => updateField('whoWeAre', 'storyText1', e.target.value)}
-                className="w-full min-h-[100px] p-4 rounded-xl border border-gray-100 bg-black text-white focus:ring-[#ED1C24]/10 font-bold text-sm"
-              />
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Story Heading</Label>
+              <Input value={current.whoWeAre.storyTitle} onChange={(e) => updateField('whoWeAre', 'storyTitle', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Story Text 2</Label>
-              <textarea 
-                value={current.whoWeAre.storyText2} 
-                onChange={(e) => updateField('whoWeAre', 'storyText2', e.target.value)}
-                className="w-full min-h-[100px] p-4 rounded-xl border border-gray-100 bg-black text-white focus:ring-[#ED1C24]/10 font-bold text-sm"
-              />
-            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Mission Title</Label>
-                <Input value={current.whoWeAre.missionTitle} onChange={(e) => updateField('whoWeAre', 'missionTitle', e.target.value)} className="rounded-xl h-12 font-bold" />
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">History Link URL</Label>
+                <Input value={current.whoWeAre.historyLink} onChange={(e) => updateField('whoWeAre', 'historyLink', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-red-100" />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Mission Text</Label>
-                <Input value={current.whoWeAre.missionText} onChange={(e) => updateField('whoWeAre', 'missionText', e.target.value)} className="rounded-xl h-12 font-bold" />
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">History Link Label</Label>
+                <Input value={current.whoWeAre.historyLinkLabel} onChange={(e) => updateField('whoWeAre', 'historyLinkLabel', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-red-100" />
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Story Paragraph 1</Label>
+                <textarea 
+                  value={current.whoWeAre.storyText1} 
+                  onChange={(e) => updateField('whoWeAre', 'storyText1', e.target.value)}
+                  className="w-full min-h-[120px] p-4 rounded-xl border border-gray-200 bg-white text-black focus:ring-[#ED1C24]/10 font-bold text-sm shadow-sm placeholder:text-gray-400"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Story Paragraph 2</Label>
+                <textarea 
+                  value={current.whoWeAre.storyText2} 
+                  onChange={(e) => updateField('whoWeAre', 'storyText2', e.target.value)}
+                  className="w-full min-h-[120px] p-4 rounded-xl border border-gray-200 bg-white text-black focus:ring-[#ED1C24]/10 font-bold text-sm shadow-sm placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+
+            <div className="h-px bg-gray-100 my-4" />
+            <div className="text-xs font-black uppercase tracking-[0.2em] text-[#ED1C24] mb-4">Cards (Mission, Vision, Values)</div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="space-y-4 p-5 rounded-2xl bg-gray-50/50 border border-gray-100">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Mission Title</Label>
+                  <Input value={current.whoWeAre.missionTitle} onChange={(e) => updateField('whoWeAre', 'missionTitle', e.target.value)} className="rounded-xl h-10 font-bold bg-white text-black border-gray-200" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Mission Text</Label>
+                  <textarea value={current.whoWeAre.missionText} onChange={(e) => updateField('whoWeAre', 'missionText', e.target.value)} className="w-full min-h-[80px] p-3 rounded-xl border border-gray-200 bg-white text-black font-bold text-[10px]" />
+                </div>
+              </div>
+
+              <div className="space-y-4 p-5 rounded-2xl bg-gray-50/50 border border-gray-100">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Vision Title</Label>
+                  <Input value={current.whoWeAre.visionTitle} onChange={(e) => updateField('whoWeAre', 'visionTitle', e.target.value)} className="rounded-xl h-10 font-bold bg-white text-black border-gray-200" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Vision Text</Label>
+                  <textarea value={current.whoWeAre.visionText} onChange={(e) => updateField('whoWeAre', 'visionText', e.target.value)} className="w-full min-h-[80px] p-3 rounded-xl border border-gray-200 bg-white text-black font-bold text-[10px]" />
+                </div>
+              </div>
+
+              <div className="space-y-4 p-5 rounded-2xl bg-gray-50/50 border border-gray-100">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Values Title</Label>
+                  <Input value={current.whoWeAre.valuesTitle} onChange={(e) => updateField('whoWeAre', 'valuesTitle', e.target.value)} className="rounded-xl h-10 font-bold bg-white text-black border-gray-200" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Values Text</Label>
+                  <textarea value={current.whoWeAre.valuesText} onChange={(e) => updateField('whoWeAre', 'valuesText', e.target.value)} className="w-full min-h-[80px] p-3 rounded-xl border border-gray-200 bg-white text-black font-bold text-[10px]" />
+                </div>
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-blue-500 ml-1">About Image URL</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">About Image URL</Label>
               <div className="flex gap-2">
                 <Input 
                   value={current.whoWeAre.imageUrl} 
                   onChange={(e) => updateField('whoWeAre', 'imageUrl', e.target.value)}
-                  className="rounded-xl h-12 font-bold border-blue-500/20 flex-1"
+                  className="rounded-xl h-12 font-bold border-gray-200 bg-white text-black flex-1"
                 />
                 <div className="relative">
                   <input
@@ -328,14 +375,14 @@ export default function CMSPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-12 w-12 rounded-xl border-dashed border-blue-500/30 hover:bg-blue-50"
+                    className="h-12 w-12 rounded-xl border-dashed border-[#ED1C24]/30 hover:bg-red-50"
                     onClick={() => document.getElementById('who-upload')?.click()}
                     disabled={isUploading === 'whoWeAre-imageUrl'}
                   >
                     {isUploading === 'whoWeAre-imageUrl' ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                      <Loader2 className="h-5 w-5 animate-spin text-[#ED1C24]" />
                     ) : (
-                      <Upload className="h-5 w-5 text-blue-500" />
+                      <Upload className="h-5 w-5 text-[#ED1C24]" />
                     )}
                   </Button>
                 </div>
@@ -357,12 +404,12 @@ export default function CMSPage() {
           <CardContent className="p-8 space-y-8">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Badge</Label>
-                <Input value={current.services.badge} onChange={(e) => updateField('services', 'badge', e.target.value)} className="rounded-xl h-12 font-bold" />
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Badge</Label>
+                <Input value={current.services.badge} onChange={(e) => updateField('services', 'badge', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Title</Label>
-                <Input value={current.services.title} onChange={(e) => updateField('services', 'title', e.target.value)} className="rounded-xl h-12 font-bold" />
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Title</Label>
+                <Input value={current.services.title} onChange={(e) => updateField('services', 'title', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
               </div>
             </div>
             
@@ -373,11 +420,11 @@ export default function CMSPage() {
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24]">{service.id}</h4>
                     <div className={`h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center opacity-50`}>
                       {/* Placeholder for Icon */}
-                      <Activity className="h-4 w-4 text-gray-400" />
+                      <Activity className="h-4 w-4 text-[#ED1C24]" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-gray-300 uppercase">Title</Label>
+                    <Label className="text-[10px] font-black text-[#ED1C24] uppercase">Title</Label>
                     <Input 
                       value={service.title} 
                       onChange={(e) => {
@@ -395,11 +442,11 @@ export default function CMSPage() {
                           }
                         }));
                       }} 
-                      className="rounded-xl h-10 text-sm font-bold" 
+                      className="rounded-xl h-10 text-sm font-bold bg-white text-black border-gray-200" 
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black text-gray-300 uppercase">Description</Label>
+                    <Label className="text-[10px] font-black text-[#ED1C24] uppercase">Description</Label>
                     <textarea 
                       value={service.desc} 
                       onChange={(e) => {
@@ -417,7 +464,7 @@ export default function CMSPage() {
                           }
                         }));
                       }} 
-                      className="w-full min-h-[100px] p-3 rounded-xl border border-gray-100 bg-black text-white font-bold text-[10px] leading-relaxed" 
+                      className="w-full min-h-[100px] p-3 rounded-xl border border-gray-200 bg-white text-black font-bold text-[10px] leading-relaxed shadow-sm" 
                     />
                   </div>
                 </div>
@@ -438,16 +485,16 @@ export default function CMSPage() {
           </CardHeader>
           <CardContent className="p-8 grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Badge</Label>
-              <Input value={current.news.badge} onChange={(e) => updateField('news', 'badge', e.target.value)} className="rounded-xl h-12 font-bold" />
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Badge</Label>
+              <Input value={current.news.badge} onChange={(e) => updateField('news', 'badge', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Title</Label>
-              <Input value={current.news.title} onChange={(e) => updateField('news', 'title', e.target.value)} className="rounded-xl h-12 font-bold" />
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Title</Label>
+              <Input value={current.news.title} onChange={(e) => updateField('news', 'title', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">View All Button</Label>
-              <Input value={current.news.viewAll} onChange={(e) => updateField('news', 'viewAll', e.target.value)} className="rounded-xl h-12 font-bold" />
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">View All Button</Label>
+              <Input value={current.news.viewAll} onChange={(e) => updateField('news', 'viewAll', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
             </div>
           </CardContent>
         </Card>
@@ -465,12 +512,12 @@ export default function CMSPage() {
           <CardContent className="p-8 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Badge</Label>
-                <Input value={current.donation.badge} onChange={(e) => updateField('donation', 'badge', e.target.value)} className="rounded-xl h-12 font-bold" />
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Badge</Label>
+                <Input value={current.donation.badge} onChange={(e) => updateField('donation', 'badge', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Title</Label>
-                <Input value={current.donation.title} onChange={(e) => updateField('donation', 'title', e.target.value)} className="rounded-xl h-12 font-bold" />
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Title</Label>
+                <Input value={current.donation.title} onChange={(e) => updateField('donation', 'title', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
               </div>
             </div>
           </CardContent>
@@ -489,29 +536,96 @@ export default function CMSPage() {
           <CardContent className="p-8 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Badge</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Badge</Label>
                 <Input 
                   value={current.membership.badge} 
                   onChange={(e) => updateField('membership', 'badge', e.target.value)}
-                  className="rounded-xl h-12 font-bold"
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Title</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Title</Label>
                 <Input 
                   value={current.membership.title} 
                   onChange={(e) => updateField('membership', 'title', e.target.value)}
-                  className="rounded-xl h-12 font-bold"
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Description</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Description</Label>
               <Input 
                 value={current.membership.desc} 
                 onChange={(e) => updateField('membership', 'desc', e.target.value)}
-                className="rounded-xl h-12 font-bold"
+                className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
               />
+            </div>
+
+            {/* Membership Tiers Editor */}
+            <div className="pt-8 border-t border-gray-100 space-y-8">
+               <h4 className="text-sm font-black uppercase tracking-[0.2em] text-[#ED1C24]">Individual Membership Tiers</h4>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {(current.membership.tiers?.individual || []).map((tier: any, idx: number) => (
+                    <div key={idx} className="space-y-4 p-4 rounded-2xl bg-gray-50/50 border border-gray-100">
+                       <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase text-black/40">Tier Name</Label>
+                          <Input 
+                            value={tier.name} 
+                            onChange={(e) => {
+                               const newIndividual = [...(current.membership.tiers?.individual || [])];
+                               newIndividual[idx] = { ...newIndividual[idx], name: e.target.value };
+                               updateField('membership', 'tiers', { ...(current.membership.tiers || {}), individual: newIndividual });
+                            }}
+                            className="rounded-lg h-10 font-bold bg-white text-black border-gray-200"
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase text-black/40">Price/Range</Label>
+                          <Input 
+                            value={tier.price} 
+                            onChange={(e) => {
+                               const newIndividual = [...(current.membership.tiers?.individual || [])];
+                               newIndividual[idx] = { ...newIndividual[idx], price: e.target.value };
+                               updateField('membership', 'tiers', { ...(current.membership.tiers || {}), individual: newIndividual });
+                            }}
+                            className="rounded-lg h-10 font-bold bg-white text-black border-gray-200"
+                          />
+                       </div>
+                    </div>
+                  ))}
+               </div>
+
+               <h4 className="text-sm font-black uppercase tracking-[0.2em] text-[#ED1C24]">Corporate Membership Tiers</h4>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {(current.membership.tiers?.corporate || []).map((tier: any, idx: number) => (
+                    <div key={idx} className="space-y-4 p-4 rounded-2xl bg-gray-50/50 border border-gray-100">
+                       <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase text-black/40">Tier Name</Label>
+                          <Input 
+                            value={tier.name} 
+                            onChange={(e) => {
+                               const newCorporate = [...(current.membership.tiers?.corporate || [])];
+                               newCorporate[idx] = { ...newCorporate[idx], name: e.target.value };
+                               updateField('membership', 'tiers', { ...(current.membership.tiers || {}), corporate: newCorporate });
+                            }}
+                            className="rounded-lg h-10 font-bold bg-white text-black border-gray-200"
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase text-black/40">Price/Range</Label>
+                          <Input 
+                            value={tier.price} 
+                            onChange={(e) => {
+                               const newCorporate = [...(current.membership.tiers?.corporate || [])];
+                               newCorporate[idx] = { ...newCorporate[idx], price: e.target.value };
+                               updateField('membership', 'tiers', { ...(current.membership.tiers || {}), corporate: newCorporate });
+                            }}
+                            className="rounded-lg h-10 font-bold bg-white text-black border-gray-200"
+                          />
+                       </div>
+                    </div>
+                  ))}
+               </div>
             </div>
           </CardContent>
         </Card>
@@ -528,28 +642,28 @@ export default function CMSPage() {
           </CardHeader>
           <CardContent className="p-8 space-y-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Footer Description</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Footer Description</Label>
               <Input 
                 value={current.footer.desc} 
                 onChange={(e) => updateField('footer', 'desc', e.target.value)}
-                className="rounded-xl h-12 font-bold"
+                className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
               />
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">CTA Banner Title</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">CTA Banner Title</Label>
                 <Input 
                   value={current.ctaBanner.title} 
                   onChange={(e) => updateField('ctaBanner', 'title', e.target.value)}
-                  className="rounded-xl h-12 font-bold"
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Copyright/Rights Text</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Copyright/Rights Text</Label>
                 <Input 
                   value={current.footer.rights} 
                   onChange={(e) => updateField('footer', 'rights', e.target.value)}
-                  className="rounded-xl h-12 font-bold"
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
                 />
               </div>
             </div>
