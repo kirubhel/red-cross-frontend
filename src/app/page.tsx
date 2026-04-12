@@ -32,6 +32,7 @@ import { useInView, useMotionValue, useSpring, useTransform } from "framer-motio
 import WhoWeAre from "@/components/WhoWeAre";
 import NewsSection from "@/components/NewsSection";
 import WelcomeModal from "@/components/WelcomeModal";
+import DonationModal from "@/components/DonationModal";
 
 const MotionHeart = motion.create(Heart);
 
@@ -137,6 +138,7 @@ export default function LandingPage() {
   const [lang, setLang] = useState<Language>('en');
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [dynamicContent, setDynamicContent] = useState<Record<Language, typeof translations.en> | null>(null);
+  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
   
   // Use dynamic content if available, but merge with local translations so new keys are never missing
@@ -188,6 +190,7 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen bg-white selection:bg-ercs-red selection:text-white overflow-x-hidden">
       {/* Welcome Pathway Modal */}
       <WelcomeModal lang={lang} />
+      <DonationModal isOpen={isDonationModalOpen} onClose={() => setIsDonationModalOpen(false)} />
 
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -408,8 +411,9 @@ export default function LandingPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.55, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <Link href="/donate">
-                      <button className="group flex items-center gap-2 sm:gap-4 bg-black hover:bg-[#ED1C24]
+                    <button 
+                      onClick={() => setIsDonationModalOpen(true)}
+                      className="group flex items-center gap-2 sm:gap-4 bg-black hover:bg-[#ED1C24]
                         text-white rounded-full h-12 sm:h-16 px-4 sm:px-6 font-black text-sm sm:text-lg
                         shadow-2xl shadow-black/20 transition-all duration-500
                         hover:-translate-y-1.5 hover:shadow-[#ED1C24]/30 cursor-pointer whitespace-nowrap">
@@ -422,8 +426,7 @@ export default function LandingPage() {
                           />
                         </div>
                         {t.hero.ctaDonate || translations[lang].hero.ctaDonate || "Donate"}
-                      </button>
-                    </Link>
+                    </button>
                   </motion.div>
                 </div>
               </div>
@@ -691,7 +694,7 @@ export default function LandingPage() {
                       <p className="text-black/60 font-medium leading-relaxed mb-10">
                         {tier.desc}
                       </p>
-                      <Link href="/donate" className="block">
+                      <button onClick={() => setIsDonationModalOpen(true)} className="block w-full">
                         <Button 
                           className="w-full h-16 rounded-2xl font-black transition-all duration-300 shadow-lg border-2 bg-white"
                           style={{ 
@@ -701,7 +704,7 @@ export default function LandingPage() {
                         >
                           {t.donation.selectGift}
                         </Button>
-                      </Link>
+                      </button>
                     </div>
                  </motion.div>
                ))}
@@ -712,11 +715,11 @@ export default function LandingPage() {
                  <div className="text-2xl font-black">{t.donation.customTitle}</div>
                  <p className="text-white/60 font-medium">{t.donation.customDesc}</p>
                </div>
-               <Link href="/donate">
+               <button onClick={() => setIsDonationModalOpen(true)}>
                   <Button className="bg-[#ED1C24] hover:bg-white hover:text-[#ED1C24] text-white rounded-xl h-14 px-10 font-bold transition-all">
                     {t.donation.customCta}
                   </Button>
-               </Link>
+               </button>
             </div>
           </div>
         </section>
