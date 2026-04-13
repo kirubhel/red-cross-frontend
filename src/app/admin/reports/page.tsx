@@ -401,7 +401,7 @@ export default function ReportsPage() {
                                         dataKey="value"
                                     >
                                         {memberStats.byType.map((entry: any, index: any) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} cornerRadius={8} />
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
                                     <Tooltip 
