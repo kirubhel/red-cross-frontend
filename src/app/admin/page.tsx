@@ -1,8 +1,10 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, HandHeart, CreditCard, Activity, ArrowUpRight } from "lucide-react";
+import { Users, HandHeart, CreditCard, Activity, ArrowUpRight, BarChart3 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const data = [
   { name: 'Add. Ababa', volunteers: 4000 },
@@ -58,9 +60,17 @@ export default function DashboardPage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* Header section */}
-      <div>
-        <h1 className="text-3xl font-black text-black tracking-tighter">Portal Overview</h1>
-        <p className="text-gray-500 font-medium mt-1">Monitor all key metrics across ERCS operations.</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-black text-black tracking-tighter">Portal Overview</h1>
+          <p className="text-gray-500 font-medium mt-1">Monitor all key metrics across ERCS operations.</p>
+        </div>
+        
+        <Link href="/admin/reports">
+            <Button className="h-12 px-6 rounded-2xl bg-black hover:bg-[#ED1C24] text-white font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-xl shadow-black/5 transition-all">
+                <BarChart3 className="h-4 w-4" /> Detailed Reports
+            </Button>
+        </Link>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

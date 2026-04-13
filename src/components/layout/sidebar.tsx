@@ -19,7 +19,8 @@ import {
   ClipboardList,
   Newspaper,
   ShieldCheck,
-  Building2
+  Building2,
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ const menuItems = [
   { href: "/admin/members", label: "Members", icon: Users },
   { href: "/admin/volunteers", label: "Volunteers", icon: HandHeart },
   { href: "/admin/organizations", label: "Organizations", icon: Building2 },
+  { href: "/admin/reports", label: "Reports & Analytics", icon: BarChart3 },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
   { href: "/admin/news", label: "News & Media", icon: Newspaper },

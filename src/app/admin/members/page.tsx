@@ -112,63 +112,245 @@ export default function MembersPage() {
     toast.success("CSV Report Generated");
   };
   
-  const downloadTemplate = () => {
-    const headers = ["First Name", "Father Name", "Grandfather Name", "Email", "Phone Number", "National ID", "Date of Birth (YYYY-MM-DD)", "Gender (MALE/FEMALE)", "Region (ID)", "Membership Type (ANNUAL/LIFE/CORPORATE/YOUTH)"];
-    const csvContent = headers.join(",") + "\n" + "John,Doe,Smith,john.doe@example.com,+251912345678,AID123456,1990-01-01,MALE,1,ANNUAL";
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "ercs_member_import_template.csv");
-    link.click();
-    toast.info("Import Template Downloaded");
+  const downloadTemplate = async () => {
+    try {
+        const ExcelJS = (await import("exceljs")).default;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Member Import");
+
+        // Add headers
+        const headers = [
+            "First Name", 
+            "Father Name", 
+            "Grandfather Name", 
+            "Email", 
+            "Phone Number", 
+            "National ID", 
+            "Date of Birth (YYYY-MM-DD)", 
+            "Gender", 
+            "Region (Select from list)", 
+            "Membership Type"
+        ];
+        
+        const headerRow = worksheet.addRow(headers);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+        headerRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFED1C24' } // ERCS Red
+        };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+        headerRow.height = 25;
+
+        // Add a helper sheet for data validation source
+        const helperSheet = workbook.addWorksheet("HelperLists");
+        // Hide helper sheet using state instead of option to ensure compatibility
+        helperSheet.state = 'hidden';
+        
+        // Regions: Format as "ID - Name" so parseInt works automatically on import
+        const regionOptions = regions.map(r => `${r.id} - ${r.name}`);
+        if (regionOptions.length === 0) {
+            // Fallback if regions not loaded
+            [
+                "1 - Addis Ababa", "2 - Dire Dawa", "3 - Tigray", "4 - Afar", 
+                "5 - Amhara", "6 - Oromia", "7 - Somali", "8 - Benishangul-Gumuz", 
+                "9 - SNNPR", "10 - Gambela", "11 - Harari", "12 - Sidama", 
+                "13 - South West", "14 - Federal HQ"
+            ].forEach((opt, i) => helperSheet.getCell(`A${i+1}`).value = opt);
+        } else {
+            regionOptions.forEach((opt, i) => helperSheet.getCell(`A${i+1}`).value = opt);
+        }
+
+        const membershipOptions = [
+            "REGULAR", "INDIVIDUAL_LIFETIME", "FAMILY_LIFETIME", 
+            "CORP_REGULAR", "CORP_HIGH", "CORP_SPECIAL", "YOUTH"
+        ];
+        membershipOptions.forEach((opt, i) => helperSheet.getCell(`B${i+1}`).value = opt);
+
+        const genderOptions = ["MALE", "FEMALE"];
+        genderOptions.forEach((opt, i) => helperSheet.getCell(`C${i+1}`).value = opt);
+
+        // Apply column widths
+        worksheet.columns = [
+            { width: 20 }, { width: 20 }, { width: 20 }, { width: 25 }, 
+            { width: 20 }, { width: 15 }, { width: 25 }, { width: 12 }, 
+            { width: 30 }, { width: 25 }
+        ];
+
+        // Apply Data Validation
+        const rowCount = 500; // Apply to first 500 rows
+        const regionCount = Math.max(regionOptions.length, 14);
+        const membershipCount = membershipOptions.length;
+        const genderCount = genderOptions.length;
+
+        for (let i = 2; i <= rowCount; i++) {
+            // Gender (Column H)
+            worksheet.getCell(`H${i}`).dataValidation = {
+                type: 'list',
+                allowBlank: true,
+                formulae: [`'HelperLists'!$C$1:$C$${genderCount}`],
+                showErrorMessage: true,
+                errorTitle: 'Invalid Selection',
+                error: 'Please select from the list.'
+            };
+            // Region (Column I)
+            worksheet.getCell(`I${i}`).dataValidation = {
+                type: 'list',
+                allowBlank: true,
+                formulae: [`'HelperLists'!$A$1:$A$${regionCount}`],
+                showErrorMessage: true,
+                errorTitle: 'Invalid Selection',
+                error: 'Please select from the list.'
+            };
+            // Membership Type (Column J)
+            worksheet.getCell(`J${i}`).dataValidation = {
+                type: 'list',
+                allowBlank: true,
+                formulae: [`'HelperLists'!$B$1:$B$${membershipCount}`],
+                showErrorMessage: true,
+                errorTitle: 'Invalid Selection',
+                error: 'Please select from the list.'
+            };
+        }
+
+        // Add example row
+        worksheet.addRow([
+            "John", "Doe", "Smith", "john.doe@example.com", "251912345678", 
+            "ID123456", "1990-01-01", "MALE", "1 - Addis Ababa", "REGULAR"
+        ]);
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "ercs_member_import_template.xlsx";
+        link.click();
+        
+        toast.success("Excel Import Template Downloaded");
+    } catch (err) {
+        console.error("Template generation failed:", err);
+        toast.error("Failed to generate Excel template.");
+    }
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    toast.loading("Parsing CSV and importing members...");
-    
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const text = event.target?.result as string;
-      const rows = text.split("\n").slice(1).filter(r => r.trim());
-      
-      const people = rows.map(row => {
-        const [firstName, fatherName, grandfatherName, email, phoneNumber, nationalId, dob, gender, region, type] = row.split(",").map(c => c.trim());
-        return {
-          first_name: firstName,
-          father_name: fatherName,
-          grandfather_name: grandfatherName,
-          email: email,
-          phone_number: phoneNumber,
-          national_id: nationalId,
-          date_of_birth: dob,
-          gender: gender,
-          region: parseInt(region) || 1,
-          membership_type: type
-        };
-      });
+    if (file.name.endsWith('.xlsx')) {
+        toast.loading("Parsing Excel and importing members...");
+        try {
+            const ExcelJS = (await import("exceljs")).default;
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const buffer = event.target?.result as ArrayBuffer;
+                const workbook = new ExcelJS.Workbook();
+                await workbook.xlsx.load(buffer);
+                const worksheet = workbook.getWorksheet(1);
+                
+                const people: any[] = [];
+                worksheet?.eachRow((row, rowNumber) => {
+                    if (rowNumber === 1) return; // Skip headers
+                    
+                    const firstName = row.getCell(1).text;
+                    const fatherName = row.getCell(2).text;
+                    const grandfatherName = row.getCell(3).text;
+                    const email = row.getCell(4).text;
+                    const phoneNumber = row.getCell(5).text;
+                    const nationalId = row.getCell(6).text;
+                    const dob = row.getCell(7).text;
+                    const gender = row.getCell(8).text;
+                    const regionRaw = row.getCell(9).text;
+                    const type = row.getCell(10).text;
 
-      try {
-        const res = await api.post("/person/bulk", people);
-        toast.dismiss();
-        const successCount = res.data.filter((r: any) => r.success).length;
-        const failCount = res.data.length - successCount;
-        
-        if (failCount === 0) {
-          toast.success(`Successfully imported all ${successCount} members!`);
-        } else {
-          toast.warning(`Imported ${successCount} members. ${failCount} rows failed.`);
+                    if (!firstName || firstName.trim() === "") return;
+
+                    people.push({
+                        first_name: firstName,
+                        father_name: fatherName,
+                        grandfather_name: grandfatherName,
+                        email: email,
+                        phone_number: String(phoneNumber || ""),
+                        national_id: String(nationalId || ""),
+                        date_of_birth: dob,
+                        gender: gender,
+                        region: parseInt(regionRaw) || 1,
+                        membership_type: type
+                    });
+                });
+
+                if (people.length === 0) {
+                    toast.dismiss();
+                    toast.error("No valid member data found in Excel.");
+                    return;
+                }
+
+                try {
+                    const res = await api.post("/person/bulk", people);
+                    toast.dismiss();
+                    const successCount = res.data.filter((r: any) => r.success).length;
+                    const failCount = res.data.length - successCount;
+                    
+                    if (failCount === 0) {
+                        toast.success(`Successfully imported all ${successCount} members!`);
+                    } else {
+                        toast.warning(`Imported ${successCount} members. ${failCount} rows failed.`);
+                    }
+                    fetchMembers();
+                } catch (err) {
+                    toast.dismiss();
+                    toast.error("Failed to process bulk import. Check network connection.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        } catch (err) {
+            toast.dismiss();
+            toast.error("Failed to load Excel parser.");
         }
-        fetchMembers();
-      } catch (err) {
-        toast.dismiss();
-        toast.error("Failed to process bulk import. Check your connection.");
-      }
-    };
-    reader.readAsText(file);
+    } else {
+        // Legacy CSV support
+        toast.loading("Parsing CSV and importing members...");
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const text = event.target?.result as string;
+            const rows = text.split("\n").slice(1).filter(r => r.trim());
+            
+            const people = rows.map(row => {
+                const [firstName, fatherName, grandfatherName, email, phoneNumber, nationalId, dob, gender, region, type] = row.split(",").map(c => c.trim());
+                return {
+                    first_name: firstName,
+                    father_name: fatherName,
+                    grandfather_name: grandfatherName,
+                    email: email,
+                    phone_number: phoneNumber,
+                    national_id: nationalId,
+                    date_of_birth: dob,
+                    gender: gender,
+                    region: parseInt(region) || 1,
+                    membership_type: type
+                };
+            });
+
+            try {
+                const res = await api.post("/person/bulk", people);
+                toast.dismiss();
+                const successCount = res.data.filter((r: any) => r.success).length;
+                const failCount = res.data.length - successCount;
+                
+                if (failCount === 0) {
+                    toast.success(`Successfully imported all ${successCount} members!`);
+                } else {
+                    toast.warning(`Imported ${successCount} members. ${failCount} rows failed.`);
+                }
+                fetchMembers();
+            } catch (err) {
+                toast.dismiss();
+                toast.error("Failed to process bulk import. Check your connection.");
+            }
+        };
+        reader.readAsText(file);
+    }
     // Reset input
     e.target.value = "";
   };
@@ -222,7 +404,7 @@ export default function MembersPage() {
             <div className="relative">
                 <Input 
                     type="file" 
-                    accept=".csv" 
+                    accept=".csv,.xlsx" 
                     onChange={handleImport} 
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
