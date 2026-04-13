@@ -9,7 +9,7 @@ export const translations = {
       news: "News",
       organizations: "Volunteer Requests",
       portal: "Portal Access",
-      join: "Join Volunteer"
+      join: "Join Membership"
     },
     hero: {
       tagline: "75 Years of Service",
@@ -19,7 +19,7 @@ export const translations = {
       subtitle: "Join the Ethiopian Red Cross Society (ERCS) to make a difference in your community. We believe in the power of humanity to overcome any challenge.",
       ctaPrimary: "Get Started",
       ctaSecondary: "Donate Now",
-      ctaVolunteer: "Volunteer",
+      ctaVolunteer: "Become a Member",
       ctaMembership: "Membership",
       ctaDonate: "Donate",
       pathwaysLabel: "Choose your path to help:",
@@ -178,6 +178,29 @@ export const translations = {
       involved: "Get Involved",
       location: "Headquarters Location",
       rights: "Alleviating Human Suffering Since 1935."
+    },
+    programsSection: {
+      title: "Membership and Donation Payments",
+      content: "Membership and donation provide a valuable opportunity to strengthen and build upon the local support for our organization and its causes. By introducing structured membership tiers, we can better segment our donors, enabling more targeted engagement and more efficient relationship management. These programs also equip us with effective tools to encourage advocacy, empowering supporters to actively promote our mission and campaigns. Furthermore, a well-designed membership system helps generate a more predictable and sustainable revenue stream, ensuring continuity in delivering our services and achieving our organizational goals.\n\nERCS has designed this powerful system which enables us to generate income so as to execute and facilitate these underlying mandates. Below are the only two sources of our financial income:",
+      sources: ["Annual Membership Payment", "Money Donations"],
+      membershipTitle: "Membership Payment",
+      membershipContent: "ERCS membership allows you to make online annual membership due payments digitally and instantly instead of collecting them in person or in cash. One of the most important components of this ERCS annual membership payment is to make payment simple, affordable, and easy to reach, and avoid the old and past difficult task requiring envelopes, letters, tear-off receipts, stamps, which took too much time, people and energy.\n\nThis ERCS system simplifies the process of collecting annual membership dues by enabling online registration at the same time as collecting annual membership payments.",
+      donationTitle: "Donation Payment",
+      donationContent: "We live in a world, where millions of people have their lives destroyed by internal conflicts and natural disasters. Amid the chaos and despair of these causes, Ethiopia Red Cross Society is a unique sign of hope to those whose lives have been shattered by any of these mentioned causes. Our neutrality gives our staff access to conflict zones where they can save lives and help rebuild them.\n\nERCS relief and rehabilitation efforts mostly depend on the collaboration of its volunteers, members, donors, the business community, and private as well as public institutions. This is the time for all of us to come together, mobilize resources and comfort victims.\n\nBut as the pressure on our resources continues to grow, ERCS need more funds to help the increasing number of men, women and children around the country who find themselves caught in the crossfire of conflict and natural disaster. ERCS instant donations for either regular or for admin configured donation causes is possible using this powerful system.",
+      donationFooter: "YOUR DONATION GOES WHERE IT IS NEEDED MOST"
+    },
+    volunteerSection: {
+      title: "Voluntary Services",
+      content: "Volunteering is at the heart of the Ethiopian Red Cross Society movement. It is central to all activities of the national society. Currently, tens of thousands of volunteers are registered throughout the country, involved in various humanitarian activities. Our humanitarian and development activities, food security and disaster preparedness/response, health and health related initiatives, HIV/AIDS prevention and control, and the promotion of humanitarian values.\n\nWorking together, our volunteers and staff members save lives and help thousands of people in need every year, and raise funds necessary to pay for our services. We bring about change not only by sending aid, but also by working through volunteers and partners to empower communities in Ethiopia, as it is one of poorest countries in the world.",
+      cta: "CREATE LASTING CHANGE THROUGH VOLUNTEERING"
+    },
+    contactSection: {
+      title: "Contact Us",
+      address: "Stadium Addis Ababa, ETHIOPIA",
+      email: "geremew.ashenafi@redcrosseth.org or kassahun.alemu@redcrosseth.org",
+      tel: "+251-115-18-01-80, +251-115-18-01-82",
+      mobile: "+251-911-90-79-78, +251-913-79-88-80",
+      fax: "+251-115-15-00-99"
     }
   },
   am: {
@@ -188,7 +211,7 @@ export const translations = {
       news: "ዜናዎች",
       organizations: "የበጎ ፈቃድ ጥያቄ",
       portal: "የፖርታል መግቢያ",
-      join: "በበጎ ፈቃደኝነት ይቀላቀሉ"
+      join: "አባል ይሁኑ"
     },
     hero: {
       tagline: "የ75 ዓመት አገልግሎት",
@@ -198,7 +221,7 @@ export const translations = {
       subtitle: "በማህበረሰቡ ውስጥ ለውጥ ለማምጣት የኢትዮጵያ ቀይ መስቀል ማህበርን ይቀላቀሉ። ማንኛውንም ፈተና ለማሸነፍ በሰው ልጅ ኃይል እናምናለን።",
       ctaPrimary: "ይጀምሩ",
       ctaSecondary: "አሁን ይለግሱ",
-      ctaVolunteer: "በጎ ፈቃደኝነት",
+      ctaVolunteer: "አባል ይሁኑ",
       ctaMembership: "አባልነት",
       ctaDonate: "ልገሳ",
       pathwaysLabel: "ለመርዳት መንገድዎን ይምረጡ፡",
@@ -349,7 +372,30 @@ export const translations = {
       title: "አንድ ላይ በመሆን የሰው ልጅን እናጠናክራለን።",
       volunteer: "ዛሬ በጎ ፈቃደኛ ይሁኑ",
       membership: "አባልነትን ይቀላቀሉ",
-      supporter: "የዕድሜ ልክ ደጋፊ"
+      supporter: "የህይወት ዘመን ደጋፊ"
+    },
+    programsSection: {
+      title: "የአባልነት እና የልገሳ ክፍያዎች",
+      content: "የአባልነት እና ልገሳ ለድርጅታችን እና ለዓላማዎቹ ያለውን አካባቢያዊ ድጋፍ ለማጠናከር እና ለመገንባት ጠቃሚ ዕድል ይሰጣል።",
+      sources: ["ዓመታዊ የአባልነት ክፍያ", "የገንዘብ ልገሳዎች"],
+      membershipTitle: "የአባልነት ክፍያ",
+      membershipContent: "የኢ.ቀ.መ.ማ አባልነት ዓመታዊ የአባልነት ክፍያዎችን በአካል ወይም በጥሬ ገንዘብ ከመሰብሰብ ይልቅ በዲጂታል መንገድ በቅጽበት እንዲከፍሉ ያስችልዎታል።",
+      donationTitle: "የልገሳ ክፍያ",
+      donationContent: "ሚሊዮን ሰዎች በውስጥ ግጭቶች እና በተፈጥሮ አደጋዎች ሕይወታቸው በሚጠፋበት ዓለም ውስጥ እንኖራለን።",
+      donationFooter: "የእርስዎ ልገሳ በጣም በሚያስፈልግበት ቦታ ይውላል"
+    },
+    volunteerSection: {
+      title: "የበጎ ፈቃድ አገልግሎቶች",
+      content: "በጎ ፈቃደኝነት የኢትዮጵያ ቀይ መስቀል ማህበር ንቅናቄ እምብርት ነው።",
+      cta: "በበጎ ፈቃደኝነት ዘላቂ ለውጥ ይፍጠሩ"
+    },
+    contactSection: {
+      title: "ያግኙን",
+      address: "ስታዲየም አዲስ አበባ ፣ ኢትዮጵያ",
+      email: "geremew.ashenafi@redcrosseth.org ወይም kassahun.alemu@redcrosseth.org",
+      tel: "+251-115-18-01-80, +251-115-18-01-82",
+      mobile: "+251-911-90-79-78, +251-913-79-88-80",
+      fax: "+251-115-15-00-99"
     },
     footer: {
       desc: "ከ1935 ጀምሮ በአገር አቀፍ ደረጃ ባለን የቁርጠኝነት መረብ አማካኝነት የሰውን ልጅ ስቃይ ማቃለል እና ሕይወትን፣ ጤናን እና ክብርን መጠበቅ።",
@@ -367,7 +413,7 @@ export const translations = {
       news: "Oduu",
       organizations: "Gaaffii Tajaajilaa",
       portal: "Galfata Poortaalii",
-      join: "Fedhaan Hirmaadhu"
+      join: "Miseensa Ta'aa"
     },
     hero: {
       tagline: "Waggaa 75 Tajaajilaa",
@@ -377,7 +423,7 @@ export const translations = {
       subtitle: "Hawaasa keessatti jijjiirama fiduuf Waldaa Fannoo Diimaa Itiyoophiyaa (ERCS) tti makamaa. Nuti humna namoomaa kanaan qormaata kamiyyuu mo'achuu ni dandeenya jennee amanna.",
       ctaPrimary: "Eegali",
       ctaSecondary: "Amma Arjoomi",
-      ctaVolunteer: "Fedhaan Tajaajiluu",
+      ctaVolunteer: "Miseensa Ta'aa",
       ctaMembership: "Miseensummaa",
       ctaDonate: "Arjooma",
       pathwaysLabel: "Gargaaruuf karaa keessan filadhaa:",
@@ -527,8 +573,31 @@ export const translations = {
     ctaBanner: {
       title: "Waliin Ta'uun Namooma Ni Jabeessina.",
       volunteer: "Har'a Fedheen Hojjedhu",
-      membership: "Miseensummaan Makami",
-      supporter: "Deeggaraa Jireenya Guutuu"
+      membership: "Itooma itti makami",
+      supporter: "Deggartuu Umrii Guutuu"
+    },
+    programsSection: {
+      title: "Kaffaltii Miseensummaafi Kennataa",
+      content: "Miseensummaafi kennatni deeggarsa naannoo dhaabbata keenyaafi dhimmoota isaatiif qabu cimsuufi irratti ijaaruuf carraaqqii guddaa dha.",
+      sources: ["Kaffaltii Miseensummaa Waggaa", "Kennata Maallaqaa"],
+      membershipTitle: "Kaffaltii Miseensummaa",
+      membershipContent: "Miseensummaan ERCS kaffaltii miseensummaa waggaa karaa dijitaalaa kaffaluuf isin dandeessisa.",
+      donationTitle: "Kaffaltii Kennataa",
+      donationContent: "Addunyaa namoonni miiliyoonaan lakkaa'aman sababa walitti bu'iinsa keessootiifi balaa uumamaatiin jireenyi isaanii badu keessa jiraanna.",
+      donationFooter: "KENNATNI KEESSAN IDDOO HUNDA CAALAA BARBAACHISUTTI OOLA"
+    },
+    volunteerSection: {
+      title: "Tajaajila Fedhii",
+      content: "Fedhiin tajaajiluu wiirtuu sochii Sosayeti Qaxxaamura Diimaa Itoophiyaati.",
+      cta: "TAJAAJILA FEDHIITIIN JIJJIIRAMA HIN BADNE FIKKERSAA"
+    },
+    contactSection: {
+      title: "Nu Quunnamaa",
+      address: "Istadiyeemii Finfinnee, ITOOPHIYAA",
+      email: "geremew.ashenafi@redcrosseth.org yookiin kassahun.alemu@redcrosseth.org",
+      tel: "+251-115-18-01-80, +251-115-18-01-82",
+      mobile: "+251-911-90-79-78, +251-913-79-88-80",
+      fax: "+251-115-15-00-99"
     },
     footer: {
       desc: "Waggaa 1935 jalqabee guutuu biyyattiitti networkii keenya kanaan dhiphuu namoomaa hir'isuu fi lubbuu, fayyaa fi ulfina namaa eeguu.",

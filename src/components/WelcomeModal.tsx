@@ -29,7 +29,7 @@ function PathwayCard({
     <motion.div
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }}
       className="group relative flex flex-col bg-white rounded-[28px] overflow-hidden shadow-lg
                  hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100"
     >
@@ -214,11 +214,8 @@ export default function WelcomeModal({ lang }: WelcomeModalProps) {
   ];
 
   useEffect(() => {
-    const alreadyShown = sessionStorage.getItem(SESSION_KEY);
-    if (!alreadyShown) {
-      const timer = setTimeout(() => setIsOpen(true), 1200);
-      return () => clearTimeout(timer);
-    }
+    const timer = setTimeout(() => setIsOpen(true), 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleClose = () => {
@@ -247,7 +244,7 @@ export default function WelcomeModal({ lang }: WelcomeModalProps) {
             initial={{ opacity: 0, scale: 0.92, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }}
             onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-4xl bg-gray-50 rounded-[40px] shadow-2xl overflow-hidden"
           >

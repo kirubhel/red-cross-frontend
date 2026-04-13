@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, Variants, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { landingContent } from "@/lib/cms-content";
 import { 
   ArrowRight, 
@@ -148,6 +149,26 @@ export default function LandingPage() {
     hero: {
       ...translations[lang].hero,
       ...(dynamicContent?.[lang]?.hero || {})
+    },
+    membership: {
+      ...translations[lang].membership,
+      ...(dynamicContent?.[lang]?.membership || {}),
+      tiers: {
+        ...(translations[lang].membership?.tiers || {}),
+        ...(dynamicContent?.[lang]?.membership?.tiers || {})
+      }
+    },
+    programsSection: {
+      ...translations[lang].programsSection,
+      ...(dynamicContent?.[lang]?.programsSection || {})
+    },
+    volunteerSection: {
+      ...translations[lang].volunteerSection,
+      ...(dynamicContent?.[lang]?.volunteerSection || {})
+    },
+    contactSection: {
+      ...translations[lang].contactSection,
+      ...(dynamicContent?.[lang]?.contactSection || {})
     }
   };
 
@@ -188,8 +209,6 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white selection:bg-ercs-red selection:text-white overflow-x-hidden">
-      {/* Welcome Pathway Modal */}
-      <WelcomeModal lang={lang} />
       <DonationModal isOpen={isDonationModalOpen} onClose={() => setIsDonationModalOpen(false)} />
 
       {/* Decorative Background Elements */}
@@ -289,8 +308,8 @@ export default function LandingPage() {
               {t.nav.portal}
             </Link>
             <div className="h-8 w-px bg-gray-200 hidden sm:block" />
-            <Link href="/join">
-              <Button size="sm" className="bg-[#ED1C24] hover:bg-black text-white rounded-full px-6 font-bold shadow-lg shadow-[#ED1C24]/20 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+            <Link href="/join/member">
+              <Button size="sm" className="bg-[#ED1C24] text-white border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24] rounded-full px-6 font-bold shadow-lg shadow-[#ED1C24]/20 transition-all hover:scale-105 active:scale-95 cursor-pointer">
                 {t.nav.join}
               </Button>
             </Link>
@@ -315,7 +334,7 @@ export default function LandingPage() {
                 animate={{ pathLength: 1, opacity: 0.12 }}
                 transition={{ 
                   duration: 2.5, 
-                  ease: [0.16, 1, 0.3, 1],
+                  ease: [0.16, 1, 0.3, 1] as any,
                 }}
               />
               {/* Secondary Accent Lines like in the 90th anniversary image */}
@@ -389,15 +408,15 @@ export default function LandingPage() {
                   <motion.div
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.45, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ delay: 0.45, duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }}
                   >
-                    <Link href="/join/volunteer">
-                      <button className="group flex items-center gap-2 sm:gap-4 bg-[#ED1C24] hover:bg-black
+                    <Link href="/join/member">
+                      <button className="group flex items-center gap-2 sm:gap-4 bg-[#ED1C24] border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24]
                         text-white rounded-full h-12 sm:h-16 px-4 sm:px-6 font-black text-sm sm:text-lg
                         shadow-2xl shadow-[#ED1C24]/30 transition-all duration-500
                         hover:-translate-y-1.5 hover:shadow-[#ED1C24]/40 cursor-pointer whitespace-nowrap">
                         <div className="h-10 w-10 rounded-full bg-white/20 flex items-center
-                          justify-center group-hover:bg-white/30 transition-colors flex-shrink-0">
+                          justify-center group-hover:bg-[#ED1C24] group-hover:text-white transition-colors flex-shrink-0">
                           <Users className="h-5 w-5" />
                         </div>
                         {t.hero.ctaVolunteer || translations[lang].hero.ctaVolunteer || "Volunteer"}
@@ -409,15 +428,15 @@ export default function LandingPage() {
                   <motion.div
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.55, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ delay: 0.55, duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }}
                   >
                     <button 
                       onClick={() => setIsDonationModalOpen(true)}
-                      className="group flex items-center gap-2 sm:gap-4 bg-black hover:bg-[#ED1C24]
+                      className="group flex items-center gap-2 sm:gap-4 bg-black border-2 border-black hover:bg-white hover:text-[#ED1C24] hover:border-[#ED1C24]
                         text-white rounded-full h-12 sm:h-16 px-4 sm:px-6 font-black text-sm sm:text-lg
                         shadow-2xl shadow-black/20 transition-all duration-500
                         hover:-translate-y-1.5 hover:shadow-[#ED1C24]/30 cursor-pointer whitespace-nowrap">
-                        <div className="h-10 w-10 rounded-full bg-white/15 group-hover:bg-white/25
+                        <div className="h-10 w-10 rounded-full bg-white/15 group-hover:bg-[#ED1C24] group-hover:text-white
                           flex items-center justify-center transition-colors flex-shrink-0">
                           <MotionHeart
                             variants={heartVariants}
@@ -603,7 +622,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <Link href="/join/member">
-                  <Button size="lg" className="bg-black hover:bg-[#ED1C24] text-white rounded-2xl h-16 px-10 text-lg font-black transition-all shadow-xl shadow-black/10">
+                  <Button size="lg" className="bg-black border-2 border-black hover:bg-white hover:text-[#ED1C24] hover:border-[#ED1C24] text-white rounded-2xl h-16 px-10 text-lg font-black transition-all shadow-xl shadow-black/10">
                     {t.membership.cta} <ChevronRight className="ml-2" />
                   </Button>
                 </Link>
@@ -624,15 +643,19 @@ export default function LandingPage() {
                           </div>
                        </div>
                         <div className="h-px bg-gray-100" />
-                        <div className="space-y-8">
+                        <div className="space-y-6">
                            {/* Individual Tiers */}
                            <div className="space-y-4">
-                              <h6 className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] mb-2">Individual Tiers</h6>
-                              <div className="space-y-3">
+                              <div className="flex items-center gap-3">
+                                 <div className="h-px flex-1 bg-gray-50" />
+                                 <h6 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24] shrink-0">Individual Tiers</h6>
+                                 <div className="h-px flex-1 bg-gray-50" />
+                              </div>
+                              <div className="grid gap-2">
                                 {(t.membership.tiers?.individual || []).map((tier: any, idx: number) => (
-                                  <div key={idx} className="flex justify-between items-center group cursor-default">
-                                    <span className="font-bold text-black group-hover:text-[#ED1C24] transition-colors">{tier.name}</span>
-                                    <span className="font-black text-[#ED1C24] bg-red-50 px-3 py-1 rounded-lg text-xs">{tier.price}</span>
+                                  <div key={idx} className="flex justify-between items-center group cursor-default p-2 rounded-xl hover:bg-red-50/50 transition-all border border-transparent hover:border-red-100/50">
+                                    <span className="font-bold text-black tracking-tight group-hover:translate-x-1 transition-transform">{tier.name}</span>
+                                    <span className="font-black text-[#ED1C24] bg-white border border-red-50 px-3 py-1 rounded-lg text-xs shadow-sm">{tier.price}</span>
                                   </div>
                                 ))}
                               </div>
@@ -640,12 +663,16 @@ export default function LandingPage() {
 
                              {/* Corporate Tiers */}
                            <div className="space-y-4">
-                              <h6 className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] mb-2">Corporate Tiers</h6>
-                              <div className="space-y-3">
+                              <div className="flex items-center gap-3">
+                                 <div className="h-px flex-1 bg-gray-50" />
+                                 <h6 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24] shrink-0">Corporate Tiers</h6>
+                                 <div className="h-px flex-1 bg-gray-50" />
+                              </div>
+                              <div className="grid gap-2">
                                 {(t.membership.tiers?.corporate || []).map((tier: any, idx: number) => (
-                                  <div key={idx} className="flex justify-between items-center group cursor-default">
-                                    <span className="font-bold text-black group-hover:text-[#ED1C24] transition-colors">{tier.name}</span>
-                                    <span className="font-black text-[#ED1C24] bg-red-50 px-3 py-1 rounded-lg text-xs">{tier.price}</span>
+                                  <div key={idx} className="flex justify-between items-center group cursor-default p-2 rounded-xl hover:bg-purple-50/50 transition-all border border-transparent hover:border-purple-100/50">
+                                    <span className="font-bold text-black tracking-tight group-hover:translate-x-1 transition-transform">{tier.name}</span>
+                                    <span className="font-black text-purple-600 bg-white border border-purple-50 px-3 py-1 rounded-lg text-xs shadow-sm">{tier.price}</span>
                                   </div>
                                 ))}
                               </div>
@@ -694,17 +721,16 @@ export default function LandingPage() {
                       <p className="text-black/60 font-medium leading-relaxed mb-10">
                         {tier.desc}
                       </p>
-                      <button onClick={() => setIsDonationModalOpen(true)} className="block w-full">
-                        <Button 
-                          className="w-full h-16 rounded-2xl font-black transition-all duration-300 shadow-lg border-2 bg-white"
-                          style={{ 
-                            borderColor: i === 0 ? "#ED1C24" : i === 1 ? "#0EA5E9" : "#991B1B",
-                            color: i === 0 ? "#ED1C24" : i === 1 ? "#0EA5E9" : "#991B1B"
-                          }}
-                        >
-                          {t.donation.selectGift}
-                        </Button>
-                      </button>
+                      <Button 
+                        onClick={() => setIsDonationModalOpen(true)}
+                        className="w-full h-16 rounded-2xl font-black transition-all duration-300 shadow-lg border-2 bg-white hover:bg-[#ED1C24] hover:text-white"
+                        style={{ 
+                          borderColor: i === 0 ? "#ED1C24" : i === 1 ? "#0EA5E9" : "#991B1B",
+                          color: i === 0 ? "#ED1C24" : i === 1 ? "#0EA5E9" : "#991B1B"
+                        }}
+                      >
+                        {t.donation.selectGift}
+                      </Button>
                     </div>
                  </motion.div>
                ))}
@@ -715,12 +741,82 @@ export default function LandingPage() {
                  <div className="text-2xl font-black">{t.donation.customTitle}</div>
                  <p className="text-white/60 font-medium">{t.donation.customDesc}</p>
                </div>
-               <button onClick={() => setIsDonationModalOpen(true)}>
-                  <Button className="bg-[#ED1C24] hover:bg-white hover:text-[#ED1C24] text-white rounded-xl h-14 px-10 font-bold transition-all">
-                    {t.donation.customCta}
-                  </Button>
-               </button>
+               <Button 
+                  onClick={() => setIsDonationModalOpen(true)}
+                  className="bg-[#ED1C24] hover:bg-white hover:text-[#ED1C24] text-white rounded-xl h-14 px-10 font-bold transition-all"
+                >
+                  {t.donation.customCta}
+                </Button>
             </div>
+          </div>
+        </section>
+
+        {/* Programs & Impact Section */}
+        <section className="py-24 px-6 bg-gray-50/50">
+          <div className="container mx-auto">
+            <div className="max-w-4xl mx-auto space-y-16">
+              <div className="space-y-6 text-center">
+                 <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter">{t.programsSection.title}</h2>
+                 <div className="h-1.5 w-24 bg-[#ED1C24] mx-auto rounded-full" />
+                 <p className="text-xl text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">
+                   {t.programsSection.content}
+                 </p>
+                 <div className="flex flex-wrap justify-center gap-4 pt-4">
+                    {t.programsSection.sources.map(source => (
+                      <div key={source} className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-black text-sm uppercase tracking-widest text-[#ED1C24]">
+                        {source}
+                      </div>
+                    ))}
+                 </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-12">
+                 <div className="bg-white p-10 rounded-[40px] shadow-xl border border-gray-100 space-y-6">
+                    <div className="h-14 w-14 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center font-black text-2xl">01</div>
+                    <h3 className="text-2xl font-black text-black">{t.programsSection.membershipTitle}</h3>
+                    <p className="text-gray-500 leading-relaxed font-medium whitespace-pre-wrap text-sm">
+                      {t.programsSection.membershipContent}
+                    </p>
+                 </div>
+                 <div className="bg-white p-10 rounded-[40px] shadow-xl border border-gray-100 space-y-6">
+                    <div className="h-14 w-14 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center font-black text-2xl">02</div>
+                    <h3 className="text-2xl font-black text-black">{t.programsSection.donationTitle}</h3>
+                    <p className="text-gray-500 leading-relaxed font-medium whitespace-pre-wrap text-sm">
+                      {t.programsSection.donationContent}
+                    </p>
+                    <div className="pt-4 border-t border-gray-50">
+                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24]">{t.programsSection.donationFooter}</p>
+                    </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Voluntary Services Section */}
+        <section className="py-24 px-6 overflow-hidden">
+          <div className="container mx-auto">
+             <div className="relative bg-black rounded-[48px] overflow-hidden p-12 md:p-20">
+                <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none" 
+                     style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+                
+                <div className="max-w-3xl space-y-10 relative z-10">
+                   <div className="space-y-4">
+                      <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none">
+                        {t.volunteerSection.title}
+                      </h2>
+                      <div className="h-1.5 w-20 bg-[#ED1C24] rounded-full" />
+                   </div>
+                   <p className="text-xl text-white/70 leading-relaxed font-medium whitespace-pre-wrap">
+                      {t.volunteerSection.content}
+                   </p>
+                   <div className="pt-6">
+                      <p className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase">
+                        {t.volunteerSection.cta}
+                      </p>
+                   </div>
+                </div>
+             </div>
           </div>
         </section>
 
@@ -764,6 +860,105 @@ export default function LandingPage() {
                             {t.ctaBanner.supporter}
                           </p>
                         </div>
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </section>
+
+        {/* Contact Us Section */}
+        <section className="py-24 px-6 bg-white" id="contact">
+          <div className="container mx-auto">
+             <div className="grid lg:grid-cols-2 gap-20 items-start">
+                <div className="space-y-12">
+                   <div className="space-y-6">
+                      <h2 className="text-5xl md:text-6xl font-black text-black tracking-tighter">{t.contactSection.title}</h2>
+                      <p className="text-gray-500 text-lg font-medium max-w-md">
+                        Have questions or want to collaborate? Reach out to our team using the form or contact details below.
+                      </p>
+                   </div>
+
+                   <form className="space-y-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Full Name *</label>
+                           <Input placeholder="John Doe" className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" />
+                         </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">E-mail *</label>
+                            <Input placeholder="john@example.com" className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" />
+                         </div>
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Subject *</label>
+                         <Input placeholder="How can we help?" className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Message *</label>
+                         <textarea placeholder="Your message here..." className="w-full min-h-[160px] rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold p-6 text-sm resize-none text-black" />
+                      </div>
+                      <Button className="w-full h-16 bg-black hover:bg-[#ED1C24] text-white rounded-2xl font-black text-lg shadow-xl shadow-black/5 transition-all">
+                        Send Message
+                      </Button>
+                      <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">* Indicate required field</p>
+                   </form>
+                </div>
+
+                <div className="space-y-16 lg:pt-8 blur-in">
+                   <div>
+                      <h4 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-8">Find Us</h4>
+                      <div className="grid gap-10">
+                         <div className="flex gap-6 group">
+                            <div className="h-14 w-14 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-500">
+                               <MapPin className="h-6 w-6" />
+                            </div>
+                            <div className="space-y-1.5">
+                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Location Address</p>
+                               <p className="text-lg font-black text-black leading-tight underline decoration-[#ED1C24]/20 underline-offset-4">{t.contactSection.address}</p>
+                            </div>
+                         </div>
+
+                         <div className="flex gap-6 group">
+                            <div className="h-14 w-14 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-500">
+                               <Mail className="h-6 w-6" />
+                            </div>
+                            <div className="space-y-1.5">
+                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</p>
+                               <p className="text-lg font-black text-black break-all leading-tight">{t.contactSection.email}</p>
+                            </div>
+                         </div>
+
+                         <div className="grid md:grid-cols-2 gap-10">
+                            <div className="flex gap-6 group">
+                               <div className="h-14 w-14 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-500">
+                                  <Phone className="h-6 w-6" />
+                               </div>
+                               <div className="space-y-1.5">
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tel</p>
+                                  <p className="text-lg font-black text-black leading-tight whitespace-pre-line">{t.contactSection.tel}</p>
+                               </div>
+                            </div>
+                            <div className="flex gap-6 group">
+                               <div className="h-14 w-14 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-500">
+                                  <Phone className="h-6 w-6" />
+                               </div>
+                               <div className="space-y-1.5">
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mobile</p>
+                                  <p className="text-lg font-black text-black leading-tight whitespace-pre-line">{t.contactSection.mobile}</p>
+                               </div>
+                            </div>
+                         </div>
+
+                         <div className="flex gap-6 group">
+                            <div className="h-14 w-14 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-500">
+                               <Plus className="h-6 w-6" />
+                            </div>
+                            <div className="space-y-1.5">
+                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fax</p>
+                               <p className="text-lg font-black text-black leading-tight">{t.contactSection.fax}</p>
+                            </div>
+                         </div>
                       </div>
                    </div>
                 </div>
@@ -888,6 +1083,8 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+       {/* Welcome Pathway Modal - Moved to end for stacking priority */}
+       <WelcomeModal lang={lang} />
     </div>
   );
 }

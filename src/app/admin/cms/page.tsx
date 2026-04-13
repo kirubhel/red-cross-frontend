@@ -18,7 +18,11 @@ import {
   Flame,
   Plus,
   Upload,
-  CheckCircle2
+  CheckCircle2,
+  Mail,
+  Phone,
+  MapPin,
+  UserPlus
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
@@ -52,7 +56,27 @@ export default function CMSPage() {
       
       const newContents = { ...contents };
       results.forEach(({ lang, data }) => {
-        newContents[lang] = data;
+        // Safe deep merge to ensure new keys in translations are preserved
+        newContents[lang] = {
+          ...translations[lang],
+          ...data,
+          nav: { ...translations[lang].nav, ...(data?.nav || {}) },
+          hero: { ...translations[lang].hero, ...(data?.hero || {}) },
+          whoWeAre: { ...translations[lang].whoWeAre, ...(data?.whoWeAre || {}) },
+          services: { ...translations[lang].services, ...(data?.services || {}) },
+          news: { ...translations[lang].news, ...(data?.news || {}) },
+          donation: { ...translations[lang].donation, ...(data?.donation || {}) },
+          membership: { 
+            ...translations[lang].membership, 
+            ...(data?.membership || {}),
+            tiers: { ...(translations[lang].membership?.tiers || {}), ...(data?.membership?.tiers || {}) }
+          },
+          footer: { ...translations[lang].footer, ...(data?.footer || {}) },
+          ctaBanner: { ...translations[lang].ctaBanner, ...(data?.ctaBanner || {}) },
+          programsSection: { ...translations[lang].programsSection, ...(data?.programsSection || {}) },
+          volunteerSection: { ...translations[lang].volunteerSection, ...(data?.volunteerSection || {}) },
+          contactSection: { ...translations[lang].contactSection, ...(data?.contactSection || {}) }
+        };
       });
       setContents(newContents);
     } catch (err) {
@@ -627,6 +651,131 @@ export default function CMSPage() {
                   ))}
                </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Programs Section */}
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[24px] overflow-hidden">
+          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
+                <Activity className="h-5 w-5" />
+              </div>
+              <CardTitle className="text-xl font-black tracking-tight text-black">About Programs (Membership & Donation)</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-8 space-y-8">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Main Section Title</Label>
+              <Input value={current.programsSection.title} onChange={(e) => updateField('programsSection', 'title', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Introduction Content</Label>
+              <textarea 
+                value={current.programsSection.content} 
+                onChange={(e) => updateField('programsSection', 'content', e.target.value)}
+                className="w-full min-h-[150px] p-4 rounded-xl border border-gray-200 bg-white text-black font-bold text-sm leading-relaxed" 
+              />
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-8 pt-6 border-t border-gray-100">
+               <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Membership Sub-title</Label>
+                    <Input value={current.programsSection.membershipTitle} onChange={(e) => updateField('programsSection', 'membershipTitle', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Membership Detail</Label>
+                    <textarea 
+                      value={current.programsSection.membershipContent} 
+                      onChange={(e) => updateField('programsSection', 'membershipContent', e.target.value)}
+                      className="w-full min-h-[150px] p-4 rounded-xl border border-gray-100 bg-white text-black font-bold text-xs leading-relaxed" 
+                    />
+                  </div>
+               </div>
+               <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Donation Sub-title</Label>
+                    <Input value={current.programsSection.donationTitle} onChange={(e) => updateField('programsSection', 'donationTitle', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Donation Detail</Label>
+                    <textarea 
+                      value={current.programsSection.donationContent} 
+                      onChange={(e) => updateField('programsSection', 'donationContent', e.target.value)}
+                      className="w-full min-h-[150px] p-4 rounded-xl border border-gray-100 bg-white text-black font-bold text-xs leading-relaxed" 
+                    />
+                  </div>
+               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Volunteer Services Section */}
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[24px] overflow-hidden">
+          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
+                <UserPlus className="h-5 w-5" />
+              </div>
+              <CardTitle className="text-xl font-black tracking-tight text-black">Voluntary Services Section</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-8 space-y-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Section Title</Label>
+              <Input value={current.volunteerSection.title} onChange={(e) => updateField('volunteerSection', 'title', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Description Content</Label>
+              <textarea 
+                value={current.volunteerSection.content} 
+                onChange={(e) => updateField('volunteerSection', 'content', e.target.value)}
+                className="w-full min-h-[150px] p-4 rounded-xl border border-gray-200 bg-white text-black font-bold text-sm leading-relaxed" 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">CTA Headline</Label>
+              <Input value={current.volunteerSection.cta} onChange={(e) => updateField('volunteerSection', 'cta', e.target.value)} className="rounded-xl h-12 font-bold text-[#ED1C24] bg-white border-red-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact Us Section */}
+        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[24px] overflow-hidden">
+          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
+                <Phone className="h-5 w-5" />
+              </div>
+              <CardTitle className="text-xl font-black tracking-tight text-black">Contact Us Section</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+             <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Section Title</Label>
+                <Input value={current.contactSection.title} onChange={(e) => updateField('contactSection', 'title', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+             </div>
+             <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Location Address</Label>
+                <Input value={current.contactSection.address} onChange={(e) => updateField('contactSection', 'address', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+             </div>
+             <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Official Email(s)</Label>
+                <Input value={current.contactSection.email} onChange={(e) => updateField('contactSection', 'email', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+             </div>
+             <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Telephone</Label>
+                <Input value={current.contactSection.tel} onChange={(e) => updateField('contactSection', 'tel', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+             </div>
+             <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Mobile</Label>
+                <Input value={current.contactSection.mobile} onChange={(e) => updateField('contactSection', 'mobile', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+             </div>
+             <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Fax</Label>
+                <Input value={current.contactSection.fax} onChange={(e) => updateField('contactSection', 'fax', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+             </div>
           </CardContent>
         </Card>
 

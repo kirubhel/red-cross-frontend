@@ -32,6 +32,11 @@ const nextConfig: NextConfig = {
         hostname: 'minio',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+        pathname: '/**',
+      },
     ],
   },
 };
