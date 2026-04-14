@@ -362,11 +362,21 @@ export default function MemberRegistrationPage() {
 
                                       <div className="space-y-2 group">
                                           <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Password</Label>
-                                          <Input type={showPassword ? "text" : "password"} id="password" required className="h-12 rounded-xl bg-gray-50 border-none px-6 font-bold text-black" value={formData.password} onChange={handleChange} />
+                                          <div className="relative">
+                                              <Input type={showPassword ? "text" : "password"} id="password" required className="h-12 rounded-xl bg-gray-50 border-none px-6 pr-12 font-bold text-black" value={formData.password} onChange={handleChange} />
+                                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">
+                                                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                              </button>
+                                          </div>
                                       </div>
                                       <div className="space-y-2 group">
                                           <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Confirm Password</Label>
-                                          <Input type={showConfirmPassword ? "text" : "password"} id="confirmPassword" required className="h-12 rounded-xl bg-gray-50 border-none px-6 font-bold text-black" value={formData.confirmPassword} onChange={handleChange} />
+                                          <div className="relative">
+                                              <Input type={showConfirmPassword ? "text" : "password"} id="confirmPassword" required className="h-12 rounded-xl bg-gray-50 border-none px-6 pr-12 font-bold text-black" value={formData.confirmPassword} onChange={handleChange} />
+                                              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">
+                                                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                              </button>
+                                          </div>
                                       </div>
                                  </div>
                                  {error && <div className="text-red-500 text-xs font-bold text-center">{error}</div>}

@@ -16,7 +16,9 @@ import {
   BadgeCheck,
   Calendar,
   ExternalLink,
-  Plus
+  Plus,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
@@ -62,6 +64,7 @@ export default function OrganizationsPage() {
     website: "",
     description: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash === "#register") {
@@ -346,15 +349,24 @@ export default function OrganizationsPage() {
                                 )}
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Portal Password</label>
-                                    <input 
-                                        type="password" 
-                                        name="password"
-                                        required
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm placeholder:text-gray-400"
-                                        placeholder="••••••••"
-                                    />
+                                    <div className="relative">
+                                        <input 
+                                            type={showPassword ? "text" : "password"} 
+                                            name="password"
+                                            required
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            className="w-full px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm placeholder:text-gray-400"
+                                            placeholder="••••••••"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Contact Person</label>
