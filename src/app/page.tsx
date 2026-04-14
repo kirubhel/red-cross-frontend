@@ -232,6 +232,7 @@ export default function LandingPage() {
                 width={44} 
                 height={44} 
                 className="object-contain transition-transform duration-500 group-hover:scale-110" 
+                unoptimized
               />
             </div>
             <div className="flex flex-col">
@@ -978,7 +979,7 @@ export default function LandingPage() {
             <div className="space-y-8">
               <div className="flex items-center gap-3">
                 <div className="bg-white p-1 rounded-lg">
-                  <Image src="/logo.jpg" alt="ERCS" width={44} height={44} />
+                  <Image src="/logo.jpg" alt="ERCS Logo" width={80} height={80} className="object-contain" unoptimized />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-2xl font-black tracking-tighter uppercase leading-none">ERCS</span>

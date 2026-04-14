@@ -54,7 +54,7 @@ export function Sidebar() {
       {/* Brand Header */}
       <div className={cn("flex h-24 items-center border-b border-gray-900 pb-2 pt-4 relative", isCollapsed ? "justify-center px-0" : "px-6 gap-4")}>
          <div className="bg-white p-1.5 rounded-xl shrink-0">
-           <Image src="/logo.jpg" alt="ERCS" width={40} height={40} className="object-contain" />
+           <Image src="/logo.jpg" alt="ERCS" width={40} height={40} className="object-contain" unoptimized />
          </div>
          
          <div className={cn("flex flex-col whitespace-nowrap overflow-hidden transition-all duration-300", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>

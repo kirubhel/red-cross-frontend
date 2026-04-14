@@ -165,6 +165,7 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                                         width={32} 
                                         height={32} 
                                         className="object-contain"
+                                        unoptimized
                                       />
                                   </div>
                                   <div className="flex-1 min-w-0">

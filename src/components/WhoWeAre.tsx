@@ -105,6 +105,7 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
                   alt="ERCS Narrative"
                   fill
                   className="object-cover transition-transform duration-1000 group-hover:scale-110"
+                  unoptimized
                 />
                 <div className="absolute inset-x-0 bottom-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
                   <p className="text-white/80 text-sm font-bold tracking-wide italic">

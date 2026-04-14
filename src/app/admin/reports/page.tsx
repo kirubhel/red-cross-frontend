@@ -203,36 +203,36 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
+    <div className="space-y-6 animate-in fade-in duration-700">
       
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-widest leading-none">
-                <BarChart3 className="h-3.5 w-3.5" /> Intelligence
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
+                <BarChart3 className="h-3 w-3" /> Intelligence
             </div>
-            <h1 className="text-5xl font-black text-black tracking-tighter text-balance">Reports & Analytics</h1>
-            <p className="text-gray-500 font-medium text-lg max-w-2xl">
-                Advanced data insights across all operational metrics. Select a category below to view detailed analytics and performance tracking.
+            <h1 className="text-3xl font-black text-black tracking-tighter">Reports & Analytics</h1>
+            <p className="text-gray-500 font-medium text-sm max-w-xl">
+                Operational data insights across all key metrics.
             </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
              <Button 
                 onClick={handleExport}
                 variant="outline" 
-                className="rounded-2xl h-14 px-8 font-black border-gray-200 flex items-center gap-3 shadow-sm hover:bg-black hover:text-white transition-all"
+                className="rounded-xl h-11 px-6 font-black border-2 border-black flex items-center gap-2 hover:bg-black hover:text-white transition-all text-[10px] uppercase tracking-widest"
             >
-                <Download className="h-5 w-5" /> Export Data
+                <Download className="h-4 w-4" /> Export Data
             </Button>
-            <Button className="rounded-2xl h-14 px-8 font-black shadow-xl shadow-red-500/10 flex items-center gap-3 bg-[#ED1C24] text-white">
-                <Plus className="h-5 w-5" /> Create Custom View
+            <Button className="rounded-xl h-11 px-6 font-black flex items-center gap-2 bg-[#ED1C24] text-white text-[10px] uppercase tracking-widest">
+                <Plus className="h-4 w-4" /> Create View
             </Button>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-[28px] w-fit shadow-inner">
+      <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-2xl w-fit shadow-inner">
         {[
           { id: "MEMBERS", label: "Members", icon: Users },
           { id: "VOLUNTEERS", label: "Volunteers", icon: HandHeart },
@@ -242,51 +242,51 @@ export default function ReportsPage() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabType)}
             className={cn(
-              "flex items-center gap-3 px-8 py-4 rounded-[22px] font-black text-sm uppercase tracking-widest transition-all",
+              "flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
               activeTab === tab.id 
-                ? "bg-white text-black shadow-lg shadow-black/5 scale-[1.02]" 
-                : "text-gray-400 hover:text-gray-600 hover:bg-white/50"
+                ? "bg-white text-black shadow-md shadow-black/5" 
+                : "text-gray-400 hover:text-black"
             )}
           >
-            <tab.icon className={cn("h-4 w-4", activeTab === tab.id ? "text-[#ED1C24]" : "")} />
+            <tab.icon className={cn("h-3.5 w-3.5", activeTab === tab.id ? "text-[#ED1C24]" : "")} />
             {tab.label}
           </button>
         ))}
       </div>
 
       {/* Advanced Filters */}
-      <div className="space-y-6 p-8 bg-white border border-gray-100 rounded-[40px] shadow-sm">
-         <div className="grid lg:grid-cols-4 gap-6">
-            <div className="space-y-1.5 flex-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 flex items-center gap-2">
-                    <Calendar className="h-3 w-3" /> Start Date
+      <div className="space-y-4 p-6 bg-white border-2 border-black rounded-[32px] shadow-sm">
+         <div className="grid lg:grid-cols-4 gap-4">
+            <div className="space-y-1 flex-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-black ml-1 flex items-center gap-2">
+                    <Calendar className="h-3 w-3 text-[#ED1C24]" /> Start Date
                 </label>
                 <Input 
                     type="date" 
                     value={dateFrom}
                     onChange={(e) => setDateFrom(e.target.value)}
-                    className="h-12 bg-gray-50 border-none rounded-xl font-bold focus:ring-2 focus:ring-[#ED1C24]/10"
+                    className="h-10 bg-white border-2 border-gray-100 rounded-xl font-bold text-black focus:border-[#ED1C24] focus:ring-4 focus:ring-[#ED1C24]/10 transition-all outline-none"
                 />
             </div>
-            <div className="space-y-1.5 flex-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 flex items-center gap-2">
-                    <Calendar className="h-3 w-3" /> End Date
+            <div className="space-y-1 flex-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-black ml-1 flex items-center gap-2">
+                    <Calendar className="h-3 w-3 text-[#ED1C24]" /> End Date
                 </label>
                 <Input 
                     type="date" 
                     value={dateTo}
                     onChange={(e) => setDateTo(e.target.value)}
-                    className="h-12 bg-gray-50 border-none rounded-xl font-bold focus:ring-2 focus:ring-[#ED1C24]/10"
+                    className="h-10 bg-white border-2 border-gray-100 rounded-xl font-bold text-black focus:border-[#ED1C24] focus:ring-4 focus:ring-[#ED1C24]/10 transition-all outline-none"
                 />
             </div>
-            <div className="space-y-1.5 flex-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 flex items-center gap-2">
-                    <MapPin className="h-3 w-3" /> Filter by Region
+            <div className="space-y-1 flex-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-black ml-1 flex items-center gap-2">
+                    <MapPin className="h-3 w-3 text-[#ED1C24]" /> Region
                 </label>
                 <select 
                     value={regionFilter}
                     onChange={(e) => setRegionFilter(e.target.value)}
-                    className="h-12 w-full bg-gray-50 border-none rounded-xl font-bold px-4 focus:ring-2 focus:ring-[#ED1C24]/10 outline-none appearance-none"
+                    className="h-10 w-full bg-white border-2 border-gray-100 rounded-xl font-bold px-4 focus:border-[#ED1C24] focus:ring-4 focus:ring-[#ED1C24]/10 outline-none appearance-none transition-all text-sm"
                 >
                     <option value="">All Regions</option>
                     {regions.map(r => (
@@ -294,15 +294,15 @@ export default function ReportsPage() {
                     ))}
                 </select>
             </div>
-            <div className="space-y-1.5 flex-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2 flex items-center gap-2">
-                    {activeTab === "MEMBERS" ? <Users className="h-3 w-3" /> : activeTab === "VOLUNTEERS" ? <HandHeart className="h-3 w-3" /> : <Building2 className="h-3 w-3" />} 
-                    Category / Type
+            <div className="space-y-1 flex-1">
+                <label className="text-[9px] font-black uppercase tracking-widest text-black ml-1 flex items-center gap-2">
+                    {activeTab === "MEMBERS" ? <Users className="h-3 w-3 text-[#ED1C24]" /> : activeTab === "VOLUNTEERS" ? <HandHeart className="h-3 w-3 text-[#ED1C24]" /> : <Building2 className="h-3 w-3 text-[#ED1C24]" />} 
+                    Category
                 </label>
                 <select 
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="h-12 w-full bg-gray-50 border-none rounded-xl font-bold px-4 focus:ring-2 focus:ring-[#ED1C24]/10 outline-none appearance-none"
+                    className="h-10 w-full bg-white border-2 border-gray-100 rounded-xl font-bold px-4 focus:border-[#ED1C24] focus:ring-4 focus:ring-[#ED1C24]/10 outline-none appearance-none transition-all text-sm"
                 >
                     {activeTab === "MEMBERS" && (
                         <>
@@ -333,18 +333,18 @@ export default function ReportsPage() {
             </div>
          </div>
          
-         <div className="flex items-center justify-between border-t border-gray-50 pt-6">
-            <div className="relative w-full max-w-md">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+         <div className="flex items-center justify-between border-t border-gray-50 pt-4">
+            <div className="relative w-full max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#ED1C24]" />
                 <Input 
-                    placeholder="Search by ID, Name or Record Reference..."
-                    className="h-12 pl-12 bg-gray-50 border-none rounded-xl font-bold text-sm"
+                    placeholder="Search Records..."
+                    className="h-10 pl-10 bg-white border-2 border-black rounded-xl font-bold text-xs"
                 />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
                 <Button 
                     variant="ghost" 
-                    className="h-12 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest text-gray-400 hover:text-black"
+                    className="h-10 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest text-gray-400 hover:text-black"
                     onClick={() => {
                         setDateFrom("");
                         setDateTo("");
@@ -352,13 +352,13 @@ export default function ReportsPage() {
                         setStatusFilter("");
                     }}
                 >
-                    Clear All
+                    Reset
                 </Button>
                 <Button 
                     onClick={fetchStats}
-                    className="h-12 px-8 bg-black text-white hover:bg-[#ED1C24] rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all"
+                    className="h-10 px-6 bg-black text-white hover:bg-[#ED1C24] rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg shadow-black/10"
                 >
-                    <Filter className="h-4 w-4" /> Apply Global Filters
+                    <Filter className="h-3.5 w-3.5" /> Apply
                 </Button>
             </div>
          </div>
@@ -372,23 +372,22 @@ export default function ReportsPage() {
              <p className="text-xs font-black uppercase tracking-widest text-gray-400">Compiling Analytical Data...</p>
         </div>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-6">
             {/* Visual Charts Grid */}
-            <div className="grid lg:grid-cols-2 gap-8">
+            <div className="grid lg:grid-cols-2 gap-6">
                 
                 {/* Chart 1: Distribution */}
-                <div className="bg-white p-10 rounded-[48px] border border-gray-100/50 shadow-xl overflow-hidden relative">
-                    <div className="flex items-center justify-between mb-10">
+                <div className="bg-white p-6 rounded-[32px] border-2 border-gray-100 shadow-xl overflow-hidden relative">
+                    <div className="flex items-center justify-between mb-6">
                         <div className="space-y-1">
-                            <h3 className="text-2xl font-black text-black tracking-tight uppercase italic">{activeTab} Composition</h3>
-                            <p className="text-xs font-medium text-gray-400">Hierarchical breakdown by {activeTab === "MEMBERS" ? "membership Type" : activeTab === "VOLUNTEERS" ? "skill proficiency" : "organization category"}.</p>
+                            <h3 className="text-xl font-black text-black tracking-tight uppercase">{activeTab} Distribution</h3>
                         </div>
-                        <div className="h-12 w-12 rounded-2xl bg-gray-50 flex items-center justify-center">
-                            <ArrowUpRight className="h-5 w-5 text-gray-400" />
+                        <div className="h-10 w-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                            <ArrowUpRight className="h-4 w-4 text-gray-400" />
                         </div>
                     </div>
                     
-                    <div className="h-[300px] w-full">
+                    <div className="h-[240px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             {activeTab === "MEMBERS" ? (
                                 <PieChart>
@@ -439,18 +438,17 @@ export default function ReportsPage() {
                 </div>
 
                 {/* Chart 2: Status / Growth */}
-                <div className="bg-black p-10 rounded-[48px] shadow-2xl overflow-hidden relative text-white">
-                    <div className="flex items-center justify-between mb-10">
+                <div className="bg-black p-6 rounded-[32px] shadow-2xl overflow-hidden relative text-white">
+                    <div className="flex items-center justify-between mb-6">
                         <div className="space-y-1">
-                            <h3 className="text-2xl font-black text-white tracking-tight uppercase italic">{activeTab} Health Sync</h3>
-                            <p className="text-xs font-medium text-gray-500">Real-time status tracking and validation metrics.</p>
+                            <h3 className="text-xl font-black text-white tracking-tight uppercase">{activeTab} Trends</h3>
                         </div>
-                        <div className="bg-white/10 p-3 rounded-2xl">
-                             <RefreshCcw className="h-5 w-5 text-red-500" />
+                        <div className="bg-white/10 p-2.5 rounded-xl">
+                             <RefreshCcw className="h-4 w-4 text-red-500" />
                         </div>
                     </div>
 
-                    <div className="h-[300px] w-full">
+                    <div className="h-[240px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             {activeTab === "MEMBERS" ? (
                                 <LineChart data={memberStats.growth}>
@@ -477,57 +475,46 @@ export default function ReportsPage() {
             </div>
 
             {/* List Preview Section */}
-            <div className="bg-white rounded-[48px] border border-gray-100 shadow-xl overflow-hidden">
-                <div className="p-10 border-b border-gray-50 flex items-center justify-between">
-                    <div>
-                        <h3 className="text-3xl font-black text-black tracking-tighter uppercase italic">Raw Data Subset</h3>
-                        <p className="text-sm font-medium text-gray-400 mt-1">Full filtered list view for manual auditing and granular inspection.</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <select className="h-11 px-4 rounded-xl bg-gray-50 border-none font-bold text-xs uppercase tracking-widest outline-none">
-                            <option>Showing 10 of 1,240</option>
-                            <option>Showing 50</option>
-                            <option>All Data</option>
-                        </select>
-                        <Button variant="outline" className="h-11 rounded-xl px-5 font-black text-[10px] uppercase tracking-widest border-gray-200">
-                           <FileText className="h-4 w-4 mr-2" /> Summary Report
+            <div className="bg-white rounded-[32px] border-2 border-black shadow-xl overflow-hidden">
+                <div className="p-6 border-b-2 border-black flex items-center justify-between bg-white">
+                    <h3 className="text-lg font-black text-black tracking-tighter uppercase italic">Reports Listing</h3>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" className="h-9 rounded-lg px-4 font-black text-[9px] uppercase tracking-widest border-2 border-black">
+                           <FileText className="h-3.5 w-3.5 mr-2" /> Quick Summary
                         </Button>
                     </div>
                 </div>
 
-                <div className="p-4 overflow-x-auto">
+                <div className="p-0 overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="border-b border-gray-50">
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400">Primary ID</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400">Identity / Name</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400">Metric 01</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400">Metric 02</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400">Status</th>
-                                <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Actions</th>
+                            <tr className="border-b-2 border-gray-100">
+                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400">ID</th>
+                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400">Identity</th>
+                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400">Metric 01</th>
+                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400">Metric 02</th>
+                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400">Status</th>
+                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400 text-right pr-10">Audit</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {[1, 2, 3, 4, 5].map((item) => (
-                                <tr key={item} className="hover:bg-gray-50 transition-colors group">
-                                    <td className="px-6 py-6 font-black text-xs text-black">ERCS-ADM-{1000 + item}</td>
-                                    <td className="px-6 py-6">
+                                <tr key={item} className="hover:bg-[#ED1C24]/5 transition-colors group">
+                                    <td className="px-6 py-4 font-black text-[11px] text-black">ERCS-{1000 + item}</td>
+                                    <td className="px-6 py-4">
                                         <div className="flex flex-col">
-                                            <span className="font-bold text-sm">Sample Record {item}</span>
-                                            <span className="text-[10px] font-medium text-gray-400">Updated 2h ago</span>
+                                            <span className="font-bold text-xs">Sample Record {item}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-6 font-bold text-xs text-gray-500">Regional HQ</td>
-                                    <td className="px-6 py-6 font-bold text-xs text-gray-500">{activeTab === "MEMBERS" ? "Individual" : activeTab === "VOLUNTEERS" ? "Verified" : "Corporate"}</td>
-                                    <td className="px-6 py-6">
-                                        <div className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest inline-block border border-green-100">
+                                    <td className="px-6 py-4 font-bold text-[11px] text-gray-500">HQ-Region</td>
+                                    <td className="px-6 py-4 font-bold text-[11px] text-gray-500">{activeTab === "MEMBERS" ? "Individual" : "Verified"}</td>
+                                    <td className="px-6 py-4">
+                                        <div className="px-2 py-0.5 bg-green-50 text-green-600 rounded-md text-[9px] font-black uppercase tracking-widest inline-block border border-green-200">
                                             Active
                                         </div>
                                     </td>
-                                    <td className="px-6 py-6 text-right">
-                                        <Button variant="ghost" className="h-10 w-10 p-0 rounded-xl hover:bg-white border border-transparent hover:border-gray-200">
-                                            <ArrowUpRight className="h-4 w-4" />
-                                        </Button>
+                                    <td className="px-6 py-4 text-right pr-10">
+                                        <ArrowUpRight className="h-4 w-4 ml-auto text-gray-300 group-hover:text-black transition-colors" />
                                     </td>
                                 </tr>
                             ))}
@@ -535,13 +522,22 @@ export default function ReportsPage() {
                     </table>
                 </div>
 
-                <div className="px-10 py-6 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
-                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest select-none underline decoration-[#ED1C24] decoration-2 underline-offset-4 pointer-events-none">
-                        Audit Trail: Active Session
+                {/* Pagination UI */}
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        Page 1 of 124
                      </p>
-                     <Button variant="ghost" className="font-black text-[10px] uppercase tracking-widest text-[#ED1C24] hover:bg-white">
-                        View Full Dataset <ChevronDown className="h-4 w-4 ml-2" />
-                     </Button>
+                     <div className="flex items-center gap-1">
+                        <Button variant="outline" className="h-8 w-8 p-0 rounded-lg border-gray-200 bg-white">
+                            <span className="rotate-180">➤</span>
+                        </Button>
+                        <div className="flex items-center px-3 h-8 bg-black text-white rounded-lg font-black text-[10px]">1</div>
+                        <div className="flex items-center px-3 h-8 hover:bg-white rounded-lg font-black text-[10px] cursor-pointer">2</div>
+                        <div className="flex items-center px-3 h-8 hover:bg-white rounded-lg font-black text-[10px] cursor-pointer">3</div>
+                        <Button variant="outline" className="h-8 w-8 p-0 rounded-lg border-gray-200 bg-white">
+                            <span>➤</span>
+                        </Button>
+                     </div>
                 </div>
             </div>
         </div>

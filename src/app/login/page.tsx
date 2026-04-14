@@ -144,7 +144,7 @@ export default function LoginPage() {
         >
           <div className="bg-white p-8 md:p-12 rounded-[48px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col">
             <div className="lg:hidden flex justify-center mb-8">
-               <Image src="/logo.jpg" alt="ERCS Logo" width={80} height={80} className="object-contain" />
+               <Image src="/logo.jpg" alt="ERCS Logo" width={80} height={80} className="object-contain" unoptimized />
             </div>
 
             <div className="space-y-2 mb-10 text-center lg:text-left">

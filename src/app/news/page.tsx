@@ -103,6 +103,7 @@ export default function NewsPage() {
                 width={40} 
                 height={40} 
                 className="object-contain transition-transform duration-500 group-hover:scale-110" 
+                unoptimized
               />
             </div>
             <div className="flex flex-col">
@@ -124,6 +125,7 @@ export default function NewsPage() {
             alt="News Banner"
             fill
             className="object-cover"
+            unoptimized
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-slate-900" />
@@ -196,6 +198,7 @@ export default function NewsPage() {
                     alt={article.title}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    unoptimized
                   />
                   <div className="absolute top-4 left-4">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white ${article.color}`}>

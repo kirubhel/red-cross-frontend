@@ -159,6 +159,7 @@ export default function OrganizationsPage() {
                 width={40} 
                 height={40} 
                 className="object-contain transition-transform duration-500 group-hover:scale-110" 
+                unoptimized
               />
             </div>
             <div className="flex flex-col">

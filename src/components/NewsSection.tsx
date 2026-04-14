@@ -105,6 +105,7 @@ export default function NewsSection({ lang, content }: NewsSectionProps) {
                     alt={post.title}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    unoptimized
                   />
                   <div className="absolute top-6 left-6">
                     <span className={`${post.color} text-white text-[10px] font-black uppercase tracking-wider px-4 py-2 rounded-full`}>

@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload } from "lucide-react";
+import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
@@ -170,12 +170,15 @@ export default function MembersPage() {
         const genderOptions = ["MALE", "FEMALE"];
         genderOptions.forEach((opt, i) => helperSheet.getCell(`C${i+1}`).value = opt);
 
-        // Apply column widths
+        // Apply column widths and formats
         worksheet.columns = [
             { width: 20 }, { width: 20 }, { width: 20 }, { width: 25 }, 
             { width: 20 }, { width: 15 }, { width: 25 }, { width: 12 }, 
             { width: 30 }, { width: 25 }
         ];
+
+        // Ensure Date of Birth column (G) is treated as text to avoid Excel date auto-formatting issues
+        worksheet.getColumn(7).numFmt = '@'; 
 
         // Apply Data Validation
         const rowCount = 500; // Apply to first 500 rows
@@ -238,120 +241,113 @@ export default function MembersPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const normalizeDate = (val: any) => {
+      if (!val) return "";
+      if (val instanceof Date) return val.toISOString().split('T')[0];
+      const s = String(val).trim();
+      if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(s)) {
+        const [d, m, y] = s.split('-');
+        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+      }
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+        const [d, m, y] = s.split('/');
+        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+      }
+      return s;
+    };
+
     if (file.name.endsWith('.xlsx')) {
-        toast.loading("Parsing Excel and importing members...");
+        toast.loading("Parsing Excel...");
         try {
             const ExcelJS = (await import("exceljs")).default;
             const reader = new FileReader();
             reader.onload = async (event) => {
-                const buffer = event.target?.result as ArrayBuffer;
-                const workbook = new ExcelJS.Workbook();
-                await workbook.xlsx.load(buffer);
-                const worksheet = workbook.getWorksheet(1);
-                
-                const people: any[] = [];
-                worksheet?.eachRow((row, rowNumber) => {
-                    if (rowNumber === 1) return; // Skip headers
-                    
-                    const firstName = row.getCell(1).text;
-                    const fatherName = row.getCell(2).text;
-                    const grandfatherName = row.getCell(3).text;
-                    const email = row.getCell(4).text;
-                    const phoneNumber = row.getCell(5).text;
-                    const nationalId = row.getCell(6).text;
-                    const dob = row.getCell(7).text;
-                    const gender = row.getCell(8).text;
-                    const regionRaw = row.getCell(9).text;
-                    const type = row.getCell(10).text;
-
-                    if (!firstName || firstName.trim() === "") return;
-
-                    people.push({
-                        first_name: firstName,
-                        father_name: fatherName,
-                        grandfather_name: grandfatherName,
-                        email: email,
-                        phone_number: String(phoneNumber || ""),
-                        national_id: String(nationalId || ""),
-                        date_of_birth: dob,
-                        gender: gender,
-                        region: parseInt(regionRaw) || 1,
-                        membership_type: type
-                    });
-                });
-
-                if (people.length === 0) {
-                    toast.dismiss();
-                    toast.error("No valid member data found in Excel.");
-                    return;
-                }
-
                 try {
+                    const buffer = event.target?.result as ArrayBuffer;
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.load(buffer);
+                    const worksheet = workbook.getWorksheet(1);
+                    
+                    const people: any[] = [];
+                    worksheet?.eachRow((row, rowNumber) => {
+                        if (rowNumber === 1) return;
+                        const firstName = row.getCell(1).text;
+                        if (!firstName || firstName.trim() === "") return;
+
+                        people.push({
+                            first_name: firstName,
+                            father_name: row.getCell(2).text,
+                            grandfather_name: row.getCell(3).text,
+                            email: row.getCell(4).text,
+                            phone_number: String(row.getCell(5).text || ""),
+                            national_id: String(row.getCell(6).text || ""),
+                            date_of_birth: normalizeDate(row.getCell(7).value),
+                            gender: row.getCell(8).text,
+                            region: parseInt(row.getCell(9).text) || 1,
+                            membership_type: row.getCell(10).text,
+                            metadata: "{}" // Important: Prevents JSONB DB error
+                        });
+                    });
+
+                    if (people.length === 0) {
+                        toast.dismiss();
+                        toast.error("No valid data found.");
+                        return;
+                    }
+
                     const res = await api.post("/person/bulk", people);
                     toast.dismiss();
                     const successCount = res.data.filter((r: any) => r.success).length;
                     const failCount = res.data.length - successCount;
-                    
-                    if (failCount === 0) {
-                        toast.success(`Successfully imported all ${successCount} members!`);
-                    } else {
-                        toast.warning(`Imported ${successCount} members. ${failCount} rows failed.`);
-                    }
+                    if (failCount === 0) toast.success(`Imported all ${successCount} members.`);
+                    else toast.warning(`Imported ${successCount}. ${failCount} failed.`);
                     fetchMembers();
                 } catch (err) {
                     toast.dismiss();
-                    toast.error("Failed to process bulk import. Check network connection.");
+                    toast.error("Failed to process Excel data.");
                 }
             };
             reader.readAsArrayBuffer(file);
         } catch (err) {
             toast.dismiss();
-            toast.error("Failed to load Excel parser.");
+            toast.error("Excel parser error.");
         }
     } else {
-        // Legacy CSV support
-        toast.loading("Parsing CSV and importing members...");
+        toast.loading("Parsing CSV...");
         const reader = new FileReader();
         reader.onload = async (event) => {
-            const text = event.target?.result as string;
-            const rows = text.split("\n").slice(1).filter(r => r.trim());
-            
-            const people = rows.map(row => {
-                const [firstName, fatherName, grandfatherName, email, phoneNumber, nationalId, dob, gender, region, type] = row.split(",").map(c => c.trim());
-                return {
-                    first_name: firstName,
-                    father_name: fatherName,
-                    grandfather_name: grandfatherName,
-                    email: email,
-                    phone_number: phoneNumber,
-                    national_id: nationalId,
-                    date_of_birth: dob,
-                    gender: gender,
-                    region: parseInt(region) || 1,
-                    membership_type: type
-                };
-            });
-
             try {
+                const text = event.target?.result as string;
+                const rows = text.split("\n").slice(1).filter(r => r.trim());
+                const people = rows.map(row => {
+                    const [fn, fat, gfat, em, ph, ni, dob, gen, reg, typ] = row.split(",").map(c => c.trim());
+                    return {
+                        first_name: fn,
+                        father_name: fat,
+                        grandfather_name: gfat,
+                        email: em,
+                        phone_number: ph,
+                        national_id: ni,
+                        date_of_birth: dob,
+                        gender: gen,
+                        region: parseInt(reg) || 1,
+                        membership_type: typ,
+                        metadata: "{}"
+                    };
+                });
                 const res = await api.post("/person/bulk", people);
                 toast.dismiss();
                 const successCount = res.data.filter((r: any) => r.success).length;
-                const failCount = res.data.length - successCount;
-                
-                if (failCount === 0) {
-                    toast.success(`Successfully imported all ${successCount} members!`);
-                } else {
-                    toast.warning(`Imported ${successCount} members. ${failCount} rows failed.`);
-                }
+                if (successCount === res.data.length) toast.success(`Imported all ${successCount} members.`);
+                else toast.warning(`Partial success: ${successCount}/${res.data.length}`);
                 fetchMembers();
             } catch (err) {
                 toast.dismiss();
-                toast.error("Failed to process bulk import. Check your connection.");
+                toast.error("Bulk import failed.");
             }
         };
         reader.readAsText(file);
     }
-    // Reset input
     e.target.value = "";
   };
 
@@ -375,31 +371,31 @@ export default function MembersPage() {
   };
 
   return (
-    <div className="space-y-10 print:p-0">
+    <div className="space-y-6 print:p-0">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 print:hidden">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-widest leading-none">
-            <Users className="h-3.5 w-3.5" /> Registry
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
+            <Users className="h-3 w-3" /> Registry
           </div>
-          <h1 className="text-5xl font-black text-black tracking-tighter text-balance">Member Directory</h1>
-          <p className="text-gray-500 font-medium text-lg">Manage all registered members, hierarchy, and status across all regions.</p>
+          <h1 className="text-3xl font-black text-black tracking-tighter">Member Directory</h1>
+          <p className="text-gray-500 font-medium text-sm">Manage hierarchy and status across all regions.</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
             <Button 
                 onClick={downloadTemplate}
                 variant="outline" 
-                className="rounded-2xl h-14 px-6 font-black border-gray-200 flex items-center gap-2 shadow-sm"
+                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest"
             >
-                <Download className="h-5 w-5" /> Template
+                <Download className="h-4 w-4" /> Template
             </Button>
             <Button 
                 onClick={exportToCSV}
                 variant="outline" 
-                className="rounded-2xl h-14 px-6 font-black border-gray-200 flex items-center gap-2 shadow-sm"
+                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest"
             >
-                <TableIcon className="h-5 w-5" /> Export CSV
+                <TableIcon className="h-4 w-4" /> CSV
             </Button>
             <div className="relative">
                 <Input 
@@ -410,173 +406,158 @@ export default function MembersPage() {
                 />
                 <Button 
                     variant="outline" 
-                    className="rounded-2xl h-14 px-6 font-black border-gray-200 flex items-center gap-2 shadow-sm"
+                    className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest"
                 >
-                    <Upload className="h-5 w-5" /> Import
+                    <Upload className="h-4 w-4" /> Import
                 </Button>
             </div>
             <Button 
                 onClick={exportToPDF}
                 variant="outline" 
-                className="rounded-2xl h-14 px-6 font-black border-gray-200 flex items-center gap-2 shadow-sm"
+                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest"
             >
-                <FileText className="h-5 w-5" /> Export PDF
+                <FileText className="h-4 w-4" /> PDF
             </Button>
-            <Button className="rounded-2xl h-14 px-8 font-black shadow-xl shadow-red-500/10 flex items-center gap-2">
-                <Plus className="h-5 w-5" /> Add New Member
+            <Button className="rounded-xl h-10 px-6 font-black shadow-xl shadow-red-500/10 flex items-center gap-2 bg-[#ED1C24] text-white text-[10px] uppercase tracking-widest">
+                <Plus className="h-4 w-4" /> Add Member
             </Button>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 print:hidden">
-        <div className="flex w-full items-center justify-between gap-4">
-            <div className="relative w-full max-w-md">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="flex flex-col gap-3 print:hidden">
+        <div className="flex w-full items-center justify-between gap-3">
+            <div className="relative w-full max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#ED1C24]" />
                 <Input
-                placeholder="Search by name, ERCS ID, or Phone..."
+                placeholder="Search Identity..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-14 pl-12 bg-black text-white border-none rounded-2xl font-bold text-lg focus:ring-2 focus:ring-[#ED1C24]/10 transition-all shadow-xl"
+                className="h-10 pl-10 bg-black text-white border-2 border-black rounded-xl font-black text-xs focus:ring-4 focus:ring-[#ED1C24]/10 transition-all shadow-lg"
                 />
             </div>
 
             <Button 
                 onClick={() => setShowFilters(!showFilters)}
                 variant={showFilters ? "default" : "outline"}
-                className={`h-14 px-8 rounded-2xl font-black transition-all flex items-center gap-2 ${showFilters ? 'bg-black text-white' : 'border-gray-200'}`}
+                className={`h-10 px-6 rounded-xl font-black transition-all flex items-center gap-2 text-[10px] uppercase tracking-widest ${showFilters ? 'bg-black text-white' : 'border-gray-200'}`}
             >
-                <Filter className="h-5 w-5" /> 
-                {showFilters ? 'Hide Filters' : 'Advanced Filters'}
+                <Filter className="h-4 w-4" /> 
+                {showFilters ? 'Hide' : 'Filters'}
             </Button>
         </div>
 
         {showFilters && (
-            <div className="space-y-6 p-8 bg-gray-50 rounded-[32px] border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-4 p-6 bg-gray-50 rounded-[28px] border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
                 {/* Master Category Row */}
-                <div className="grid md:grid-cols-4 gap-6 pb-6 border-b border-gray-100">
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Category Group</label>
+                <div className="grid md:grid-cols-4 gap-4 pb-4 border-b border-gray-200/50">
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Category</label>
                         <select 
                             value={mainCategory}
                             onChange={(e) => { setMainCategory(e.target.value); setTypeFilter(""); }}
-                            className="w-full h-12 px-4 rounded-xl bg-white border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/10 outline-none"
+                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
                         >
-                            <option value="">All Categories</option>
-                            <option value="INDIVIDUAL">Individual Member</option>
-                            <option value="CORPORATE">Corporate Member</option>
+                            <option value="" className="bg-black text-white">All Groups</option>
+                            <option value="INDIVIDUAL" className="bg-black text-white">Individual</option>
+                            <option value="CORPORATE" className="bg-black text-white">Corporate</option>
                         </select>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Sub-Category / Type</label>
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Type</label>
                         <select 
                             value={typeFilter}
                             onChange={(e) => setTypeFilter(e.target.value)}
                             disabled={!mainCategory}
-                            className="w-full h-12 px-4 rounded-xl bg-white border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/10 outline-none disabled:opacity-50"
+                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-20 disabled:cursor-not-allowed appearance-none cursor-pointer"
                         >
-                            <option value="">Choose Sub...</option>
+                            <option value="">Sub-Type...</option>
                             {mainCategory === 'INDIVIDUAL' && (
                                 <>
-                                    <option value="ANNUAL">Annual Member</option>
-                                    <option value="LIFE">Lifetime Supporter</option>
-                                    <option value="YOUTH">Youth Member</option>
+                                    <option value="ANNUAL">Annual</option>
+                                    <option value="LIFE">Lifetime</option>
+                                    <option value="YOUTH">Youth</option>
                                 </>
                             )}
                             {mainCategory === 'CORPORATE' && (
                                 <>
-                                    <option value="SILVER">Silver Partner</option>
-                                    <option value="GOLD">Gold Partner</option>
-                                    <option value="PLATINUM">Platinum Partner</option>
+                                    <option value="SILVER">Silver</option>
+                                    <option value="GOLD">Gold</option>
+                                    <option value="PLATINUM">Platinum</option>
                                 </>
                             )}
                         </select>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Membership Status</label>
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Status</label>
                         <select 
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full h-12 px-4 rounded-xl bg-white border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/10 outline-none"
+                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
                         >
-                            <option value="">All Statuses</option>
-                            <option value="ACTIVE">Active</option>
-                            <option value="INACTIVE">Inactive</option>
-                            <option value="EXPIRED">Expired</option>
-                            <option value="PENDING">Pending Approval</option>
+                            <option value="" className="bg-black text-white">All Status</option>
+                            <option value="ACTIVE" className="bg-black text-white">Active</option>
+                            <option value="INACTIVE" className="bg-black text-white">Inactive</option>
+                            <option value="EXPIRED" className="bg-black text-white">Expired</option>
+                            <option value="PENDING" className="bg-black text-white">Pending</option>
                         </select>
                     </div>
                 </div>
 
                 {/* Regional Hierarchy Row */}
-                <div className="grid md:grid-cols-4 gap-6 items-end">
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Region</label>
+                <div className="grid md:grid-cols-4 gap-4 items-end">
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Region</label>
                         <select 
                             value={regionFilter}
                             onChange={(e) => { setRegionFilter(e.target.value); setZoneFilter(""); setWoredaFilter(""); }}
-                            className="w-full h-12 px-4 rounded-xl bg-white border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/10 outline-none"
+                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
                         >
-                            <option value="">All Regions</option>
-                            {regions.map(r => (
-                                <option key={r.id} value={r.id}>{r.name}</option>
-                            ))}
+                             <option value="" className="bg-black text-white">All Regions</option>
+                             {regions.map(r => (
+                                 <option key={r.id} value={r.id} className="bg-black text-white">{r.name}</option>
+                             ))}
                         </select>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Zone / Sub-City</label>
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Zone</label>
                         <select 
                             value={zoneFilter}
                             onChange={(e) => { setZoneFilter(e.target.value); setWoredaFilter(""); }}
                             disabled={!regionFilter}
-                            className="w-full h-12 px-4 rounded-xl bg-white border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/10 outline-none disabled:opacity-50"
+                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-20 disabled:cursor-not-allowed appearance-none cursor-pointer"
                         >
                             <option value="">Select Zone...</option>
-                            {regionFilter === "1" && ( /* Addis Ababa Mock */
+                            {regionFilter === "1" && ( 
                                 <>
-                                    <option value="addis-ketema">Addis Ketema</option>
-                                    <option value="arada">Arada</option>
                                     <option value="bole">Bole</option>
-                                    <option value="kirkos">Kirkos</option>
+                                    <option value="arada">Arada</option>
                                 </>
-                            )}
-                            {regionFilter && regionFilter !== "1" && (
-                                <option value="default-zone">Zone 01</option>
                             )}
                         </select>
                     </div>
 
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Woreda / Kebele</label>
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Woreda</label>
                         <select 
                             value={woredaFilter}
                             onChange={(e) => setWoredaFilter(e.target.value)}
                             disabled={!zoneFilter}
-                            className="w-full h-12 px-4 rounded-xl bg-white border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/10 outline-none disabled:opacity-50"
+                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-20 disabled:cursor-not-allowed appearance-none cursor-pointer"
                         >
-                            <option value="">Select Woreda...</option>
-                            {zoneFilter === "arada" && (
-                                <>
-                                    <option value="woreda-01">Woreda 01</option>
-                                    <option value="woreda-02">Woreda 02</option>
-                                    <option value="woreda-03">Woreda 03</option>
-                                </>
-                            )}
-                            {zoneFilter && zoneFilter !== "arada" && (
-                                <option value="default-woreda">Woreda 01</option>
-                            )}
+                            <option value="">Select...</option>
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-2 pb-0.5">
+                    <div className="flex items-center gap-2">
                         <Button 
                             onClick={resetFilters}
                             variant="ghost" 
-                            className="h-12 flex-1 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest text-gray-400 hover:text-[#ED1C24] hover:bg-white border border-transparent hover:border-red-100"
+                            className="h-10 flex-1 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-gray-400 hover:text-[#ED1C24] hover:bg-white transition-all"
                         >
-                            <X className="h-4 w-4 mr-2" /> Reset All
+                            <X className="h-3.5 w-3.5 mr-1" /> Reset
                         </Button>
                     </div>
                 </div>
@@ -584,25 +565,25 @@ export default function MembersPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-[40px] border border-gray-100 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] overflow-hidden print:shadow-none print:border-none print:rounded-none">
+      <div className="bg-white rounded-[32px] border border-gray-100 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.03)] overflow-hidden print:shadow-none print:border-none print:rounded-none">
         <Table>
           <TableHeader className="bg-gray-50/50 print:bg-transparent">
             <TableRow className="hover:bg-transparent border-gray-50">
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">ERCS ID</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Full Name</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Region</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Category</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Status</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black text-right print:hidden">Actions</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">ID</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Full Identity</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Region</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Category</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Status</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40 text-right print:hidden">Audit</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-64 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-4">
-                     <div className="h-10 w-10 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
-                     <p className="text-xs font-black uppercase tracking-widest text-gray-400">Syncing Registry...</p>
+                <TableCell colSpan={6} className="h-48 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-3">
+                     <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
+                     <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Syncing Registry...</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -614,39 +595,36 @@ export default function MembersPage() {
               </TableRow>
             ) : (
               members.map((member) => (
-                <TableRow key={member.id} className="hover:bg-gray-50/50 transition-colors border-gray-50">
-                  <TableCell className="px-8 py-6 font-black text-black text-xs">{member.ercs_id}</TableCell>
-                  <TableCell className="px-8 py-6">
+                <TableRow key={member.id} className="hover:bg-[#ED1C24]/5 transition-colors border-gray-50">
+                  <TableCell className="px-6 py-4 font-black text-black text-[11px]">{member.ercs_id}</TableCell>
+                  <TableCell className="px-6 py-4">
                     <div className="flex flex-col">
-                        <span className="font-bold text-gray-900">{member.first_name} {member.father_name}</span>
-                        <span className="text-[10px] text-gray-400 font-medium tracking-tight">Reg ID: {member.id.split('-')[0]}</span>
+                        <span className="font-bold text-gray-900 text-xs">{member.first_name} {member.father_name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-8 py-6 font-black text-[10px] uppercase tracking-wider text-gray-400">
+                  <TableCell className="px-6 py-4 font-black text-[9px] uppercase tracking-wider text-gray-400">
                     {regions.find(r => String(r.id) === String(member.region_id))?.name || 'N/A'}
                   </TableCell>
-                  <TableCell className="px-8 py-6 font-bold text-xs text-gray-500">{member.membership_type || "N/A"}</TableCell>
+                  <TableCell className="px-6 py-4 font-bold text-[11px] text-gray-500">{member.membership_type || "N/A"}</TableCell>
 
-                  <TableCell className="px-8 py-6">
+                  <TableCell className="px-6 py-4">
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest",
+                        "inline-flex items-center rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-widest",
                         member.status === "ACTIVE" || !member.status
-                          ? "bg-[#ECFDF5] text-[#065F46] border border-[#10B981]/10"
+                          ? "bg-green-50 text-green-600 border border-green-200"
                           : member.status === "INACTIVE"
                           ? "bg-gray-100 text-gray-500 border border-gray-200"
                           : member.status === "EXPIRED"
-                          ? "bg-[#FEF2F2] text-[#ED1C24] border border-[#ED1C24]/10"
-                          : "bg-[#FFFBEB] text-[#92400E] border border-[#F59E0B]/10"
+                          ? "bg-red-50 text-[#ED1C24] border border-red-200"
+                          : "bg-amber-50 text-amber-600 border border-amber-200"
                       )}
                     >
                       {member.status || "ACTIVE"}
                     </span>
                   </TableCell>
-                  <TableCell className="px-8 py-6 text-right print:hidden">
-                    <Button variant="ghost" className="h-10 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-gray-50 underline-offset-4 shadow-sm border border-gray-100">
-                      View Profile
-                    </Button>
+                  <TableCell className="px-6 py-4 text-right print:hidden">
+                    <ArrowUpRight className="h-4 w-4 ml-auto text-gray-300 group-hover:text-black transition-colors" />
                   </TableCell>
                 </TableRow>
               ))
@@ -655,30 +633,30 @@ export default function MembersPage() {
         </Table>
 
         {/* Pagination Footer */}
-        <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between print:hidden">
-           <p className="text-xs font-bold text-gray-400">
-             Showing <span className="text-black font-black">{Math.max(0, (page-1)*pageSize + 1)}</span> to <span className="text-black font-black">{Math.min(page*pageSize, totalItems)}</span> of <span className="text-black font-black">{totalItems}</span> members
+        <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between print:hidden">
+           <p className="text-[10px] font-black text-black/30 uppercase tracking-widest">
+             <span className="text-black">{totalItems}</span> Records Compiled
            </p>
 
-           <div className="flex items-center gap-2">
+           <div className="flex items-center gap-1">
              <Button 
                disabled={page === 1 || loading}
                onClick={() => setPage(page - 1)}
                variant="outline" 
-               className="h-10 rounded-xl px-4 font-black text-[10px] uppercase tracking-widest disabled:opacity-30 border-gray-200"
+               className="h-8 w-8 p-0 rounded-lg border-gray-200 bg-white"
              >
-               Previous
+               <span className="rotate-180">➤</span>
              </Button>
-             <div className="flex items-center justify-center h-10 w-10 bg-white border border-gray-200 rounded-xl text-xs font-black text-black shadow-sm">
+             <div className="flex items-center justify-center h-8 px-3 bg-black rounded-lg text-[10px] font-black text-white">
                 {page}
              </div>
              <Button 
                disabled={page >= totalPages || loading}
                onClick={() => setPage(page + 1)}
                variant="outline" 
-               className="h-10 rounded-xl px-4 font-black text-[10px] uppercase tracking-widest disabled:opacity-30 border-gray-200"
+               className="h-8 w-8 p-0 rounded-lg border-gray-200 bg-white"
              >
-               Next
+               <span>➤</span>
              </Button>
            </div>
         </div>
