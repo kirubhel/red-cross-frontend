@@ -364,7 +364,7 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={geographicData} margin={{ bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#6b7280', fontWeight: 'bold', angle: -45, textAnchor: 'end' }} dy={10} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#6b7280', fontWeight: 'bold' }} angle={-45} textAnchor="end" dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 'bold' }} dx={-10} />
                 <Tooltip cursor={{ fill: '#fef2f2' }} content={<CustomTooltip />} />
                 <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32}>
