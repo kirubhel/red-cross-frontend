@@ -85,7 +85,7 @@ export default function AdminLayout({
         </header>
 
         {/* Dashboard Content Region */}
-        <main className="flex-1 overflow-y-auto w-full relative">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden w-full relative">
            <div className="p-4 md:p-6 pb-20 mx-auto max-w-[1920px]">
               {children}
            </div>

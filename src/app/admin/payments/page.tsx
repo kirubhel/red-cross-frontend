@@ -51,44 +51,44 @@ export default function PaymentsPage() {
 
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 w-full max-w-full pb-10">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-widest leading-none">
-            <CreditCard className="h-3.5 w-3.5" /> Finance
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
+            <CreditCard className="h-3 w-3" /> Finance
           </div>
-          <h1 className="text-5xl font-black text-black tracking-tighter">Payments Tracking</h1>
-          <p className="text-gray-500 font-medium text-lg">Monitor all membership transactions, donations, and event fees.</p>
+          <h1 className="text-3xl font-black text-black tracking-tighter">Payments Tracking</h1>
+          <p className="text-gray-500 font-medium text-sm">Monitor all membership transactions, donations, and event fees.</p>
         </div>
 
-        <Button className="bg-[#ED1C24] hover:bg-black text-white rounded-2xl h-14 px-8 font-black shadow-xl shadow-red-500/10 transition-all flex items-center gap-2">
-            <Download className="h-5 w-5" /> Export Report
+        <Button className="bg-[#ED1C24] hover:bg-black text-white rounded-xl h-10 px-6 font-black shadow-sm transition-all flex items-center gap-2 text-xs">
+            <Download className="h-4 w-4" /> Export Report
         </Button>
       </div>
 
       <div className="flex w-full items-center space-x-2">
         <div className="relative w-full max-w-md">
-             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search by transaction ID or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-14 pl-12 bg-black text-white border-none rounded-2xl font-bold text-lg focus:ring-2 focus:ring-[#ED1C24]/10 transition-all shadow-xl"
+              className="h-10 pl-10 bg-gray-50 text-black border-gray-100 rounded-xl font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/10 transition-all shadow-sm"
             />
         </div>
       </div>
 
-      <div className="bg-white rounded-[40px] border border-gray-100 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-gray-50/50">
             <TableRow className="hover:bg-transparent border-gray-50">
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Transaction ID</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Email</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Type</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Amount</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Status</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black text-right">Date</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Transaction ID</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Email</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Type</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Amount</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Status</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black text-right">Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -108,23 +108,23 @@ export default function PaymentsPage() {
             ) : (
                 payments.map((p) => (
                     <TableRow key={p.id} className="hover:bg-gray-50/50 transition-colors border-gray-50">
-                    <TableCell className="px-8 py-6">
-                        <span className="font-black text-black text-lg leading-tight uppercase tracking-tighter">{p.id}</span>
+                    <TableCell className="px-6 py-4">
+                        <span className="font-black text-black text-sm leading-tight uppercase tracking-tighter">{p.id}</span>
                     </TableCell>
-                    <TableCell className="px-8 py-6">
-                        <span className="text-sm font-bold text-gray-500">{p.person_id}</span>
+                    <TableCell className="px-6 py-4">
+                        <span className="text-xs font-bold text-gray-500">{p.person_id}</span>
                     </TableCell>
-                    <TableCell className="px-8 py-6 text-sm font-bold">
+                    <TableCell className="px-6 py-4 text-xs font-bold">
                         <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest bg-gray-50 text-gray-600">
                             {p.description || 'N/A'}
                         </span>
                     </TableCell>
-                    <TableCell className="px-8 py-6">
-                        <span className="font-black text-lg text-black">{p.amount} <span className="text-xs">{p.currency}</span></span>
+                    <TableCell className="px-6 py-4">
+                        <span className="font-black text-sm text-black">{p.amount} <span className="text-[10px]">{p.currency}</span></span>
                     </TableCell>
-                    <TableCell className="px-8 py-6">
+                    <TableCell className="px-6 py-4">
                         <span className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 w-fit",
+                        "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 w-fit",
                         p.status === "SUCCESS" || p.status === "PAID" ? "bg-green-100 text-green-600" :
                         p.status === "FAILED" ? "bg-red-100 text-red-600" :
                         "bg-yellow-100 text-yellow-600"
@@ -135,7 +135,7 @@ export default function PaymentsPage() {
                         {p.status}
                         </span>
                     </TableCell>
-                    <TableCell className="px-8 py-6 text-right font-bold text-gray-400 text-xs">
+                    <TableCell className="px-6 py-4 text-right font-bold text-gray-400 text-[10px]">
                         {p.created_at}
                     </TableCell>
 

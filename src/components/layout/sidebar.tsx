@@ -47,25 +47,25 @@ export function Sidebar() {
 
   return (
     <div className={cn(
-      "flex h-full flex-col bg-gray-950 border-r border-gray-900 text-white relative z-20 transition-all duration-300",
+      "flex h-full flex-col bg-white border-r border-gray-100 relative z-20 transition-all duration-300 shadow-[2px_0_10px_rgba(0,0,0,0.02)]",
       isCollapsed ? "w-[88px]" : "w-[280px]"
     )}>
       
       {/* Brand Header */}
-      <div className={cn("flex h-24 items-center border-b border-gray-900 pb-2 pt-4 relative", isCollapsed ? "justify-center px-0" : "px-6 gap-4")}>
-         <div className="bg-white p-1.5 rounded-xl shrink-0">
+      <div className={cn("flex h-24 items-center border-b border-gray-50 pb-2 pt-4 relative", isCollapsed ? "justify-center px-0" : "px-6 gap-4")}>
+         <div className="bg-gray-50 border border-gray-100 p-1.5 rounded-xl shrink-0 shadow-sm">
            <Image src="/logo.jpg" alt="ERCS" width={40} height={40} className="object-contain" unoptimized />
          </div>
          
          <div className={cn("flex flex-col whitespace-nowrap overflow-hidden transition-all duration-300", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
-          <span className="text-xl font-black tracking-tighter uppercase leading-none">ERCS</span>
+          <span className="text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">ERCS</span>
           <span className="text-[9px] font-black text-[#ED1C24] uppercase tracking-[0.2em]">Ethiopia Portal</span>
          </div>
          
          <button 
            onClick={() => setIsCollapsed(!isCollapsed)}
            className={cn(
-             "absolute top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors bg-gray-900 p-1.5 rounded-lg border border-gray-800 z-50",
+             "absolute top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#ED1C24] transition-colors bg-white p-1.5 rounded-lg border border-gray-200 shadow-sm z-50",
              isCollapsed ? "-right-3" : "right-4"
            )}
          >
@@ -83,7 +83,7 @@ export function Sidebar() {
           // Exact match for /admin to prevent it from matching /admin/everything
           const isActive = item.href === "/admin" 
             ? pathname === "/admin"
-            : pathname.startsWith(item.href);
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
           return (
             <Link
@@ -94,21 +94,21 @@ export function Sidebar() {
                 "group flex items-center rounded-2xl transition-all duration-300",
                 isCollapsed ? "justify-center p-3.5" : "justify-between px-4 py-3.5",
                 isActive
-                  ? "bg-[#ED1C24] text-white shadow-lg shadow-red-500/20"
-                  : "text-gray-400 hover:bg-gray-900 hover:text-white"
+                  ? "bg-[#ED1C24] text-white shadow-md shadow-[#ED1C24]/20"
+                  : "text-gray-500 hover:bg-gray-50 hover:text-[#ED1C24]"
               )}
             >
               <div className="flex items-center gap-3">
                 <item.icon className={cn(
                   "h-5 w-5 shrink-0 transition-transform duration-300",
-                  isActive ? "text-white" : "text-gray-500 group-hover:text-[#ED1C24]"
+                  isActive ? "text-white" : "text-gray-400 group-hover:text-[#ED1C24]"
                 )} />
                 <span className={cn("text-sm font-bold whitespace-nowrap overflow-hidden transition-all duration-300", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
                   {item.label}
                 </span>
               </div>
               <div className={cn("overflow-hidden transition-all duration-300 shrink-0", isCollapsed ? "w-0 opacity-0" : "w-4 opacity-100")}>
-                {isActive && <ChevronRight className="h-4 w-4 opacity-50" />}
+                {isActive && <ChevronRight className="h-4 w-4 opacity-70" />}
               </div>
             </Link>
           );

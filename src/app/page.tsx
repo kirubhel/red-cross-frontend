@@ -309,7 +309,7 @@ export default function LandingPage() {
               {t.nav.portal}
             </Link>
             <div className="h-8 w-px bg-gray-200 hidden sm:block" />
-            <Link href="/join/member">
+            <Link href="/join/volunteer">
               <Button size="sm" className="bg-[#ED1C24] text-white border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24] rounded-full px-6 font-bold shadow-lg shadow-[#ED1C24]/20 transition-all hover:scale-105 active:scale-95 cursor-pointer">
                 {t.nav.join}
               </Button>

@@ -432,14 +432,14 @@ export default function MembersPage() {
                 placeholder="Search Identity..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-10 pl-10 bg-black text-white border-2 border-black rounded-xl font-black text-xs focus:ring-4 focus:ring-[#ED1C24]/10 transition-all shadow-lg"
+                className="h-10 pl-10 bg-white text-black border border-gray-200 rounded-xl font-black text-xs focus:ring-4 focus:ring-[#ED1C24]/10 transition-all shadow-sm"
                 />
             </div>
 
             <Button 
                 onClick={() => setShowFilters(!showFilters)}
                 variant={showFilters ? "default" : "outline"}
-                className={`h-10 px-6 rounded-xl font-black transition-all flex items-center gap-2 text-[10px] uppercase tracking-widest ${showFilters ? 'bg-black text-white' : 'border-gray-200'}`}
+                className={`h-10 px-6 rounded-xl font-black transition-all flex items-center gap-2 text-[10px] uppercase tracking-widest ${showFilters ? 'bg-white text-black border border-gray-200 shadow-sm' : 'border border-gray-200 bg-transparent text-gray-500 hover:bg-gray-50'}`}
             >
                 <Filter className="h-4 w-4" /> 
                 {showFilters ? 'Hide' : 'Filters'}
@@ -455,11 +455,11 @@ export default function MembersPage() {
                         <select 
                             value={mainCategory}
                             onChange={(e) => { setMainCategory(e.target.value); setTypeFilter(""); }}
-                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
+                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
                         >
-                            <option value="" className="bg-black text-white">All Groups</option>
-                            <option value="INDIVIDUAL" className="bg-black text-white">Individual</option>
-                            <option value="CORPORATE" className="bg-black text-white">Corporate</option>
+                            <option value="" className="bg-white text-black">All Groups</option>
+                            <option value="INDIVIDUAL" className="bg-white text-black">Individual</option>
+                            <option value="CORPORATE" className="bg-white text-black">Corporate</option>
                         </select>
                     </div>
 
@@ -469,7 +469,7 @@ export default function MembersPage() {
                             value={typeFilter}
                             onChange={(e) => setTypeFilter(e.target.value)}
                             disabled={!mainCategory}
-                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-20 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
                         >
                             <option value="">Sub-Type...</option>
                             {mainCategory === 'INDIVIDUAL' && (
@@ -494,13 +494,13 @@ export default function MembersPage() {
                         <select 
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
+                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
                         >
-                            <option value="" className="bg-black text-white">All Status</option>
-                            <option value="ACTIVE" className="bg-black text-white">Active</option>
-                            <option value="INACTIVE" className="bg-black text-white">Inactive</option>
-                            <option value="EXPIRED" className="bg-black text-white">Expired</option>
-                            <option value="PENDING" className="bg-black text-white">Pending</option>
+                            <option value="" className="bg-white text-black">All Status</option>
+                            <option value="ACTIVE" className="bg-white text-black">Active</option>
+                            <option value="INACTIVE" className="bg-white text-black">Inactive</option>
+                            <option value="EXPIRED" className="bg-white text-black">Expired</option>
+                            <option value="PENDING" className="bg-white text-black">Pending</option>
                         </select>
                     </div>
                 </div>
@@ -512,11 +512,11 @@ export default function MembersPage() {
                         <select 
                             value={regionFilter}
                             onChange={(e) => { setRegionFilter(e.target.value); setZoneFilter(""); setWoredaFilter(""); }}
-                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
+                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
                         >
-                             <option value="" className="bg-black text-white">All Regions</option>
+                             <option value="" className="bg-white text-black">All Regions</option>
                              {regions.map(r => (
-                                 <option key={r.id} value={r.id} className="bg-black text-white">{r.name}</option>
+                                 <option key={r.id} value={r.id} className="bg-white text-black">{r.name}</option>
                              ))}
                         </select>
                     </div>
@@ -527,7 +527,7 @@ export default function MembersPage() {
                             value={zoneFilter}
                             onChange={(e) => { setZoneFilter(e.target.value); setWoredaFilter(""); }}
                             disabled={!regionFilter}
-                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-20 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
                         >
                             <option value="">Select Zone...</option>
                             {regionFilter === "1" && ( 
@@ -545,7 +545,7 @@ export default function MembersPage() {
                             value={woredaFilter}
                             onChange={(e) => setWoredaFilter(e.target.value)}
                             disabled={!zoneFilter}
-                            className="w-full h-10 px-3 rounded-lg bg-black text-white border-2 border-black font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-20 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
                         >
                             <option value="">Select...</option>
                         </select>

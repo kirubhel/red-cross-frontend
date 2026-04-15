@@ -21,7 +21,8 @@ import {
   CreditCard,
   Eye,
   EyeOff,
-  Globe
+  Globe,
+  QrCode
 } from "lucide-react";
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -30,6 +31,23 @@ import en from 'react-phone-number-input/locale/en.json';
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS } from "@/lib/constants";
+
+const REGION_ABBR: Record<string, string> = {
+  "REGION_addis_ababa": "AA",
+  "REGION_dire_dawa": "DD",
+  "REGION_tigray": "TG",
+  "REGION_afar": "AF",
+  "REGION_amhara": "AM",
+  "REGION_oromia": "OR",
+  "REGION_somali": "SM",
+  "REGION_benishangul_gumuz": "BG",
+  "REGION_snnpr": "SN",
+  "REGION_gambela": "GM",
+  "REGION_harari": "HR",
+  "REGION_sidama": "SD",
+  "REGION_south_west": "SW",
+  "REGION_federal_hq": "HQ",
+};
 
 const ALL_COUNTRIES = getCountries().map(country => ({
   code: country,
@@ -265,6 +283,8 @@ export default function MemberRegistrationPage() {
                                 <h2 className="text-3xl font-black text-black tracking-tighter">Registration Details</h2>
                                 <p className="text-black/60 font-black text-[10px] uppercase tracking-widest bg-gray-50 inline-block px-3 py-1 rounded-full border border-gray-100">Step 1 of 3</p>
                             </div>
+
+
 
                              <form onSubmit={(e) => { 
                                  e.preventDefault(); 
@@ -526,10 +546,34 @@ export default function MemberRegistrationPage() {
                                 </p>
                             </div>
                             {memberId && (
-                                <div className="mx-auto max-w-sm bg-gray-50 border border-gray-100 p-6 rounded-[28px] space-y-2">
-                                     <div className="text-[10px] uppercase font-black tracking-widest text-[#ED1C24]">Your Member ID</div>
-                                     <div className="text-4xl font-black text-black tracking-tight" style={{ fontVariantNumeric: "tabular-nums" }}>{memberId}</div>
-                                     <div className="text-xs text-gray-500 font-bold">You can login using this ID.</div>
+                                <div className="mx-auto max-w-sm p-8 bg-gradient-to-br from-gray-900 to-black rounded-[40px] shadow-2xl relative overflow-hidden group text-left">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#ED1C24]/10 blur-3xl rounded-full -mr-16 -mt-16" />
+                                    <div className="relative z-10 space-y-6">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <div className="bg-white p-1.5 rounded-xl">
+                                                    <Image src="/logo.jpg" alt="ERCS" width={24} height={24} />
+                                                </div>
+                                                <span className="text-white font-black text-[10px] uppercase tracking-widest italic opacity-60">Verified Member</span>
+                                            </div>
+                                            <ShieldCheck className="h-6 w-6 text-[#ED1C24]" />
+                                        </div>
+                                        
+                                        <div className="space-y-1">
+                                            <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em]">Membership ID</div>
+                                            <div className="text-3xl font-black text-white tracking-tighter" style={{ fontVariantNumeric: "tabular-nums" }}>
+                                                {memberId}
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-4 border-t border-white/5 flex justify-between items-end">
+                                            <div className="space-y-1">
+                                                <div className="text-[8px] font-black text-white/20 uppercase tracking-widest">Type</div>
+                                                <div className="text-xs font-bold text-white uppercase">{formData.tierType}</div>
+                                            </div>
+                                            <QrCode className="h-10 w-10 text-white/20" />
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                             <Link href="/"><Button className="h-16 bg-black hover:bg-[#ED1C24] text-white rounded-3xl px-16 text-xl font-black shadow-2xl transition-all">Back to Home</Button></Link>

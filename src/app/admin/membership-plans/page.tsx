@@ -115,26 +115,26 @@ export default function MembershipPlansPage() {
   );
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-widest leading-none">
-            <Layers className="h-3.5 w-3.5" /> Plan Management
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
+            <Layers className="h-3 w-3" /> Plan Management
           </div>
-          <h1 className="text-5xl font-black text-black tracking-tighter">Membership Tiers</h1>
-          <p className="text-gray-500 font-medium text-lg">Define subscription cycles, pricing models, and featured benefits.</p>
+          <h1 className="text-3xl font-black text-black tracking-tighter">Membership Tiers</h1>
+          <p className="text-gray-500 font-medium text-sm">Define subscription cycles, pricing models, and featured benefits.</p>
         </div>
 
-        <Button onClick={createNewPlan} className="bg-black hover:bg-[#ED1C24] text-white rounded-2xl h-14 px-8 font-black shadow-xl shadow-red-500/10 transition-all flex items-center gap-2">
-            <Plus className="h-5 w-5" /> Create New Tier
+        <Button onClick={createNewPlan} className="bg-black hover:bg-[#ED1C24] text-white rounded-xl h-10 px-6 text-xs font-black shadow-lg shadow-red-500/10 transition-all flex items-center gap-2">
+            <Plus className="h-4 w-4" /> Create New Tier
         </Button>
       </div>
 
-      <div className="grid lg:grid-cols-[400px_1fr] gap-10">
+      <div className="grid lg:grid-cols-[300px_1fr] gap-6">
         
         {/* Plans List Column */}
-        <div className="space-y-10">
+        <div className="space-y-6">
            {/* Individual Tiers */}
            <div className="space-y-4">
               <h3 className="font-black text-[#ED1C24] uppercase tracking-widest text-[10px] px-2 flex items-center gap-2">
@@ -150,30 +150,30 @@ export default function MembershipPlansPage() {
                       animate={{ opacity: 1, x: 0 }}
                       onClick={() => setSelectedPlan(plan)}
                       className={cn(
-                        "group cursor-pointer p-6 rounded-[28px] border transition-all relative overflow-hidden",
+                        "group cursor-pointer p-4 rounded-2xl border transition-all relative overflow-hidden",
                         selectedPlan?.short_code === plan.short_code 
-                          ? "bg-white border-[#ED1C24] shadow-[0_20px_50px_rgba(237,28,36,0.1)]" 
+                          ? "bg-white border-[#ED1C24] shadow-md shadow-red-500/10" 
                           : "bg-gray-50/50 border-gray-100 hover:border-gray-300"
                       )}
                     >
                       {plan.is_featured && (
-                         <div className="absolute top-0 right-0 px-4 py-1.5 bg-[#ED1C24] text-white text-[8px] font-black uppercase tracking-widest rounded-bl-xl shadow-sm">Featured</div>
+                         <div className="absolute top-0 right-0 px-3 py-1 bg-[#ED1C24] text-white text-[8px] font-black uppercase tracking-widest rounded-bl-lg shadow-sm">Featured</div>
                       )}
                       
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="space-y-1">
-                           <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">{plan.short_code}</div>
-                           <h4 className="text-xl font-black text-black tracking-tighter leading-tight">{plan.name}</h4>
-                           <div className="flex items-center gap-2 pt-1">
-                              <span className="text-sm font-black text-[#ED1C24]">{plan.amount} {plan.currency}</span>
-                              <span className="text-[10px] font-bold text-gray-400">/ {plan.subscription_type.toLowerCase()}</span>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="space-y-0.5">
+                           <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">{plan.short_code}</div>
+                           <h4 className="text-base font-black text-black tracking-tighter leading-tight">{plan.name}</h4>
+                           <div className="flex items-center gap-1.5 pt-0.5">
+                              <span className="text-xs font-black text-[#ED1C24]">{plan.amount} {plan.currency}</span>
+                              <span className="text-[9px] font-bold text-gray-400">/ {plan.subscription_type.toLowerCase()}</span>
                            </div>
                         </div>
                         <div className={cn(
-                           "h-12 w-12 rounded-2xl flex items-center justify-center transition-all",
+                           "h-10 w-10 rounded-xl flex items-center justify-center transition-all shrink-0",
                            selectedPlan?.short_code === plan.short_code ? "bg-red-50 text-[#ED1C24]" : "bg-gray-100 text-gray-400 group-hover:bg-red-50 group-hover:text-[#ED1C24]"
                         )}>
-                           <CreditCard className="h-6 w-6" />
+                           <CreditCard className="h-5 w-5" />
                         </div>
                       </div>
                     </motion.div>
@@ -197,30 +197,30 @@ export default function MembershipPlansPage() {
                       animate={{ opacity: 1, x: 0 }}
                       onClick={() => setSelectedPlan(plan)}
                       className={cn(
-                        "group cursor-pointer p-6 rounded-[28px] border transition-all relative overflow-hidden",
+                        "group cursor-pointer p-4 rounded-2xl border transition-all relative overflow-hidden",
                         selectedPlan?.short_code === plan.short_code 
-                          ? "bg-white border-purple-600 shadow-[0_20px_50px_rgba(147,51,234,0.1)]" 
+                          ? "bg-white border-purple-600 shadow-md shadow-purple-500/10" 
                           : "bg-gray-50/50 border-gray-100 hover:border-gray-300"
                       )}
                     >
                       {plan.is_featured && (
-                         <div className="absolute top-0 right-0 px-4 py-1.5 bg-purple-600 text-white text-[8px] font-black uppercase tracking-widest rounded-bl-xl shadow-sm">Featured</div>
+                         <div className="absolute top-0 right-0 px-3 py-1 bg-purple-600 text-white text-[8px] font-black uppercase tracking-widest rounded-bl-lg shadow-sm">Featured</div>
                       )}
                       
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="space-y-1">
-                           <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">{plan.short_code}</div>
-                           <h4 className="text-xl font-black text-black tracking-tighter leading-tight">{plan.name}</h4>
-                           <div className="flex items-center gap-2 pt-1">
-                              <span className="text-sm font-black text-purple-600">{plan.amount} {plan.currency}</span>
-                              <span className="text-[10px] font-bold text-gray-400">/ {plan.subscription_type.toLowerCase()}</span>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="space-y-0.5">
+                           <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">{plan.short_code}</div>
+                           <h4 className="text-base font-black text-black tracking-tighter leading-tight">{plan.name}</h4>
+                           <div className="flex items-center gap-1.5 pt-0.5">
+                              <span className="text-xs font-black text-purple-600">{plan.amount} {plan.currency}</span>
+                              <span className="text-[9px] font-bold text-gray-400">/ {plan.subscription_type.toLowerCase()}</span>
                            </div>
                         </div>
                         <div className={cn(
-                           "h-12 w-12 rounded-2xl flex items-center justify-center transition-all",
+                           "h-10 w-10 rounded-xl flex items-center justify-center transition-all shrink-0",
                            selectedPlan?.short_code === plan.short_code ? "bg-purple-50 text-purple-600" : "bg-gray-100 text-gray-400 group-hover:bg-purple-50 group-hover:text-purple-600"
                         )}>
-                           <CreditCard className="h-6 w-6" />
+                           <CreditCard className="h-5 w-5" />
                         </div>
                       </div>
                     </motion.div>
@@ -238,64 +238,64 @@ export default function MembershipPlansPage() {
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
                exit={{ opacity: 0, y: -20 }}
-               className="bg-white rounded-[40px] border border-gray-100 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] overflow-hidden"
+               className="bg-white rounded-[24px] border border-gray-100 shadow-xl overflow-hidden self-start"
              >
-                <div className="p-10 space-y-10">
-                   <div className="flex items-center gap-4 pb-6 border-b border-gray-50">
-                      <div className="h-16 w-16 bg-red-50 rounded-2xl flex items-center justify-center text-[#ED1C24]">
-                         <Settings2 className="h-8 w-8" />
+                <div className="p-6 space-y-6">
+                   <div className="flex items-center gap-3 pb-4 border-b border-gray-50">
+                      <div className="h-12 w-12 bg-red-50 rounded-xl flex items-center justify-center text-[#ED1C24] shrink-0">
+                         <Settings2 className="h-6 w-6" />
                       </div>
                       <div>
-                         <h3 className="text-3xl font-black text-black tracking-tighter">Plan Editor</h3>
-                         <p className="text-gray-400 font-medium">Fine-tune the parameters for {selectedPlan.name}.</p>
+                         <h3 className="text-xl font-black text-black tracking-tight leading-none mb-1">Plan Editor</h3>
+                         <p className="text-gray-400 font-medium text-xs">Fine-tune the parameters for {selectedPlan.name}.</p>
                       </div>
                    </div>
 
-                   <div className="grid md:grid-cols-2 gap-x-10 gap-y-8">
+                   <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
                       {/* Basic Info */}
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                      <div className="space-y-1.5">
+                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
                             <Type className="h-3 w-3" /> Plan Name
                         </Label>
                         <Input 
                             value={selectedPlan.name} 
                             onChange={(e) => handleUpdate({ name: e.target.value })}
-                            className="h-14 rounded-2xl bg-black text-white border-none font-bold text-lg"
+                            className="h-10 rounded-lg bg-white text-black border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/20"
                         />
                       </div>
                       
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                      <div className="space-y-1.5">
+                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
                             <BadgeInfo className="h-3 w-3" /> Short Code (ID)
                         </Label>
                         <Input 
                             value={selectedPlan.short_code} 
                             onChange={(e) => handleUpdate({ short_code: e.target.value })}
-                            className="h-14 rounded-2xl bg-black text-white border-none font-bold text-lg uppercase"
+                            className="h-10 rounded-lg bg-white text-black border border-gray-200 font-bold text-sm uppercase focus:ring-2 focus:ring-[#ED1C24]/20"
                         />
                       </div>
 
                       {/* Pricing */}
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                      <div className="space-y-1.5">
+                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
                             <DollarSign className="h-3 w-3" /> Price Amount
                         </Label>
                         <Input 
                             type="number"
                             value={selectedPlan.amount} 
                             onChange={(e) => handleUpdate({ amount: parseFloat(e.target.value) })}
-                            className="h-14 rounded-2xl bg-black text-white border-none font-bold text-lg"
+                            className="h-10 rounded-lg bg-white text-black border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/20"
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                      <div className="space-y-1.5">
+                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
                             <Calendar className="h-3 w-3" /> Subscription Type
                         </Label>
                         <select 
                           value={selectedPlan.subscription_type}
                           onChange={(e) => handleUpdate({ subscription_type: e.target.value })}
-                          className="flex h-14 w-full rounded-2xl bg-black text-white border-none px-6 py-2 text-lg font-bold focus:ring-1 focus:ring-red-500/10 appearance-none"
+                          className="flex h-10 w-full rounded-lg bg-white text-black border border-gray-200 px-3 py-1.5 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/20 appearance-none bg-none outline-none"
                         >
                           <option value="WEEKLY">Weekly</option>
                           <option value="MONTHLY">Monthly</option>
@@ -304,14 +304,14 @@ export default function MembershipPlansPage() {
                         </select>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                      <div className="space-y-1.5">
+                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
                             <Layers className="h-3 w-3" /> Plan Category
                         </Label>
                         <select 
                           value={selectedPlan.tier_type}
                           onChange={(e) => handleUpdate({ tier_type: e.target.value })}
-                          className="flex h-14 w-full rounded-2xl bg-black text-white border-none px-6 py-2 text-lg font-bold focus:ring-1 focus:ring-red-500/10 appearance-none"
+                          className="flex h-10 w-full rounded-lg bg-white text-black border border-gray-200 px-3 py-1.5 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/20 appearance-none bg-none outline-none"
                         >
                           <option value="INDIVIDUAL">Individual</option>
                           <option value="CORPORATE">Corporate</option>
@@ -319,87 +319,87 @@ export default function MembershipPlansPage() {
                       </div>
 
                       {/* Features & Description */}
-                      <div className="space-y-2 md:col-span-2">
-                        <Label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
                             <FileText className="h-3 w-3" /> Description
                         </Label>
                         <Input 
                             value={selectedPlan.description} 
                             onChange={(e) => handleUpdate({ description: e.target.value })}
-                            className="h-14 rounded-2xl bg-black text-white border-none font-bold text-lg"
+                            className="h-10 rounded-lg bg-white text-black border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/20"
                         />
                       </div>
 
-                      <div className="space-y-2 md:col-span-2">
-                        <Label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                      <div className="space-y-1.5 md:col-span-2">
+                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
                             <Star className="h-3 w-3" /> Plan Features (Comma-separated)
                         </Label>
                         <textarea 
                             value={selectedPlan.plan_features} 
                             onChange={(e) => handleUpdate({ plan_features: e.target.value })}
-                            className="w-full min-h-[100px] rounded-2xl bg-black text-white border-none p-6 font-bold"
+                            className="w-full min-h-[80px] rounded-lg bg-white text-black border border-gray-200 p-3 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/20 focus:outline-none"
                             placeholder="e.g. Benefit A, Benefit B, Benefit C"
                         />
                       </div>
 
                       {/* Toggles */}
-                      <div className="flex items-center justify-between p-6 bg-gray-50 rounded-3xl border border-gray-100">
-                         <div className="space-y-1">
-                            <div className="font-black text-black">Featured Plan</div>
-                            <div className="text-xs font-bold text-gray-400">Highlights this plan during signup.</div>
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                         <div className="space-y-0.5">
+                            <div className="font-black text-black text-sm">Featured Plan</div>
+                            <div className="text-[10px] font-bold text-gray-400">Highlights this plan during signup.</div>
                          </div>
                          <div 
                            onClick={() => handleUpdate({ is_featured: !selectedPlan.is_featured })}
                            className={cn(
-                             "w-14 h-8 rounded-full transition-all cursor-pointer relative shadow-inner",
+                             "w-10 h-6 rounded-full transition-all cursor-pointer relative shadow-inner",
                              selectedPlan.is_featured ? "bg-[#ED1C24]" : "bg-gray-200"
                            )}
                          >
                            <div className={cn(
-                             "absolute top-1 w-6 h-6 bg-white rounded-full transition-all shadow-md",
-                             selectedPlan.is_featured ? "left-7" : "left-1"
+                             "absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-md",
+                             selectedPlan.is_featured ? "left-5" : "left-1"
                            )} />
                          </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-6 bg-gray-50 rounded-3xl border border-gray-100">
-                         <div className="space-y-1">
-                            <div className="font-black text-black">Plan Visibility</div>
-                            <div className="text-xs font-bold text-gray-400">Enable or disable this tier entirely.</div>
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                         <div className="space-y-0.5">
+                            <div className="font-black text-black text-sm">Plan Visibility</div>
+                            <div className="text-[10px] font-bold text-gray-400">Enable or disable this tier entirely.</div>
                          </div>
                          <div 
                            onClick={() => handleUpdate({ is_active: !selectedPlan.is_active })}
                            className={cn(
-                             "w-14 h-8 rounded-full transition-all cursor-pointer relative shadow-inner",
+                             "w-10 h-6 rounded-full transition-all cursor-pointer relative shadow-inner",
                              selectedPlan.is_active ? "bg-green-500" : "bg-gray-200"
                            )}
                          >
                            <div className={cn(
-                             "absolute top-1 w-6 h-6 bg-white rounded-full transition-all shadow-md",
-                             selectedPlan.is_active ? "left-7" : "left-1"
+                             "absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-md",
+                             selectedPlan.is_active ? "left-5" : "left-1"
                            )} />
                          </div>
                       </div>
                    </div>
                 </div>
                 
-                <div className="p-10 border-t border-gray-50 bg-gray-50/30 flex justify-end">
+                <div className="p-4 border-t border-gray-50 bg-gray-50/50 flex justify-end">
                   <Button 
                       onClick={handleSave} 
                       disabled={saving}
                       className={cn(
-                          "h-16 rounded-3xl px-12 font-black transition-all text-xl text-white shadow-2xl flex items-center gap-3",
+                          "h-10 rounded-xl px-8 font-black transition-all text-sm text-white shadow-lg flex items-center gap-2",
                           success ? "bg-green-500" : "bg-black hover:bg-[#ED1C24] shadow-red-500/20 active:scale-95"
                       )}
                   >
-                      {saving ? "Deploying..." : success ? <><Check className="h-6 w-6" /> Updated Successfully</> : <><Save className="h-6 w-6" /> Save Changes</>}
+                      {saving ? "Deploying..." : success ? <><Check className="h-4 w-4" /> Updated</> : <><Save className="h-4 w-4" /> Save</>}
                   </Button>
                 </div>
              </motion.div>
           ) : (
-            <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[40px] flex flex-col items-center justify-center p-20 text-center space-y-4">
-                <CreditCard className="h-12 w-12 text-gray-300" />
-                <div className="text-gray-400 font-black uppercase tracking-widest text-xs">Select a plan to edit its details</div>
+            <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[24px] flex flex-col items-center justify-center p-10 text-center space-y-3 self-start">
+                <CreditCard className="h-8 w-8 text-gray-300" />
+                <div className="text-gray-400 font-black uppercase tracking-widest text-[10px]">Select a plan to edit its details</div>
             </div>
           )}
         </AnimatePresence>

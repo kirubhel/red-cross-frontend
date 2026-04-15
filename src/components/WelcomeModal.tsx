@@ -91,6 +91,7 @@ const CONTENT = {
     subtitle:
       "Ethiopian Red Cross Society offers multiple ways to get involved. Choose the path that fits you.",
     dismiss: "Explore on my own",
+    doNotShow: "Don't show again for this session",
     paths: [
       {
         href: "/join/volunteer",
@@ -129,6 +130,7 @@ const CONTENT = {
     title: "እንዴት ማገልገል ይፈልጋሉ?",
     subtitle: "ኢ.ቀ.መ. ለመሳተፍ ብዙ መንገዶችን ያቀርባል፡፡ ለእርስዎ የሚስማማውን ይምረጡ።",
     dismiss: "ብቻዬን ልቃኝ",
+    doNotShow: "በዚህ ክፍለ ጊዜ እንደገና አታሳይ",
     paths: [
       {
         href: "/join/volunteer",
@@ -168,6 +170,7 @@ const CONTENT = {
     subtitle:
       "ERCS karaalee hirmaannaa hedduu dhiyeessa. Karaa isinitti ta'u filadhaa.",
     dismiss: "Ofuma ilaala",
+    doNotShow: "Yeroo kanaaf irra deebi'amee hin agarsiisiin",
     paths: [
       {
         href: "/join/volunteer",
@@ -205,6 +208,7 @@ const CONTENT = {
 
 export default function WelcomeModal({ lang }: WelcomeModalProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [doNotShowChecked, setDoNotShowChecked] = useState(false);
   const c = CONTENT[lang] || CONTENT.en;
 
   const ICONS = [
@@ -214,12 +218,16 @@ export default function WelcomeModal({ lang }: WelcomeModalProps) {
   ];
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsOpen(true), 500);
-    return () => clearTimeout(timer);
+    if (!sessionStorage.getItem(SESSION_KEY)) {
+      const timer = setTimeout(() => setIsOpen(true), 500);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const handleClose = () => {
-    sessionStorage.setItem(SESSION_KEY, "true");
+    if (doNotShowChecked) {
+      sessionStorage.setItem(SESSION_KEY, "true");
+    }
     setIsOpen(false);
   };
 
@@ -294,11 +302,31 @@ export default function WelcomeModal({ lang }: WelcomeModalProps) {
               ))}
             </div>
 
-            {/* Footer dismiss */}
-            <div className="pb-6 text-center">
+            {/* Footer dismiss and Checkbox */}
+            <div className="px-6 sm:px-8 pb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <label className="flex items-center gap-2.5 cursor-pointer group select-none">
+                <div className="relative flex items-center justify-center h-5 w-5 rounded-[6px] border-[1.5px] border-gray-300 bg-white group-hover:border-[#ED1C24] transition-colors">
+                  <input 
+                    type="checkbox" 
+                    className="peer absolute opacity-0 h-0 w-0 cursor-pointer" 
+                    checked={doNotShowChecked}
+                    onChange={(e) => setDoNotShowChecked(e.target.checked)}
+                  />
+                  <svg
+                    className={`h-3.5 w-3.5 text-[#ED1C24] pointer-events-none transition-all duration-200 ${doNotShowChecked ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-[13px] font-bold text-black/50 group-hover:text-black/80 transition-colors uppercase tracking-wide">
+                  {c.doNotShow}
+                </span>
+              </label>
+
               <button
                 onClick={handleClose}
-                className="text-xs font-bold text-black/30 hover:text-black/60 transition-colors uppercase tracking-widest cursor-pointer"
+                className="text-xs font-black text-black/30 hover:text-[#ED1C24] transition-colors uppercase tracking-[0.1em] cursor-pointer"
               >
                 {c.dismiss} →
               </button>

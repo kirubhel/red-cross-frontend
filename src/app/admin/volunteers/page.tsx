@@ -110,32 +110,32 @@ export default function VolunteersPage() {
   return (
     <div className="space-y-10 print:p-0">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 print:hidden">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-widest leading-none">
-            <HandHeart className="h-3.5 w-3.5" /> Volunteers System
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 print:hidden">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
+            <HandHeart className="h-3 w-3" /> Volunteers System
           </div>
-          <h1 className="text-5xl font-black text-black tracking-tighter">Volunteer Registry</h1>
-          <p className="text-gray-500 font-medium text-lg">Manage all field volunteers, track hours, and coordinate field activities.</p>
+          <h1 className="text-3xl font-black text-black tracking-tighter">Volunteer Registry</h1>
+          <p className="text-gray-500 font-medium text-sm">Manage all field volunteers, track hours, and coordinate field activities.</p>
         </div>
 
         <div className="flex items-center gap-3">
             <Button 
                 onClick={exportToCSV}
                 variant="outline" 
-                className="rounded-2xl h-14 px-6 font-black border-gray-200"
+                className="rounded-xl h-10 px-6 font-black border-gray-200"
             >
-                <TableIcon className="h-5 w-5 mr-2" /> Export CSV
+                <TableIcon className="h-4 w-4 mr-2" /> Export CSV
             </Button>
             <Button 
                 onClick={exportToPDF}
                 variant="outline" 
-                className="rounded-2xl h-14 px-6 font-black border-gray-200"
+                className="rounded-xl h-10 px-6 font-black border-gray-200"
             >
-                <FileText className="h-5 w-5 mr-2" /> Export PDF
+                <FileText className="h-4 w-4 mr-2" /> Export PDF
             </Button>
-            <Button className="rounded-2xl h-14 px-8 font-black shadow-xl shadow-red-500/10 transition-all flex items-center gap-2">
-                <Plus className="h-5 w-5" /> Add Field Member
+            <Button className="rounded-xl h-10 px-6 font-black shadow-lg shadow-red-500/10 flex items-center gap-2">
+                <Plus className="h-4 w-4" /> Add Field Member
             </Button>
         </div>
       </div>
@@ -143,33 +143,33 @@ export default function VolunteersPage() {
       <div className="flex flex-col gap-4 print:hidden">
         <div className="flex w-full items-center justify-between gap-4">
             <div className="relative w-full max-w-md">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                 placeholder="Search volunteers..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-14 pl-12 bg-black text-white border-none rounded-2xl font-bold text-lg"
+                className="h-10 pl-10 bg-white border border-gray-200 shadow-sm text-black rounded-xl font-bold text-sm"
                 />
             </div>
 
             <Button 
                 onClick={() => setShowFilters(!showFilters)}
                 variant="outline"
-                className={`h-14 px-8 rounded-2xl font-black transition-all flex items-center gap-2 ${showFilters ? 'bg-black text-white' : 'border-gray-200'}`}
+                className={`h-10 px-6 rounded-xl font-black flex items-center gap-2 ${showFilters ? 'bg-black text-white' : 'border-gray-200'}`}
             >
-                <Filter className="h-5 w-5" /> 
+                <Filter className="h-4 w-4" /> 
                 {showFilters ? 'Hide Filters' : 'Advanced Filters'}
             </Button>
         </div>
 
         {showFilters && (
-            <div className="grid md:grid-cols-4 gap-4 p-6 bg-gray-50 rounded-[32px] border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-300">
-                <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Location/Region</label>
+            <div className="grid md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Location/Region</label>
                     <select 
                         value={regionFilter}
                         onChange={(e) => setRegionFilter(e.target.value)}
-                        className="w-full h-12 px-4 rounded-xl bg-white border border-gray-200 font-bold text-sm outline-none"
+                        className="w-full h-10 px-3 rounded-lg bg-white border border-gray-200 font-bold text-xs outline-none"
                     >
                         <option value="">All Regions</option>
                         {regions.map(r => (
@@ -178,12 +178,12 @@ export default function VolunteersPage() {
                     </select>
                 </div>
 
-                <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Status</label>
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Status</label>
                     <select 
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="w-full h-12 px-4 rounded-xl bg-white border border-gray-200 font-bold text-sm outline-none"
+                        className="w-full h-10 px-3 rounded-lg bg-white border border-gray-200 font-bold text-xs outline-none"
                     >
                         <option value="">All Statuses</option>
                         <option value="ACTIVE">Active</option>
@@ -196,64 +196,64 @@ export default function VolunteersPage() {
                     <Button 
                         onClick={() => { setRegionFilter(""); setStatusFilter(""); setSearch(""); }}
                         variant="ghost" 
-                        className="h-12 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest text-gray-400"
+                        className="h-10 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-gray-400"
                     >
-                        <X className="h-4 w-4 mr-2" /> Reset
+                        <X className="h-3 w-3 mr-2" /> Reset
                     </Button>
                 </div>
             </div>
         )}
       </div>
 
-      <div className="bg-white rounded-[40px] border border-gray-100 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] overflow-hidden print:shadow-none print:border-none">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none print:border-none">
         <Table>
           <TableHeader className="bg-gray-50/50 print:bg-transparent">
             <TableRow className="hover:bg-transparent border-gray-50">
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Volunteer Identity</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Contact</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Location</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black">Contribution</TableHead>
-              <TableHead className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-black text-right">Status</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Volunteer Identity</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contact</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Location</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contribution</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500 text-right">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
                 <TableRow>
-                   <TableCell colSpan={5} className="h-64 text-center">
+                   <TableCell colSpan={5} className="h-32 text-center">
                       <div className="flex flex-col items-center justify-center space-y-4">
-                         <div className="h-10 w-10 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
-                         <p className="text-xs font-black uppercase tracking-widest text-gray-400">Loading Volunteers...</p>
+                         <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
+                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading Volunteers...</p>
                       </div>
                    </TableCell>
                 </TableRow>
             ) : volunteers.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={5} className="h-64 text-center text-gray-400 font-bold italic">No volunteers found matching your criteria</TableCell>
+                   <TableCell colSpan={5} className="h-32 text-center text-gray-400 font-bold italic text-xs">No volunteers found matching your criteria</TableCell>
                 </TableRow>
             ) : (
                 volunteers.map((v) => (
                     <TableRow key={v.id} className="hover:bg-gray-50/50 transition-colors border-gray-50 font-bold">
-                    <TableCell className="px-8 py-6">
-                        <span className="font-black text-black text-lg leading-tight uppercase tracking-tighter">{v.first_name} {v.last_name}</span>
+                    <TableCell className="px-6 py-4">
+                        <span className="font-black text-black text-sm leading-tight uppercase tracking-tighter">{v.first_name} {v.last_name}</span>
                     </TableCell>
-                    <TableCell className="px-8 py-6">
-                        <span className="text-sm font-bold text-gray-500">{v.phone_number}</span>
+                    <TableCell className="px-6 py-4">
+                        <span className="text-xs font-bold text-gray-500">{v.phone_number}</span>
                     </TableCell>
 
-                    <TableCell className="px-8 py-6">
-                        <span className="px-3 py-1 bg-gray-100 text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+                    <TableCell className="px-6 py-4">
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-[9px] font-black uppercase tracking-widest rounded-md">
                             {regions.find(r => String(r.id) === String(v.region))?.name || v.region || 'N/A'}
                         </span>
                     </TableCell>
-                    <TableCell className="px-8 py-6">
-                        <div className="flex items-center gap-2">
-                            <span className="font-black text-lg text-[#ED1C24]">{v.hoursSpent || 0} <span className="text-[10px] uppercase font-black opacity-40">Hrs</span></span>
-                            {v.hoursSpent > 100 && <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />}
+                    <TableCell className="px-6 py-4">
+                        <div className="flex items-center gap-1.5">
+                            <span className="font-black text-sm text-[#ED1C24]">{v.hoursSpent || 0} <span className="text-[9px] uppercase font-black opacity-50">Hrs</span></span>
+                            {v.hoursSpent > 100 && <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />}
                         </div>
                     </TableCell>
-                    <TableCell className="px-8 py-6 text-right">
+                    <TableCell className="px-6 py-4 text-right">
                         <span className={cn(
-                            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                            "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest",
                             v.status === "ACTIVE" ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
                         )}>
                             {v.status || "PENDING"}

@@ -230,56 +230,56 @@ export default function UserManagementPage() {
   );
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 w-full max-w-full pb-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="max-w-xl">
-          <h1 className="text-4xl md:text-5xl font-black text-black tracking-tighter mb-4 leading-none">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="max-w-xl space-y-1.5">
+          <h1 className="text-3xl font-black text-black tracking-tighter leading-none">
             User <span className="text-[#ED1C24]">Management</span>
           </h1>
-          <p className="text-lg font-bold text-gray-400 leading-snug">
+          <p className="text-gray-500 font-medium text-sm leading-snug">
             Create admin users, assign roles and permissions, and manage access across all modules.
           </p>
         </div>
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           <Button
             onClick={fetchUsers}
             variant="outline"
-            className="h-14 rounded-2xl px-8 font-black text-xs uppercase tracking-widest hover:bg-gray-50 border-gray-200"
+            className="h-10 rounded-xl px-5 font-black text-[10px] uppercase tracking-widest hover:bg-gray-50 border-gray-200"
           >
-            <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+            <RefreshCw className="mr-2 h-3.5 w-3.5" /> Refresh
           </Button>
           <Button
             onClick={() => { setShowCreate(true); setSelectedUser(null); setForm({ ...DEFAULT_FORM }); }}
-            className="h-14 rounded-2xl px-8 font-black text-xs uppercase tracking-widest bg-[#ED1C24] hover:bg-black text-white transition-colors"
+            className="h-10 rounded-xl px-5 font-black text-[10px] uppercase tracking-widest bg-[#ED1C24] hover:bg-black text-white transition-colors"
           >
-            <Plus className="mr-2 h-5 w-5" /> Create User
+            <Plus className="mr-2 h-4 w-4" /> Create User
           </Button>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-8 items-start">
+      <div className="grid lg:grid-cols-12 gap-6 items-start">
         {/* User List */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="lg:col-span-5 space-y-3">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search by email or phone..."
-              className="pl-11 h-12 rounded-2xl bg-gray-50 border-gray-100 font-medium text-black"
+              className="pl-10 h-10 rounded-xl bg-white border-gray-200 text-sm font-medium text-black focus:ring-1 focus:ring-red-500/20"
             />
           </div>
 
-          <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
             {loading ? (
-              <div className="h-32 flex items-center justify-center bg-gray-50 rounded-3xl">
-                <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
+              <div className="h-24 flex items-center justify-center bg-gray-50 rounded-2xl">
+                <div className="h-6 w-6 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center p-10 bg-gray-50 rounded-3xl border border-gray-100">
-                <ShieldCheck className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="font-bold text-gray-400">No users found.</p>
+              <div className="text-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                <ShieldCheck className="h-8 w-8 text-gray-300 mx-auto mb-2 opacity-50" />
+                <p className="font-bold text-xs text-gray-400">No users found.</p>
               </div>
             ) : (
               filtered.map(user => (
@@ -287,26 +287,26 @@ export default function UserManagementPage() {
                   key={user.id}
                   onClick={() => handleSelectUser(user)}
                   className={cn(
-                    "group cursor-pointer p-5 rounded-[20px] border transition-all duration-200 relative",
+                    "group cursor-pointer p-4 rounded-xl border transition-all duration-200 relative",
                     selectedUser?.id === user.id
-                      ? "bg-black border-black text-white shadow-xl scale-[1.01]"
+                      ? "bg-black border-black text-white shadow-md scale-[1.01]"
                       : "bg-white border-gray-100 hover:border-gray-200 hover:bg-gray-50"
                   )}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={cn(
-                        "h-10 w-10 rounded-2xl flex items-center justify-center shrink-0",
+                        "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
                         selectedUser?.id === user.id ? "bg-white/10" : "bg-gray-100"
                       )}>
-                        <User className={cn("h-5 w-5", selectedUser?.id === user.id ? "text-white" : "text-gray-500")} />
+                        <User className={cn("h-4 w-4", selectedUser?.id === user.id ? "text-white" : "text-gray-500")} />
                       </div>
                       <div className="min-w-0">
-                        <p className={cn("font-black truncate text-sm", selectedUser?.id === user.id ? "text-white" : "text-black")}>
+                        <p className={cn("font-black truncate text-xs", selectedUser?.id === user.id ? "text-white" : "text-black")}>
                           {user.email || user.phone_number || "Unknown"}
                         </p>
                         <span className={cn(
-                          "inline-block mt-1 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full",
+                          "inline-block mt-0.5 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md",
                           selectedUser?.id === user.id
                             ? "bg-white/10 text-white"
                             : (ROLE_COLORS[user.role] || "bg-gray-100 text-gray-600")
@@ -317,7 +317,7 @@ export default function UserManagementPage() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={cn(
-                        "px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-full",
+                        "px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md",
                         user.status === "ACTIVE"
                           ? selectedUser?.id === user.id ? "bg-green-400/20 text-green-300" : "bg-green-50 text-green-600"
                           : selectedUser?.id === user.id ? "bg-red-400/20 text-red-300" : "bg-red-50 text-red-500"
@@ -327,11 +327,11 @@ export default function UserManagementPage() {
                       <button
                         onClick={e => handleDeleteUser(e, user.id)}
                         className={cn(
-                          "p-2 rounded-xl transition-colors opacity-0 group-hover:opacity-100",
+                          "p-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100",
                           selectedUser?.id === user.id ? "hover:bg-red-500/20 text-red-400" : "hover:bg-red-50 text-red-500"
                         )}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
@@ -347,93 +347,93 @@ export default function UserManagementPage() {
             {showCreate ? (
               <motion.div
                 key="create"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-white rounded-[40px] border border-gray-100 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] overflow-hidden"
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
               >
-                <div className="p-10 space-y-8">
-                  <div className="flex items-center justify-between pb-6 border-b border-gray-50">
-                    <div className="flex items-center gap-4">
-                      <div className="h-16 w-16 bg-red-50 rounded-2xl flex items-center justify-center text-[#ED1C24]">
-                        <Plus className="h-8 w-8" />
+                <div className="p-6 space-y-6">
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-50">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-red-50 rounded-xl flex items-center justify-center text-[#ED1C24]">
+                        <Plus className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-3xl font-black text-black tracking-tighter">Create User</h3>
-                        <p className="text-gray-400 font-medium">Add a new admin or staff member.</p>
+                        <h3 className="text-xl font-black text-black tracking-tighter">Create User</h3>
+                        <p className="text-gray-400 font-medium text-xs">Add a new admin or staff member.</p>
                       </div>
                     </div>
-                    <button onClick={() => setShowCreate(false)} className="p-3 rounded-2xl hover:bg-gray-50">
-                      <X className="h-5 w-5 text-gray-400" />
+                    <button onClick={() => setShowCreate(false)} className="p-2 rounded-xl hover:bg-gray-50">
+                      <X className="h-4 w-4 text-gray-400" />
                     </button>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email</Label>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Email</Label>
                       <Input
                         type="email"
                         value={form.email}
                         onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                         placeholder="admin@ercs.org"
-                        className="h-14 rounded-2xl bg-black text-white border-none font-bold"
+                        className="h-10 rounded-xl bg-gray-50 text-black border-gray-100 font-bold text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Phone</Label>
+                    <div className="space-y-1.5">
+                       <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Phone</Label>
                        <div className="flex gap-2">
                            <select 
                                value={countryCode} 
                                onChange={(e) => setCountryCode(e.target.value)}
-                               className="w-32 h-14 rounded-2xl bg-black text-white border-none font-bold text-[10px] appearance-none px-3 focus:ring-1 focus:ring-red-500/20 shadow-xl"
+                               className="w-24 h-10 rounded-xl bg-gray-50 text-black border border-gray-100 font-bold text-[10px] appearance-none px-2 focus:ring-1 focus:ring-red-500/20"
                            >
                                {ALL_COUNTRY_CODES.sort((a, b) => (a.name || "").localeCompare(b.name || "")).map((c, i) => (
-                                   <option key={`${c.code}-${i}`} value={c.code} className="bg-zinc-900">{c.name} ({c.code})</option>
+                                   <option key={`${c.code}-${i}`} value={c.code} className="bg-white">{c.name} ({c.code})</option>
                                ))}
                            </select>
                            <Input
                                value={form.phone_number}
                                onChange={e => setForm(f => ({ ...f, phone_number: e.target.value }))}
                                placeholder="912345678"
-                               className="flex-1 h-14 rounded-2xl bg-black text-white border-none font-bold"
+                               className="flex-1 h-10 rounded-xl bg-gray-50 text-black border-gray-100 font-bold text-sm"
                            />
                        </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Password</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Password</Label>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
                           value={form.password}
                           onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                           placeholder="Minimum 8 characters"
-                          className="h-14 rounded-2xl bg-black text-white border-none font-bold pr-12"
+                          className="h-10 rounded-xl bg-gray-50 text-black border-gray-100 font-bold text-sm pr-10"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black transition-colors"
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Role</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Role</Label>
                       <select
                         value={form.role}
                         onChange={e => setForm(f => ({ ...f, role: Number(e.target.value) }))}
-                        className="flex h-14 w-full rounded-2xl bg-black text-white border-none px-5 font-bold focus:ring-1 focus:ring-red-500/20 appearance-none"
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
                         {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                       </select>
                     </div>
-                    <div className="md:col-span-2 space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Region</Label>
+                    <div className="md:col-span-2 space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Region</Label>
                       <select
                         value={form.region}
                         onChange={e => setForm(f => ({ ...f, region: Number(e.target.value) }))}
-                        className="flex h-14 w-full rounded-2xl bg-black text-white border-none px-5 font-bold focus:ring-1 focus:ring-red-500/20 appearance-none"
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
                         {REGIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                       </select>
@@ -443,53 +443,53 @@ export default function UserManagementPage() {
                   <Button
                     onClick={handleCreateUser}
                     disabled={saving}
-                    className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest bg-[#ED1C24] hover:bg-black text-white transition-all"
+                    className="w-full h-10 rounded-xl font-black text-xs uppercase tracking-widest bg-[#ED1C24] hover:bg-black text-white transition-all"
                   >
-                    {saving ? "Creating..." : <><Plus className="mr-2 h-4 w-4" /> Create User Account</>}
+                    {saving ? "Creating..." : <><Plus className="mr-2 h-3.5 w-3.5" /> Create User</>}
                   </Button>
                 </div>
               </motion.div>
             ) : selectedUser ? (
               <motion.div
                 key={`edit-${selectedUser.id}`}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-white rounded-[40px] border border-gray-100 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.05)] overflow-hidden"
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
               >
-                <div className="p-10 space-y-8">
-                  <div className="flex items-center justify-between pb-6 border-b border-gray-50">
-                    <div className="flex items-center gap-4">
-                      <div className="h-16 w-16 bg-gray-100 rounded-2xl flex items-center justify-center">
-                        <User className="h-8 w-8 text-gray-500" />
+                <div className="p-6 space-y-6">
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-50">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <User className="h-5 w-5 text-gray-500" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-black text-black tracking-tighter">{selectedUser.email || selectedUser.phone_number}</h3>
-                        <p className="text-gray-400 font-medium text-sm">User ID: {selectedUser.id.slice(0, 8)}...</p>
+                        <h3 className="text-lg font-black text-black tracking-tighter">{selectedUser.email || selectedUser.phone_number}</h3>
+                        <p className="text-gray-400 font-medium text-[10px]">User ID: {selectedUser.id.slice(0, 8)}...</p>
                       </div>
                     </div>
-                    <button onClick={() => setSelectedUser(null)} className="p-3 rounded-2xl hover:bg-gray-50">
-                      <X className="h-5 w-5 text-gray-400" />
+                    <button onClick={() => setSelectedUser(null)} className="p-2 rounded-xl hover:bg-gray-50">
+                      <X className="h-4 w-4 text-gray-400" />
                     </button>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Role</Label>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Role</Label>
                       <select
                         value={editRole}
                         onChange={e => setEditRole(Number(e.target.value))}
-                        className="flex h-14 w-full rounded-2xl bg-black text-white border-none px-5 font-bold focus:ring-1 focus:ring-red-500/20 appearance-none"
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
                         {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                       </select>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Status</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Status</Label>
                       <select
                         value={editStatus}
                         onChange={e => setEditStatus(e.target.value)}
-                        className="flex h-14 w-full rounded-2xl bg-black text-white border-none px-5 font-bold focus:ring-1 focus:ring-red-500/20 appearance-none"
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
                         <option value="ACTIVE">Active</option>
                         <option value="SUSPENDED">Suspended</option>
@@ -499,36 +499,36 @@ export default function UserManagementPage() {
                   </div>
 
                   {/* Permissions info box */}
-                  <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                    <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">Role Permissions</p>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">Role Permissions</p>
+                    <div className="flex flex-wrap gap-1.5">
                       {editRole === 1 && ["USERS_MANAGE","MEMBERS_WRITE","MEMBERS_READ","FINANCE_MANAGE","MISSIONS_MANAGE"].map(p => (
-                        <span key={p} className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-wider rounded-full">{p}</span>
+                        <span key={p} className="px-2 py-0.5 bg-red-50 text-red-600 text-[8px] font-black uppercase tracking-wider rounded-md">{p}</span>
                       ))}
                       {editRole === 2 && ["MEMBERS_READ","MISSIONS_MANAGE"].map(p => (
-                        <span key={p} className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-wider rounded-full">{p}</span>
+                        <span key={p} className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-wider rounded-md">{p}</span>
                       ))}
                       {editRole === 7 && ["MEMBERS_READ","MEMBERS_WRITE"].map(p => (
-                        <span key={p} className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-wider rounded-full">{p}</span>
+                        <span key={p} className="px-2 py-0.5 bg-green-50 text-green-600 text-[8px] font-black uppercase tracking-wider rounded-md">{p}</span>
                       ))}
                       {[3,4,5,6].includes(editRole) && (
-                        <span className="px-3 py-1 bg-gray-100 text-gray-500 text-[10px] font-black uppercase tracking-wider rounded-full">Portal Access Only</span>
+                        <span className="px-2 py-0.5 bg-white border border-gray-100 text-gray-500 text-[8px] font-black uppercase tracking-wider rounded-md">Portal Access Only</span>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex gap-4">
+                  <div className="flex gap-3">
                     <Button
                       onClick={handleUpdateUser}
                       disabled={saving}
-                      className="flex-1 h-14 rounded-2xl font-black text-sm uppercase tracking-widest bg-black hover:bg-[#ED1C24] text-white transition-all"
+                      className="flex-1 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest bg-black hover:bg-[#ED1C24] text-white transition-all"
                     >
-                      {saving ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Changes</>}
+                      {saving ? "Saving..." : <><Save className="mr-2 h-3.5 w-3.5" /> Save</>}
                     </Button>
                     <Button
                       onClick={e => handleDeleteUser(e as any, selectedUser.id)}
                       variant="outline"
-                      className="h-14 rounded-2xl px-6 font-black text-xs uppercase tracking-widest border-red-100 text-red-500 hover:bg-red-50"
+                      className="h-10 rounded-xl px-4 font-black text-[10px] uppercase tracking-widest border-red-100 text-red-500 hover:bg-red-50"
                     >
                       <UserX className="h-4 w-4" />
                     </Button>
@@ -539,14 +539,14 @@ export default function UserManagementPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="h-full min-h-[500px] bg-white rounded-[40px] border border-gray-100 border-dashed flex items-center justify-center p-10"
+                className="h-full min-h-[300px] bg-white rounded-2xl border border-gray-100 border-dashed flex items-center justify-center p-6"
               >
                 <div className="text-center max-w-sm">
-                  <div className="h-20 w-20 bg-gray-50 rounded-3xl flex items-center justify-center text-gray-300 mx-auto mb-6">
-                    <ShieldCheck className="h-10 w-10" />
+                  <div className="h-12 w-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-300 mx-auto mb-4">
+                    <ShieldCheck className="h-6 w-6" />
                   </div>
-                  <h3 className="text-2xl font-black text-black tracking-tighter mb-2">Select a User</h3>
-                  <p className="text-gray-400 font-bold">Choose a user from the list to manage their role and permissions, or create a new one.</p>
+                  <h3 className="text-lg font-black text-black tracking-tighter mb-1">Select a User</h3>
+                  <p className="text-gray-400 font-bold text-xs">Choose a user from the list to manage their role and permissions, or create a new one.</p>
                 </div>
               </motion.div>
             )}
