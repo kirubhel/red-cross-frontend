@@ -211,18 +211,6 @@ export default function SystemSettingsPage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="uppercase tracking-widest text-[9px] font-black text-gray-400">Zero Padding</Label>
-                            <select
-                                value={memberConfig.padding}
-                                onChange={(e) => setMemberConfig({ ...memberConfig, padding: parseInt(e.target.value) })}
-                                className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-200 px-3 text-sm font-black focus:ring-red-500 outline-none"
-                            >
-                                <option value={6}>6 Digits (000001)</option>
-                                <option value={8}>8 Digits (00000001)</option>
-                            </select>
-                        </div>
-
                         <div className="pt-2 space-y-3">
                             <Label className="uppercase tracking-widest text-[9px] font-black text-gray-400">Dynamic Segment Settings</Label>
                             <div className="grid grid-cols-1 gap-3">
@@ -246,14 +234,27 @@ export default function SystemSettingsPage() {
                                 </div>
                             </div>
                         </div>
+
+                        <div className="space-y-2">
+                            <Label className="uppercase tracking-widest text-[9px] font-black text-gray-400">Zero Padding</Label>
+                            <select
+                                value={memberConfig.padding}
+                                onChange={(e) => setMemberConfig({ ...memberConfig, padding: parseInt(e.target.value) })}
+                                className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-200 px-3 text-sm font-black focus:ring-red-500 outline-none"
+                            >
+                                <option value={6}>6 Digits (000001)</option>
+                                <option value={8}>8 Digits (00000001)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col justify-center gap-3 h-full min-h-[250px]">
                         <Label className="uppercase tracking-widest text-[9px] font-black text-gray-400">Preview Layout</Label>
                         <div className="text-3xl sm:text-4xl font-black text-black tracking-tight" style={{ fontVariantNumeric: "tabular-nums" }}>
+                            {memberConfig.prefix}
                             {memberConfig.useRegionCode ? "AA-" : ""}
                             {memberConfig.useZoneCode ? "Z01-" : ""}
-                            {memberConfig.prefix}{Array(memberConfig.padding).fill('X').join('')}
+                            {Array(memberConfig.padding).fill('X').join('')}
                         </div>
                         <div className="flex flex-col gap-2 mt-4 text-sm text-gray-500 font-medium">
                             <div className="flex items-center gap-2">
