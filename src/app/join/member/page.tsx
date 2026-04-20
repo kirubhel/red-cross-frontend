@@ -30,7 +30,7 @@ import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
 import en from 'react-phone-number-input/locale/en.json';
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
-import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS } from "@/lib/constants";
+import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS, ETHIOPIA_LOCATION_DATA, ZONE_WOREDA_DATA } from "@/lib/constants";
 
 const REGION_ABBR: Record<string, string> = {
   "REGION_addis_ababa": "AA",
@@ -66,6 +66,8 @@ export default function MemberRegistrationPage() {
     password: "",
     confirmPassword: "",
     region: "REGION_addis_ababa",
+    zone: "",
+    woreda: "",
     membershipType: "REGULAR",
     country: "ET",
     phoneNumber: "",
@@ -119,7 +121,22 @@ export default function MemberRegistrationPage() {
   }, [formData.tierType, membershipPlans, formData.membershipType]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    const { id, value } = e.target;
+    const newData: Record<string, any> = { ...formData, [id]: value };
+    
+    // Cascading resets
+    if (id === "country" && value !== "ET") {
+        newData.region = "";
+        newData.zone = "";
+        newData.woreda = "";
+    } else if (id === "region") {
+        newData.zone = "";
+        newData.woreda = "";
+    } else if (id === "zone") {
+        newData.woreda = "";
+    }
+    
+    setFormData(newData);
   };
 
   const handleTypeSelect = (type: string) => {
@@ -162,7 +179,9 @@ export default function MemberRegistrationPage() {
                 membershipType: formData.membershipType,
                 metadata: JSON.stringify({
                     country: formData.country,
-                    international_address: finalAddress
+                    international_address: finalAddress,
+                    zone_id: formData.zone,
+                    woreda_id: formData.woreda
                 })
             });
             
@@ -225,7 +244,7 @@ export default function MemberRegistrationPage() {
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-red-50 rounded-full blur-[120px] opacity-40" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-red-50 rounded-full blur-[120px] opacity-40" />
       </div>
-
+      
        <header className="relative z-10 px-6 py-8 md:px-12 flex justify-between items-center">
             <Link href="/" className="group flex items-center gap-2 text-black/40 hover:text-black transition-colors font-black uppercase tracking-widest text-xs">
                  <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Back to Home
@@ -283,8 +302,6 @@ export default function MemberRegistrationPage() {
                                 <h2 className="text-3xl font-black text-black tracking-tighter">Registration Details</h2>
                                 <p className="text-black/60 font-black text-[10px] uppercase tracking-widest bg-gray-50 inline-block px-3 py-1 rounded-full border border-gray-100">Step 1 of 3</p>
                             </div>
-
-
 
                              <form onSubmit={(e) => { 
                                  e.preventDefault(); 
@@ -361,19 +378,59 @@ export default function MemberRegistrationPage() {
                                           </select>
                                       </div>
 
-                                      {formData.country === 'ET' ? (
+                                      {formData.country === 'ET' && (
                                          <div className="space-y-2 group">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Region <span className="text-[#ED1C24] text-xs">*</span></Label>
                                             <select 
                                                 id="region" 
+                                                required
                                                 className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
                                                 value={formData.region}
                                                 onChange={handleChange}
                                             >
+                                                <option value="" disabled>Select Region</option>
                                                 {REGIONS.map(r => <option key={r.value} value={r.value}>{r.name}</option>)}
                                             </select>
                                          </div>
-                                      ) : (
+                                      )}
+
+                                      {formData.country === 'ET' && formData.region && (
+                                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 group">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Zone <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                            <select 
+                                                id="zone" 
+                                                required
+                                                className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                value={formData.zone}
+                                                onChange={handleChange}
+                                            >
+                                                <option value="">Select Zone</option>
+                                                {ETHIOPIA_LOCATION_DATA[formData.region]?.zones.map(z => (
+                                                    <option key={z.id} value={z.id}>{z.name}</option>
+                                                ))}
+                                            </select>
+                                         </motion.div>
+                                      )}
+
+                                      {formData.country === 'ET' && formData.zone && (
+                                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 group">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Woreda / Sub-City <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                            <select 
+                                                id="woreda" 
+                                                required
+                                                className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                value={formData.woreda}
+                                                onChange={handleChange}
+                                            >
+                                                <option value="">Select Woreda</option>
+                                                {ZONE_WOREDA_DATA[formData.zone]?.map(w => (
+                                                    <option key={w.id} value={w.id}>{w.name}</option>
+                                                ))}
+                                            </select>
+                                         </motion.div>
+                                      )}
+
+                                      {formData.country !== 'ET' && (
                                          <div className="space-y-2 group">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Address <span className="text-[#ED1C24] text-xs">*</span></Label>
                                             <Input id="internationalAddress" className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6" value={formData.internationalAddress} onChange={handleChange} required />
@@ -406,7 +463,7 @@ export default function MemberRegistrationPage() {
                              </form>
                         </motion.div>
                     )}
- 
+
                     {step === 2 && (
                         <motion.div key="tier-select" {...stepVariants} className="space-y-10">
                             <div className="space-y-2 text-center">
