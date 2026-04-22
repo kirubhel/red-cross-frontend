@@ -76,6 +76,8 @@ export default function MemberRegistrationPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [zones, setZones] = useState<any[]>([]);
+  const [woredas, setWoredas] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchConfigs = async () => {
@@ -119,6 +121,29 @@ export default function MemberRegistrationPage() {
         }
     }
   }, [formData.tierType, membershipPlans, formData.membershipType]);
+
+  // Fetch Zones
+  useEffect(() => {
+    if (formData.region && formData.country === "ET") {
+      const regionId = REGION_MAP_VALUE_TO_ID[formData.region];
+      api.get(`/location/zones?region_id=${regionId}`).then(res => {
+        setZones(res.data.zones || []);
+      }).catch(err => console.error("Failed to fetch zones:", err));
+    } else {
+      setZones([]);
+    }
+  }, [formData.region, formData.country]);
+
+  // Fetch Woredas
+  useEffect(() => {
+    if (formData.zone && formData.country === "ET") {
+      api.get(`/location/woredas?zone_id=${formData.zone}`).then(res => {
+        setWoredas(res.data.woredas || []);
+      }).catch(err => console.error("Failed to fetch woredas:", err));
+    } else {
+      setWoredas([]);
+    }
+  }, [formData.zone, formData.country]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
@@ -405,7 +430,7 @@ export default function MemberRegistrationPage() {
                                                 onChange={handleChange}
                                             >
                                                 <option value="">Select Zone</option>
-                                                {ETHIOPIA_LOCATION_DATA[formData.region]?.zones.map(z => (
+                                                {zones.map(z => (
                                                     <option key={z.id} value={z.id}>{z.name}</option>
                                                 ))}
                                             </select>
@@ -423,7 +448,7 @@ export default function MemberRegistrationPage() {
                                                 onChange={handleChange}
                                             >
                                                 <option value="">Select Woreda</option>
-                                                {ZONE_WOREDA_DATA[formData.zone]?.map(w => (
+                                                {woredas.map(w => (
                                                     <option key={w.id} value={w.id}>{w.name}</option>
                                                 ))}
                                             </select>
