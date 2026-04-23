@@ -337,8 +337,128 @@ export default function MemberRegistrationPage() {
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 text-left">
                                       {/* Identity Fields */}
                                       {formConfig.map((field: any) => {
-                                          if (field.type === 'tel' || field.dataSource === 'REGIONS') return null;
-                                          if (field.id === 'password' || field.id === 'confirmPassword') return null;
+                                          if (field.id === 'password') {
+                                              return (
+                                                  <div key={field.id} className="space-y-2 group">
+                                                      <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
+                                                      <div className="relative">
+                                                          <Input type={showPassword ? "text" : "password"} id="password" required={field.required} className="h-12 rounded-xl bg-gray-50 border-none px-6 pr-12 font-bold text-black" value={formData.password} onChange={handleChange} />
+                                                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">
+                                                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                          </button>
+                                                      </div>
+                                                  </div>
+                                              );
+                                          }
+                                          
+                                          if (field.id === 'confirmPassword') {
+                                              return (
+                                                  <div key={field.id} className="space-y-2 group">
+                                                      <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
+                                                      <div className="relative">
+                                                          <Input type={showConfirmPassword ? "text" : "password"} id="confirmPassword" required={field.required} className="h-12 rounded-xl bg-gray-50 border-none px-6 pr-12 font-bold text-black" value={formData.confirmPassword} onChange={handleChange} />
+                                                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">
+                                                              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                          </button>
+                                                      </div>
+                                                  </div>
+                                              );
+                                          }
+
+                                          if (field.type === 'tel') {
+                                              return (
+                                                  <div key={field.id} className="space-y-2 group">
+                                                      <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
+                                                      <PhoneInput
+                                                         international
+                                                         defaultCountry={formData.country as any}
+                                                         value={formData.phoneNumber}
+                                                         onChange={(val) => setFormData({ ...formData, phoneNumber: val || "" })}
+                                                         placeholder={field.placeholder || "Enter phone number"}
+                                                         className="PhoneInput"
+                                                      />
+                                                  </div>
+                                              );
+                                          }
+
+                                          if (field.dataSource === 'REGIONS') {
+                                              return (
+                                                  <div key={field.id} className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                                                      <div className="space-y-2 group">
+                                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Country <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                          <select 
+                                                              id="country" 
+                                                              className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                              value={formData.country}
+                                                              onChange={handleChange}
+                                                          >
+                                                              {ALL_COUNTRIES.map(c => (
+                                                                  <option key={c.code} value={c.code}>{c.name}</option>
+                                                              ))}
+                                                          </select>
+                                                      </div>
+
+                                                      {formData.country === 'ET' && (
+                                                         <div className="space-y-2 group">
+                                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                            <select 
+                                                                id="region" 
+                                                                required={field.required}
+                                                                className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                value={formData.region}
+                                                                onChange={handleChange}
+                                                            >
+                                                                <option value="" disabled>{field.placeholder || "Select Region"}</option>
+                                                                {REGIONS.map(r => <option key={r.value} value={r.value}>{r.name}</option>)}
+                                                            </select>
+                                                         </div>
+                                                      )}
+
+                                                      {formData.country === 'ET' && formData.region && (
+                                                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 group">
+                                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Zone <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                            <select 
+                                                                id="zone" 
+                                                                required
+                                                                className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                value={formData.zone}
+                                                                onChange={handleChange}
+                                                            >
+                                                                <option value="">Select Zone</option>
+                                                                {zones.map(z => (
+                                                                    <option key={z.id} value={z.id}>{z.name}</option>
+                                                                ))}
+                                                            </select>
+                                                         </motion.div>
+                                                      )}
+
+                                                      {formData.country === 'ET' && formData.zone && (
+                                                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 group">
+                                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Woreda / Sub-City <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                            <select 
+                                                                id="woreda" 
+                                                                required
+                                                                className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                value={formData.woreda}
+                                                                onChange={handleChange}
+                                                            >
+                                                                <option value="">Select Woreda</option>
+                                                                {woredas.map(w => (
+                                                                    <option key={w.id} value={w.id}>{w.name}</option>
+                                                                ))}
+                                                            </select>
+                                                         </motion.div>
+                                                      )}
+
+                                                      {formData.country !== 'ET' && (
+                                                         <div className="space-y-2 group">
+                                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Address <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                            <Input id="internationalAddress" className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6" value={formData.internationalAddress} onChange={handleChange} required />
+                                                         </div>
+                                                      )}
+                                                  </div>
+                                              );
+                                          }
 
                                           return (
                                               <div key={field.id} className={cn("space-y-2 group", field.type === 'textarea' ? "md:col-span-2" : "")}>
@@ -363,123 +483,19 @@ export default function MemberRegistrationPage() {
                                                           </select>
                                                       ) : (
                                                           <Input 
-                                                             id={field.id} 
-                                                             type={field.type} 
-                                                             required={field.required} 
-                                                             className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all" 
-                                                             placeholder={field.placeholder} 
-                                                             value={formData[field.id] || ""} 
-                                                             onChange={handleChange} 
+                                                              id={field.id} 
+                                                              type={field.type} 
+                                                              required={field.required} 
+                                                              className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all" 
+                                                              placeholder={field.placeholder} 
+                                                              value={formData[field.id] || ""} 
+                                                              onChange={handleChange} 
                                                           />
                                                       )}
                                                   </div>
                                               </div>
                                           );
                                       })}
-
-                                      <div className="space-y-2 group">
-                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Phone Number <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                          <PhoneInput
-                                             international
-                                             defaultCountry={formData.country as any}
-                                             value={formData.phoneNumber}
-                                             onChange={(val) => setFormData({ ...formData, phoneNumber: val || "" })}
-                                             placeholder="Enter phone number"
-                                             className="PhoneInput"
-                                          />
-                                      </div>
-
-                                      <div className="space-y-2 group">
-                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Country <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                          <select 
-                                              id="country" 
-                                              className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
-                                              value={formData.country}
-                                              onChange={handleChange}
-                                          >
-                                              {ALL_COUNTRIES.map(c => (
-                                                  <option key={c.code} value={c.code}>{c.name}</option>
-                                              ))}
-                                          </select>
-                                      </div>
-
-                                      {formData.country === 'ET' && (
-                                         <div className="space-y-2 group">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Region <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                            <select 
-                                                id="region" 
-                                                required
-                                                className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
-                                                value={formData.region}
-                                                onChange={handleChange}
-                                            >
-                                                <option value="" disabled>Select Region</option>
-                                                {REGIONS.map(r => <option key={r.value} value={r.value}>{r.name}</option>)}
-                                            </select>
-                                         </div>
-                                      )}
-
-                                      {formData.country === 'ET' && formData.region && (
-                                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 group">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Zone <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                            <select 
-                                                id="zone" 
-                                                required
-                                                className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
-                                                value={formData.zone}
-                                                onChange={handleChange}
-                                            >
-                                                <option value="">Select Zone</option>
-                                                {zones.map(z => (
-                                                    <option key={z.id} value={z.id}>{z.name}</option>
-                                                ))}
-                                            </select>
-                                         </motion.div>
-                                      )}
-
-                                      {formData.country === 'ET' && formData.zone && (
-                                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 group">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Woreda / Sub-City <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                            <select 
-                                                id="woreda" 
-                                                required
-                                                className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
-                                                value={formData.woreda}
-                                                onChange={handleChange}
-                                            >
-                                                <option value="">Select Woreda</option>
-                                                {woredas.map(w => (
-                                                    <option key={w.id} value={w.id}>{w.name}</option>
-                                                ))}
-                                            </select>
-                                         </motion.div>
-                                      )}
-
-                                      {formData.country !== 'ET' && (
-                                         <div className="space-y-2 group">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Address <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                            <Input id="internationalAddress" className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6" value={formData.internationalAddress} onChange={handleChange} required />
-                                         </div>
-                                      )}
-
-                                      <div className="space-y-2 group">
-                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Password</Label>
-                                          <div className="relative">
-                                              <Input type={showPassword ? "text" : "password"} id="password" required className="h-12 rounded-xl bg-gray-50 border-none px-6 pr-12 font-bold text-black" value={formData.password} onChange={handleChange} />
-                                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">
-                                                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                              </button>
-                                          </div>
-                                      </div>
-                                      <div className="space-y-2 group">
-                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Confirm Password</Label>
-                                          <div className="relative">
-                                              <Input type={showConfirmPassword ? "text" : "password"} id="confirmPassword" required className="h-12 rounded-xl bg-gray-50 border-none px-6 pr-12 font-bold text-black" value={formData.confirmPassword} onChange={handleChange} />
-                                              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">
-                                                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                              </button>
-                                          </div>
-                                      </div>
                                  </div>
                                  {error && <div className="text-red-500 text-xs font-bold text-center">{error}</div>}
                                  <Button type="submit" className="w-full h-14 bg-black hover:bg-[#ED1C24] text-white rounded-2xl text-lg font-black shadow-2xl transition-all flex items-center justify-center gap-2">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Reorder, useDragControls } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,193 @@ type FormField = {
   placeholder: string;
   options?: { label: string; value: string }[];
   dataSource?: string;
+};
+
+const FieldItem = ({ field, updateField, removeField, isCoreField }: { field: FormField, updateField: any, removeField: any, isCoreField: any }) => {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={field}
+      layout
+      dragListener={false}
+      dragControls={dragControls}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="group bg-white p-6 rounded-2xl border border-gray-100 hover:border-[#ED1C24]/30 hover:shadow-xl hover:shadow-red-500/5 transition-all flex items-start gap-6 relative"
+    >
+      <div 
+        onPointerDown={(e) => dragControls.start(e)}
+        className="pt-2 text-gray-300 group-hover:text-[#ED1C24] transition-colors cursor-grab active:cursor-grabbing"
+        style={{ touchAction: "none" }}
+      >
+        <GripVertical className="h-5 w-5" />
+      </div>
+
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="space-y-1.5">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Label</Label>
+          <Input 
+            value={field.label} 
+            onChange={(e) => updateField(field.id, { label: e.target.value })}
+            className="h-11 rounded-xl bg-gray-50 border-none font-bold text-sm text-black"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Input Type</Label>
+          <select 
+            value={field.type}
+            onChange={(e) => updateField(field.id, { type: e.target.value as any })}
+            className="flex h-11 w-full rounded-xl bg-gray-50 border-none px-4 py-2 text-sm font-bold focus:ring-1 focus:ring-red-500/10 appearance-none transition-all text-black"
+          >
+            <option value="text">Text</option>
+            <option value="email">Email</option>
+            <option value="tel">Phone</option>
+            <option value="number">Number</option>
+            <option value="date">Date</option>
+            <option value="select">Select</option>
+          </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Placeholder</Label>
+          <Input 
+            value={field.placeholder} 
+            onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
+            className="h-11 rounded-xl bg-gray-50 border-none font-bold text-sm text-black"
+          />
+        </div>
+
+        <div className="flex flex-col justify-center gap-2">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Required</Label>
+          <div 
+            onClick={() => updateField(field.id, { required: !field.required })}
+            className={cn(
+              "w-12 h-6 rounded-full transition-all cursor-pointer relative",
+              field.required ? "bg-[#ED1C24]" : "bg-gray-200"
+            )}
+          >
+            <div className={cn(
+              "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+              field.required ? "left-7" : "left-1"
+            )} />
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-center gap-2">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Unique</Label>
+          <div 
+            onClick={() => updateField(field.id, { unique: !field.unique })}
+            className={cn(
+              "w-12 h-6 rounded-full transition-all cursor-pointer relative",
+              field.unique ? "bg-blue-600" : "bg-gray-200"
+            )}
+          >
+            <div className={cn(
+              "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+              field.unique ? "left-7" : "left-1"
+            )} />
+          </div>
+        </div>
+
+        {field.type === 'select' && (
+          <div className="md:col-span-4 mt-8 p-8 bg-gray-50/80 rounded-[32px] border border-gray-100 space-y-6 shadow-inner">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                  <div className="space-y-1 flex-1">
+                     <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Data Source Mode</Label>
+                     <div className="flex gap-4 mt-1">
+                        <select 
+                          value={field.dataSource || "MANUAL"}
+                          onChange={(e) => updateField(field.id, { dataSource: e.target.value as any })}
+                          className="h-10 px-4 bg-white border border-gray-100 rounded-xl text-xs font-black text-black focus:ring-0 focus:border-[#ED1C24] transition-colors appearance-none min-w-[200px]"
+                        >
+                          <option value="MANUAL">Custom List (Manual)</option>
+                          <option value="REGIONS">System: Regions Table</option>
+                          <option value="MEMBERSHIP_TYPES">System: Membership Plans</option>
+                          <option value="GENDER">System: Gender Options</option>
+                        </select>
+                        <p className="text-[9px] font-bold text-black/40 mt-3 italic">
+                          {field.dataSource === 'REGIONS' ? "Pulls all active regions automatically." : 
+                           field.dataSource === 'MEMBERSHIP_TYPES' ? "Pulls all defined membership tiers." :
+                           field.dataSource === 'GENDER' ? "Uses standard male/female/other options." :
+                           "Add manual labels and values for this dropdown."}
+                        </p>
+                     </div>
+                  </div>
+                  
+                  {(field.dataSource === 'MANUAL' || !field.dataSource) && (
+                    <Button 
+                        onClick={() => {
+                          const options = field.options || [];
+                          updateField(field.id, { options: [...options, { label: "New Option", value: "" }] });
+                        }}
+                        className="h-10 bg-black hover:bg-[#ED1C24] text-white text-[10px] font-black uppercase tracking-widest px-6 rounded-xl transition-all shadow-lg active:scale-95 flex items-center gap-2"
+                    >
+                        <Plus className="h-4 w-4" /> Add Option
+                    </Button>
+                  )}
+              </div>
+              
+              {(field.dataSource === 'MANUAL' || !field.dataSource) ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(field.options || []).map((opt, idx) => (
+                    <div key={idx} className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm group/opt">
+                        <div className="flex-1 space-y-1">
+                            <Label className="text-[8px] font-black uppercase tracking-widest text-black/30 ml-1">Label</Label>
+                            <Input 
+                              placeholder="Display Label" 
+                              value={opt.label} 
+                              onChange={(e) => {
+                                const options = [...(field.options || [])];
+                                options[idx].label = e.target.value;
+                                updateField(field.id, { options });
+                              }}
+                              className="h-10 bg-gray-50/50 border-none text-xs font-black text-black ring-offset-white focus-visible:ring-1 focus-visible:ring-red-500/10"
+                            />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                            <Label className="text-[8px] font-black uppercase tracking-widest text-black/30 ml-1">Value</Label>
+                            <Input 
+                              placeholder="Stored Value" 
+                              value={opt.value} 
+                              onChange={(e) => {
+                                const options = [...(field.options || [])];
+                                options[idx].value = e.target.value;
+                                updateField(field.id, { options });
+                              }}
+                              className="h-10 bg-gray-50/50 border-none text-xs font-black text-[#ED1C24] ring-offset-white focus-visible:ring-1 focus-visible:ring-red-500/10 uppercase"
+                            />
+                        </div>
+                        <button 
+                          onClick={() => {
+                            updateField(field.id, { options: field.options?.filter((_, i) => i !== idx) });
+                          }}
+                          className="mt-5 p-2.5 text-black/20 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+          </div>
+        )}
+      </div>
+
+      <button 
+        onClick={() => removeField(field.id)}
+        disabled={isCoreField(field.id)}
+        className={cn(
+          "p-2 transition-colors opacity-0 group-hover:opacity-100",
+          isCoreField(field.id) ? "text-gray-100 cursor-not-allowed" : "text-gray-300 hover:text-red-500"
+        )}
+      >
+        <Trash2 className="h-5 w-5" />
+      </button>
+    </Reorder.Item>
+  );
 };
 
 export default function FormConfigurationPage() {
@@ -150,186 +337,20 @@ export default function FormConfigurationPage() {
               </Button>
             </div>
             
-            <div className="p-4 space-y-4">
-              <AnimatePresence mode="popLayout">
-                {fields.map((field, index) => (
-                  <motion.div 
-                    key={field.id}
-                    layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="group bg-white p-6 rounded-2xl border border-gray-100 hover:border-[#ED1C24]/30 hover:shadow-xl hover:shadow-red-500/5 transition-all flex items-start gap-6 relative"
-                  >
-                    <div className="pt-2 text-gray-300 group-hover:text-[#ED1C24] transition-colors cursor-grab active:cursor-grabbing">
-                      <GripVertical className="h-5 w-5" />
-                    </div>
-
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Label</Label>
-                        <Input 
-                          value={field.label} 
-                          onChange={(e) => updateField(field.id, { label: e.target.value })}
-                          className="h-11 rounded-xl bg-gray-50 border-none font-bold text-sm text-black"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Input Type</Label>
-                        <select 
-                          value={field.type}
-                          onChange={(e) => updateField(field.id, { type: e.target.value as any })}
-                          className="flex h-11 w-full rounded-xl bg-gray-50 border-none px-4 py-2 text-sm font-bold focus:ring-1 focus:ring-red-500/10 appearance-none transition-all text-black"
-                        >
-                          <option value="text">Text</option>
-                          <option value="email">Email</option>
-                          <option value="tel">Phone</option>
-                          <option value="number">Number</option>
-                          <option value="date">Date</option>
-                          <option value="select">Select</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Placeholder</Label>
-                        <Input 
-                          value={field.placeholder} 
-                          onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
-                          className="h-11 rounded-xl bg-gray-50 border-none font-bold text-sm text-black"
-                        />
-                      </div>
-
-                      <div className="flex flex-col justify-center gap-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Required</Label>
-                        <div 
-                          onClick={() => updateField(field.id, { required: !field.required })}
-                          className={cn(
-                            "w-12 h-6 rounded-full transition-all cursor-pointer relative",
-                            field.required ? "bg-[#ED1C24]" : "bg-gray-200"
-                          )}
-                        >
-                          <div className={cn(
-                            "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
-                            field.required ? "left-7" : "left-1"
-                          )} />
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col justify-center gap-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Unique</Label>
-                        <div 
-                          onClick={() => updateField(field.id, { unique: !field.unique })}
-                          className={cn(
-                            "w-12 h-6 rounded-full transition-all cursor-pointer relative",
-                            field.unique ? "bg-blue-600" : "bg-gray-200"
-                          )}
-                        >
-                          <div className={cn(
-                            "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
-                            field.unique ? "left-7" : "left-1"
-                          )} />
-                        </div>
-                      </div>
-
-                      {field.type === 'select' && (
-                        <div className="md:col-span-4 mt-8 p-8 bg-gray-50/80 rounded-[32px] border border-gray-100 space-y-6 shadow-inner">
-                            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                                <div className="space-y-1 flex-1">
-                                   <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Data Source Mode</Label>
-                                   <div className="flex gap-4 mt-1">
-                                      <select 
-                                        value={field.dataSource || "MANUAL"}
-                                        onChange={(e) => updateField(field.id, { dataSource: e.target.value as any })}
-                                        className="h-10 px-4 bg-white border border-gray-100 rounded-xl text-xs font-black text-black focus:ring-0 focus:border-[#ED1C24] transition-colors appearance-none min-w-[200px]"
-                                      >
-                                        <option value="MANUAL">Custom List (Manual)</option>
-                                        <option value="REGIONS">System: Regions Table</option>
-                                        <option value="MEMBERSHIP_TYPES">System: Membership Plans</option>
-                                        <option value="GENDER">System: Gender Options</option>
-                                      </select>
-                                      <p className="text-[9px] font-bold text-black/40 mt-3 italic">
-                                        {field.dataSource === 'REGIONS' ? "Pulls all active regions automatically." : 
-                                         field.dataSource === 'MEMBERSHIP_TYPES' ? "Pulls all defined membership tiers." :
-                                         field.dataSource === 'GENDER' ? "Uses standard male/female/other options." :
-                                         "Add manual labels and values for this dropdown."}
-                                      </p>
-                                   </div>
-                                </div>
-                                
-                                {(field.dataSource === 'MANUAL' || !field.dataSource) && (
-                                  <Button 
-                                      onClick={() => {
-                                        const options = field.options || [];
-                                        updateField(field.id, { options: [...options, { label: "New Option", value: "" }] });
-                                      }}
-                                      className="h-10 bg-black hover:bg-[#ED1C24] text-white text-[10px] font-black uppercase tracking-widest px-6 rounded-xl transition-all shadow-lg active:scale-95 flex items-center gap-2"
-                                  >
-                                      <Plus className="h-4 w-4" /> Add Option
-                                  </Button>
-                                )}
-                            </div>
-                            
-                            {(field.dataSource === 'MANUAL' || !field.dataSource) ? (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {(field.options || []).map((opt, idx) => (
-                                  <div key={idx} className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm group/opt">
-                                      {/* existing options content */}
-                                      <div className="flex-1 space-y-1">
-                                          <Label className="text-[8px] font-black uppercase tracking-widest text-black/30 ml-1">Label</Label>
-                                          <Input 
-                                            placeholder="Display Label" 
-                                            value={opt.label} 
-                                            onChange={(e) => {
-                                              const options = [...(field.options || [])];
-                                              options[idx].label = e.target.value;
-                                              updateField(field.id, { options });
-                                            }}
-                                            className="h-10 bg-gray-50/50 border-none text-xs font-black text-black ring-offset-white focus-visible:ring-1 focus-visible:ring-red-500/10"
-                                          />
-                                      </div>
-                                      <div className="flex-1 space-y-1">
-                                          <Label className="text-[8px] font-black uppercase tracking-widest text-black/30 ml-1">Value</Label>
-                                          <Input 
-                                            placeholder="Stored Value" 
-                                            value={opt.value} 
-                                            onChange={(e) => {
-                                              const options = [...(field.options || [])];
-                                              options[idx].value = e.target.value;
-                                              updateField(field.id, { options });
-                                            }}
-                                            className="h-10 bg-gray-50/50 border-none text-xs font-black text-[#ED1C24] ring-offset-white focus-visible:ring-1 focus-visible:ring-red-500/10 uppercase"
-                                          />
-                                      </div>
-                                      <button 
-                                        onClick={() => {
-                                          updateField(field.id, { options: field.options?.filter((_, i) => i !== idx) });
-                                        }}
-                                        className="mt-5 p-2.5 text-black/20 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </button>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : null}
-                        </div>
-                    )}
-                    </div>
-
-                    <button 
-                      onClick={() => removeField(field.id)}
-                      disabled={isCoreField(field.id)}
-                      className={cn(
-                        "p-2 transition-colors opacity-0 group-hover:opacity-100",
-                        isCoreField(field.id) ? "text-gray-100 cursor-not-allowed" : "text-gray-300 hover:text-red-500"
-                      )}
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+            <div className="p-4">
+              <Reorder.Group axis="y" values={fields} onReorder={setFields} className="space-y-4">
+                <AnimatePresence mode="popLayout">
+                  {fields.map((field) => (
+                    <FieldItem 
+                      key={field.id} 
+                      field={field} 
+                      updateField={updateField} 
+                      removeField={removeField} 
+                      isCoreField={isCoreField} 
+                    />
+                  ))}
+                </AnimatePresence>
+              </Reorder.Group>
             </div>
             
             <div className="p-8 border-t border-gray-50 bg-gray-50/50 flex justify-end">

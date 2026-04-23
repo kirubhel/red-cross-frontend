@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [noPassword, setNoPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -161,7 +162,7 @@ export default function LoginPage() {
                     <Input
                       id="email"
                       type="text"
-                      placeholder="Email or Volunteer ID"
+                      placeholder="Email, Phone, or Member ID"
                       className="h-16 pl-12 rounded-2xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-lg placeholder:text-black/30 text-black"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -170,7 +171,23 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="flex items-center gap-2 ml-1">
+                  <input
+                    type="checkbox"
+                    id="noPassword"
+                    checked={noPassword}
+                    onChange={(e) => {
+                      setNoPassword(e.target.checked);
+                      if (e.target.checked) setPassword("");
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-[#ED1C24] focus:ring-[#ED1C24]"
+                  />
+                  <Label htmlFor="noPassword" className="text-xs font-bold text-black/60 cursor-pointer">
+                    Login without password (requires Member ID)
+                  </Label>
+                </div>
+
+                <div className={`space-y-3 transition-opacity duration-300 ${noPassword ? 'opacity-30 pointer-events-none' : ''}`}>
                   <div className="flex justify-between items-center ml-1">
                     <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-black/60">Password</Label>
                     <Link href="#" className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">Forgot?</Link>
@@ -184,7 +201,8 @@ export default function LoginPage() {
                       className="h-16 pl-12 pr-12 rounded-2xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-lg placeholder:text-black/30 text-black"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required
+                      required={!noPassword}
+                      disabled={noPassword}
                     />
                     <button
                       type="button"

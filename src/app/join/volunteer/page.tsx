@@ -284,113 +284,142 @@ export default function VolunteerJoinPage() {
                             </div>
 
                              <form onSubmit={handleSubmit} className="space-y-5 text-left">
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                                     <div className="space-y-2 group">
-                                         <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Country of Residence <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                         <div className="relative">
-                                            <div className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#ED1C24] transition-colors">
-                                                <Globe className="h-4 w-4" />
-                                            </div>
-                                            <select 
-                                                id="country" 
-                                                className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-12 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
-                                                value={formData.country}
-                                                onChange={handleChange}
-                                            >
-                                                {ALL_COUNTRIES.map(c => (
-                                                    <option key={c.code} value={c.code}>{c.name}</option>
-                                                ))}
-                                            </select>
-                                         </div>
-                                     </div>
+                                      {formConfig.map((field: any) => {
+                                          if (field.id === 'password') {
+                                              return (
+                                                  <div key={field.id} className="space-y-2 group">
+                                                      <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
+                                                      <div className="relative">
+                                                          <Input id="password" type={showPassword ? "text" : "password"} required={field.required} className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.password} onChange={handleChange} />
+                                                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                                                      </div>
+                                                  </div>
+                                              );
+                                          }
 
-                                     <div className="space-y-2 group">
-                                         <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Phone Number <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                         <PhoneInput
-                                            international
-                                            defaultCountry={formData.country as any}
-                                            value={formData.phoneNumber}
-                                            onChange={(val) => setFormData({ ...formData, phoneNumber: val || "" })}
-                                            placeholder="Enter phone number"
-                                            className="PhoneInput"
-                                         />
-                                     </div>
+                                          if (field.id === 'confirmPassword') {
+                                              return (
+                                                  <div key={field.id} className="space-y-2 group">
+                                                      <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
+                                                      <div className="relative">
+                                                          <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} required={field.required} className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
+                                                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                                                      </div>
+                                                  </div>
+                                              );
+                                          }
 
-                                     {formConfig.map((field: any) => {
-                                         if (field.type === 'tel') return null;
+                                          if (field.type === 'tel') {
+                                              return (
+                                                  <div key={field.id} className="space-y-2 group">
+                                                      <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
+                                                      <PhoneInput
+                                                         international
+                                                         defaultCountry={formData.country as any}
+                                                         value={formData.phoneNumber}
+                                                         onChange={(val) => setFormData({ ...formData, phoneNumber: val || "" })}
+                                                         placeholder={field.placeholder || "Enter phone number"}
+                                                         className="PhoneInput"
+                                                      />
+                                                  </div>
+                                              );
+                                          }
 
-                                         if (field.dataSource === 'REGIONS' && formData.country !== 'ET') {
-                                             return (
-                                                <div key="intl-address" className="space-y-2 group">
-                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">State / Province / Address <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                                    <Input 
-                                                       id="internationalAddress" 
-                                                       className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all" 
-                                                       placeholder="Enter your address" 
-                                                       value={formData.internationalAddress} 
-                                                       onChange={handleChange} 
-                                                       required
-                                                    />
-                                                </div>
-                                             );
-                                         }
-
-                                         return (
-                                             <div key={field.id} className={cn("space-y-2 group", field.type === 'textarea' ? "md:col-span-2" : "")}>
-                                                 <Label htmlFor={field.id} className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
-                                                 <div className="relative">
-                                                     {field.type === 'select' ? (
-                                                          <select 
-                                                              id={field.id} 
-                                                              required={field.required} 
-                                                              className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
-                                                              value={formData[field.id] || ""}
-                                                              onChange={handleChange}
-                                                          >
-                                                              <option value="" disabled>{field.placeholder}</option>
-                                                              {(
-                                                                field.dataSource === 'REGIONS' 
-                                                                  ? REGIONS.map(r => ({ label: r.name, value: r.value })) : 
-                                                                field.dataSource === 'MEMBERSHIP_TYPES'
-                                                                  ? membershipPlans.map(p => ({ label: p.name, value: p.short_code })) :
-                                                                field.dataSource === 'GENDER'
-                                                                  ? GENDER_OPTIONS :
-                                                                (field.options || [])
-                                                              ).map((opt: any, i: number) => (
-                                                                  <option key={i} value={opt.value}>{opt.label}</option>
-                                                              ))}
-                                                          </select>
+                                          if (field.dataSource === 'REGIONS') {
+                                              return (
+                                                  <div key={field.id} className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                                                      <div className="space-y-2 group">
+                                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Country of Residence <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                          <div className="relative">
+                                                             <div className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#ED1C24] transition-colors">
+                                                                 <Globe className="h-4 w-4" />
+                                                             </div>
+                                                             <select 
+                                                                 id="country" 
+                                                                 className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-12 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                 value={formData.country}
+                                                                 onChange={handleChange}
+                                                             >
+                                                                 {ALL_COUNTRIES.map(c => (
+                                                                     <option key={c.code} value={c.code}>{c.name}</option>
+                                                                 ))}
+                                                             </select>
+                                                          </div>
+                                                      </div>
+                                                      
+                                                      {formData.country === 'ET' ? (
+                                                          <div className="space-y-2 group">
+                                                              <Label htmlFor={field.id} className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
+                                                              <div className="relative">
+                                                                  <select 
+                                                                      id={field.id} 
+                                                                      required={field.required} 
+                                                                      className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
+                                                                      value={formData[field.id] || ""}
+                                                                      onChange={handleChange}
+                                                                  >
+                                                                      <option value="" disabled>{field.placeholder}</option>
+                                                                      {REGIONS.map(r => (
+                                                                          <option key={r.value} value={r.value}>{r.name}</option>
+                                                                      ))}
+                                                                  </select>
+                                                              </div>
+                                                          </div>
                                                       ) : (
-                                                          <Input 
-                                                             id={field.id} 
-                                                             type={field.type} 
-                                                             required={field.required} 
-                                                             className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-left" 
-                                                             placeholder={field.placeholder} 
-                                                             value={formData[field.id] || ""} 
-                                                             onChange={handleChange} 
-                                                          />
+                                                          <div className="space-y-2 group">
+                                                              <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">State / Province / Address <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                              <Input 
+                                                                 id="internationalAddress" 
+                                                                 className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all" 
+                                                                 placeholder="Enter your address" 
+                                                                 value={formData.internationalAddress} 
+                                                                 onChange={handleChange} 
+                                                                 required
+                                                              />
+                                                          </div>
                                                       )}
-                                                 </div>
-                                             </div>
-                                         );
-                                     })}
+                                                  </div>
+                                              );
+                                          }
 
-                                     <div className="space-y-2 group">
-                                         <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Password</Label>
-                                         <div className="relative">
-                                             <Input id="password" type={showPassword ? "text" : "password"} required className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.password} onChange={handleChange} />
-                                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
-                                         </div>
-                                     </div>
-                                     <div className="space-y-2 group">
-                                         <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Confirm Password</Label>
-                                         <div className="relative">
-                                             <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} required className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
-                                             <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
-                                         </div>
-                                     </div>
-                                 </div>
+                                          return (
+                                              <div key={field.id} className={cn("space-y-2 group", field.type === 'textarea' ? "md:col-span-2" : "")}>
+                                                  <Label htmlFor={field.id} className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
+                                                  <div className="relative">
+                                                      {field.type === 'select' ? (
+                                                           <select 
+                                                               id={field.id} 
+                                                               required={field.required} 
+                                                               className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
+                                                               value={formData[field.id] || ""}
+                                                               onChange={handleChange}
+                                                           >
+                                                               <option value="" disabled>{field.placeholder}</option>
+                                                               {(
+                                                                 field.dataSource === 'MEMBERSHIP_TYPES'
+                                                                   ? membershipPlans.map(p => ({ label: p.name, value: p.short_code })) :
+                                                                 field.dataSource === 'GENDER'
+                                                                   ? GENDER_OPTIONS :
+                                                                 (field.options || [])
+                                                               ).map((opt: any, i: number) => (
+                                                                   <option key={i} value={opt.value}>{opt.label}</option>
+                                                               ))}
+                                                           </select>
+                                                       ) : (
+                                                           <Input 
+                                                              id={field.id} 
+                                                              type={field.type} 
+                                                              required={field.required} 
+                                                              className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-left" 
+                                                              placeholder={field.placeholder} 
+                                                              value={formData[field.id] || ""} 
+                                                              onChange={handleChange} 
+                                                           />
+                                                       )}
+                                                  </div>
+                                              </div>
+                                          );
+                                      })}
 
                                  {error && <div className="bg-red-50 text-[#ED1C24] p-3 rounded-xl text-xs font-bold text-center border border-red-100 italic">{error}</div>}
                                  <Button type="submit" className="w-full h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl text-lg font-black shadow-2xl shadow-red-500/20 transition-all flex items-center justify-center gap-2">Continue <ChevronRight className="h-5 w-5" /></Button>
