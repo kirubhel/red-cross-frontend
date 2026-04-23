@@ -44,7 +44,7 @@ export default function SystemSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<"id" | "regions" | "zones" | "woredas">("id");
+  const [activeTab, setActiveTab] = useState<"id" | "regions" | "zones" | "woredas" | "assets" | "system">("id");
   
   const [regions, setRegions] = useState<Region[]>([]);
   const [locationHierarchy, setLocationHierarchy] = useState<LocationHierarchy>({ zones: [], woredas: [] });
@@ -54,6 +54,24 @@ export default function SystemSettingsPage() {
     padding: 6,
     useRegionCode: true,
     useZoneCode: true,
+  });
+
+  const [idAssets, setIdAssets] = useState({
+    stampUrl: "",
+    signature1Url: "",
+    signature2Url: "",
+  });
+
+  const [systemConfig, setSystemConfig] = useState({
+    smsToken: "************************************",
+    smsApiUrl: "https://api.geezsms.com/api/v1/sms/send",
+    whatsappToken: "************************************",
+    whatsappApiUrl: "https://graph.facebook.com/v21.0/528356777028058/messages",
+    telegramToken: "************************************",
+    serverUiPort: "4200",
+    serverApiPort: "5267",
+    serverPaymentPort: "8080",
+    serverIp: "138.201.190.62"
   });
 
   useEffect(() => {
@@ -68,6 +86,14 @@ export default function SystemSettingsPage() {
 
       if (settings.member_id_config) {
         setMemberConfig(JSON.parse(settings.member_id_config));
+      }
+
+      if (settings.id_assets) {
+        setIdAssets(JSON.parse(settings.id_assets));
+      }
+
+      if (settings.system_config) {
+        setSystemConfig(JSON.parse(settings.system_config));
       }
 
       if (settings.all_regions) {
@@ -90,17 +116,25 @@ export default function SystemSettingsPage() {
       setSaving(true);
       setSuccess(false);
       
-      // Save ID Config
-      await api.post("/system-settings", {
-        key: "member_id_config",
-        value_json: JSON.stringify(memberConfig),
-      });
-
-      // Save Location Hierarchy
-      await api.post("/system-settings", {
-        key: "locations_hierarchy",
-        value_json: JSON.stringify(locationHierarchy),
-      });
+      // Save all configs in parallel
+      await Promise.all([
+        api.post("/system-settings", {
+          key: "member_id_config",
+          value_json: JSON.stringify(memberConfig),
+        }),
+        api.post("/system-settings", {
+          key: "locations_hierarchy",
+          value_json: JSON.stringify(locationHierarchy),
+        }),
+        api.post("/system-settings", {
+          key: "id_assets",
+          value_json: JSON.stringify(idAssets),
+        }),
+        api.post("/system-settings", {
+          key: "system_config",
+          value_json: JSON.stringify(systemConfig),
+        })
+      ]);
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -167,7 +201,7 @@ export default function SystemSettingsPage() {
         </div>
         
         <div className="flex bg-gray-100 p-1 rounded-xl">
-            {(["id", "regions", "zones", "woredas"] as const).map((tab) => (
+            {(["id", "regions", "zones", "woredas", "assets", "system"] as const).map((tab) => (
                 <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -177,7 +211,7 @@ export default function SystemSettingsPage() {
                         : "text-gray-400 hover:text-gray-600"
                     }`}
                 >
-                    {tab === "id" ? "Member ID" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    {tab === "id" ? "Member ID" : tab === "assets" ? "ID Assets" : tab === "system" ? "Connectivity" : tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
             ))}
         </div>
@@ -404,6 +438,170 @@ export default function SystemSettingsPage() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            </motion.div>
+          )}
+
+          {activeTab === "assets" && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+                <div className="flex items-center gap-4 pb-4 border-b border-gray-50">
+                    <div className="h-12 w-12 bg-red-50 rounded-xl flex items-center justify-center text-[#ED1C24]">
+                        <Edit3 className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-black text-black tracking-tighter">ID Card Branding Assets</h3>
+                        <p className="text-gray-400 font-medium text-xs">Manage official stamps and authorized signatures for member identification.</p>
+                    </div>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                    {[
+                        { label: "Official Organization Stamp", key: "stampUrl", desc: "Used on the back of all ID cards" },
+                        { label: "Primary Authorized Signature", key: "signature1Url", desc: "Main signatory (e.g. Secretary General)" },
+                        { label: "Secondary Authorized Signature", key: "signature2Url", desc: "Optional second signatory" }
+                    ].map((asset, i) => (
+                        <div key={i} className="p-6 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
+                            <Label className="text-[10px] font-black uppercase text-gray-500 tracking-widest leading-none">{asset.label}</Label>
+                            <div className="h-32 bg-white rounded-xl border border-dashed border-gray-200 flex items-center justify-center relative overflow-hidden group">
+                                {idAssets[asset.key as keyof typeof idAssets] ? (
+                                    <img src={idAssets[asset.key as keyof typeof idAssets]} alt={asset.label} className="h-full object-contain" />
+                                ) : (
+                                    <div className="flex flex-col items-center gap-2 text-gray-300">
+                                        <Plus className="h-8 w-8" />
+                                        <span className="text-[10px] font-bold uppercase tracking-tight">Upload PNG</span>
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+                                    <Button variant="outline" className="text-white border-white hover:bg-white hover:text-black h-8 px-4 rounded-lg text-[10px] font-black uppercase">
+                                        Change Asset
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-black text-gray-400 uppercase">Asset URL / Storage Path</Label>
+                                <Input 
+                                    value={idAssets[asset.key as keyof typeof idAssets]}
+                                    onChange={(e) => setIdAssets({ ...idAssets, [asset.key]: e.target.value })}
+                                    className="h-10 bg-white border-gray-200 rounded-xl text-[10px] font-medium"
+                                    placeholder="https://..."
+                                />
+                            </div>
+                            <p className="text-[10px] font-medium text-gray-400 italic">{asset.desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </motion.div>
+          )}
+
+          {activeTab === "system" && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+                <div className="flex items-center gap-4 pb-4 border-b border-gray-50">
+                    <div className="h-12 w-12 bg-red-50 rounded-xl flex items-center justify-center text-[#ED1C24]">
+                        <RefreshCw className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-black text-black tracking-tighter">Connectivity & Gateways</h3>
+                        <p className="text-gray-400 font-medium text-xs">Configure communication APIs and infrastructure parameters.</p>
+                    </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                    {/* SMS Gateway */}
+                    <div className="space-y-4 p-6 bg-gray-50 rounded-[24px] border border-gray-100">
+                        <h4 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
+                           <MessageCircle className="h-4 w-4 text-green-600" /> SMS Gateway
+                        </h4>
+                        <div className="space-y-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-black uppercase text-gray-400">SMS Token</Label>
+                                <div className="flex gap-2">
+                                    <Input value={systemConfig.smsToken} onChange={(e) => setSystemConfig({...systemConfig, smsToken: e.target.value})} className="h-10 bg-white border-gray-200 rounded-xl text-xs font-medium" />
+                                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-green-600 hover:bg-green-700 text-white border-none rounded-xl"><Save className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-black uppercase text-gray-400">SMS API URL</Label>
+                                <div className="flex gap-2">
+                                    <Input value={systemConfig.smsApiUrl} onChange={(e) => setSystemConfig({...systemConfig, smsApiUrl: e.target.value})} className="h-10 bg-white border-gray-200 rounded-xl text-xs font-medium" />
+                                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-green-600 hover:bg-green-700 text-white border-none rounded-xl"><Save className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* WhatsApp API */}
+                    <div className="space-y-4 p-6 bg-gray-50 rounded-[24px] border border-gray-100">
+                        <h4 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
+                           <MessageCircle className="h-4 w-4 text-green-500" /> WhatsApp API
+                        </h4>
+                        <div className="space-y-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-black uppercase text-gray-400">WhatsApp Token</Label>
+                                <div className="flex gap-2">
+                                    <Input value={systemConfig.whatsappToken} onChange={(e) => setSystemConfig({...systemConfig, whatsappToken: e.target.value})} className="h-10 bg-white border-gray-200 rounded-xl text-xs font-medium" />
+                                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-green-600 hover:bg-green-700 text-white border-none rounded-xl"><Save className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-black uppercase text-gray-400">WhatsApp API URL</Label>
+                                <div className="flex gap-2">
+                                    <Input value={systemConfig.whatsappApiUrl} onChange={(e) => setSystemConfig({...systemConfig, whatsappApiUrl: e.target.value})} className="h-10 bg-white border-gray-200 rounded-xl text-xs font-medium" />
+                                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-green-600 hover:bg-green-700 text-white border-none rounded-xl"><Save className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Telegram Bot */}
+                    <div className="space-y-4 p-6 bg-gray-50 rounded-[24px] border border-gray-100">
+                        <h4 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
+                           <MessageCircle className="h-4 w-4 text-blue-400" /> Telegram Bot
+                        </h4>
+                        <div className="space-y-1.5">
+                            <Label className="text-[9px] font-black uppercase text-gray-400">Telegram Token</Label>
+                            <div className="flex gap-2">
+                                <Input value={systemConfig.telegramToken} onChange={(e) => setSystemConfig({...systemConfig, telegramToken: e.target.value})} className="h-10 bg-white border-gray-200 rounded-xl text-xs font-medium" />
+                                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-blue-400 hover:bg-blue-500 text-white border-none rounded-xl"><Save className="h-4 w-4"/></Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Infrastructure */}
+                    <div className="space-y-4 p-6 bg-gray-50 rounded-[24px] border border-gray-100">
+                        <h4 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
+                           <Globe className="h-4 w-4 text-amber-500" /> Infrastructure
+                        </h4>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-black uppercase text-gray-400">Server UI Port</Label>
+                                <div className="flex gap-2">
+                                    <Input value={systemConfig.serverUiPort} onChange={(e) => setSystemConfig({...systemConfig, serverUiPort: e.target.value})} className="h-10 bg-white border-gray-200 rounded-xl text-xs font-black" />
+                                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-amber-500 hover:bg-amber-600 text-white border-none rounded-xl"><Save className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-black uppercase text-gray-400">Server API Port</Label>
+                                <div className="flex gap-2">
+                                    <Input value={systemConfig.serverApiPort} onChange={(e) => setSystemConfig({...systemConfig, serverApiPort: e.target.value})} className="h-10 bg-white border-gray-200 rounded-xl text-xs font-black" />
+                                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-amber-500 hover:bg-amber-600 text-white border-none rounded-xl"><Save className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-black uppercase text-gray-400">Server Payment Port</Label>
+                                <div className="flex gap-2">
+                                    <Input value={systemConfig.serverPaymentPort} onChange={(e) => setSystemConfig({...systemConfig, serverPaymentPort: e.target.value})} className="h-10 bg-white border-gray-200 rounded-xl text-xs font-black" />
+                                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-amber-500 hover:bg-amber-600 text-white border-none rounded-xl"><Save className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-black uppercase text-gray-400">Server IP</Label>
+                                <div className="flex gap-2">
+                                    <Input value={systemConfig.serverIp} onChange={(e) => setSystemConfig({...systemConfig, serverIp: e.target.value})} className="h-10 bg-white border-gray-200 rounded-xl text-xs font-black" />
+                                    <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-amber-500 hover:bg-amber-600 text-white border-none rounded-xl"><Save className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </motion.div>
