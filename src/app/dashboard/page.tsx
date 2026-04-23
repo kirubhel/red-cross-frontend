@@ -54,7 +54,7 @@ export default function DashboardPage() {
           // 403 is expected for some member accounts if endpoint is volunteer-only
         }
 
-        const isMemberRole = role === "MEMBER" || role === "5" || role === 5;
+        const isMemberRole = role === "MEMBER" || role === "5" || (role && parseInt(role) === 5);
 
         setUser({
           firstName: userData?.first_name || (isMemberRole ? "Kebede" : "Volunteer"),

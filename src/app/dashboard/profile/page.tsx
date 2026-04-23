@@ -197,7 +197,7 @@ export default function ProfilePage() {
             </div>
             
             <div className="space-y-1">
-              <h2 className="text-xl font-black tracking-tight">{formData.firstName} {formData.lastName}</h2>
+              <h2 className="text-xl font-black tracking-tight">{formData.firstName} {formData.fatherName}</h2>
               <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">{user?.ercs_id || "ERCS MEMBER"}</p>
             </div>
 
@@ -252,18 +252,33 @@ export default function ProfilePage() {
                     </div>
                  </div>
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Last Name</label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Father's Name</label>
                     <div className="relative">
                        <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
                        <input 
                           type="text" 
-                          name="lastName"
-                          value={formData.lastName}
+                          name="fatherName"
+                          value={formData.fatherName}
                           onChange={handleInputChange}
                           className="w-full bg-gray-50 border-none rounded-2xl h-14 pl-12 pr-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" 
                           placeholder="Alemu"
                        />
                     </div>
+                 </div>
+              </div>
+
+              <div className="space-y-2">
+                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Grandfather's Name</label>
+                 <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
+                    <input 
+                       type="text" 
+                       name="grandfatherName"
+                       value={formData.grandfatherName}
+                       onChange={handleInputChange}
+                       className="w-full bg-gray-50 border-none rounded-2xl h-14 pl-12 pr-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" 
+                       placeholder="Bekele"
+                    />
                  </div>
               </div>
 
