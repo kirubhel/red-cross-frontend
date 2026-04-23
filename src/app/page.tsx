@@ -377,7 +377,7 @@ export default function LandingPage() {
                 <span className="relative inline-block">
                   <span className="text-[#ED1C24]">{t.hero.title2}</span> <br /> 
                   {t.hero.title3}
-                  <svg className="absolute top-[60%] left-0 w-full h-8 -translate-y-1/2 pointer-events-none overflow-visible" viewBox="0 0 300 20" preserveAspectRatio="none">
+                  <svg className="absolute top-[95%] left-0 w-full h-8 -translate-y-1/2 pointer-events-none overflow-visible" viewBox="0 0 300 20" preserveAspectRatio="none">
                     <motion.path 
                       d="M1 15C50 12 150 5 299 10" 
                       stroke="#ED1C24" 

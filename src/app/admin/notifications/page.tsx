@@ -283,7 +283,7 @@ export default function NotificationsPage() {
                            <div className="space-y-2">
                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-2"><MessageSquare className="h-3 w-3" /> Message Template (EN)</label>
                                <div className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-6 text-sm font-medium text-black border-dashed leading-relaxed space-y-4">
-                                   <p>Congratulations {`{{memberName}}`}, your ABI-ZEER Membership has been successfully renewed!</p>
+                                   <p>Congratulations {`{{memberName}}`}, your ERCS Membership has been successfully renewed!</p>
                                    <p>We have received your payment. Thank you for continuing to be a valued member.<br/>
                                    Your renewed Membership ID is {`{{memberId}}`}, valid until {`{{expiredDate}}`}.</p>
                                    <p>You can log in at {`{{loginUrl}}`} using your Membership ID.</p>

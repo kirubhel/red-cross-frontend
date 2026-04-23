@@ -127,6 +127,7 @@ export default function UserManagementPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [editRole, setEditRole] = useState<number>(5);
   const [editStatus, setEditStatus] = useState<string>("ACTIVE");
+  const [activeTab, setActiveTab] = useState<"ADMIN" | "MEMBER">("ADMIN");
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -224,10 +225,17 @@ export default function UserManagementPage() {
     }
   };
 
-  const filtered = users.filter(u =>
-    u.email?.toLowerCase().includes(search.toLowerCase()) ||
-    u.phone_number?.includes(search)
-  );
+  const filtered = users.filter(u => {
+    const isSearchMatch = u.email?.toLowerCase().includes(search.toLowerCase()) || 
+                          u.phone_number?.includes(search);
+    
+    // Role values 5 and 6 are Volunteer and Member
+    const roleVal = Number(u.role);
+    const isEndUser = roleVal === 5 || roleVal === 6 || u.role === "VOLUNTEER" || u.role === "MEMBER";
+    
+    if (activeTab === "ADMIN") return isSearchMatch && !isEndUser;
+    return isSearchMatch && isEndUser;
+  });
 
   return (
     <div className="space-y-6 w-full max-w-full pb-10">
@@ -259,8 +267,30 @@ export default function UserManagementPage() {
       </div>
 
       <div className="grid lg:grid-cols-12 gap-6 items-start">
-        {/* User List */}
-        <div className="lg:col-span-5 space-y-3">
+        {/* User List Panel */}
+        <div className="lg:col-span-5 space-y-4">
+          {/* Tab Switcher */}
+          <div className="flex p-1 bg-gray-100 rounded-2xl">
+            <button
+              onClick={() => setActiveTab("ADMIN")}
+              className={cn(
+                "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+                activeTab === "ADMIN" ? "bg-white text-[#ED1C24] shadow-sm" : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              Staff & Admins
+            </button>
+            <button
+              onClick={() => setActiveTab("MEMBER")}
+              className={cn(
+                "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+                activeTab === "MEMBER" ? "bg-white text-[#ED1C24] shadow-sm" : "text-gray-400 hover:text-gray-600"
+              )}
+            >
+              Members & Volunteers
+            </button>
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
