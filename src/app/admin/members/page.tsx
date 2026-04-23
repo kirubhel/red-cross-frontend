@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -11,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight } from "lucide-react";
+import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
@@ -19,10 +20,18 @@ type Member = {
   id: string;
   first_name: string;
   father_name: string;
-  region_id: string;
+  grandfather_name?: string;
+  email?: string;
+  phone_number?: string;
+  national_id?: string;
+  gender?: string;
+  region: any;
   status: string;
   ercs_id: string;
   membership_type?: string;
+  metadata?: string;
+  zone_id?: string;
+  woreda_id?: string;
 };
 
 type Region = {
@@ -42,6 +51,9 @@ export default function MembersPage() {
   const [zoneFilter, setZoneFilter] = useState<string>("");
   const [woredaFilter, setWoredaFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -49,6 +61,7 @@ export default function MembersPage() {
   const pageSize = 10;
 
   useEffect(() => {
+    setIsMounted(true);
     fetchRegions();
   }, []);
 
@@ -97,7 +110,7 @@ export default function MembersPage() {
         m.ercs_id,
         m.first_name,
         m.father_name,
-        regions.find(r => String(r.id) === String(m.region_id))?.name || m.region_id,
+        regions.find(r => String(r.id) === String(m.region))?.name || String(m.region),
         m.membership_type || "N/A",
         m.status || "Active"
     ]);
@@ -603,9 +616,11 @@ export default function MembersPage() {
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-4 font-black text-[9px] uppercase tracking-wider text-gray-400">
-                    {regions.find(r => String(r.id) === String(member.region_id))?.name || 'N/A'}
+                    {regions.find(r => String(r.id) === String(member.region))?.name || String(member.region)}
                   </TableCell>
-                  <TableCell className="px-6 py-4 font-bold text-[11px] text-gray-500">{member.membership_type || "N/A"}</TableCell>
+                  <TableCell className="px-6 py-4 font-bold text-[11px] text-gray-500">
+                    {(member as any).membership_type || (member as any).membershipType || "REGULAR"}
+                  </TableCell>
 
                   <TableCell className="px-6 py-4">
                     <span
@@ -624,13 +639,128 @@ export default function MembersPage() {
                     </span>
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right print:hidden">
-                    <ArrowUpRight className="h-4 w-4 ml-auto text-gray-300 group-hover:text-black transition-colors" />
+                    <button 
+                        onClick={() => { setSelectedMember(member); setShowModal(true); }}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+                    >
+                        <ArrowUpRight className="h-4 w-4 ml-auto text-gray-300 group-hover:text-[#ED1C24] transition-colors" />
+                    </button>
                   </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
+
+        {/* Member Detail Modal */}
+        {showModal && selectedMember && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100"
+                >
+                    <div className="p-8 border-b border-gray-50 flex justify-between items-start">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">Member Audit Log</p>
+                            <h2 className="text-2xl font-black tracking-tight text-black">
+                                {selectedMember.first_name} {selectedMember.father_name} {selectedMember.grandfather_name}
+                            </h2>
+                            <p className="text-xs font-bold text-gray-400">{selectedMember.ercs_id}</p>
+                        </div>
+                        <button 
+                            onClick={() => setShowModal(false)}
+                            className="h-10 w-10 flex items-center justify-center rounded-2xl hover:bg-gray-50 transition-colors"
+                        >
+                            <X className="h-5 w-5 text-gray-400" />
+                        </button>
+                    </div>
+
+                    <div className="p-8 grid grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                            <div>
+                                <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Identity Details</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Users className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Gender</p>
+                                            <p className="text-xs font-bold text-black">{selectedMember.gender || "Not Specified"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><FileText className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">National ID</p>
+                                            <p className="text-xs font-bold text-black">{selectedMember.national_id || "N/A"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><CreditCard className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Category</p>
+                                            <p className="text-xs font-bold text-[#ED1C24]">
+                                                {(selectedMember as any).membership_type || (selectedMember as any).membershipType || "REGULAR"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Contact & Location</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Phone className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Phone</p>
+                                            <p className="text-xs font-bold text-black">{selectedMember.phone_number || "No Phone"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Mail className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Email</p>
+                                            <p className="text-xs font-bold text-black">{selectedMember.email || "No Email"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><MapPin className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Location Hierarchy</p>
+                                            <p className="text-xs font-bold text-black">
+                                                {regions.find(r => String(r.id) === String(selectedMember.region))?.name || "Unknown Region"}
+                                                {((selectedMember as any).zone_id || (selectedMember as any).zoneId) && ` • ${(selectedMember as any).zone_id || (selectedMember as any).zoneId}`}
+                                                {((selectedMember as any).woreda_id || (selectedMember as any).woredaId) && ` • ${(selectedMember as any).woreda_id || (selectedMember as any).woredaId}`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="px-8 pb-8">
+                        <div className="p-6 bg-gray-50 rounded-[32px] border border-gray-100">
+                            <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">System Metadata</h4>
+                            <pre className="text-[10px] font-mono text-gray-500 overflow-auto max-h-48">
+                                {JSON.stringify(selectedMember, null, 2)}
+                            </pre>
+                        </div>
+                        <div className="mt-6 flex gap-3">
+                            <Button className="flex-1 bg-black text-white rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest">
+                                Print Audit Record
+                            </Button>
+                            <Button variant="outline" className="flex-1 rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest border-gray-200">
+                                Edit Profile
+                            </Button>
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+        )}
 
         {/* Pagination Footer */}
         <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between print:hidden">
@@ -671,7 +801,7 @@ export default function MembersPage() {
                 <div className="mt-4 grid grid-cols-2 gap-x-12 gap-y-2 text-xs">
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Region:</span> {regions.find(r => String(r.id) === regionFilter)?.name || "All"}</div>
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Status:</span> {statusFilter || "All"}</div>
-                    <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Generated:</span> {new Date().toLocaleString()}</div>
+                    <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Generated:</span> {isMounted ? new Date().toLocaleString() : ""}</div>
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Total Count:</span> {totalItems}</div>
                 </div>
               </div>
