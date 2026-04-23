@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, Save, Check, RefreshCw, Hash, ShieldAlert, MapPin, Map, Globe, Plus, Trash2, Edit3 } from "lucide-react";
+import { Settings, Save, Check, RefreshCw, Hash, ShieldAlert, MapPin, Map, Globe, Plus, Trash2, Edit3, MessageCircle } from "lucide-react";
 import api from "@/lib/api";
 
 type MemberIDConfig = {
@@ -73,6 +73,42 @@ export default function SystemSettingsPage() {
     serverPaymentPort: "8080",
     serverIp: "138.201.190.62"
   });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [currentAssetKey, setCurrentAssetKey] = useState<string | null>(null);
+
+  const handleAssetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentAssetKey) return;
+
+    try {
+      setSaving(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      // Use the general storage upload endpoint
+      const res = await api.post("/storage/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      
+      if (res.data.url) {
+        setIdAssets(prev => ({ ...prev, [currentAssetKey]: res.data.url }));
+        // Reset input
+        e.target.value = '';
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+      alert("Failed to upload asset. Please try again.");
+    } finally {
+      setSaving(false);
+      setCurrentAssetKey(null);
+    }
+  };
+
+  const triggerUpload = (key: string) => {
+    setCurrentAssetKey(key);
+    fileInputRef.current?.click();
+  };
 
   useEffect(() => {
     fetchInitialData();
@@ -221,6 +257,15 @@ export default function SystemSettingsPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-6">
           
+            {/* Hidden File Input for Assets */}
+            <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleAssetUpload} 
+                className="hidden" 
+                accept="image/png,image/jpeg,image/svg+xml"
+            />
+
           {activeTab === "id" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                 <div className="flex items-center gap-4 pb-4 border-b border-gray-50">
@@ -467,14 +512,23 @@ export default function SystemSettingsPage() {
                                 {idAssets[asset.key as keyof typeof idAssets] ? (
                                     <img src={idAssets[asset.key as keyof typeof idAssets]} alt={asset.label} className="h-full object-contain" />
                                 ) : (
-                                    <div className="flex flex-col items-center gap-2 text-gray-300">
+                                    <button 
+                                        onClick={() => triggerUpload(asset.key)}
+                                        disabled={saving}
+                                        className="flex flex-col items-center gap-2 text-gray-300 hover:text-red-400 transition-colors"
+                                    >
                                         <Plus className="h-8 w-8" />
                                         <span className="text-[10px] font-bold uppercase tracking-tight">Upload PNG</span>
-                                    </div>
+                                    </button>
                                 )}
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
-                                    <Button variant="outline" className="text-white border-white hover:bg-white hover:text-black h-8 px-4 rounded-lg text-[10px] font-black uppercase">
-                                        Change Asset
+                                    <Button 
+                                        variant="outline" 
+                                        className="text-white border-white hover:bg-white hover:text-black h-8 px-4 rounded-lg text-[10px] font-black uppercase"
+                                        onClick={() => triggerUpload(asset.key)}
+                                        disabled={saving}
+                                    >
+                                        {saving && currentAssetKey === asset.key ? <RefreshCw className="h-3 w-3 animate-spin mr-2" /> : "Change Asset"}
                                     </Button>
                                 </div>
                             </div>

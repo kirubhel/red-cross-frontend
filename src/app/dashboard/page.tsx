@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { 
   Heart, 
@@ -33,7 +33,9 @@ import { cn } from "@/lib/utils";
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [activities, setActivities] = useState<any[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -96,6 +98,39 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, []);
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // 1. Upload to storage
+      const uploadRes = await api.post("/person/profile/photo", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      const photoUrl = uploadRes.data.url;
+
+      // 2. Update profile
+      await api.put("/person/profile", {
+        ...user,
+        photoUrl: photoUrl
+      });
+
+      // 3. Update local state
+      setUser((prev: any) => ({ ...prev, photoUrl }));
+      alert("Photo uploaded successfully!");
+    } catch (err: any) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload photo. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const isMember = user?.role === "MEMBER" || user?.role === "5" || user?.role === 5;
   const isVolunteer = !isMember;
 
@@ -129,7 +164,7 @@ export default function DashboardPage() {
     return (
       <div className="p-6 md:p-8 space-y-8 bg-[#F8FAFC] min-h-full pb-20">
         
-        {!user?.photo && (
+        {!user?.photoUrl && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -144,8 +179,19 @@ export default function DashboardPage() {
                 <p className="text-xs font-medium opacity-80">Please upload your photo to complete your Digital ID card and verify your membership.</p>
               </div>
             </div>
-            <Button className="bg-[#ED1C24] hover:bg-black text-white px-6 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-red-500/20">
-               Upload Photo Now
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handlePhotoUpload} 
+              accept="image/*" 
+              className="hidden" 
+            />
+            <Button 
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="bg-[#ED1C24] hover:bg-black text-white px-6 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-red-500/20"
+            >
+               {uploading ? "Uploading..." : "Upload Photo Now"}
             </Button>
           </motion.div>
         )}
