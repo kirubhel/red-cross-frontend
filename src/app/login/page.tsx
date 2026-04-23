@@ -37,10 +37,11 @@ export default function LoginPage() {
     try {
       const res = await api.post("/auth/login", { identifier: email, password });
       
-      const { access_token, role } = res.data;
+      const { access_token, role, ercs_id } = res.data;
       localStorage.setItem("token", access_token);
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("user_role", role); 
+      if (ercs_id) localStorage.setItem("ercs_id", ercs_id);
       
       // Handle both string and numeric enum values from the API
       const isAdmin = role === "SUPER_ADMIN" || role === "REGIONAL_ADMIN" || role === 1 || role === 2;
