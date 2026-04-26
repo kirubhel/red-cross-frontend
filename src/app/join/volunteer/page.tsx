@@ -191,7 +191,7 @@ export default function VolunteerJoinPage() {
             const regionId = formData.country === "ET" ? (REGION_MAP_VALUE_TO_ID[formData.region] || 1) : 14;
 
             // Register User
-            const res = await api.post("/auth/register", {
+            const res = await api.post("/auth/register/volunteer", {
                 first_name: formData.firstName,
                 father_name: formData.fatherName,
                 grandfather_name: formData.grandfatherName,
