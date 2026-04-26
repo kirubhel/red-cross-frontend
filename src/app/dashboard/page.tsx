@@ -37,21 +37,25 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [activities, setActivities] = useState<any[]>([]);
+  const [news, setNews] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
+        // 1. Fetch Profile
+        const profileRes = await api.get("/person/profile");
+        const userData = profileRes.data.person || profileRes.data;
+        
+        // 2. Fetch News
+        const newsRes = await api.get("/news?page_size=3");
+        setNews(newsRes.data.articles || []);
+
         const role = localStorage.getItem("user_role");
         const storedErcsId = localStorage.getItem("ercs_id");
-        
-        const profileRes = await api.get("/person/profile");
-        // GetPersonResponse contains a 'person' object
-        const userData = profileRes.data.person || profileRes.data;
-
         const isMemberRole = role === "MEMBER" || role === "5" || (role && parseInt(role) === 5);
-
+        
         setUser({
           firstName: userData?.first_name || "",
           fatherName: userData?.father_name || "",
