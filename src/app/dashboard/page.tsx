@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -52,10 +53,42 @@ export default function DashboardPage() {
         const newsRes = await api.get("/news?page_size=3");
         setNews(newsRes.data.articles || []);
 
+        // 3. Fetch ID Assets from System Settings
+        let idAssets = { stampUrl: "", signature1Url: "", signature2Url: "" };
+        try {
+          const settingsRes = await api.get("/system/settings");
+          const settings = settingsRes.data.settings || {};
+          if (settings.id_assets) {
+            idAssets = JSON.parse(settings.id_assets);
+          }
+        } catch (err) {
+          console.error("Failed to fetch ID assets:", err);
+        }
+
         const role = localStorage.getItem("user_role");
         const storedErcsId = localStorage.getItem("ercs_id");
-        const isMemberRole = role === "MEMBER" || role === "5" || (role && parseInt(role) === 5);
         
+        const issueDate = userData?.created_at ? new Date(userData.created_at) : new Date();
+        const membershipType = userData?.membership_type || "REGULAR";
+        
+        // Calculate Membership Expiry
+        let expiryDate = new Date(issueDate);
+        if (membershipType.toUpperCase() === "LIFETIME") {
+          expiryDate = new Date(issueDate.getFullYear() + 100, issueDate.getMonth(), issueDate.getDate());
+        } else if (membershipType.toUpperCase() === "MONTHLY") {
+          expiryDate.setMonth(expiryDate.getMonth() + 1);
+        } else {
+          // Default to Yearly for REGULAR/YEARLY
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+        }
+
+        // ID Card specific expiry is always +1 year from issue
+        const cardExpiry = new Date(issueDate);
+        cardExpiry.setFullYear(cardExpiry.getFullYear() + 1);
+
+        const diffTime = expiryDate.getTime() - new Date().getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
         setUser({
           firstName: userData?.first_name || "",
           fatherName: userData?.father_name || "",
@@ -63,37 +96,32 @@ export default function DashboardPage() {
           fullName: `${userData?.first_name || ""} ${userData?.father_name || ""} ${userData?.grandfather_name || ""}`.trim(),
           memberId: userData?.ercs_id || storedErcsId || "NOT_ASSIGNED",
           status: userData?.membership_status || userData?.status || "PENDING",
-          membershipType: userData?.membership_type || "REGULAR",
-          role: role || (isMemberRole ? "MEMBER" : "VOLUNTEER"),
-          joinDate: userData?.created_at ? new Date(userData.created_at).toLocaleDateString() : "March 2024",
-          expiryDate: userData?.expiry_date || "N/A",
-          daysLeft: userData?.days_left || 0,
-          totalHours: userData?.hoursSpent || userData?.hours_spent || 0,
-          donations: userData?.total_donations ? `${userData.total_donations} ETB` : "0 ETB",
-          impactScore: userData?.impact_score || 0,
-          points: userData?.points || 0,
+          membershipType: membershipType,
+          role: role || "MEMBER",
+          issueDate: issueDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          expiryDate: membershipType.toUpperCase() === "LIFETIME" ? "LIFETIME" : expiryDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          cardExpiry: cardExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          daysLeft: diffDays > 0 ? diffDays : 0,
           region: userData?.region_name || "Federal HQ",
           phone: userData?.phone_number || userData?.phone || "+251...",
           email: userData?.email || "N/A",
           photo: userData?.photo_url || null,
-          raw: userData // Keep raw for updates
+          idAssets: idAssets,
+          raw: userData
         });
 
-        if (!isMemberRole) {
-          try {
-            const activityRes = await api.get("/volunteers/activities");
-            setActivities(activityRes.data.activities || []);
-          } catch (err) {
-            setActivities([]);
-          }
-        }
+        // Mock activities
+        setActivities([
+          { title: "Monthly Membership Fee", date: "Today", amount: "10.00 ETB", status: "COMPLETED", icon: CreditCard, bg: "bg-green-50", color: "text-green-500" },
+          { title: "Quarterly Donation", date: "24 Mar 2024", amount: "250.00 ETB", status: "VERIFIED", icon: Heart, bg: "bg-red-50", color: "text-red-500" },
+        ]);
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchDashboardData();
+    fetchData();
   }, []);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -288,7 +316,16 @@ export default function DashboardPage() {
                     </div>
                  </div>
                  
-                 <div className="p-6 flex gap-6 h-full">
+                 <div className="p-6 flex gap-6 h-full relative overflow-hidden">
+                    {/* Watermark Stamp */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 opacity-[0.06] pointer-events-none rotate-12">
+                       {user?.idAssets?.stampUrl ? (
+                         <img src={user.idAssets.stampUrl} alt="Watermark" className="w-full h-full object-contain grayscale" />
+                       ) : (
+                         <Image src="/logo.jpg" alt="Watermark" width={200} height={200} unoptimized />
+                       )}
+                    </div>
+
                     <div className="w-1/3 aspect-square bg-gray-100 rounded-xl border-2 border-red-100 overflow-hidden shrink-0 relative">
                        {user?.photo ? (
                           <img src={user.photo} alt="ID" className="w-full h-full object-cover" />
@@ -303,9 +340,10 @@ export default function DashboardPage() {
                          { label: "ID Number", val: user?.memberId },
                          { label: "Name", val: user?.fullName || `${user?.firstName} ${user?.lastName}` },
                          { label: "Membership Type", val: user?.membershipType },
-                         { label: "Mobile Number", val: user?.phone },
-                         { label: "Issued Date", val: "10 Mar 2026" },
-                         { label: "Expired Date", val: user?.expiryDate }
+                         { label: "Mobile Number", val: user?.phone || "+251..." },
+                         { label: "Region", val: user?.region },
+                         { label: "Issued Date", val: user?.issueDate },
+                         { label: "Expired Date", val: user?.cardExpiry }
                        ].map((f, i) => (
                          <div key={i} className="flex justify-between items-end border-b border-gray-50 pb-0.5">
                             <span className="text-[7px] font-black text-red-900 uppercase tracking-widest">{f.label}</span>
@@ -334,36 +372,64 @@ export default function DashboardPage() {
                        <div className="flex-1 space-y-3">
                           <div className="space-y-1">
                              <p className="text-[7px] font-black text-red-900 uppercase tracking-widest">Office Address</p>
-                             <p className="text-[9px] font-bold text-gray-600 leading-tight">Bisrate Gebriel, in front of Zambia Embassy, Addis Ababa</p>
+                             <p className="text-[9px] font-bold text-gray-800 leading-tight">
+                                Ethiopian Red Cross Society HQ<br />
+                                Bisrate Gebriel, In front of Zambia Embassy<br />
+                                Addis Ababa, Ethiopia
+                             </p>
                           </div>
                           <div className="space-y-1">
-                             <p className="text-[7px] font-black text-red-900 uppercase tracking-widest">Email Support</p>
-                             <p className="text-[9px] font-bold text-gray-600">{user?.email}</p>
-                          </div>
-                          <div className="space-y-1">
-                             <p className="text-[7px] font-black text-red-900 uppercase tracking-widest">24/7 Hotline</p>
-                             <p className="text-[9px] font-bold text-gray-600">+251 911 393 123</p>
+                             <p className="text-[7px] font-black text-red-900 uppercase tracking-widest">Contact Information</p>
+                             <p className="text-[9px] font-bold text-gray-800">
+                                Tel: +251 11 551 91 00<br />
+                                Email: info@redcrosseth.org<br />
+                                Web: www.redcrosseth.org
+                             </p>
                           </div>
                        </div>
                        
                        <div className="w-1/3 flex flex-col items-center justify-center gap-2">
-                          <div className="p-2 bg-gray-50 border border-gray-100 rounded-xl">
-                             <QrCode className="h-20 w-20 text-red-900" />
+                          <div className="p-2 bg-white border-2 border-gray-100 rounded-xl shadow-sm">
+                             <QRCodeCanvas 
+                               value={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${user?.memberId}`}
+                               size={64}
+                               level={"H"}
+                               includeMargin={false}
+                               imageSettings={{
+                                 src: "/logo.jpg",
+                                 x: undefined,
+                                 y: undefined,
+                                 height: 12,
+                                 width: 12,
+                                 excavate: true,
+                               }}
+                             />
+
                           </div>
-                          <p className="text-[6px] font-black text-gray-400 uppercase tracking-[0.2em]">Scan to Verify</p>
+                          <p className="text-[5px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Scan to Verify<br />{user?.memberId}</p>
                        </div>
                     </div>
 
-                    <div className="px-6 pb-6 flex justify-between items-end">
-                       <div className="space-y-1 text-center">
-                          <div className="w-24 h-8 bg-gray-50 border-b border-red-900/20" />
-                          <p className="text-[6px] font-black text-red-900 uppercase">Member Signature</p>
-                       </div>
-                       <div className="space-y-1 text-center">
-                          <div className="w-24 h-8 flex items-center justify-center overflow-hidden">
-                             <Image src="/signature.png" alt="Signature" width={60} height={30} className="opacity-60 grayscale" />
+                    <div className="px-6 pb-6 flex justify-between items-end gap-10">
+                       <div className="space-y-1 text-center flex-1">
+                          <div className="h-8 flex items-center justify-center">
+                             {user?.idAssets?.signature1Url ? (
+                               <img src={user.idAssets.signature1Url} alt="Signature 1" className="h-full object-contain grayscale opacity-70" />
+                             ) : (
+                               <span className="italic font-serif text-gray-300 text-xs">Signature</span>
+                             )}
                           </div>
-                          <p className="text-[6px] font-black text-red-900 uppercase">Authorized Signature</p>
+                          <p className="text-[6px] font-black text-red-900 uppercase border-t border-gray-100 pt-1">General Secretary</p>
+                       </div>
+                       <div className="space-y-1 text-center flex-1">
+                          <div className="h-8 flex items-center justify-center">
+                             {user?.idAssets?.signature2Url ? (
+                               <img src={user.idAssets.signature2Url} alt="Signature 2" className="h-full object-contain grayscale opacity-70" />
+                             ) : (
+                               <span className="italic font-serif text-gray-300 text-xs">Signature</span>
+                             )}
+                          </div>
+                          <p className="text-[6px] font-black text-red-900 uppercase border-t border-gray-100 pt-1">Branch Manager</p>
                        </div>
                     </div>
                  </div>
@@ -443,7 +509,12 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
-              <p className="text-2xl font-black text-black tracking-tight">{stat.value}</p>
+              <div className="flex flex-col">
+                <p className="text-2xl font-black text-black tracking-tight">{stat.value}</p>
+                {stat.label === "Days Remaining" && (
+                  <p className="text-[9px] font-black text-gray-400 mt-0.5">{user?.expiryDate}</p>
+                )}
+              </div>
             </div>
           </motion.div>
         ))}
@@ -536,28 +607,27 @@ export default function DashboardPage() {
         {/* Sidebar Section */}
         <div className="space-y-10">
           
-          {/* Upcoming Events */}
+          {/* ERCS News */}
           <div className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-sm space-y-6">
             <h3 className="text-xl font-black tracking-tighter">
-              {isVolunteer ? "Upcoming Missions" : "Upcoming Events"}
+              ERCS News
             </h3>
             <div className="space-y-6">
-              {upcomingEvents.map((event, idx) => (
+              {news.map((item, idx) => (
                 <div key={idx} className="group relative pl-6 border-l-2 border-gray-100 hover:border-[#ED1C24] transition-colors cursor-pointer">
                    <div className="absolute top-0 -left-[5px] h-2 w-2 rounded-full bg-gray-100 group-hover:bg-[#ED1C24] transition-colors" />
                    <div>
-                      <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest mb-1">{event.type}</p>
-                      <p className="font-black text-black leading-tight group-hover:text-[#ED1C24] transition-colors">{event.title}</p>
+                      <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest mb-1">{item.category}</p>
+                      <p className="font-black text-black leading-tight group-hover:text-[#ED1C24] transition-colors">{item.title}</p>
                       <div className="flex items-center gap-4 mt-2 text-xs font-bold text-gray-400">
-                        <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3" /> {event.date}</span>
-                        <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> {event.location}</span>
+                        <span className="flex items-center gap-1.5"><Calendar className="h-3 w-3" /> {item.date}</span>
                       </div>
                    </div>
                 </div>
               ))}
             </div>
             <Button variant="outline" className="w-full h-14 rounded-2xl border-2 border-gray-100 font-black text-xs uppercase tracking-widest hover:bg-gray-50 hover:text-black">
-              {isVolunteer ? "Explore All Missions" : "Explore All Events"}
+              Explore All News
             </Button>
           </div>
 

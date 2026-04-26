@@ -17,61 +17,24 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import api from "@/lib/api";
 
 export default function NewsPage() {
-  const [loading, setLoading] = useState(true);
-
-  // Mock news data
-  const articles = [
-    {
-      id: 1,
-      title: "ERCS Responds to Flash Floods in Afar Region",
-      excerpt: "The Ethiopia Red Cross Society has deployed three emergency teams to the Afar region following devastating flash floods that displaced over 5,000 families.",
-      date: "2 hours ago",
-      author: "Communication Dept",
-      category: "Emergency Response",
-      image: "https://images.unsplash.com/photo-1547683908-21aa538c716b?auto=format&fit=crop&q=80&w=1000",
-      featured: true,
-      readTime: "5 min read"
-    },
-    {
-      id: 2,
-      title: "New Digital Membership Portal Goes Live",
-      excerpt: "Members can now access their digital ID cards, track their impact history, and renew memberships entirely online.",
-      date: "Yesterday",
-      author: "IT Support",
-      category: "Announcement",
-      image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=800",
-      featured: false,
-      readTime: "3 min read"
-    },
-    {
-      id: 3,
-      title: "International Red Cross President Visits Addis Ababa HQ",
-      excerpt: "Discussions focused on scaling up humanitarian aid and strengthening community resilience in drought-affected areas.",
-      date: "2 days ago",
-      author: "Admin Office",
-      category: "Diplomatic",
-      image: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800",
-      featured: false,
-      readTime: "8 min read"
-    },
-    {
-      id: 4,
-      title: "Youth Volunteer Program: Summer Intake Now Open",
-      excerpt: "Are you ready to make a difference? Applications are now open for the 2024 Summer Youth Volunteer Corps.",
-      date: "3 days ago",
-      author: "Youth Wing",
-      category: "Recruitment",
-      image: "https://images.unsplash.com/photo-1559027615-cd93739bee94?auto=format&fit=crop&q=80&w=800",
-      featured: false,
-      readTime: "4 min read"
-    }
-  ];
+  const [articles, setArticles] = useState<any[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
+    const fetchNews = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/news?page_size=20");
+        setArticles(res.data.articles || []);
+      } catch (err) {
+        console.error("Failed to fetch news:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
   }, []);
 
   if (loading) {
@@ -122,7 +85,7 @@ export default function NewsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 bg-white rounded-[48px] overflow-hidden border border-gray-100 shadow-2xl shadow-gray-200/50">
              <div className="h-[400px] lg:h-auto overflow-hidden">
                 <img 
-                  src={featured.image} 
+                  src={featured.thumbnail_url || "https://images.unsplash.com/photo-1547683908-21aa538c716b?auto=format&fit=crop&q=80&w=1000"} 
                   alt={featured.title} 
                   className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                 />
@@ -150,8 +113,10 @@ export default function NewsPage() {
                          <img src="https://i.pravatar.cc/100?u=admin" alt="author" className="h-full w-full object-cover" />
                       </div>
                       <div>
-                         <p className="text-sm font-black text-gray-900">{featured.author}</p>
-                         <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{featured.date}</p>
+                          <p className="text-sm font-black text-gray-900">{featured.author || "ERCS Admin"}</p>
+                          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                            {featured.published_at ? new Date(featured.published_at).toLocaleDateString() : "Recently Published"}
+                          </p>
                       </div>
                    </div>
                    <div className="flex items-center gap-3">
@@ -185,18 +150,20 @@ export default function NewsPage() {
                    transition={{ delay: idx * 0.1 }}
                    className="group flex flex-col md:flex-row gap-8 items-center bg-white p-6 rounded-[40px] border border-transparent hover:border-gray-100 hover:shadow-xl transition-all cursor-pointer"
                  >
-                    <div className="w-full md:w-64 h-48 rounded-[32px] overflow-hidden shrink-0">
-                       <img 
-                         src={article.image} 
-                         alt={article.title} 
-                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                       />
-                    </div>
+                     <div className="w-full md:w-64 h-48 rounded-[32px] overflow-hidden shrink-0">
+                        <img 
+                          src={article.thumbnail_url || "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=800"} 
+                          alt={article.title} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                     </div>
                     <div className="space-y-4 flex-1">
                        <div className="flex items-center gap-4">
                           <span className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">{article.category}</span>
                           <span className="text-xs text-gray-300">•</span>
-                          <span className="text-xs text-gray-400 font-bold">{article.date}</span>
+                          <span className="text-xs text-gray-400 font-bold">
+                            {article.published_at ? new Date(article.published_at).toLocaleDateString() : "Recently"}
+                          </span>
                        </div>
                        <h3 className="text-2xl font-black tracking-tight text-gray-900 group-hover:text-[#ED1C24] transition-colors leading-tight">
                           {article.title}
