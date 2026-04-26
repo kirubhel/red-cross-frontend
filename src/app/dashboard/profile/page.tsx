@@ -37,9 +37,26 @@ export default function ProfilePage() {
     grandfatherName: "",
     email: "",
     phone: "",
-    region: "",
+    region: 0,
     bio: ""
   });
+
+  const REGIONS = [
+    { id: 1, name: "Addis Ababa" },
+    { id: 2, name: "Dire Dawa" },
+    { id: 3, name: "Tigray" },
+    { id: 4, name: "Afar" },
+    { id: 5, name: "Amhara" },
+    { id: 6, name: "Oromia" },
+    { id: 7, name: "Somali" },
+    { id: 8, name: "Benishangul Gumuz" },
+    { id: 9, name: "SNNPR" },
+    { id: 10, name: "Gambela" },
+    { id: 11, name: "Harari" },
+    { id: 12, name: "Sidama" },
+    { id: 13, name: "South West" },
+    { id: 14, name: "Federal HQ" }
+  ];
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -50,14 +67,28 @@ export default function ProfilePage() {
         const data = res.data.person || res.data;
         
         setUser(data);
+        
+        let bio = "";
+        try {
+          let meta: any = {};
+          if (typeof data.metadata === 'string' && data.metadata) {
+            meta = JSON.parse(data.metadata);
+          } else if (typeof data.metadata === 'object' && data.metadata) {
+            meta = data.metadata;
+          }
+          bio = meta.bio || "";
+        } catch (e) {
+          console.warn("Failed to parse metadata", e);
+        }
+
         setFormData({
           firstName: data.first_name || "",
           fatherName: data.father_name || "",
           grandfatherName: data.grandfather_name || "",
           email: data.email || "",
           phone: data.phone_number || "",
-          region: data.region_name || "",
-          bio: data.bio || ""
+          region: data.region_id || data.region || 0,
+          bio: bio
         });
       } catch (err) {
         console.error("Failed to fetch profile:", err);
@@ -68,9 +99,12 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: name === 'region' ? parseInt(value) : value 
+    }));
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,16 +158,43 @@ export default function ProfilePage() {
     e.preventDefault();
     try {
       setSaving(true);
+      
+      let meta: any = {};
+      try {
+        if (typeof user?.metadata === 'string' && user.metadata) {
+          meta = JSON.parse(user.metadata);
+        } else if (typeof user?.metadata === 'object' && user.metadata) {
+          meta = { ...user.metadata };
+        }
+      } catch (e) {
+        console.warn("Failed to parse existing metadata", e);
+      }
+      meta.bio = formData.bio;
+      const metaString = JSON.stringify(meta);
+
       await api.put("/person/profile", {
+        id: user?.id,
         first_name: formData.firstName,
         father_name: formData.fatherName,
         grandfather_name: formData.grandfatherName,
         email: formData.email,
         phone_number: formData.phone,
-        region_name: formData.region,
-        bio: formData.bio,
+        region: formData.region,
+        metadata: metaString,
         photo_url: user?.photo_url
       });
+
+      // Update local state so subsequent saves have latest metadata
+      setUser((prev: any) => ({
+        ...prev,
+        ...formData,
+        first_name: formData.firstName,
+        father_name: formData.fatherName,
+        grandfather_name: formData.grandfatherName,
+        phone_number: formData.phone,
+        metadata: metaString
+      }));
+
       toast.success("Profile updated successfully!", {
         icon: <CheckCircle2 className="h-4 w-4 text-green-500" />
       });
@@ -213,7 +274,7 @@ export default function ProfilePage() {
             
             <div className="space-y-1">
               <h2 className="text-xl font-black tracking-tight">{formData.firstName} {formData.fatherName}</h2>
-              <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">{user?.ercs_id || "ERCS MEMBER"}</p>
+              <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">{user?.ercs_id || (user?.role === "VOLUNTEER" ? "ERCS VOLUNTEER" : "ERCS MEMBER")}</p>
             </div>
 
             <div className="w-full pt-6 border-t border-gray-50 grid grid-cols-2 gap-4">
@@ -328,20 +389,23 @@ export default function ProfilePage() {
                  </div>
               </div>
 
-              <div className="space-y-2">
-                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Region / Branch</label>
-                 <div className="relative">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
-                    <input 
-                       type="text" 
-                       name="region"
-                       value={formData.region}
-                       onChange={handleInputChange}
-                       className="w-full bg-gray-50 border-none rounded-2xl h-14 pl-12 pr-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" 
-                       placeholder="Addis Ababa Branch"
-                    />
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Region / Branch</label>
+                    <div className="relative">
+                       <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
+                       <select 
+                          name="region"
+                          value={formData.region}
+                          onChange={handleInputChange}
+                          className="w-full bg-gray-50 border-none rounded-2xl h-14 pl-12 pr-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all appearance-none cursor-pointer"
+                       >
+                          <option value={0}>Select Region</option>
+                          {REGIONS.map(r => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                       </select>
+                    </div>
                  </div>
-              </div>
 
               <div className="space-y-2">
                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Bio / About You</label>
@@ -380,7 +444,7 @@ export default function ProfilePage() {
               </div>
               <div>
                  <p className="text-xs font-black uppercase tracking-tight text-gray-900">Important Security Notice</p>
-                 <p className="text-[11px] font-medium text-gray-400 mt-1">Changes to your name or membership ID may require manual verification from an ERCS administrator before they are reflected on your physical ID card.</p>
+                 <p className="text-[11px] font-medium text-gray-400 mt-1">Changes to your name or {user?.role === "VOLUNTEER" ? "volunteer" : "membership"} ID may require manual verification from an ERCS administrator before they are reflected on your identification card.</p>
               </div>
            </div>
         </div>

@@ -89,6 +89,26 @@ export default function DashboardPage() {
         const diffTime = expiryDate.getTime() - new Date().getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
+        const REGIONS: Record<number, string> = {
+          1: "Addis Ababa",
+          2: "Dire Dawa",
+          3: "Tigray",
+          4: "Afar",
+          5: "Amhara",
+          6: "Oromia",
+          7: "Somali",
+          8: "Benishangul Gumuz",
+          9: "SNNPR",
+          10: "Gambela",
+          11: "Harari",
+          12: "Sidama",
+          13: "South West",
+          14: "Federal HQ"
+        };
+
+        const regionId = userData?.region_id || userData?.region || 0;
+        const regionName = REGIONS[regionId] || userData?.region_name || "Federal HQ";
+
         setUser({
           firstName: userData?.first_name || "",
           fatherName: userData?.father_name || "",
@@ -102,7 +122,7 @@ export default function DashboardPage() {
           expiryDate: membershipType.toUpperCase() === "LIFETIME" ? "LIFETIME" : expiryDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
           cardExpiry: cardExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
           daysLeft: diffDays > 0 ? diffDays : 0,
-          region: userData?.region_name || "Federal HQ",
+          region: regionName,
           phone: userData?.phone_number || userData?.phone || "+251...",
           email: userData?.email || "N/A",
           photo: userData?.photo_url || null,
@@ -294,7 +314,7 @@ export default function DashboardPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-gray-50 pb-8">
              <div>
                 <h2 className="text-3xl font-black tracking-tighter">Digital ID Card</h2>
-                <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mt-1">Official ERCS Membership Identification</p>
+                <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mt-1">Official ERCS {user?.role === "VOLUNTEER" ? "Volunteer" : "Membership"} Identification</p>
              </div>
              <Button className="bg-[#ED1C24] hover:bg-black text-white px-8 h-14 rounded-2xl font-black tracking-widest uppercase text-xs shadow-xl shadow-red-500/20 transition-all flex items-center gap-2">
                 <Download className="h-4 w-4" /> Download ID Card
@@ -337,9 +357,9 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 space-y-2">
                        {[
-                         { label: "ID Number", val: user?.memberId },
+                         { label: user?.role === "VOLUNTEER" ? "Volunteer ID" : "Member ID", val: user?.memberId },
                          { label: "Name", val: user?.fullName || `${user?.firstName} ${user?.lastName}` },
-                         { label: "Membership Type", val: user?.membershipType },
+                         { label: user?.role === "VOLUNTEER" ? "Volunteer Type" : "Membership Type", val: user?.membershipType },
                          { label: "Mobile Number", val: user?.phone || "+251..." },
                          { label: "Region", val: user?.region },
                          { label: "Issued Date", val: user?.issueDate },
@@ -354,7 +374,7 @@ export default function DashboardPage() {
                  </div>
                  
                  <div className="absolute bottom-0 left-0 w-full bg-[#ED1C24] py-1.5 px-4 text-center">
-                    <p className="text-[8px] font-bold text-white uppercase tracking-tighter italic">Humanitarian Identity • {user?.region}</p>
+                    <p className="text-[8px] font-bold text-white uppercase tracking-tighter italic">Humanitarian Identity • {user?.role} • {user?.region}</p>
                  </div>
               </div>
             </div>

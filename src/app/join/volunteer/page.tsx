@@ -75,6 +75,8 @@ export default function VolunteerJoinPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [zones, setZones] = useState<any[]>([]);
+  const [woredas, setWoredas] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,8 +102,46 @@ export default function VolunteerJoinPage() {
     fetchData();
   }, []);
 
+  // Fetch Zones
+  useEffect(() => {
+    if (formData.region && formData.country === "ET") {
+      const regionId = REGION_MAP_VALUE_TO_ID[formData.region];
+      api.get(`/location/zones?region_id=${regionId}`).then(res => {
+        setZones(res.data.zones || []);
+      }).catch(err => console.error("Failed to fetch zones:", err));
+    } else {
+      setZones([]);
+    }
+  }, [formData.region, formData.country]);
+
+  // Fetch Woredas
+  useEffect(() => {
+    if (formData.zone && formData.country === "ET") {
+      api.get(`/location/woredas?zone_id=${formData.zone}`).then(res => {
+        setWoredas(res.data.woredas || []);
+      }).catch(err => console.error("Failed to fetch woredas:", err));
+    } else {
+      setWoredas([]);
+    }
+  }, [formData.zone, formData.country]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    const { id, value } = e.target;
+    const newData: any = { ...formData, [id]: value };
+    
+    // Cascading resets
+    if (id === "country" && value !== "ET") {
+        newData.region = "";
+        newData.zone = "";
+        newData.woreda = "";
+    } else if (id === "region") {
+        newData.zone = "";
+        newData.woreda = "";
+    } else if (id === "zone") {
+        newData.woreda = "";
+    }
+    
+    setFormData(newData);
   };
 
   const toggleEngagementArea = (area: string) => {
@@ -151,7 +191,7 @@ export default function VolunteerJoinPage() {
             const regionId = formData.country === "ET" ? (REGION_MAP_VALUE_TO_ID[formData.region] || 1) : 14;
 
             // Register User
-            await api.post("/auth/register", {
+            const res = await api.post("/auth/register", {
                 first_name: formData.firstName,
                 father_name: formData.fatherName,
                 grandfather_name: formData.grandfatherName,
@@ -166,9 +206,18 @@ export default function VolunteerJoinPage() {
                 gender: formData.gender,
                 metadata: JSON.stringify({
                     country: formData.country,
-                    international_address: formData.country === 'ET' ? "" : formData.internationalAddress
+                    international_address: formData.country === 'ET' ? "" : formData.internationalAddress,
+                    zone_id: formData.zone,
+                    woreda_id: formData.woreda
                 })
             });
+
+            // Save session
+            if (res.data.access_token || res.data.accessToken) {
+                localStorage.setItem("access_token", res.data.access_token || res.data.accessToken);
+                localStorage.setItem("user_role", "VOLUNTEER");
+                localStorage.setItem("ercs_id", res.data.ercs_id || res.data.ercsId);
+            }
 
             setStep(3);
         } catch (err: any) {
@@ -283,35 +332,14 @@ export default function VolunteerJoinPage() {
                                 <p className="text-black/60 font-black text-[10px] uppercase tracking-widest bg-gray-50 inline-block px-3 py-1 rounded-full border border-gray-100">Step 1 of 2</p>
                             </div>
 
-                             <form onSubmit={handleSubmit} className="space-y-5 text-left">
+                             <form onSubmit={handleSubmit} className="space-y-8 text-left">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                       {formConfig.map((field: any) => {
-                                          if (field.id === 'password') {
-                                              return (
-                                                  <div key={field.id} className="space-y-2 group">
-                                                      <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
-                                                      <div className="relative">
-                                                          <Input id="password" type={showPassword ? "text" : "password"} required={field.required} className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.password} onChange={handleChange} />
-                                                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
-                                                      </div>
-                                                  </div>
-                                              );
-                                          }
-
-                                          if (field.id === 'confirmPassword') {
-                                              return (
-                                                  <div key={field.id} className="space-y-2 group">
-                                                      <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
-                                                      <div className="relative">
-                                                          <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} required={field.required} className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
-                                                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
-                                                      </div>
-                                                  </div>
-                                              );
-                                          }
+                                          if (field.id === 'password' || field.id === 'confirmPassword') return null;
 
                                           if (field.type === 'tel') {
                                               return (
-                                                  <div key={field.id} className="space-y-2 group">
+                                                  <div key={field.id} className="space-y-2 group md:col-span-2">
                                                       <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
                                                       <PhoneInput
                                                          international
@@ -327,27 +355,27 @@ export default function VolunteerJoinPage() {
 
                                           if (field.dataSource === 'REGIONS') {
                                               return (
-                                                  <div key={field.id} className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                                                  <div key={field.id} className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                                       <div className="space-y-2 group">
-                                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Country of Residence <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Country <span className="text-[#ED1C24] text-xs">*</span></Label>
                                                           <div className="relative">
-                                                             <div className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#ED1C24] transition-colors">
-                                                                 <Globe className="h-4 w-4" />
-                                                             </div>
-                                                             <select 
-                                                                 id="country" 
-                                                                 className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-12 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
-                                                                 value={formData.country}
-                                                                 onChange={handleChange}
-                                                             >
-                                                                 {ALL_COUNTRIES.map(c => (
-                                                                     <option key={c.code} value={c.code}>{c.name}</option>
-                                                                 ))}
-                                                             </select>
+                                                              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#ED1C24] transition-colors">
+                                                                  <Globe className="h-4 w-4" />
+                                                              </div>
+                                                              <select 
+                                                                  id="country" 
+                                                                  className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-12 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                  value={formData.country}
+                                                                  onChange={handleChange}
+                                                              >
+                                                                  {ALL_COUNTRIES.map(c => (
+                                                                      <option key={c.code} value={c.code}>{c.name}</option>
+                                                                  ))}
+                                                              </select>
                                                           </div>
                                                       </div>
                                                       
-                                                      {formData.country === 'ET' ? (
+                                                      {formData.country === 'ET' && (
                                                           <div className="space-y-2 group">
                                                               <Label htmlFor={field.id} className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
                                                               <div className="relative">
@@ -365,9 +393,47 @@ export default function VolunteerJoinPage() {
                                                                   </select>
                                                               </div>
                                                           </div>
-                                                      ) : (
+                                                      )}
+
+                                                      {formData.country === 'ET' && formData.region && (
+                                                          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 group">
+                                                              <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Zone <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                              <select 
+                                                                  id="zone" 
+                                                                  required
+                                                                  className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                  value={formData.zone}
+                                                                  onChange={handleChange}
+                                                              >
+                                                                  <option value="">Select Zone</option>
+                                                                  {zones.map(z => (
+                                                                      <option key={z.id} value={z.id}>{z.name}</option>
+                                                                  ))}
+                                                              </select>
+                                                          </motion.div>
+                                                      )}
+
+                                                      {formData.country === 'ET' && formData.zone && (
+                                                          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 group">
+                                                              <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Woreda / Sub-City <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                              <select 
+                                                                  id="woreda" 
+                                                                  required
+                                                                  className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                  value={formData.woreda}
+                                                                  onChange={handleChange}
+                                                              >
+                                                                  <option value="">Select Woreda</option>
+                                                                  {woredas.map(w => (
+                                                                      <option key={w.id} value={w.id}>{w.name}</option>
+                                                                  ))}
+                                                              </select>
+                                                          </motion.div>
+                                                      )}
+
+                                                      {formData.country !== 'ET' && (
                                                           <div className="space-y-2 group">
-                                                              <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">State / Province / Address <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                              <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Address <span className="text-[#ED1C24] text-xs">*</span></Label>
                                                               <Input 
                                                                  id="internationalAddress" 
                                                                  className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all" 
@@ -383,7 +449,7 @@ export default function VolunteerJoinPage() {
                                           }
 
                                           return (
-                                              <div key={field.id} className={cn("space-y-2 group", field.type === 'textarea' ? "md:col-span-2" : "")}>
+                                              <div key={field.id} className={cn("space-y-2 group", field.type === 'textarea' || field.id === 'email' ? "md:col-span-2" : "md:col-span-1")}>
                                                   <Label htmlFor={field.id} className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
                                                   <div className="relative">
                                                       {field.type === 'select' ? (
@@ -396,8 +462,6 @@ export default function VolunteerJoinPage() {
                                                            >
                                                                <option value="" disabled>{field.placeholder}</option>
                                                                {(
-                                                                 field.dataSource === 'MEMBERSHIP_TYPES'
-                                                                   ? membershipPlans.map(p => ({ label: p.name, value: p.short_code })) :
                                                                  field.dataSource === 'GENDER'
                                                                    ? GENDER_OPTIONS :
                                                                  (field.options || [])
@@ -420,6 +484,24 @@ export default function VolunteerJoinPage() {
                                               </div>
                                           );
                                       })}
+
+                                      {/* Explicit Password Fields */}
+                                      <div className="space-y-2 group md:col-span-1">
+                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Create Password <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                          <div className="relative">
+                                              <Input id="password" type={showPassword ? "text" : "password"} required className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.password} onChange={handleChange} />
+                                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                                          </div>
+                                      </div>
+
+                                      <div className="space-y-2 group md:col-span-1">
+                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Confirm Password <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                          <div className="relative">
+                                              <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} required className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
+                                              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                                          </div>
+                                      </div>
+                                  </div>
 
                                  {error && <div className="bg-red-50 text-[#ED1C24] p-3 rounded-xl text-xs font-bold text-center border border-red-100 italic">{error}</div>}
                                  <Button type="submit" className="w-full h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl text-lg font-black shadow-2xl shadow-red-500/20 transition-all flex items-center justify-center gap-2">Continue <ChevronRight className="h-5 w-5" /></Button>
