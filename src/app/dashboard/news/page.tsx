@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 
 export default function NewsPage() {
+  const [loading, setLoading] = useState(true);
   const [articles, setArticles] = useState<any[]>([]);
 
   useEffect(() => {
