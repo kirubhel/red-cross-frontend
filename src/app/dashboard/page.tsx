@@ -23,12 +23,14 @@ import {
   ExternalLink,
   MessageCircle,
   ShieldCheck,
-  User
+  User,
+  XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -44,49 +46,41 @@ export default function DashboardPage() {
         const role = localStorage.getItem("user_role");
         const storedErcsId = localStorage.getItem("ercs_id");
         
-        // Try to fetch user profile
-        let userData = null;
-        try {
-          const profileRes = await api.get("/person/profile");
-          userData = profileRes.data;
-        } catch (err: any) {
-          console.warn("Profile endpoint forbidden or failed, using local info", err);
-          // 403 is expected for some member accounts if endpoint is volunteer-only
-        }
+        const profileRes = await api.get("/person/profile");
+        // GetPersonResponse contains a 'person' object
+        const userData = profileRes.data.person || profileRes.data;
 
         const isMemberRole = role === "MEMBER" || role === "5" || (role && parseInt(role) === 5);
 
         setUser({
-          firstName: userData?.first_name || (isMemberRole ? "Kebede" : "Volunteer"),
-          lastName: userData?.last_name || (isMemberRole ? "Alemu" : "Member"),
-          memberId: userData?.ercs_id || storedErcsId || "ERCS-AA-AR-903187",
-          status: userData?.status || "PAID",
-          membershipType: userData?.membership_type || "OLD ENCODED",
+          firstName: userData?.first_name || "",
+          fatherName: userData?.father_name || "",
+          grandfatherName: userData?.grandfather_name || "",
+          fullName: `${userData?.first_name || ""} ${userData?.father_name || ""} ${userData?.grandfather_name || ""}`.trim(),
+          memberId: userData?.ercs_id || storedErcsId || "NOT_ASSIGNED",
+          status: userData?.membership_status || userData?.status || "PENDING",
+          membershipType: userData?.membership_type || "REGULAR",
           role: role || (isMemberRole ? "MEMBER" : "VOLUNTEER"),
-          joinDate: userData?.created_at ? new Date(userData.created_at).toLocaleDateString() : "March 2023",
-          expiryDate: userData?.expiry_date || "10 Mar 2027",
-          daysLeft: userData?.days_left || 321,
+          joinDate: userData?.created_at ? new Date(userData.created_at).toLocaleDateString() : "March 2024",
+          expiryDate: userData?.expiry_date || "N/A",
+          daysLeft: userData?.days_left || 0,
           totalHours: userData?.hoursSpent || userData?.hours_spent || 0,
           donations: userData?.total_donations ? `${userData.total_donations} ETB` : "0 ETB",
           impactScore: userData?.impact_score || 0,
           points: userData?.points || 0,
-          region: userData?.region_name || "Addis Ababa",
-          phone: userData?.phone || "+251 911 393 123",
-          email: userData?.email || "abizeerfamily@gmail.com",
-          photo: userData?.photo_url || null
+          region: userData?.region_name || "Federal HQ",
+          phone: userData?.phone_number || userData?.phone || "+251...",
+          email: userData?.email || "N/A",
+          photo: userData?.photo_url || null,
+          raw: userData // Keep raw for updates
         });
 
-        // Only fetch volunteer activities if not a pure member
         if (!isMemberRole) {
           try {
             const activityRes = await api.get("/volunteers/activities");
             setActivities(activityRes.data.activities || []);
           } catch (err) {
-            setActivities([
-              { title: "Ambulance Support Service", date: "2 days ago", hours: "4h", status: "VERIFIED", icon: HandHeart, color: "text-blue-500", bg: "bg-blue-50" },
-              { title: "Donation: Monthly Support", date: "1 week ago", amount: "500 ETB", status: "COMPLETED", icon: Heart, color: "text-red-500", bg: "bg-red-50" },
-              { title: "Community First Aid", date: "2 weeks ago", hours: "8h", status: "VERIFIED", icon: HandHeart, color: "text-blue-500", bg: "bg-blue-50" },
-            ]);
+            setActivities([]);
           }
         }
       } catch (err) {
@@ -102,30 +96,56 @@ export default function DashboardPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith("image/")) {
+      toast.error("Invalid file type", { description: "Please upload an image." });
+      return;
+    }
+
     try {
       setUploading(true);
       const formData = new FormData();
       formData.append("file", file);
 
       // 1. Upload to storage
-      const uploadRes = await api.post("/person/profile/photo", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
+      const uploadRes = await api.post("/person/profile/photo", formData);
       const photoUrl = uploadRes.data.url;
 
-      // 2. Update profile
+      if (!photoUrl) throw new Error("Storage server did not return a valid URL");
+
+      // 2. Update profile with sanitized data
+      const personData = { ...(user.raw || {}) };
+      
+      // Map region_id to region for the Protobuf enum
+      if (personData.region_id && !personData.region) {
+        personData.region = personData.region_id;
+      }
+      
+      // Prevent PQ error: invalid input syntax for type date: ""
+      if (personData.date_of_birth === "") {
+        delete personData.date_of_birth;
+      }
+      
       await api.put("/person/profile", {
-        ...user,
-        photoUrl: photoUrl
+        ...personData,
+        photo_url: photoUrl
       });
 
       // 3. Update local state
-      setUser((prev: any) => ({ ...prev, photoUrl }));
-      alert("Photo uploaded successfully!");
+      setUser((prev: any) => ({ 
+        ...prev, 
+        photo: photoUrl,
+        raw: { ...prev.raw, photo_url: photoUrl }
+      }));
+      
+      toast.success("Profile photo updated!", {
+        description: "Your digital ID has been updated."
+      });
     } catch (err: any) {
-      console.error("Upload failed:", err);
-      alert("Failed to upload photo. Please try again.");
+      console.error("Profile update failed:", err);
+      const errorDetail = err.response?.data?.error || err.response?.data || err.message;
+      toast.error("Update failed", {
+        description: typeof errorDetail === 'string' ? errorDetail : "Check server logs or connection."
+      });
     } finally {
       setUploading(false);
     }
@@ -164,7 +184,7 @@ export default function DashboardPage() {
     return (
       <div className="p-6 md:p-8 space-y-8 bg-[#F8FAFC] min-h-full pb-20">
         
-        {!user?.photoUrl && (
+        {!user?.photo && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -265,15 +285,19 @@ export default function DashboardPage() {
                  </div>
                  
                  <div className="p-6 flex gap-6 h-full">
-                    <div className="w-1/3 aspect-square bg-gray-100 rounded-xl border-2 border-red-100 overflow-hidden shrink-0">
-                       <div className="w-full h-full flex items-center justify-center text-red-900/20">
-                          <User className="h-20 w-20" />
-                       </div>
+                    <div className="w-1/3 aspect-square bg-gray-100 rounded-xl border-2 border-red-100 overflow-hidden shrink-0 relative">
+                       {user?.photo ? (
+                          <img src={user.photo} alt="ID" className="w-full h-full object-cover" />
+                       ) : (
+                          <div className="w-full h-full flex items-center justify-center text-red-900/20">
+                             <User className="h-20 w-20" />
+                          </div>
+                       )}
                     </div>
                     <div className="flex-1 space-y-2">
                        {[
                          { label: "ID Number", val: user?.memberId },
-                         { label: "Name", val: `${user?.firstName} ${user?.lastName}` },
+                         { label: "Name", val: user?.fullName || `${user?.firstName} ${user?.lastName}` },
                          { label: "Membership Type", val: user?.membershipType },
                          { label: "Mobile Number", val: user?.phone },
                          { label: "Issued Date", val: "10 Mar 2026" },
@@ -453,11 +477,11 @@ export default function DashboardPage() {
                   </div>
                </div>
 
-               <div className="flex flex-col md:flex-row justify-between items-end gap-8">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Full Name</p>
-                    <p className="text-2xl font-black tracking-tight">{user?.firstName} {user?.lastName}</p>
-                  </div>
+                <div className="flex flex-col md:flex-row justify-between items-end gap-8">
+                   <div className="space-y-1">
+                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Full Name</p>
+                     <p className="text-2xl font-black tracking-tight">{user?.fullName || `${user?.firstName} ${user?.lastName}`}</p>
+                   </div>
                   <div className="space-y-1 text-right">
                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">System ID</p>
                     <p className="text-xl font-mono font-bold tracking-tighter text-red-500">{user?.memberId}</p>

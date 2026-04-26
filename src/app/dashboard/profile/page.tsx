@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -81,29 +82,39 @@ export default function ProfilePage() {
       const fd = new FormData();
       fd.append("file", file);
 
-      const uploadRes = await api.post("/person/profile/photo", fd, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
+      // 1. Upload to storage (Let Axios handle boundary)
+      const uploadRes = await api.post("/person/profile/photo", fd);
       const photoUrl = uploadRes.data.url;
       
-      // Update profile with new photo
+      if (!photoUrl) throw new Error("Storage server did not return a valid URL");
+
+      // 2. Update profile with new photo using the full existing data to avoid data loss
+      const personData = { ...(user || {}) };
+      
+      // Map region_id to region for the Protobuf enum
+      if (personData.region_id && !personData.region) {
+        personData.region = personData.region_id;
+      }
+
+      if (personData.date_of_birth === "") {
+        delete personData.date_of_birth;
+      }
+
       await api.put("/person/profile", {
-        first_name: formData.firstName,
-        father_name: formData.fatherName,
-        grandfather_name: formData.grandfatherName,
-        email: formData.email,
-        phone_number: formData.phone,
-        region_name: formData.region,
-        bio: formData.bio,
+        ...personData,
         photo_url: photoUrl
       });
 
       setUser((prev: any) => ({ ...prev, photo_url: photoUrl }));
-      alert("Profile photo updated!");
-    } catch (err) {
+      toast.success("Profile photo updated!", {
+        description: "Your identification photo has been refreshed."
+      });
+    } catch (err: any) {
       console.error("Upload failed:", err);
-      alert("Failed to upload photo.");
+      const errorDetail = err.response?.data?.error || err.response?.data || err.message;
+      toast.error("Failed to upload photo", {
+        description: typeof errorDetail === 'string' ? errorDetail : "Please try again later."
+      });
     } finally {
       setUploading(false);
     }
@@ -123,10 +134,14 @@ export default function ProfilePage() {
         bio: formData.bio,
         photo_url: user?.photo_url
       });
-      alert("Profile updated successfully!");
+      toast.success("Profile updated successfully!", {
+        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />
+      });
     } catch (err) {
       console.error("Update failed:", err);
-      alert("Failed to update profile.");
+      toast.error("Failed to update profile.", {
+        icon: <AlertCircle className="h-4 w-4 text-red-500" />
+      });
     } finally {
       setSaving(false);
     }

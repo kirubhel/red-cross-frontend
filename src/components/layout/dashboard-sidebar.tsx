@@ -27,12 +27,10 @@ const menuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/profile", label: "My Profile", icon: User },
   { href: "/dashboard/volunteer", label: "Volunteering", icon: HandHeart },
-  { href: "/dashboard/events", label: "Upcoming Events", icon: Calendar },
   { href: "/dashboard/donations", label: "My Donations", icon: Heart },
   { href: "/dashboard/membership", label: "Membership", icon: CreditCard },
   { href: "/dashboard/history", label: "Impact History", icon: History },
   { href: "/dashboard/news", label: "ERCS News", icon: Newspaper },
-  { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -44,26 +42,41 @@ export function DashboardSidebar() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const role = localStorage.getItem("user_role");
+        const rawRole = localStorage.getItem("user_role");
         const profileRes = await api.get("/person/profile").catch(() => null);
         
+        // Map role IDs to labels
+        const roleMap: Record<string, string> = {
+          "1": "Super Admin",
+          "2": "Admin",
+          "3": "Regional Admin",
+          "4": "Volunteer",
+          "5": "Member",
+          "MEMBER": "Member",
+          "VOLUNTEER": "Volunteer"
+        };
+
+        const roleLabel = roleMap[rawRole || ""] || rawRole || "Member";
+
         setUser({
-          name: profileRes?.data?.first_name ? `${profileRes.data.first_name} ${profileRes.data.last_name}` : "ERCS User",
-          role: role || "MEMBER"
+          name: profileRes?.data?.person?.first_name 
+            ? `${profileRes.data.person.first_name} ${profileRes.data.person.father_name || ""}` 
+            : (profileRes?.data?.first_name ? `${profileRes.data.first_name} ${profileRes.data.last_name || ""}` : "ERCS User"),
+          role: roleLabel
         });
       } catch (err) {
-        setUser({ name: "ERCS User", role: "MEMBER" });
+        setUser({ name: "ERCS User", role: "Member" });
       }
     };
     fetchUser();
   }, []);
 
-  const isVolunteer = user?.role === "VOLUNTEER" || (user?.role !== "MEMBER" && user?.role !== "5" && user?.role !== 5);
+  const isVolunteer = user?.role === "Volunteer" || user?.role === "VOLUNTEER" || (user?.role !== "Member" && user?.role !== "MEMBER");
 
   const filteredMenuItems = menuItems.filter(item => {
     if (!isVolunteer) {
       // Member only sees these
-      const memberLinks = ["/dashboard", "/dashboard/profile", "/dashboard/events", "/dashboard/news", "/dashboard/notifications"];
+      const memberLinks = ["/dashboard", "/dashboard/profile", "/dashboard/news"];
       return memberLinks.includes(item.href);
     }
     return true;
