@@ -107,8 +107,18 @@ export default function VolunteersPage() {
     toast.info("Preparing PDF Report...");
   };
 
-  return (
-    <div className="space-y-10 print:p-0">
+    const handleApprove = async (personId: string) => {
+        try {
+            await api.put("/volunteers/status", { person_id: personId, status: "ACTIVE" });
+            toast.success("Volunteer Approved");
+            fetchVolunteers();
+        } catch (err) {
+            toast.error("Failed to approve volunteer");
+        }
+    };
+
+    return (
+        <div className="space-y-10 print:p-0">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 print:hidden">
         <div className="space-y-1.5">
@@ -252,12 +262,22 @@ export default function VolunteersPage() {
                         </div>
                     </TableCell>
                     <TableCell className="px-6 py-4 text-right">
-                        <span className={cn(
-                            "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest",
-                            v.status === "ACTIVE" ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
-                        )}>
-                            {v.status || "PENDING"}
-                        </span>
+                        <div className="flex items-center justify-end gap-2">
+                            <span className={cn(
+                                "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest",
+                                v.status === "ACTIVE" ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"
+                            )}>
+                                {v.status || "PENDING"}
+                            </span>
+                            {v.status === "PENDING" && (
+                                <Button 
+                                    onClick={() => handleApprove((v as any).person_id || v.id)}
+                                    className="h-7 px-3 bg-[#ED1C24] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all"
+                                >
+                                    Approve
+                                </Button>
+                            )}
+                        </div>
                     </TableCell>
                     </TableRow>
                 ))
