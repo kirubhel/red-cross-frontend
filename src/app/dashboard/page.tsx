@@ -328,7 +328,7 @@ export default function DashboardPage() {
               <div className="bg-white rounded-[24px] border-2 border-red-800/20 overflow-hidden shadow-2xl relative max-w-[500px] mx-auto aspect-[1.6/1]">
                  <div className="bg-[#ED1C24] text-white p-4 flex items-center gap-3">
                     <div className="bg-white p-1 rounded-lg shrink-0">
-                       <Image src="/logo.jpg" alt="ERCS" width={28} height={28} unoptimized />
+                       <Image src="/logo.png" alt="ERCS" width={28} height={28} unoptimized />
                     </div>
                     <div className="flex flex-col">
                        <span className="text-[10px] font-black leading-none uppercase tracking-tighter">Ethiopia Red Cross Society</span>
@@ -342,7 +342,7 @@ export default function DashboardPage() {
                        {user?.idAssets?.stampUrl ? (
                          <img src={user.idAssets.stampUrl} alt="Watermark" className="w-full h-full object-contain grayscale" />
                        ) : (
-                         <Image src="/logo.jpg" alt="Watermark" width={200} height={200} unoptimized />
+                         <Image src="/logo.png" alt="Watermark" width={200} height={200} unoptimized />
                        )}
                     </div>
 
@@ -416,7 +416,7 @@ export default function DashboardPage() {
                                level={"H"}
                                includeMargin={false}
                                imageSettings={{
-                                 src: "/logo.jpg",
+                                 src: "/logo.png",
                                  x: undefined,
                                  y: undefined,
                                  height: 12,
@@ -559,7 +559,7 @@ export default function DashboardPage() {
                <div className="flex justify-between items-start">
                   <div className="space-y-4">
                     <div className="bg-white p-2 rounded-xl w-fit">
-                      <Image src="/logo.jpg" alt="ERCS" width={32} height={32} unoptimized />
+                      <Image src="/logo.png" alt="ERCS" width={32} height={32} unoptimized />
                     </div>
                     <div>
                       <h3 className="text-[10px] font-black uppercase tracking-[0.4em] opacity-50">Ethiopia Red Cross Society</h3>

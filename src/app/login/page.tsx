@@ -106,19 +106,25 @@ export default function LoginPage() {
           transition={{ duration: 0.8 }}
           className="hidden lg:flex flex-col flex-1 space-y-12"
         >
-          <Link href="/" className="inline-flex items-center gap-2 group text-black/40 hover:text-black transition-colors font-black uppercase tracking-widest text-xs">
-            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Back to home
+          <Link href="/" className="inline-flex items-center gap-1.5 group text-black/40 hover:text-black transition-colors font-black uppercase tracking-widest text-[10px]">
+            <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" /> Back to home
           </Link>
           
-          <div className="space-y-6">
-            <div className="bg-[#ED1C24] p-4 rounded-3xl w-fit shadow-2xl shadow-red-500/20">
-              <Plus className="h-12 w-12 text-white" strokeWidth={6} />
+          <div className="space-y-4">
+            <div className="relative w-16 h-16 rounded-2xl overflow-hidden shadow-xl shadow-red-500/10 bg-white p-1.5">
+              <Image 
+                src="/logo.png" 
+                alt="ERCS Logo" 
+                fill
+                className="object-contain p-1.5"
+                unoptimized
+              />
             </div>
-            <h1 className="text-6xl font-black text-black leading-[0.9] tracking-tighter">
+            <h1 className="text-4xl md:text-5xl font-black text-black leading-[0.9] tracking-tighter">
               Manage Your <br />
               <span className="text-[#ED1C24]">Mission.</span>
             </h1>
-            <p className="text-xl text-black/60 font-medium max-w-md">
+            <p className="text-base text-black/60 font-medium max-w-sm">
               Access the Ethiopia Red Cross Society internal portal to manage volunteers, memberships, and humanitarian impact.
             </p>
           </div>
@@ -142,29 +148,29 @@ export default function LoginPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
-          className="w-full max-w-[480px]"
+          className="w-full max-w-[440px]"
         >
-          <div className="bg-white p-8 md:p-12 rounded-[48px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] border border-gray-100 flex flex-col">
+          <div className="bg-white p-6 md:p-10 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.12)] border border-gray-100 flex flex-col">
             <div className="lg:hidden flex justify-center mb-8">
-               <Image src="/logo.jpg" alt="ERCS Logo" width={80} height={80} className="object-contain" unoptimized />
+               <Image src="/logo.png" alt="ERCS Logo" width={80} height={80} className="object-contain" unoptimized />
             </div>
 
-            <div className="space-y-2 mb-10 text-center lg:text-left">
-              <h2 className="text-4xl font-black text-black tracking-tighter">Welcome back.</h2>
-              <p className="text-black/60 font-black text-xs uppercase tracking-widest">Sign in to your account</p>
+            <div className="space-y-1 mb-8 text-center lg:text-left">
+              <h2 className="text-3xl font-black text-black tracking-tighter">Welcome back.</h2>
+              <p className="text-black/60 font-black text-[10px] uppercase tracking-widest">Sign in to your account</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-8">
               <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/60">Identifier</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">Identifier</Label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-black/60" />
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
                     <Input
                       id="email"
                       type="text"
                       placeholder="Email, Phone, or Member ID"
-                      className="h-16 pl-12 rounded-2xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-lg placeholder:text-black/30 text-black"
+                      className="h-14 pl-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -188,18 +194,18 @@ export default function LoginPage() {
                   </Label>
                 </div>
 
-                <div className={`space-y-3 transition-opacity duration-300 ${noPassword ? 'opacity-30 pointer-events-none' : ''}`}>
+                <div className={`space-y-2 transition-opacity duration-300 ${noPassword ? 'opacity-30 pointer-events-none' : ''}`}>
                   <div className="flex justify-between items-center ml-1">
-                    <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-black/60">Password</Label>
-                    <Link href="#" className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">Forgot?</Link>
+                    <Label htmlFor="password" className="text-[9px] font-black uppercase tracking-widest text-black/60">Password</Label>
+                    <Link href="#" className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">Forgot?</Link>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-black/60" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="h-16 pl-12 pr-12 rounded-2xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-lg placeholder:text-black/30 text-black"
+                      className="h-14 pl-12 pr-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required={!noPassword}
@@ -211,7 +217,7 @@ export default function LoginPage() {
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-black/60 hover:text-black transition-colors"
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
@@ -229,26 +235,26 @@ export default function LoginPage() {
 
               <Button 
                 type="submit" 
-                className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-red-500/20 active:scale-95 group overflow-hidden relative"
+                className="w-full h-14 rounded-xl text-lg font-black shadow-xl shadow-red-500/15 active:scale-95 group overflow-hidden relative"
                 disabled={loading}
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
                     <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-                      <Plus className="h-5 w-5" />
+                      <Plus className="h-4 w-4" />
                     </motion.div>
                     Authenticating...
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
-                    Sign In <ChevronRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
+                    Sign In <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </span>
                 )}
               </Button>
             </form>
 
-            <div className="mt-12 pt-8 border-t border-gray-100 text-center">
-              <p className="text-sm font-bold text-black/40">
+            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+              <p className="text-xs font-bold text-black/40">
                 New to the system? <Link href="/join" className="text-[#ED1C24] hover:underline font-black">Join as a volunteer</Link>
               </p>
             </div>

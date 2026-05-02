@@ -71,9 +71,9 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
                    <div className="h-10 w-10 rounded-full bg-white shadow-md flex items-center justify-center text-ercs-red">
                       <History className="h-5 w-5" />
                    </div>
-                   <h4 className="text-2xl font-black text-black">{local.storyTitle}</h4>
+                   <h4 className="text-lg font-black text-black">{local.storyTitle}</h4>
                 </div>
-                <div className="space-y-6 text-black/60 font-medium text-lg leading-relaxed max-w-xl">
+                <div className="space-y-6 text-black/60 font-medium text-sm leading-relaxed max-w-xl">
                   <p>{local.storyText1}</p>
                   <p>{local.storyText2}</p>
                 </div>
@@ -119,7 +119,7 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
           {/* Core Foundations (Mission/Vision/Values) */}
           <div className="space-y-12">
             <motion.div variants={itemVariants} className="text-center space-y-4">
-               <h4 className="text-3xl md:text-4xl font-black text-black tracking-tight underline decoration-ercs-red/20 decoration-8 underline-offset-8">
+               <h4 className="text-2xl md:text-3xl font-black text-black tracking-tight underline decoration-ercs-red/20 decoration-8 underline-offset-8">
                   {local.storyTitle}
                </h4>
                <p className="text-black/50 font-bold uppercase text-[10px] tracking-[0.3em]">Our Foundational Pillars</p>
@@ -156,13 +156,13 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
                   key={i}
                   variants={itemVariants}
                   whileHover={{ y: -10 }}
-                  className={`group relative bg-white p-12 rounded-[40px] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] ${item.border} hover:shadow-2xl transition-all duration-500 overflow-hidden`}
+                  className={`group relative bg-white p-8 rounded-[32px] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.02)] ${item.border} hover:shadow-2xl transition-all duration-500 overflow-hidden`}
                 >
                   <div className={`h-16 w-16 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center mb-8 transition-transform duration-500 group-hover:rotate-[10deg] shadow-inner`}>
                     <item.icon className="h-8 w-8" />
                   </div>
-                  <h5 className="text-2xl font-black text-black mb-4 tracking-tight">{item.title}</h5>
-                  <p className="text-black/60 font-medium text-base leading-relaxed">
+                  <h5 className="text-lg font-black text-black mb-2 tracking-tight">{item.title}</h5>
+                  <p className="text-black/60 font-medium text-sm leading-relaxed">
                     {item.text}
                   </p>
                   

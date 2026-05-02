@@ -65,7 +65,7 @@ export default function VerificationPage() {
         {/* Header Logo */}
         <div className="flex flex-col items-center gap-4 mb-10">
            <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100">
-              <Image src="/logo.jpg" alt="ERCS" width={48} height={48} unoptimized />
+              <Image src="/logo.png" alt="ERCS" width={48} height={48} unoptimized />
            </div>
            <div className="text-center">
               <h2 className="text-lg font-black tracking-tight uppercase">Ethiopia Red Cross Society</h2>

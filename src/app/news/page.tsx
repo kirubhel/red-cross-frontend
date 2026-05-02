@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,85 +9,44 @@ import {
   Calendar, 
   User, 
   Search, 
-  Filter 
+  Filter,
+  Newspaper
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
-// Mock data (expanded for full page)
-const ALL_NEWS = [
-  {
-    id: 1,
-    category: "Emergency",
-    date: "March 20, 2026",
-    author: "ERCS Communications",
-    title: "Critical Aid Distributed to Flood-Affected Regions",
-    desc: "Our response teams have distributed essential supplies to over 5,000 households affected by recent flooding in southern Ethiopia.",
-    image: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=800",
-    color: "bg-red-500",
-  },
-  {
-    id: 2,
-    category: "Health",
-    date: "March 15, 2026",
-    author: "Blood Bank Division",
-    title: "World Blood Donor Day: A Call to Save Lives",
-    desc: "Join us in celebrating our donors and raising awareness about the continuous need for safe blood products across the nation.",
-    image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800",
-    color: "bg-blue-500",
-  },
-  {
-    id: 3,
-    category: "Youth",
-    date: "March 10, 2026",
-    author: "Volunteer Network",
-    title: "Youth Volunteers Launch Climate Resilience Project",
-    desc: "Over 500 youth volunteers across 4 regions are planting trees and leading workshops on sustainable environmental practices.",
-    image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800",
-    color: "bg-green-500",
-  },
-  {
-    id: 4,
-    category: "Development",
-    date: "March 5, 2026",
-    author: "WASH Department",
-    title: "New Sustainable Water System Inactive in Afar Region",
-    desc: "More than 10,000 residents now have access to clean, safe drinking water thanks to the recently finalized solar-powered well integration project.",
-    image: "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&q=80&w=800",
-    color: "bg-amber-500",
-  },
-  {
-    id: 5,
-    category: "Health",
-    date: "March 1, 2026",
-    author: "Medical Services",
-    title: "Medical Caravan Reaches Remote Villages in Amhara",
-    desc: "A mobile medical team of 20 doctors and nurses successfully provided free consultations and treatments to communities in remote areas.",
-    image: "https://images.unsplash.com/photo-1511174511575-2751015881f8?auto=format&fit=crop&q=80&w=800",
-    color: "bg-blue-500",
-  },
-  {
-    id: 6,
-    category: "Emergency",
-    date: "February 25, 2026",
-    author: "Disaster Risk Reduction",
-    title: "Workshop: Building Resilient Communities Against Drought",
-    desc: "ERCS conducts capacity-building workshops for local leaders to implement early warning systems and sustainable agricultural techniques.",
-    image: "https://images.unsplash.com/photo-1464226183884-47b61f268327?auto=format&fit=crop&q=80&w=800",
-    color: "bg-red-500",
-  }
-];
-
-const CATEGORIES = ["All", "Emergency", "Health", "Youth", "Development"];
+const CATEGORIES = ["All", "EMERGENCY", "HEALTH", "YOUTH", "DEVELOPMENT"];
 
 export default function NewsPage() {
+  const [news, setNews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredNews = ALL_NEWS.filter(article => {
-    const matchesCategory = selectedCategory === "All" || article.category === selectedCategory;
+  useEffect(() => {
+    fetchNews();
+  }, [selectedCategory]);
+
+  const fetchNews = async () => {
+    setLoading(true);
+    try {
+      const categoryParam = selectedCategory === "All" ? "" : selectedCategory;
+      const res = await api.get(`/news?only_published=true&category=${categoryParam}`);
+      if (res.data?.articles) {
+        setNews(res.data.articles);
+      }
+    } catch (error) {
+      console.error("Failed to fetch news:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredNews = news.filter(article => {
     const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          article.desc.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+                          article.excerpt?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
   return (
@@ -98,7 +57,7 @@ export default function NewsPage() {
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative overflow-hidden rounded-lg">
               <Image 
-                src="/logo.jpg" 
+                src="/logo.png" 
                 alt="ERCS Logo" 
                 width={40} 
                 height={40} 
@@ -182,7 +141,18 @@ export default function NewsPage() {
         {/* News Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <AnimatePresence>
-            {filteredNews.map((article, i) => (
+            {loading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm animate-pulse">
+                  <div className="aspect-[4/3] bg-gray-100" />
+                  <div className="p-8 space-y-4">
+                    <div className="h-4 bg-gray-100 rounded w-1/2" />
+                    <div className="h-6 bg-gray-100 rounded w-full" />
+                    <div className="h-20 bg-gray-100 rounded w-full" />
+                  </div>
+                </div>
+              ))
+            ) : filteredNews.map((article, i) => (
               <motion.div
                 key={article.id}
                 layout
@@ -192,16 +162,25 @@ export default function NewsPage() {
                 transition={{ duration: 0.3 }}
                 className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 group"
               >
-                <div className="relative aspect-[4/3] w-full overflow-hidden">
-                  <Image 
-                    src={article.image} 
-                    alt={article.title}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    unoptimized
-                  />
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
+                  {article.thumbnail_url ? (
+                    <img 
+                      src={article.thumbnail_url} 
+                      alt={article.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-300">
+                      <Newspaper className="h-12 w-12" />
+                    </div>
+                  )}
                   <div className="absolute top-4 left-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white ${article.color}`}>
+                    <span className={cn(
+                      "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-white",
+                      article.category === "EMERGENCY" ? "bg-red-500" : 
+                      article.category === "HEALTH" ? "bg-blue-500" : 
+                      article.category === "YOUTH" ? "bg-green-500" : "bg-amber-500"
+                    )}>
                       {article.category}
                     </span>
                   </div>
@@ -210,7 +189,7 @@ export default function NewsPage() {
                   <div className="flex items-center gap-4 text-black/40 text-xs font-bold">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3.5 w-3.5" />
-                      <span>{article.date}</span>
+                      <span>{new Date(article.published_at || article.created_at).toLocaleDateString()}</span>
                     </div>
                     <div className="w-1 h-1 rounded-full bg-black/20" />
                     <div className="flex items-center gap-1">
@@ -224,7 +203,7 @@ export default function NewsPage() {
                   </h4>
                   
                   <p className="text-black/60 font-medium text-sm leading-relaxed line-clamp-3">
-                    {article.desc}
+                    {article.excerpt}
                   </p>
 
                   <div className="pt-4">

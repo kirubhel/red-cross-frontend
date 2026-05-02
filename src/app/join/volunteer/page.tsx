@@ -243,13 +243,13 @@ export default function VolunteerJoinPage() {
           display: flex;
           align-items: center;
           background: #f9fafb;
-          border-radius: 0.75rem;
-          padding: 0 1.25rem;
-          height: 3rem;
+          border-radius: 0.6rem;
+          padding: 0 1rem;
+          height: 2.5rem;
           transition: all 0.2s;
         }
         .PhoneInput:focus-within {
-          box-shadow: 0 0 0 2px rgba(237, 28, 36, 0.1);
+          box-shadow: 0 0 0 2px rgba(237, 28, 36, 0.08);
         }
         .PhoneInputInput {
           flex: 1;
@@ -274,31 +274,31 @@ export default function VolunteerJoinPage() {
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-red-50 rounded-full blur-[120px] opacity-40" />
       </div>
 
-       <header className="relative z-10 px-6 py-8 md:px-12 flex justify-between items-center">
-            <Link href="/" className="group flex items-center gap-2 text-black/40 hover:text-black transition-colors font-black uppercase tracking-widest text-xs">
-                 <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Back to Home
+       <header className="relative z-10 px-6 py-4 md:px-12 flex justify-between items-center">
+            <Link href="/" className="group flex items-center gap-1.5 text-black/40 hover:text-black transition-colors font-black uppercase tracking-widest text-[10px]">
+                 <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" /> Back to Home
             </Link>
-            <div className="flex items-center gap-3">
-              <div className="bg-white p-1 rounded-lg border border-gray-100 shadow-sm">
-                <Image src="/logo.jpg" alt="ERCS" width={32} height={32} />
+            <div className="flex items-center gap-2">
+              <div className="bg-white p-1 rounded-md border border-gray-100 shadow-sm">
+                <Image src="/logo.jpg" alt="ERCS" width={24} height={24} unoptimized />
               </div>
-              <span className="text-xl font-black text-black tracking-tighter uppercase">ERCS</span>
+              <span className="text-lg font-black text-black tracking-tighter uppercase">ERCS</span>
             </div>
        </header>
 
        <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-7xl grid lg:grid-cols-[1fr_640px] gap-20 items-start pt-10">
             
-            <div className="hidden lg:flex flex-col space-y-10 sticky top-20">
-                <div className="space-y-6">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
-                        <Star className="h-3 w-3 fill-current" /> Join the Mission
+            <div className="hidden lg:flex flex-col space-y-6 sticky top-20">
+                <div className="space-y-4">
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-[0.2em]">
+                        <Star className="h-2.5 w-2.5 fill-current" /> Join the Mission
                     </div>
-                    <h1 className="text-8xl font-black text-black leading-[0.8] tracking-tighter">
+                    <h1 className="text-6xl font-black text-black leading-[0.8] tracking-tighter">
                         Become a <br />
                         <span className="text-[#ED1C24]">Force for Good.</span>
                     </h1>
-                    <p className="text-xl text-black/60 font-medium max-w-md">
+                    <p className="text-lg text-black/60 font-medium max-w-sm">
                         Your time and skills can save lives. Join our network of over 6.2 million volunteers across Ethiopia.
                     </p>
                 </div>
@@ -322,25 +322,25 @@ export default function VolunteerJoinPage() {
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-full bg-white p-6 md:p-10 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-gray-100 h-fit"
+                className="w-full bg-white p-6 md:p-8 rounded-[32px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)] border border-gray-100 h-fit"
             >
                 <AnimatePresence mode="wait">
                     {step === 1 && (
                         <motion.div key="step1" {...stepVariants}>
-                            <div className="space-y-1 mb-8 text-left">
-                                <h2 className="text-3xl font-black text-black tracking-tighter">Personal Details</h2>
-                                <p className="text-black/60 font-black text-[10px] uppercase tracking-widest bg-gray-50 inline-block px-3 py-1 rounded-full border border-gray-100">Step 1 of 2</p>
+                            <div className="space-y-0.5 mb-6 text-left">
+                                <h2 className="text-2xl font-black text-black tracking-tighter">Personal Details</h2>
+                                <p className="text-black/60 font-black text-[9px] uppercase tracking-widest bg-gray-50 inline-block px-2 py-0.5 rounded-full border border-gray-100">Step 1 of 2</p>
                             </div>
 
-                             <form onSubmit={handleSubmit} className="space-y-8 text-left">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                             <form onSubmit={handleSubmit} className="space-y-6 text-left">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                                       {formConfig.map((field: any) => {
                                           if (field.id === 'password' || field.id === 'confirmPassword') return null;
 
                                           if (field.type === 'tel') {
                                               return (
-                                                  <div key={field.id} className="space-y-2 group md:col-span-2">
-                                                      <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
+                                                  <div key={field.id} className="space-y-1 group md:col-span-1">
+                                                      <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
                                                       <PhoneInput
                                                          international
                                                          defaultCountry={formData.country as any}
@@ -355,16 +355,16 @@ export default function VolunteerJoinPage() {
 
                                           if (field.dataSource === 'REGIONS') {
                                               return (
-                                                  <div key={field.id} className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                                      <div className="space-y-2 group">
-                                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Country <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                  <>
+                                                      <div key={`${field.id}-country`} className="space-y-1 group md:col-span-1">
+                                                          <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Country <span className="text-[#ED1C24] text-xs">*</span></Label>
                                                           <div className="relative">
                                                               <div className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#ED1C24] transition-colors">
                                                                   <Globe className="h-4 w-4" />
                                                               </div>
                                                               <select 
                                                                   id="country" 
-                                                                  className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-12 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                  className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-12 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
                                                                   value={formData.country}
                                                                   onChange={handleChange}
                                                               >
@@ -376,13 +376,13 @@ export default function VolunteerJoinPage() {
                                                       </div>
                                                       
                                                       {formData.country === 'ET' && (
-                                                          <div className="space-y-2 group">
-                                                              <Label htmlFor={field.id} className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
+                                                          <div key={`${field.id}-region`} className="space-y-1 group md:col-span-1">
+                                                              <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
                                                               <div className="relative">
                                                                   <select 
                                                                       id={field.id} 
                                                                       required={field.required} 
-                                                                      className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
+                                                                      className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
                                                                       value={formData[field.id] || ""}
                                                                       onChange={handleChange}
                                                                   >
@@ -394,14 +394,15 @@ export default function VolunteerJoinPage() {
                                                               </div>
                                                           </div>
                                                       )}
+                                                      {formData.country === 'ET' && !formData.region && <div className="hidden md:block" />}
 
                                                       {formData.country === 'ET' && formData.region && (
-                                                          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 group">
-                                                              <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Zone <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                          <motion.div key={`${field.id}-zone`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-1 group md:col-span-1">
+                                                              <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Zone <span className="text-[#ED1C24] text-xs">*</span></Label>
                                                               <select 
                                                                   id="zone" 
                                                                   required
-                                                                  className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                  className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
                                                                   value={formData.zone}
                                                                   onChange={handleChange}
                                                               >
@@ -412,14 +413,15 @@ export default function VolunteerJoinPage() {
                                                               </select>
                                                           </motion.div>
                                                       )}
+                                                      {formData.country === 'ET' && formData.region && !formData.zone && <div className="hidden md:block" />}
 
                                                       {formData.country === 'ET' && formData.zone && (
-                                                          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 group">
-                                                              <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Woreda / Sub-City <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                          <motion.div key={`${field.id}-woreda`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-1 group md:col-span-1">
+                                                              <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Woreda / Sub-City <span className="text-[#ED1C24] text-xs">*</span></Label>
                                                               <select 
                                                                   id="woreda" 
                                                                   required
-                                                                  className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                  className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
                                                                   value={formData.woreda}
                                                                   onChange={handleChange}
                                                               >
@@ -432,11 +434,11 @@ export default function VolunteerJoinPage() {
                                                       )}
 
                                                       {formData.country !== 'ET' && (
-                                                          <div className="space-y-2 group">
-                                                              <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Address <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                          <div key={`${field.id}-intl`} className="space-y-1 group md:col-span-1">
+                                                              <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Address <span className="text-[#ED1C24] text-xs">*</span></Label>
                                                               <Input 
                                                                  id="internationalAddress" 
-                                                                 className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all" 
+                                                                 className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-xs" 
                                                                  placeholder="Enter your address" 
                                                                  value={formData.internationalAddress} 
                                                                  onChange={handleChange} 
@@ -444,19 +446,19 @@ export default function VolunteerJoinPage() {
                                                               />
                                                           </div>
                                                       )}
-                                                  </div>
+                                                  </>
                                               );
                                           }
 
                                           return (
-                                              <div key={field.id} className={cn("space-y-2 group", field.type === 'textarea' || field.id === 'email' ? "md:col-span-2" : "md:col-span-1")}>
-                                                  <Label htmlFor={field.id} className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
+                                              <div key={field.id} className="space-y-1 group md:col-span-1">
+                                                   <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
                                                   <div className="relative">
-                                                      {field.type === 'select' ? (
-                                                           <select 
-                                                               id={field.id} 
-                                                               required={field.required} 
-                                                               className="flex h-12 w-full rounded-xl bg-gray-50 border-none px-6 py-2 text-sm font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
+                                                       {field.type === 'select' ? (
+                                                            <select 
+                                                                id={field.id} 
+                                                                required={field.required} 
+                                                                className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
                                                                value={formData[field.id] || ""}
                                                                onChange={handleChange}
                                                            >
@@ -470,11 +472,11 @@ export default function VolunteerJoinPage() {
                                                                ))}
                                                            </select>
                                                        ) : (
-                                                           <Input 
-                                                              id={field.id} 
-                                                              type={field.type} 
-                                                              required={field.required} 
-                                                              className="h-12 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-left" 
+                                                            <Input 
+                                                               id={field.id} 
+                                                               type={field.type} 
+                                                               required={field.required} 
+                                                               className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-left text-xs" 
                                                               placeholder={field.placeholder} 
                                                               value={formData[field.id] || ""} 
                                                               onChange={handleChange} 
@@ -486,72 +488,74 @@ export default function VolunteerJoinPage() {
                                       })}
 
                                       {/* Explicit Password Fields */}
-                                      <div className="space-y-2 group md:col-span-1">
-                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Create Password <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                          <div className="relative">
-                                              <Input id="password" type={showPassword ? "text" : "password"} required className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.password} onChange={handleChange} />
+                                       <div className="space-y-1 group md:col-span-1">
+                                           <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Create Password <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                           <div className="relative">
+                                               <Input id="password" type={showPassword ? "text" : "password"} required className="h-10 rounded-lg bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-xs" placeholder="••••••••" value={formData.password} onChange={handleChange} />
                                               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
                                           </div>
                                       </div>
 
-                                      <div className="space-y-2 group md:col-span-1">
-                                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Confirm Password <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                          <div className="relative">
-                                              <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} required className="h-12 rounded-xl bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
+                                      <div className="space-y-1 group md:col-span-1">
+                                           <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Confirm Password <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                           <div className="relative">
+                                               <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} required className="h-10 rounded-lg bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-xs" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
                                               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
                                           </div>
                                       </div>
                                   </div>
 
-                                 {error && <div className="bg-red-50 text-[#ED1C24] p-3 rounded-xl text-xs font-bold text-center border border-red-100 italic">{error}</div>}
-                                 <Button type="submit" className="w-full h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl text-lg font-black shadow-2xl shadow-red-500/20 transition-all flex items-center justify-center gap-2">Continue <ChevronRight className="h-5 w-5" /></Button>
+                                  {error && <div className="bg-red-50 text-[#ED1C24] p-2 rounded-lg text-[10px] font-bold text-center border border-red-100 italic">{error}</div>}
+                                  <Button type="submit" className="w-full h-12 bg-[#ED1C24] hover:bg-black text-white rounded-xl text-base font-black shadow-lg shadow-red-500/15 transition-all flex items-center justify-center gap-2">Continue <ChevronRight className="h-4 w-4" /></Button>
                              </form>
                         </motion.div>
                     )}
 
                     {step === 2 && (
                         <motion.div key="step2" {...stepVariants}>
-                             <div className="space-y-1 mb-8 text-left">
-                                <h2 className="text-3xl font-black text-black tracking-tighter">Engagement & Skills</h2>
-                                <p className="text-black/60 font-black text-[10px] uppercase tracking-widest bg-gray-50 inline-block px-3 py-1 rounded-full border border-gray-100">Step 2 of 2</p>
+                             <div className="space-y-0.5 mb-6 text-left">
+                                <h2 className="text-2xl font-black text-black tracking-tighter">Engagement & Skills</h2>
+                                <p className="text-black/60 font-black text-[9px] uppercase tracking-widest bg-gray-50 inline-block px-2 py-0.5 rounded-full border border-gray-100">Step 2 of 2</p>
                              </div>
 
                              <form onSubmit={handleSubmit} className="space-y-8 text-left">
-                                <div className="space-y-4">
-                                    <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-[#ED1C24] ml-1">Voluntary Service Engagement Areas <span className="text-red-500">*</span></Label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="space-y-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24] ml-1">Voluntary Service Engagement Areas <span className="text-red-500">*</span></Label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                         {ENGAGEMENT_AREAS.map((area) => (
-                                            <div key={area} onClick={() => toggleEngagementArea(area)} className={cn("flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer group", formData.engagementAreas.includes(area) ? "bg-black border-black text-white shadow-lg" : "bg-gray-50/50 border-gray-100 text-black/60 hover:border-black/10 hover:bg-white")}>
-                                                <div className={cn("w-5 h-5 rounded-md flex items-center justify-center border-2 transition-all", formData.engagementAreas.includes(area) ? "border-white bg-white" : "border-gray-200")}>{formData.engagementAreas.includes(area) && <Check className="h-4 w-4 text-black" strokeWidth={4} />}</div>
-                                                <span className="text-xs font-bold leading-tight">{area}</span>
+                                            <div key={area} onClick={() => toggleEngagementArea(area)} className={cn("flex items-center gap-2.5 p-3 rounded-xl border transition-all cursor-pointer group", formData.engagementAreas.includes(area) ? "bg-black border-black text-white shadow-md" : "bg-gray-50/50 border-gray-100 text-black/60 hover:border-black/10 hover:bg-white")}>
+                                                <div className={cn("w-4 h-4 rounded flex items-center justify-center border-2 transition-all", formData.engagementAreas.includes(area) ? "border-white bg-white" : "border-gray-200")}>{formData.engagementAreas.includes(area) && <Check className="h-3 w-3 text-black" strokeWidth={4} />}</div>
+                                                <span className="text-[11px] font-bold leading-tight">{area}</span>
                                             </div>
                                         ))}
                                     </div>
                                     {formData.engagementAreas.includes("Other Services") && (
-                                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="pt-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Please specify your areas of interest</Label>
-                                            <Input id="otherEngagementArea" placeholder="Write your areas of interest here..." className="h-14 rounded-2xl bg-gray-50 border-none font-bold text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 mt-2" value={formData.otherEngagementArea} onChange={handleChange} />
+                                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                                            <div className="space-y-1">
+                                                <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Please specify your areas of interest</Label>
+                                                <Input id="otherEngagementArea" placeholder="Write your areas of interest..." className="h-10 rounded-lg bg-gray-50 border-none font-bold text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 mt-1 text-xs" value={formData.otherEngagementArea} onChange={handleChange} />
+                                            </div>
                                         </motion.div>
                                     )}
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2"><Label htmlFor="skills" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/40">Key Skills (Optional)</Label><Input id="skills" placeholder="e.g. First Aid, Driving, Translation" className="h-14 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" value={formData.skills} onChange={handleChange} /></div>
-                                    <div className="space-y-2"><Label htmlFor="interests" className="text-[10px] font-black uppercase tracking-widest ml-1 text-black/40">Primary Interests (Optional)</Label><Input id="interests" placeholder="e.g. Disaster Relief, Health Services" className="h-14 rounded-xl bg-gray-50 border-none font-bold placeholder:text-black/30 text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" value={formData.interests} onChange={handleChange} /></div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1"><Label htmlFor="skills" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/40">Key Skills (Optional)</Label><Input id="skills" placeholder="e.g. First Aid, Driving" className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-xs" value={formData.skills} onChange={handleChange} /></div>
+                                    <div className="space-y-1"><Label htmlFor="interests" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/40">Primary Interests (Optional)</Label><Input id="interests" placeholder="e.g. Disaster Relief" className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black px-6 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-xs" value={formData.interests} onChange={handleChange} /></div>
                                 </div>
                                 {error && <div className="bg-red-50 text-[#ED1C24] p-3 rounded-xl text-xs font-bold text-center border border-red-100 italic">{error}</div>}
-                                <div className="flex gap-4 pt-2">
-                                    <Button type="button" variant="ghost" className="h-16 rounded-2xl font-black px-8 text-black/40 hover:text-black" onClick={() => setStep(1)} disabled={loading}>Back</Button>
-                                    <Button type="submit" className="flex-1 h-16 bg-[#ED1C24] hover:bg-black text-white rounded-2xl text-xl font-black shadow-2xl shadow-red-500/20 transition-all flex items-center justify-center gap-2" disabled={loading}>{loading ? "Processing..." : "Join the Red Cross"} <CheckCircle className="h-5 w-5 ml-1" /></Button>
-                                </div>
+                                <div className="flex gap-3 pt-1">
+                                    <Button type="button" variant="ghost" className="h-12 rounded-xl font-black px-6 text-black/40 hover:text-black text-sm" onClick={() => setStep(1)} disabled={loading}>Back</Button>
+                                    <Button type="submit" className="flex-1 h-12 bg-[#ED1C24] hover:bg-black text-white rounded-xl text-base font-black shadow-lg shadow-red-500/15 transition-all flex items-center justify-center gap-2" disabled={loading}>{loading ? "Processing..." : "Join the Red Cross"} <CheckCircle className="h-4 w-4 ml-1" /></Button>
+                                 </div>
                              </form>
                         </motion.div>
                     )}
 
                     {step === 3 && (
-                        <motion.div key="step3" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-12 space-y-10">
-                            <div className="mx-auto h-28 w-28 bg-green-50 rounded-[40px] flex items-center justify-center shadow-inner relative"><CheckCircle className="h-14 w-14 text-green-500" strokeWidth={3} /><div className="absolute -inset-2 rounded-[44px] border-2 border-green-100 animate-ping opacity-20" /></div>
-                            <div className="space-y-4"><h2 className="text-5xl font-black text-black tracking-tighter">Welcome home.</h2><p className="text-black/60 font-medium text-xl leading-relaxed max-w-sm mx-auto">Your humanitarian journey has officially begun! We&apos;ll review your details and contact you shortly.</p></div>
-                            <Link href="/"><Button className="h-16 bg-black hover:bg-[#ED1C24] text-white rounded-3xl px-16 text-xl font-black shadow-2xl transition-all">Back to Home</Button></Link>
+                        <motion.div key="step3" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 space-y-6">
+                            <div className="mx-auto h-20 w-20 bg-green-50 rounded-[32px] flex items-center justify-center shadow-inner relative"><CheckCircle className="h-10 w-10 text-green-500" strokeWidth={3} /><div className="absolute -inset-2 rounded-[36px] border-2 border-green-100 animate-ping opacity-20" /></div>
+                            <div className="space-y-3"><h2 className="text-3xl font-black text-black tracking-tighter">Welcome home.</h2><p className="text-black/60 font-medium text-base leading-relaxed max-w-xs mx-auto">Your humanitarian journey has officially begun! We&apos;ll review your details and contact you shortly.</p></div>
+                            <Link href="/"><Button className="h-14 bg-black hover:bg-[#ED1C24] text-white rounded-2xl px-12 text-lg font-black shadow-xl transition-all">Back to Home</Button></Link>
                         </motion.div>
                     )}
                 </AnimatePresence>

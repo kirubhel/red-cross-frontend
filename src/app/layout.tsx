@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Ethiopian Red Cross Society | ERCS VMMS",
   description: "Official Volunteer & Member Management System for the Ethiopian Red Cross Society (ERCS). Saving Lives, Changing Minds.",
   icons: {
-    icon: "/logo.jpg",
+    icon: "/logo.png",
   },
 };
 

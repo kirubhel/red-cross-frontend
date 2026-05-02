@@ -223,21 +223,21 @@ export default function LandingPage() {
         animate={{ y: 0, opacity: 1 }}
         className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md"
       >
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="relative overflow-hidden rounded-lg">
+            <div className="relative overflow-hidden rounded-md border border-gray-100 shadow-sm">
               <Image 
                 src="/logo.jpg" 
                 alt="ERCS Logo" 
-                width={44} 
-                height={44} 
+                width={32} 
+                height={32} 
                 className="object-contain transition-transform duration-500 group-hover:scale-110" 
                 unoptimized
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-black leading-none tracking-tight">ERCS</span>
-              <span className="text-[10px] font-bold text-[#ED1C24] uppercase tracking-[0.2em]">Ethiopia</span>
+              <span className="text-lg font-bold text-black leading-none tracking-tight">ERCS</span>
+              <span className="text-[9px] font-bold text-[#ED1C24] uppercase tracking-[0.2em]">Ethiopia</span>
             </div>
           </div>
           
@@ -320,7 +320,7 @@ export default function LandingPage() {
 
       <main className="relative z-10">
         {/* Hero Section */}
-        <section className="relative pt-12 pb-20 px-6 overflow-hidden">
+        <section className="relative pt-20 pb-24 px-6 overflow-hidden">
           {/* Decorative Hero Swoosh */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-0 overflow-visible">
             <svg viewBox="0 0 1000 600" className="w-[150%] h-[150%] -translate-x-[15%]">
@@ -369,8 +369,8 @@ export default function LandingPage() {
               transition={{ duration: 0.8 }}
               className="space-y-6"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-ercs-light text-ercs-red rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
-                <Plus className="h-4 w-4" strokeWidth={4} /> {t.hero.tagline}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-ercs-light text-ercs-red rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">
+                <ShieldCheck className="h-3.5 w-3.5" /> {t.hero.tagline}
               </div>
               <h1 className={`${lang === 'en' ? 'text-6xl md:text-8xl' : 'text-5xl md:text-7xl'} font-black text-black leading-[0.9] tracking-tighter`}>
                 {t.hero.title1} <br />
@@ -412,13 +412,13 @@ export default function LandingPage() {
                     transition={{ delay: 0.45, duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }}
                   >
                     <Link href="/join/member">
-                      <button className="group flex items-center gap-2 sm:gap-4 bg-[#ED1C24] border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24]
-                        text-white rounded-full h-12 sm:h-16 px-4 sm:px-6 font-black text-sm sm:text-lg
-                        shadow-2xl shadow-[#ED1C24]/30 transition-all duration-500
-                        hover:-translate-y-1.5 hover:shadow-[#ED1C24]/40 cursor-pointer whitespace-nowrap">
-                        <div className="h-10 w-10 rounded-full bg-white/20 flex items-center
+                      <button className="group flex items-center gap-2 sm:gap-3 bg-[#ED1C24] border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24]
+                        text-white rounded-full h-10 sm:h-12 px-4 sm:px-5 font-black text-xs sm:text-sm
+                        shadow-xl shadow-[#ED1C24]/30 transition-all duration-500
+                        hover:-translate-y-1 hover:shadow-[#ED1C24]/40 cursor-pointer whitespace-nowrap">
+                        <div className="h-7 w-7 rounded-full bg-white/20 flex items-center
                           justify-center group-hover:bg-[#ED1C24] group-hover:text-white transition-colors flex-shrink-0">
-                          <Users className="h-5 w-5" />
+                          <Users className="h-3.5 w-3.5" />
                         </div>
                         {t.hero.ctaVolunteer || translations[lang].hero.ctaVolunteer || "Volunteer"}
                       </button>
@@ -433,16 +433,16 @@ export default function LandingPage() {
                   >
                     <button 
                       onClick={() => setIsDonationModalOpen(true)}
-                      className="group flex items-center gap-2 sm:gap-4 bg-black border-2 border-black hover:bg-white hover:text-[#ED1C24] hover:border-[#ED1C24]
-                        text-white rounded-full h-12 sm:h-16 px-4 sm:px-6 font-black text-sm sm:text-lg
-                        shadow-2xl shadow-black/20 transition-all duration-500
-                        hover:-translate-y-1.5 hover:shadow-[#ED1C24]/30 cursor-pointer whitespace-nowrap">
-                        <div className="h-10 w-10 rounded-full bg-white/15 group-hover:bg-[#ED1C24] group-hover:text-white
+                      className="group flex items-center gap-2 sm:gap-3 bg-black border-2 border-black hover:bg-white hover:text-[#ED1C24] hover:border-[#ED1C24]
+                        text-white rounded-full h-10 sm:h-12 px-4 sm:px-5 font-black text-xs sm:text-sm
+                        shadow-xl shadow-black/20 transition-all duration-500
+                        hover:-translate-y-1 hover:shadow-[#ED1C24]/30 cursor-pointer whitespace-nowrap">
+                        <div className="h-7 w-7 rounded-full bg-white/15 group-hover:bg-[#ED1C24] group-hover:text-white
                           flex items-center justify-center transition-colors flex-shrink-0">
                           <MotionHeart
                             variants={heartVariants}
                             animate="heartbeat"
-                            className="h-5 w-5"
+                            className="h-3.5 w-3.5"
                           />
                         </div>
                         {t.hero.ctaDonate || translations[lang].hero.ctaDonate || "Donate"}
@@ -535,7 +535,7 @@ export default function LandingPage() {
               ].map((stat, i) => (
                 <div key={i} className="bg-gray-900 md:px-12 py-4 flex flex-col items-center md:items-start space-y-2">
                   <div className="text-[#ED1C24] text-xs font-black uppercase tracking-widest">{stat.label}</div>
-                  <div className="text-3xl md:text-5xl font-black text-white">
+                  <div className="text-2xl md:text-3xl font-black text-white">
                     {stat.isCounter ? (
                       <CountUp value={stat.value as number} suffix={stat.suffix} />
                     ) : (
@@ -556,7 +556,7 @@ export default function LandingPage() {
           <div className="container mx-auto">
             <div className="max-w-xl mb-20">
               <h2 className="text-sm font-black text-ercs-red uppercase tracking-[0.3em] mb-4">{t.services.badge}</h2>
-              <h3 className={`${lang === 'en' ? 'text-5xl md:text-6xl' : 'text-4xl md:text-5xl'} font-black text-black leading-[0.9] tracking-tighter`}>
+              <h3 className={`${lang === 'en' ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl'} font-black text-black leading-[0.9] tracking-tighter`}>
                 {t.services.title}
               </h3>
             </div>
@@ -592,8 +592,8 @@ export default function LandingPage() {
                     <div className={`h-14 w-14 ${service.bg || 'bg-red-50'} ${service.color || 'text-ercs-red'} rounded-2xl flex items-center justify-center mb-6 rotate-3 group-hover:rotate-12 transition-transform duration-500`}>
                       <MotionIcon className="h-7 w-7" />
                     </div>
-                    <h4 className={`${lang === 'en' ? 'text-xl' : 'text-lg'} font-black text-black mb-3 line-clamp-2`}>{service.title || 'Service Title'}</h4>
-                    <p className="text-black/60 text-sm leading-relaxed mb-2 line-clamp-4 flex-grow">
+                    <h4 className={`${lang === 'en' ? 'text-lg' : 'text-base'} font-black text-black mb-2 line-clamp-2`}>{service.title || 'Service Title'}</h4>
+                    <p className="text-black/60 text-xs leading-relaxed mb-2 line-clamp-4 flex-grow">
                       {service.desc || 'Service description goes here...'}
                     </p>
                   </motion.div>
@@ -633,8 +633,14 @@ export default function LandingPage() {
                  <div className="bg-white p-12 rounded-[48px] shadow-2xl border border-gray-100 relative z-10">
                     <div className="space-y-12">
                        <div className="flex items-center justify-between">
-                          <div className="h-16 w-16 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center">
-                             <Plus className="h-10 w-10" strokeWidth={6} />
+                          <div className="h-20 w-20 bg-white rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden border border-red-50">
+                             <Image 
+                               src="/logo.png" 
+                               alt="ERCS Logo" 
+                               fill
+                               className="object-contain p-3"
+                               unoptimized
+                             />
                           </div>
                           <div className="text-right">
                              <div className="text-4xl font-black text-black">
@@ -979,7 +985,7 @@ export default function LandingPage() {
             <div className="space-y-8">
               <div className="flex items-center gap-3">
                 <div className="bg-white p-1 rounded-lg">
-                  <Image src="/logo.jpg" alt="ERCS Logo" width={80} height={80} className="object-contain" unoptimized />
+                  <Image src="/logo.png" alt="ERCS Logo" width={80} height={80} className="object-contain" unoptimized />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-2xl font-black tracking-tighter uppercase leading-none">ERCS</span>

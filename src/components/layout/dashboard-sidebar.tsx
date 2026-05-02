@@ -98,7 +98,7 @@ export function DashboardSidebar() {
       {/* Brand Header */}
       <div className={cn("flex h-24 items-center border-b border-gray-50 pb-2 pt-4 relative", isCollapsed ? "justify-center px-0" : "px-6 gap-4")}>
          <div className="bg-gray-50 border border-gray-100 p-1.5 rounded-xl shrink-0 shadow-sm">
-           <Image src="/logo.jpg" alt="ERCS" width={40} height={40} className="object-contain" unoptimized />
+           <Image src="/logo.png" alt="ERCS" width={40} height={40} className="object-contain" unoptimized />
          </div>
          
          <div className={cn("flex flex-col whitespace-nowrap overflow-hidden transition-all duration-300", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>

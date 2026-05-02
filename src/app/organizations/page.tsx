@@ -157,7 +157,7 @@ export default function OrganizationsPage() {
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative overflow-hidden rounded-lg">
               <Image 
-                src="/logo.jpg" 
+                src="/logo.png" 
                 alt="ERCS Logo" 
                 width={40} 
                 height={40} 
