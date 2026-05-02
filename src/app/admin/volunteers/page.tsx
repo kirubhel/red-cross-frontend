@@ -26,7 +26,9 @@ import {
     Mail, 
     MapPin, 
     Calendar, 
-    User 
+    User,
+    Briefcase,
+    Home
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
@@ -44,6 +46,13 @@ type Volunteer = {
   gender: string;
   date_of_birth: string;
   hoursSpent: number;
+  profession?: string;
+  email?: string;
+  zone_id?: string;
+  woreda_id?: string;
+  engagement_areas?: string[];
+  skills?: string[];
+  interests?: string[];
   status: "ACTIVE" | "INACTIVE" | "PENDING";
 };
 

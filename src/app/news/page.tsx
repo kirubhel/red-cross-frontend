@@ -13,7 +13,7 @@ import {
   Newspaper
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = ["All", "EMERGENCY", "HEALTH", "YOUTH", "DEVELOPMENT"];

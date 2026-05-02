@@ -320,7 +320,7 @@ export default function LandingPage() {
 
       <main className="relative z-10">
         {/* Hero Section */}
-        <section className="relative pt-32 pb-40 px-6 overflow-hidden">
+        <section className="relative pt-16 pb-20 px-6 overflow-hidden min-h-[calc(100vh-64px)] flex items-center">
           {/* Decorative Hero Swoosh */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-0 overflow-visible">
             <svg viewBox="0 0 1000 600" className="w-[150%] h-[150%] -translate-x-[15%]">
@@ -362,17 +362,17 @@ export default function LandingPage() {
             </svg>
           </div>
 
-          <div className="container mx-auto grid lg:grid-cols-[0.9fr_1.1fr] gap-8 xl:gap-20 items-center relative z-10">
+          <div className="container mx-auto grid lg:grid-cols-[0.9fr_1.1fr] gap-8 xl:gap-16 items-center relative z-10">
             <motion.div 
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
-              className="space-y-8"
+              className="space-y-6"
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-ercs-light text-ercs-red rounded-full text-[11px] font-black uppercase tracking-widest animate-pulse">
                 <ShieldCheck className="h-4 w-4" /> {t.hero.tagline}
               </div>
-              <h1 className={`${lang === 'en' ? 'text-7xl md:text-9xl' : 'text-6xl md:text-8xl'} font-black text-black leading-[0.85] tracking-tighter`}>
+              <h1 className={`${lang === 'en' ? 'text-6xl md:text-8xl lg:text-9xl' : 'text-5xl md:text-7xl lg:text-8xl'} font-black text-black leading-[0.85] tracking-tighter`}>
                 {t.hero.title1} <br />
                 <span className="relative inline-block">
                   <span className="text-[#ED1C24]">{t.hero.title2}</span> <br /> 
@@ -390,16 +390,16 @@ export default function LandingPage() {
                   </svg>
                 </span>
               </h1>
-              <p className={`${lang === 'en' ? 'text-2xl' : 'text-xl'} text-black/70 max-w-xl leading-relaxed font-medium`}>
+              <p className={`${lang === 'en' ? 'text-xl md:text-2xl' : 'text-lg md:text-xl'} text-black/70 max-w-xl leading-relaxed font-medium`}>
                 {t.hero.subtitle}
               </p>
               {/* Hero CTA Pathway Buttons */}
-              <div className="space-y-6 pt-10">
+              <div className="space-y-4 pt-6">
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.35 }}
-                  className="text-xs font-black uppercase tracking-[0.3em] text-black/40"
+                  className="text-[10px] font-black uppercase tracking-[0.3em] text-black/40"
                 >
                   {(t.hero as any).pathwaysLabel}
                 </motion.p>

@@ -71,7 +71,7 @@ export default function DashboardPage() {
         const role = localStorage.getItem("user_role");
         const storedErcsId = localStorage.getItem("ercs_id");
         
-        const isMemberUser = role === "MEMBER" || role === "5" || role === 5;
+        const isMemberUser = role === "MEMBER" || role === "5";
         let totalHours = 0;
 
         if (!isMemberUser) {
