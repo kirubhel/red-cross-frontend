@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -11,17 +12,37 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, HandHeart, Plus, Star, Filter, Download, FileText, Table as TableIcon, X } from "lucide-react";
+import { 
+    Search, 
+    HandHeart, 
+    Plus, 
+    Star, 
+    Filter, 
+    FileText, 
+    Table as TableIcon, 
+    X, 
+    ArrowUpRight, 
+    Phone, 
+    Mail, 
+    MapPin, 
+    Calendar, 
+    User 
+} from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type Volunteer = {
   id: string;
+  person_id: string;
   first_name: string;
   last_name: string;
   phone_number: string;
   region: string;
+  country: string;
+  address: string;
+  gender: string;
+  date_of_birth: string;
   hoursSpent: number;
   status: "ACTIVE" | "INACTIVE" | "PENDING";
 };
@@ -40,6 +61,8 @@ export default function VolunteersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchRegions();
@@ -83,11 +106,13 @@ export default function VolunteersPage() {
         return;
     }
 
-    const headers = ["Name", "Phone", "Region", "Hours Spent", "Status"];
+    const headers = ["Name", "Phone", "Region", "Country", "Address", "Hours Spent", "Status"];
     const rows = volunteers.map(v => [
         `${v.first_name} ${v.last_name}`,
         v.phone_number,
         v.region,
+        v.country || "Ethiopia",
+        v.address || "---",
         v.hoursSpent,
         v.status
     ]);
@@ -107,18 +132,18 @@ export default function VolunteersPage() {
     toast.info("Preparing PDF Report...");
   };
 
-    const handleApprove = async (personId: string) => {
-        try {
-            await api.put("/volunteers/status", { person_id: personId, status: "ACTIVE" });
-            toast.success("Volunteer Approved");
-            fetchVolunteers();
-        } catch (err) {
-            toast.error("Failed to approve volunteer");
-        }
-    };
+  const handleApprove = async (personId: string) => {
+    try {
+        await api.put("/volunteers/status", { person_id: personId, status: "ACTIVE" });
+        toast.success("Volunteer Approved");
+        fetchVolunteers();
+    } catch (err) {
+        toast.error("Failed to approve volunteer");
+    }
+  };
 
-    return (
-        <div className="space-y-10 print:p-0">
+  return (
+    <div className="space-y-10 print:p-0 text-black">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 print:hidden">
         <div className="space-y-1.5">
@@ -222,6 +247,7 @@ export default function VolunteersPage() {
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Volunteer Identity</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contact</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Location</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Address</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contribution</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500 text-right">Status</TableHead>
             </TableRow>
@@ -229,16 +255,16 @@ export default function VolunteersPage() {
           <TableBody>
             {loading ? (
                 <TableRow>
-                   <TableCell colSpan={5} className="h-32 text-center">
+                   <TableCell colSpan={6} className="h-32 text-center">
                       <div className="flex flex-col items-center justify-center space-y-4">
-                         <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
+                         <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin"></div>
                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading Volunteers...</p>
                       </div>
                    </TableCell>
                 </TableRow>
             ) : volunteers.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={5} className="h-32 text-center text-gray-400 font-bold italic text-xs">No volunteers found matching your criteria</TableCell>
+                   <TableCell colSpan={6} className="h-32 text-center text-gray-400 font-bold italic text-xs">No volunteers found matching your criteria</TableCell>
                 </TableRow>
             ) : (
                 volunteers.map((v) => (
@@ -249,12 +275,22 @@ export default function VolunteersPage() {
                     <TableCell className="px-6 py-4">
                         <span className="text-xs font-bold text-gray-500">{v.phone_number}</span>
                     </TableCell>
+                    
+                    <TableCell className="px-6 py-4">
+                        <div className="flex flex-col gap-1">
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-[9px] font-black uppercase tracking-widest rounded-md w-fit">
+                                {regions.find(r => String(r.id) === String(v.region))?.name || v.region || 'N/A'}
+                            </span>
+                            <span className="text-[10px] text-gray-400 uppercase tracking-tighter ml-1">{v.country || 'Ethiopia'}</span>
+                        </div>
+                    </TableCell>
 
                     <TableCell className="px-6 py-4">
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-[9px] font-black uppercase tracking-widest rounded-md">
-                            {regions.find(r => String(r.id) === String(v.region))?.name || v.region || 'N/A'}
+                        <span className="text-xs text-gray-500 truncate max-w-[150px] inline-block" title={v.address}>
+                            {v.address || '---'}
                         </span>
                     </TableCell>
+
                     <TableCell className="px-6 py-4">
                         <div className="flex items-center gap-1.5">
                             <span className="font-black text-sm text-[#ED1C24]">{v.hoursSpent || 0} <span className="text-[9px] uppercase font-black opacity-50">Hrs</span></span>
@@ -269,9 +305,15 @@ export default function VolunteersPage() {
                             )}>
                                 {v.status || "PENDING"}
                             </span>
+                            <button 
+                                onClick={() => { setSelectedVolunteer(v); setShowModal(true); }}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+                            >
+                                <ArrowUpRight className="h-4 w-4 ml-auto text-gray-300 group-hover:text-[#ED1C24] transition-colors" />
+                            </button>
                             {v.status === "PENDING" && (
                                 <Button 
-                                    onClick={() => handleApprove((v as any).person_id || v.id)}
+                                    onClick={() => handleApprove(v.person_id || v.id)}
                                     className="h-7 px-3 bg-[#ED1C24] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black transition-all"
                                 >
                                     Approve
@@ -285,6 +327,193 @@ export default function VolunteersPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Volunteer Detail Modal */}
+      {showModal && selectedVolunteer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100"
+            >
+                <div className="p-8 border-b border-gray-50 flex justify-between items-start">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">Volunteer Profile Audit</p>
+                        <h2 className="text-2xl font-black tracking-tight text-black">
+                            {selectedVolunteer.first_name} {selectedVolunteer.last_name}
+                        </h2>
+                        <p className="text-xs font-bold text-gray-400">{selectedVolunteer.person_id || selectedVolunteer.id}</p>
+                    </div>
+                    <button 
+                        onClick={() => setShowModal(false)}
+                        className="h-10 w-10 flex items-center justify-center rounded-2xl hover:bg-gray-50 transition-colors"
+                    >
+                        <X className="h-5 w-5 text-gray-400" />
+                    </button>
+                </div>
+
+                <div className="p-8 grid grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                        <div>
+                            <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Identity & Bio</h4>
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><User className="h-4 w-4 text-gray-400" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Gender</p>
+                                        <p className="text-xs font-bold text-black">{selectedVolunteer.gender || "Not Specified"}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Calendar className="h-4 w-4 text-gray-400" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Date of Birth</p>
+                                        <p className="text-xs font-bold text-black">{selectedVolunteer.date_of_birth || "N/A"}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Star className="h-4 w-4 text-gray-400" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Hours Contributed</p>
+                                        <p className="text-xs font-bold text-[#ED1C24]">{selectedVolunteer.hoursSpent || 0} Total Hours</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Briefcase className="h-4 w-4 text-gray-400" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Profession</p>
+                                        <p className="text-xs font-bold text-black">{selectedVolunteer.profession || "N/A"}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div>
+                            <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Contact & Location</h4>
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Phone className="h-4 w-4 text-gray-400" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Phone</p>
+                                        <p className="text-xs font-bold text-black">{selectedVolunteer.phone_number || "No Phone"}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><MapPin className="h-4 w-4 text-gray-400" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Region / Branch</p>
+                                        <p className="text-xs font-bold text-black">
+                                            {regions.find(r => String(r.id) === String(selectedVolunteer.region))?.name || "National HQ"}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Mail className="h-4 w-4 text-gray-400" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Email Address</p>
+                                        <p className="text-xs font-bold text-black">{selectedVolunteer.email || "No Email"}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Home className="h-4 w-4 text-gray-400" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Address / Country</p>
+                                        <p className="text-xs font-bold text-black">
+                                            {selectedVolunteer.address || "---"} • {selectedVolunteer.country || "Ethiopia"}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><MapPin className="h-4 w-4 text-gray-400" /></div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Zone / Woreda</p>
+                                        <p className="text-xs font-bold text-black">
+                                            {selectedVolunteer.zone_id || "---"} • {selectedVolunteer.woreda_id || "---"}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="px-8 pb-8">
+                    <div className="mt-6 p-6 bg-gray-50 rounded-[32px] border border-gray-100">
+                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4">Expertise & Engagement</h4>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Engagement Areas</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {(selectedVolunteer.engagement_areas || []).map((area: string) => (
+                                        <span key={area} className="px-3 py-1 bg-white border border-gray-100 rounded-full text-[10px] font-bold text-black shadow-sm">
+                                            {area}
+                                        </span>
+                                    ))}
+                                    {(!selectedVolunteer.engagement_areas || selectedVolunteer.engagement_areas.length === 0) && <p className="text-xs text-gray-400 font-bold italic">No areas selected</p>}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Skills</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(selectedVolunteer.skills || []).map((skill: string) => (
+                                            <span key={skill} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-black uppercase tracking-wider">
+                                                {skill}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Interests</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(selectedVolunteer.interests || []).map((interest: string) => (
+                                            <span key={interest} className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-md text-[9px] font-black uppercase tracking-wider">
+                                                {interest}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 p-6 bg-gray-50 rounded-[32px] border border-gray-100">
+                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Volunteer Status</h4>
+                        <div className="flex items-center justify-between">
+                            <span className={cn(
+                                "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                                selectedVolunteer.status === "ACTIVE" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
+                            )}>
+                                {selectedVolunteer.status || "PENDING APPROVAL"}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="mt-6 flex gap-3">
+                        {selectedVolunteer.status === "PENDING" && (
+                            <Button 
+                                onClick={() => {
+                                    handleApprove(selectedVolunteer.person_id || selectedVolunteer.id);
+                                    setShowModal(false);
+                                }}
+                                className="flex-1 bg-[#ED1C24] text-white rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest"
+                            >
+                                Approve Volunteer
+                            </Button>
+                        )}
+                        <Button 
+                            onClick={() => setShowModal(false)}
+                            variant="outline" 
+                            className="flex-1 rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest border-gray-200"
+                        >
+                            Close Profile
+                        </Button>
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+      )}
 
       {/* Print-only Report Header */}
       <div className="hidden print:block mb-8">
@@ -302,7 +531,7 @@ export default function VolunteersPage() {
               <div className="bg-[#ED1C24] text-white p-6 font-black text-3xl">ERCS</div>
           </div>
           <div className="mt-8 border-t-2 border-dashed border-gray-100 pt-4 text-[10px] font-black uppercase tracking-widest text-gray-300">
-              Confidentail Administrative Record • ERCS Humanitarian Management System
+              Confidential Administrative Record • ERCS Humanitarian Management System
           </div>
       </div>
     </div>

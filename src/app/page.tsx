@@ -320,7 +320,7 @@ export default function LandingPage() {
 
       <main className="relative z-10">
         {/* Hero Section */}
-        <section className="relative pt-20 pb-24 px-6 overflow-hidden">
+        <section className="relative pt-32 pb-40 px-6 overflow-hidden">
           {/* Decorative Hero Swoosh */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-0 overflow-visible">
             <svg viewBox="0 0 1000 600" className="w-[150%] h-[150%] -translate-x-[15%]">
@@ -362,26 +362,26 @@ export default function LandingPage() {
             </svg>
           </div>
 
-          <div className="container mx-auto grid lg:grid-cols-[0.9fr_1.1fr] gap-8 xl:gap-16 items-center relative z-10">
+          <div className="container mx-auto grid lg:grid-cols-[0.9fr_1.1fr] gap-8 xl:gap-20 items-center relative z-10">
             <motion.div 
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
-              className="space-y-6"
+              className="space-y-8"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-ercs-light text-ercs-red rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">
-                <ShieldCheck className="h-3.5 w-3.5" /> {t.hero.tagline}
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-ercs-light text-ercs-red rounded-full text-[11px] font-black uppercase tracking-widest animate-pulse">
+                <ShieldCheck className="h-4 w-4" /> {t.hero.tagline}
               </div>
-              <h1 className={`${lang === 'en' ? 'text-6xl md:text-8xl' : 'text-5xl md:text-7xl'} font-black text-black leading-[0.9] tracking-tighter`}>
+              <h1 className={`${lang === 'en' ? 'text-7xl md:text-9xl' : 'text-6xl md:text-8xl'} font-black text-black leading-[0.85] tracking-tighter`}>
                 {t.hero.title1} <br />
                 <span className="relative inline-block">
                   <span className="text-[#ED1C24]">{t.hero.title2}</span> <br /> 
                   {t.hero.title3}
-                  <svg className="absolute top-[95%] left-0 w-full h-8 -translate-y-1/2 pointer-events-none overflow-visible" viewBox="0 0 300 20" preserveAspectRatio="none">
+                  <svg className="absolute top-[95%] left-0 w-full h-10 -translate-y-1/2 pointer-events-none overflow-visible" viewBox="0 0 300 20" preserveAspectRatio="none">
                     <motion.path 
                       d="M1 15C50 12 150 5 299 10" 
                       stroke="#ED1C24" 
-                      strokeWidth="4" 
+                      strokeWidth="6" 
                       strokeLinecap="round" 
                       initial={{ pathLength: 0 }}
                       animate={{ pathLength: 1 }}
@@ -390,21 +390,21 @@ export default function LandingPage() {
                   </svg>
                 </span>
               </h1>
-              <p className={`${lang === 'en' ? 'text-xl' : 'text-lg'} text-black/70 max-w-lg leading-relaxed font-medium`}>
+              <p className={`${lang === 'en' ? 'text-2xl' : 'text-xl'} text-black/70 max-w-xl leading-relaxed font-medium`}>
                 {t.hero.subtitle}
               </p>
               {/* Hero CTA Pathway Buttons */}
-              <div className="space-y-5 pt-8">
+              <div className="space-y-6 pt-10">
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.35 }}
-                  className="text-xs font-black uppercase tracking-[0.22em] text-black/40"
+                  className="text-xs font-black uppercase tracking-[0.3em] text-black/40"
                 >
                   {(t.hero as any).pathwaysLabel}
                 </motion.p>
 
-                <div className="flex flex-row items-center gap-3 pt-2">
+                <div className="flex flex-row items-center gap-4 pt-2">
                   {/* Volunteer */}
                   <motion.div
                     initial={{ opacity: 0, y: 24 }}
@@ -412,13 +412,13 @@ export default function LandingPage() {
                     transition={{ delay: 0.45, duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }}
                   >
                     <Link href="/join/member">
-                      <button className="group flex items-center gap-2 sm:gap-3 bg-[#ED1C24] border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24]
-                        text-white rounded-full h-10 sm:h-12 px-4 sm:px-5 font-black text-xs sm:text-sm
-                        shadow-xl shadow-[#ED1C24]/30 transition-all duration-500
-                        hover:-translate-y-1 hover:shadow-[#ED1C24]/40 cursor-pointer whitespace-nowrap">
-                        <div className="h-7 w-7 rounded-full bg-white/20 flex items-center
+                      <button className="group flex items-center gap-3 sm:gap-4 bg-[#ED1C24] border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24]
+                        text-white rounded-full h-12 sm:h-16 px-6 sm:px-8 font-black text-sm sm:text-base
+                        shadow-2xl shadow-[#ED1C24]/30 transition-all duration-500
+                        hover:-translate-y-2 hover:shadow-[#ED1C24]/40 cursor-pointer whitespace-nowrap">
+                        <div className="h-8 w-8 rounded-full bg-white/20 flex items-center
                           justify-center group-hover:bg-[#ED1C24] group-hover:text-white transition-colors flex-shrink-0">
-                          <Users className="h-3.5 w-3.5" />
+                          <Users className="h-4 w-4" />
                         </div>
                         {t.hero.ctaVolunteer || translations[lang].hero.ctaVolunteer || "Volunteer"}
                       </button>
@@ -433,16 +433,16 @@ export default function LandingPage() {
                   >
                     <button 
                       onClick={() => setIsDonationModalOpen(true)}
-                      className="group flex items-center gap-2 sm:gap-3 bg-black border-2 border-black hover:bg-white hover:text-[#ED1C24] hover:border-[#ED1C24]
-                        text-white rounded-full h-10 sm:h-12 px-4 sm:px-5 font-black text-xs sm:text-sm
-                        shadow-xl shadow-black/20 transition-all duration-500
-                        hover:-translate-y-1 hover:shadow-[#ED1C24]/30 cursor-pointer whitespace-nowrap">
-                        <div className="h-7 w-7 rounded-full bg-white/15 group-hover:bg-[#ED1C24] group-hover:text-white
+                      className="group flex items-center gap-3 sm:gap-4 bg-black border-2 border-black hover:bg-white hover:text-[#ED1C24] hover:border-[#ED1C24]
+                        text-white rounded-full h-12 sm:h-16 px-6 sm:px-8 font-black text-sm sm:text-base
+                        shadow-2xl shadow-black/20 transition-all duration-500
+                        hover:-translate-y-2 hover:shadow-[#ED1C24]/30 cursor-pointer whitespace-nowrap">
+                        <div className="h-8 w-8 rounded-full bg-white/15 group-hover:bg-[#ED1C24] group-hover:text-white
                           flex items-center justify-center transition-colors flex-shrink-0">
                           <MotionHeart
                             variants={heartVariants}
                             animate="heartbeat"
-                            className="h-3.5 w-3.5"
+                            className="h-4 w-4"
                           />
                         </div>
                         {t.hero.ctaDonate || translations[lang].hero.ctaDonate || "Donate"}
