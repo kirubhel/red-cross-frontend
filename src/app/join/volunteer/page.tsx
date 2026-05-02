@@ -163,7 +163,22 @@ export default function VolunteerJoinPage() {
             return;
         }
 
-        const missingFields = formConfig.filter(f => f.required && !formData[f.id] && f.type !== 'tel');
+        const missingFields = formConfig.filter(f => {
+            if (f.required && !formData[f.id] && f.type !== 'tel') {
+                // If country is not Ethiopia, don't require region fields
+                if (formData.country !== 'ET' && (f.dataSource === 'REGIONS' || f.id === 'region')) {
+                    return false;
+                }
+                return true;
+            }
+            return false;
+        });
+
+        if (formData.country !== 'ET' && !formData.internationalAddress) {
+            setError("Please provide your full international address.");
+            return;
+        }
+
         if (missingFields.length > 0) {
             setError(`Please fill in: ${missingFields.map(f => f.label).join(", ")}`);
             return;

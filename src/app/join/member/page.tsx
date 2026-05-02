@@ -172,6 +172,37 @@ export default function MemberRegistrationPage() {
     e.preventDefault();
     setError("");
 
+    if (!formData.phoneNumber) {
+        setError("Phone number is required.");
+        return;
+    }
+
+    const missingFields = formConfig.filter(f => {
+        if (f.required && !formData[f.id] && f.type !== 'tel') {
+            // If country is not Ethiopia, don't require region fields
+            if (formData.country !== 'ET' && (f.dataSource === 'REGIONS' || f.id === 'region')) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    });
+
+    if (formData.country !== 'ET' && !formData.internationalAddress) {
+        setError("Please provide your full international address.");
+        return;
+    }
+
+    if (missingFields.length > 0) {
+        setError(`Please fill in: ${missingFields.map(f => f.label).join(", ")}`);
+        return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+    }
+
         setLoading(true);
         try {
             const getVal = (keyword: string) => {
