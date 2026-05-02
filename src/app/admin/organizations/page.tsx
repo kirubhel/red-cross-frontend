@@ -40,6 +40,7 @@ export default function AdminOrganizationsPage() {
   const [selectedOrg, setSelectedOrg] = useState<OrganizationRequest | null>(null);
   const [actionType, setActionType] = useState<"APPROVED" | "REJECTED" | null>(null);
   const [remarks, setRemarks] = useState("");
+  const [ratePerVolunteer, setRatePerVolunteer] = useState<number>(0);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -63,16 +64,24 @@ export default function AdminOrganizationsPage() {
     if (!selectedOrg || !actionType) return;
     setIsProcessing(true);
     try {
-      await api.put(`/organizations/status`, { 
-        id: selectedOrg.id, 
-        status: actionType,
-        remarks: remarks 
-      });
+      if (actionType === "APPROVED") {
+        await api.put(`/organizations/approve-rate`, { 
+          organization_id: selectedOrg.id, 
+          rate_per_volunteer: ratePerVolunteer
+        });
+      } else {
+        await api.put(`/organizations/status`, { 
+          id: selectedOrg.id, 
+          status: actionType,
+          remarks: remarks 
+        });
+      }
       setOrgRequests(prev => prev.map(req => req.id === selectedOrg.id ? { ...req, status: actionType } : req));
       toast.success(`Organization ${actionType.toLowerCase()} successfully`);
       setSelectedOrg(null);
       setActionType(null);
       setRemarks("");
+      setRatePerVolunteer(0);
     } catch (err) {
       toast.error("Failed to update status");
     } finally {
@@ -197,13 +206,13 @@ export default function AdminOrganizationsPage() {
                     {org.status === "PENDING" ? (
                       <div className="flex items-center justify-end gap-2 transition-all duration-300">
                         <Button 
-                            onClick={() => { setSelectedOrg(org); setActionType("APPROVED"); setRemarks(""); }} 
+                            onClick={() => { setSelectedOrg(org); setActionType("APPROVED"); setRemarks(""); setRatePerVolunteer(0); }} 
                             className="bg-green-500 hover:bg-green-600 text-white rounded-xl h-10 px-6 font-black uppercase tracking-widest text-[9px] transition-all shadow-sm"
                         >
                             Approve
                         </Button>
                         <Button 
-                            onClick={() => { setSelectedOrg(org); setActionType("REJECTED"); setRemarks(""); }} 
+                            onClick={() => { setSelectedOrg(org); setActionType("REJECTED"); setRemarks(""); setRatePerVolunteer(0); }} 
                             variant="outline" 
                             className="text-red-500 hover:bg-red-50 border-gray-200 hover:border-red-200 rounded-xl h-10 px-6 font-black uppercase tracking-widest text-[9px] transition-all"
                         >
@@ -276,6 +285,23 @@ export default function AdminOrganizationsPage() {
                 />
                 <p className="text-gray-400 text-[9px] font-bold uppercase tracking-widest mt-2 ml-2">These remarks will be securely attached to the organizational record.</p>
               </div>
+
+              {actionType === "APPROVED" && (
+                <div className="pt-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-black mb-2 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-[#ED1C24] rounded-full"></span>
+                    Rate Per Volunteer (ETB)
+                  </label>
+                  <Input
+                    type="number"
+                    value={ratePerVolunteer}
+                    onChange={(e) => setRatePerVolunteer(Number(e.target.value))}
+                    placeholder="Enter rate amount..."
+                    className="h-12 bg-white text-black border border-gray-200 rounded-xl font-bold text-sm focus:border-[#ED1C24]/20 focus:ring-0 transition-all shadow-sm shadow-black/5"
+                  />
+                  <p className="text-gray-400 text-[9px] font-bold uppercase tracking-widest mt-2 ml-2">This is the default rate per volunteer charged to this organization.</p>
+                </div>
+              )}
 
             </div>
 

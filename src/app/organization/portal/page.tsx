@@ -38,7 +38,17 @@ type VolunteerRequest = {
   women_count: number;
   min_experience: number;
   qualifications: string;
+  payment_amount: number;
+  payment_status: string;
   activities: { name: string; count: number }[];
+};
+
+type Assignment = {
+  id: string;
+  volunteer_name: string;
+  volunteer_id: string;
+  status: string;
+  assigned_at: string;
 };
 
 const ENGAGEMENT_AREAS = [
@@ -108,6 +118,13 @@ export default function OrganizationPortal() {
   // Organization Profile State
   const [profile, setProfile] = useState<any>(null);
   const [updatingProfile, setUpdatingProfile] = useState(false);
+
+  // Request Details State
+  const [selectedRequest, setSelectedRequest] = useState<VolunteerRequest | null>(null);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [paymentProofUrl, setPaymentProofUrl] = useState("");
+  const [submittingPayment, setSubmittingPayment] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token") || localStorage.getItem("token");
@@ -209,6 +226,52 @@ export default function OrganizationPortal() {
     const newActivities = [...activities];
     newActivities[index] = { ...newActivities[index], [field]: value };
     setActivities(newActivities);
+  };
+
+  const handleViewDetails = async (req: VolunteerRequest) => {
+    setSelectedRequest(req);
+    if (req.status === "APPROVED" || req.status === "MATCHED" || req.status === "COMPLETED") {
+      setLoadingAssignments(true);
+      try {
+        const res = await api.get(`/organizations/requests/assignments?request_id=${req.id}`);
+        setAssignments(res.data.assignments || []);
+      } catch (err) {
+        console.error("Failed to load assignments", err);
+      } finally {
+        setLoadingAssignments(false);
+      }
+    }
+  };
+
+  const handleSubmitPayment = async () => {
+    if (!selectedRequest || !paymentProofUrl) return;
+    setSubmittingPayment(true);
+    try {
+      await api.post("/organizations/requests/payment", {
+        request_id: selectedRequest.id,
+        proof_url: paymentProofUrl
+      });
+      toast.success("Payment proof submitted successfully!");
+      setPaymentProofUrl("");
+      fetchPortalData();
+      setSelectedRequest(null);
+    } catch (err) {
+      toast.error("Failed to submit payment");
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
+
+  const handleOnboard = async (assignmentId: string) => {
+    try {
+      await api.put("/organizations/volunteers/onboard", {
+        assignment_id: assignmentId
+      });
+      toast.success("Volunteer onboarded successfully!");
+      setAssignments(assignments.map(a => a.id === assignmentId ? { ...a, status: "ONBOARDED" } : a));
+    } catch (err) {
+      toast.error("Failed to onboard volunteer");
+    }
   };
 
   const handleLogout = () => {
@@ -438,8 +501,17 @@ export default function OrganizationPortal() {
                                       <div className="h-full bg-pink-400" style={{ width: `${(request.women_count / (request.men_count + request.women_count || 1)) * 100}%` }} />
                                    </div>
                                 </div>
-                                <Button className="w-full h-12 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#ED1C24] transition-colors">
-                                   View Applicants
+                                <div className="bg-slate-50 p-4 rounded-2xl flex flex-col gap-1">
+                                    <div className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Financials</div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-xs font-black text-slate-900">{request.payment_amount || 0} ETB</span>
+                                      <span className={`text-[9px] font-black uppercase tracking-widest ${request.payment_status === 'VERIFIED' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                        {request.payment_status || "PENDING"}
+                                      </span>
+                                    </div>
+                                </div>
+                                <Button onClick={() => handleViewDetails(request)} className="w-full h-12 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#ED1C24] transition-colors">
+                                   Manage Details
                                 </Button>
                              </div>
                           </div>
@@ -749,7 +821,109 @@ export default function OrganizationPortal() {
             </motion.div>
           </motion.div>
         )}
+
+        {/* Request Details Modal */}
+        {selectedRequest && !showForm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          >
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setSelectedRequest(null)} />
+            
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-4xl bg-white border border-slate-200 rounded-[40px] p-8 md:p-12 shadow-2xl relative z-10 overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-slate-900" />
+              
+              <div className="mb-8 flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-black tracking-tighter mb-2 text-slate-900">Request <span className="text-[#ED1C24]">Details</span></h2>
+                  <p className="text-slate-400 font-bold">{selectedRequest.activities_skills}</p>
+                </div>
+                <Button variant="ghost" onClick={() => setSelectedRequest(null)} className="h-12 w-12 rounded-full hover:bg-slate-50">
+                  <Plus className="h-6 w-6 rotate-45 text-slate-400" />
+                </Button>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Financial/Payment Section */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-black uppercase tracking-widest text-slate-900">Payment Status</h3>
+                  <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-500">Total Amount</span>
+                      <span className="text-xl font-black text-slate-900">{selectedRequest.payment_amount || 0} ETB</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-500">Status</span>
+                      <StatusBadge status={selectedRequest.payment_status || "PENDING"} />
+                    </div>
+                    
+                    {(!selectedRequest.payment_status || selectedRequest.payment_status === 'PENDING') && selectedRequest.status === 'APPROVED' && (
+                      <div className="pt-4 border-t border-slate-200 space-y-4 mt-4">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Submit Proof of Payment (Tx ID / Receipt URL)</Label>
+                        <Input 
+                          placeholder="https://..."
+                          value={paymentProofUrl}
+                          onChange={(e) => setPaymentProofUrl(e.target.value)}
+                          className="h-12 bg-white border-slate-200 rounded-xl font-medium text-xs text-slate-900"
+                        />
+                        <Button 
+                          onClick={handleSubmitPayment}
+                          disabled={submittingPayment || !paymentProofUrl}
+                          className="w-full h-12 bg-[#ED1C24] hover:bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                        >
+                          {submittingPayment ? "Submitting..." : "Submit Payment"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Volunteers/Assignments Section */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-black uppercase tracking-widest text-slate-900">Assigned Volunteers</h3>
+                  {loadingAssignments ? (
+                    <div className="p-8 text-center text-slate-400 font-black uppercase tracking-widest text-[10px] animate-pulse">Loading...</div>
+                  ) : assignments.length === 0 ? (
+                    <div className="bg-slate-50 p-8 rounded-3xl text-center border border-slate-100">
+                      <p className="text-slate-400 font-bold text-sm">No volunteers assigned yet. {selectedRequest.status !== 'APPROVED' ? "Wait for approval." : "Wait for matching."}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {assignments.map(a => (
+                        <div key={a.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+                          <div>
+                            <p className="font-black text-slate-900 text-sm">{a.volunteer_name || "Unknown Volunteer"}</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">ID: {a.volunteer_id.substring(0,8)}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${a.status === 'ONBOARDED' ? 'text-emerald-500' : 'text-blue-500'}`}>{a.status}</span>
+                            {a.status === 'ASSIGNED' && (
+                              <Button 
+                                onClick={() => handleOnboard(a.id)}
+                                className="h-8 px-4 bg-slate-900 hover:bg-[#ED1C24] text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                              >
+                                Onboard
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
+
     </div>
   );
 }

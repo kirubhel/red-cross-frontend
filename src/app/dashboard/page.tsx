@@ -41,6 +41,9 @@ export default function DashboardPage() {
   const [news, setNews] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [history, setHistory] = useState<any[]>([]);
+  const [openRequests, setOpenRequests] = useState<any[]>([]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -68,6 +71,24 @@ export default function DashboardPage() {
         const role = localStorage.getItem("user_role");
         const storedErcsId = localStorage.getItem("ercs_id");
         
+        const isMemberUser = role === "MEMBER" || role === "5" || role === 5;
+        let totalHours = 0;
+
+        if (!isMemberUser) {
+           // Fetch Volunteer Specific Data
+           try {
+             const [histRes, reqRes] = await Promise.all([
+                api.get("/volunteer/history"),
+                api.get("/volunteer/open-requests")
+             ]);
+             setHistory(histRes.data.assignments || []);
+             totalHours = histRes.data.total_hours || 0;
+             setOpenRequests(reqRes.data.requests || []);
+           } catch (e) {
+             console.error("Failed to load volunteer data", e);
+           }
+        }
+
         const issueDate = userData?.created_at ? new Date(userData.created_at) : new Date();
         const membershipType = userData?.membership_type || "REGULAR";
         
@@ -126,11 +147,12 @@ export default function DashboardPage() {
           phone: userData?.phone_number || userData?.phone || "+251...",
           email: userData?.email || "N/A",
           photo: userData?.photo_url || null,
+          totalHours: totalHours,
           idAssets: idAssets,
           raw: userData
         });
 
-        // Mock activities
+        // Mock activities for members
         setActivities([
           { title: "Monthly Membership Fee", date: "Today", amount: "10.00 ETB", status: "COMPLETED", icon: CreditCard, bg: "bg-green-50", color: "text-green-500" },
           { title: "Quarterly Donation", date: "24 Mar 2024", amount: "250.00 ETB", status: "VERIFIED", icon: Heart, bg: "bg-red-50", color: "text-red-500" },
@@ -597,29 +619,34 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-4">
-              {activities.map((item, idx) => {
-                const Icon = item.icon || (item.title?.toLowerCase().includes("donation") ? Heart : HandHeart);
+              {history && history.length > 0 ? history.map((item, idx) => {
+                const Icon = item.status === "ASSIGNED" || item.status === "ONBOARDED" ? HandHeart : CheckCircle2;
                 return (
                   <div key={idx} className="bg-white p-6 rounded-[32px] border border-gray-100 flex items-center justify-between group hover:border-[#ED1C24]/20 transition-all cursor-pointer">
                     <div className="flex items-center gap-5">
-                      <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0", item.bg || (item.title?.toLowerCase().includes("donation") ? "bg-red-50" : "bg-blue-50"))}>
-                        <Icon className={cn("h-6 w-6", item.color || (item.title?.toLowerCase().includes("donation") ? "text-red-500" : "text-blue-500"))} />
+                      <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0", "bg-blue-50")}>
+                        <Icon className={cn("h-6 w-6", "text-blue-500")} />
                       </div>
                       <div>
-                        <p className="font-black text-black tracking-tight">{item.title}</p>
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-0.5">{item.date}</p>
+                        <p className="font-black text-black tracking-tight">{item.org_name || "Volunteer Engagement"}</p>
+                        <p className="text-xs text-gray-500 font-bold tracking-widest mt-0.5">{item.engagement}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Assigned: {new Date(item.assigned_at).toLocaleDateString()}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-black text-black">{item.hours || item.amount}</p>
+                      <p className="text-lg font-black text-black">{item.hours_worked} Hrs</p>
                       <p className={cn(
                         "text-[9px] font-black uppercase tracking-[0.2em]",
-                        item.status === "VERIFIED" || item.status === "COMPLETED" ? "text-green-500" : "text-amber-500"
+                        item.status === "ONBOARDED" ? "text-green-500" : "text-amber-500"
                       )}>{item.status}</p>
                     </div>
                   </div>
                 );
-              })}
+              }) : (
+                <div className="text-center py-10 bg-gray-50 rounded-[32px] border border-gray-100">
+                  <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">No Service History Found</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -627,6 +654,44 @@ export default function DashboardPage() {
         {/* Sidebar Section */}
         <div className="space-y-10">
           
+          {/* Open Opportunities for Volunteers */}
+          {openRequests && openRequests.length > 0 && (
+            <div className="bg-blue-50 rounded-[40px] p-8 border border-blue-100 shadow-sm space-y-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                 <HandHeart className="h-24 w-24 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-black tracking-tighter text-blue-900">
+                Open Opportunities
+              </h3>
+              <div className="space-y-4 relative z-10">
+                {openRequests.map((req, idx) => (
+                  <div key={idx} className="bg-white rounded-2xl p-4 shadow-sm border border-blue-50 hover:border-blue-200 transition-colors">
+                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">{req.org_name}</p>
+                     <p className="font-black text-black leading-tight mb-2 text-sm">{req.activities_skills}</p>
+                     <div className="flex items-center justify-between mt-3">
+                        <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-gray-100 px-2 py-1 rounded-md">
+                           {req.headcount} Needed
+                        </span>
+                        <Button 
+                          onClick={async () => {
+                             try {
+                               await api.post("/volunteer/apply", { request_id: req.id });
+                               toast.success("Applied to opportunity successfully!");
+                             } catch (e) {
+                               toast.error("Failed to apply");
+                             }
+                          }}
+                          className="h-8 px-4 bg-blue-600 hover:bg-black text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                        >
+                          Apply
+                        </Button>
+                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ERCS News */}
           <div className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-sm space-y-6">
             <h3 className="text-xl font-black tracking-tighter">
@@ -650,6 +715,7 @@ export default function DashboardPage() {
               Explore All News
             </Button>
           </div>
+
 
           {/* Quick Support */}
           <div className="bg-gradient-to-br from-red-600 to-[#ED1C24] rounded-[40px] p-8 text-white space-y-6 shadow-2xl shadow-red-500/30">

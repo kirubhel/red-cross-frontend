@@ -29,6 +29,7 @@ const menuItems = [
   { href: "/admin/members", label: "Members", icon: Users },
   { href: "/admin/volunteers", label: "Volunteers", icon: HandHeart },
   { href: "/admin/organizations", label: "Organizations", icon: Building2 },
+  { href: "/admin/volunteer-requests", label: "Volunteer Requests", icon: ClipboardList },
   { href: "/admin/reports", label: "Reports & Analytics", icon: BarChart3 },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
