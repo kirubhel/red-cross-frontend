@@ -78,6 +78,15 @@ export default function VolunteersPage() {
   }, []);
 
   useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; }
+  }, [showModal]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
         fetchVolunteers();
     }, 500);
@@ -343,9 +352,9 @@ export default function VolunteersPage() {
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100"
+                className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100"
             >
-                <div className="p-8 border-b border-gray-50 flex justify-between items-start">
+                <div className="p-6 border-b border-gray-50 flex justify-between items-start sticky top-0 bg-white/80 backdrop-blur-md z-10">
                     <div className="space-y-1">
                         <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">Volunteer Profile Audit</p>
                         <h2 className="text-2xl font-black tracking-tight text-black">
@@ -361,8 +370,8 @@ export default function VolunteersPage() {
                     </button>
                 </div>
 
-                <div className="p-8 grid grid-cols-2 gap-8">
-                    <div className="space-y-6">
+                <div className="p-6 grid grid-cols-2 gap-6">
+                    <div className="space-y-4">
                         <div>
                             <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Identity & Bio</h4>
                             <div className="space-y-4">
@@ -398,7 +407,7 @@ export default function VolunteersPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         <div>
                             <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Contact & Location</h4>
                             <div className="space-y-4">
@@ -448,10 +457,10 @@ export default function VolunteersPage() {
                     </div>
                 </div>
 
-                <div className="px-8 pb-8">
-                    <div className="mt-6 p-6 bg-gray-50 rounded-[32px] border border-gray-100">
-                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4">Expertise & Engagement</h4>
-                        <div className="space-y-4">
+                <div className="px-6 pb-6">
+                    <div className="mt-4 p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Expertise & Engagement</h4>
+                        <div className="space-y-3">
                             <div>
                                 <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Engagement Areas</p>
                                 <div className="flex flex-wrap gap-2">
@@ -488,7 +497,7 @@ export default function VolunteersPage() {
                         </div>
                     </div>
 
-                    <div className="mt-6 p-6 bg-gray-50 rounded-[32px] border border-gray-100">
+                    <div className="mt-4 p-5 bg-gray-50 rounded-[24px] border border-gray-100">
                         <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Volunteer Status</h4>
                         <div className="flex items-center justify-between">
                             <span className={cn(
@@ -499,7 +508,7 @@ export default function VolunteersPage() {
                             </span>
                         </div>
                     </div>
-                    <div className="mt-6 flex gap-3">
+                    <div className="mt-4 flex gap-3">
                         {selectedVolunteer.status === "PENDING" && (
                             <Button 
                                 onClick={() => {

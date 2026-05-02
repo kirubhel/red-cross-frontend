@@ -66,6 +66,15 @@ export default function MembersPage() {
   }, []);
 
   useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; }
+  }, [showModal]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
         fetchMembers();
     }, 500); // Debounce search

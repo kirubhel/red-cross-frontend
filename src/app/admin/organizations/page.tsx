@@ -47,6 +47,15 @@ export default function AdminOrganizationsPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (selectedOrg) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; }
+  }, [selectedOrg]);
+
   const fetchData = async () => {
     setLoading(true);
     try {

@@ -198,6 +198,15 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
+    if (isDonationModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; }
+  }, [isDonationModalOpen]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (langRef.current && !langRef.current.contains(event.target as Node)) {
         setShowLangDropdown(false);

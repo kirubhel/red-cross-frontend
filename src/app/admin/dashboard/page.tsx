@@ -59,6 +59,15 @@ const AdminDashboard = () => {
     fetchBusinesses();
   }, []);
 
+  useEffect(() => {
+    if (confirmModal.show || matchModal.show) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; }
+  }, [confirmModal.show, matchModal.show]);
+
   const fetchBusinesses = async () => {
     try {
       setLoading(true);

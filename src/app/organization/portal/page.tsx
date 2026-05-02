@@ -139,6 +139,15 @@ export default function OrganizationPortal() {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    if (showForm || selectedRequest) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; }
+  }, [showForm, selectedRequest]);
+
   const fetchProfile = async () => {
     try {
       const res = await api.get("/organizations/me");

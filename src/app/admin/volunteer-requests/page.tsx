@@ -43,6 +43,15 @@ export default function AdminVolunteerRequestsPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (selectedReq) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; }
+  }, [selectedReq]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
