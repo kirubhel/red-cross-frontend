@@ -123,10 +123,15 @@ export default function OrganizationPortal() {
 
   // Request Details State
   const [selectedRequest, setSelectedRequest] = useState<VolunteerRequest | null>(null);
+
+  // Payment Modal State
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentRequest, setPaymentRequest] = useState<VolunteerRequest | null>(null);
+  const [paymentProofUrl, setPaymentProofUrl] = useState("");
+  const [paymentProvider, setPaymentProvider] = useState<"chapa" | "ethswitch">("chapa");
+  const [submittingPayment, setSubmittingPayment] = useState(false);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
-  const [paymentProofUrl, setPaymentProofUrl] = useState("");
-  const [submittingPayment, setSubmittingPayment] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token") || localStorage.getItem("token");
@@ -276,17 +281,18 @@ export default function OrganizationPortal() {
   };
 
   const handleSubmitPayment = async () => {
-    if (!selectedRequest || !paymentProofUrl) return;
+    if (!paymentRequest) return;
     setSubmittingPayment(true);
     try {
       await api.post("/organizations/requests/payment", {
-        request_id: selectedRequest.id,
-        proof_url: paymentProofUrl
+        request_id: paymentRequest.id,
+        proof_url: paymentProofUrl || "BANK_TRANSFER"
       });
-      toast.success("Payment proof submitted successfully!");
+      toast.success("Payment proof submitted! Awaiting admin verification.");
       setPaymentProofUrl("");
+      setShowPaymentModal(false);
+      setPaymentRequest(null);
       fetchPortalData();
-      setSelectedRequest(null);
     } catch (err) {
       toast.error("Failed to submit payment");
     } finally {
@@ -533,14 +539,32 @@ export default function OrganizationPortal() {
                                       <div className="h-full bg-pink-400" style={{ width: `${(request.women_count / (request.men_count + request.women_count || 1)) * 100}%` }} />
                                    </div>
                                 </div>
-                                <div className="bg-slate-50 p-4 rounded-2xl flex flex-col gap-1">
+                                {/* Financials */}
+                                <div className="bg-slate-50 p-4 rounded-2xl flex flex-col gap-2">
                                     <div className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Financials</div>
                                     <div className="flex justify-between items-center">
-                                      <span className="text-xs font-black text-slate-900">{request.payment_amount || 0} ETB</span>
-                                      <span className={`text-[9px] font-black uppercase tracking-widest ${request.payment_status === 'VERIFIED' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                      <span className="text-sm font-black text-slate-900">
+                                        {(request.payment_amount || 0).toLocaleString()} ETB
+                                      </span>
+                                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                                        request.payment_status === 'VERIFIED' ? 'bg-emerald-100 text-emerald-600' :
+                                        request.payment_status === 'SUBMITTED' ? 'bg-blue-100 text-blue-600' :
+                                        'bg-amber-100 text-amber-600'
+                                      }`}>
                                         {request.payment_status || "PENDING"}
                                       </span>
                                     </div>
+                                    {request.status === 'APPROVED' && (!request.payment_status || request.payment_status === 'PENDING') && (
+                                      <button
+                                        onClick={() => { setPaymentRequest(request); setPaymentProofUrl(""); setShowPaymentModal(true); }}
+                                        className="mt-1 w-full h-9 rounded-xl bg-[#ED1C24] text-white text-[10px] font-black uppercase tracking-widest hover:bg-black transition-colors"
+                                      >
+                                        💳 Submit Payment
+                                      </button>
+                                    )}
+                                    {request.payment_status === 'SUBMITTED' && (
+                                      <p className="text-[9px] text-blue-500 font-bold">Awaiting admin verification...</p>
+                                    )}
                                 </div>
                                 <Button onClick={() => handleViewDetails(request)} className="w-full h-12 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#ED1C24] transition-colors">
                                    Manage Details
@@ -1004,6 +1028,115 @@ export default function OrganizationPortal() {
                 >
                   {submitting ? "Submitting..." : "Confirm & Send"}
                 </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Payment Submission Modal */}
+      <AnimatePresence>
+        {showPaymentModal && paymentRequest && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPaymentModal(false)}
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative z-10 bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl"
+            >
+              <button 
+                onClick={() => setShowPaymentModal(false)}
+                className="absolute top-4 right-4 h-8 w-8 bg-slate-50 text-slate-400 hover:text-slate-900 rounded-full flex items-center justify-center transition-colors"
+              >
+                ✕
+              </button>
+
+              <div className="mb-8">
+                <div className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-[#ED1C24] bg-red-50 px-2 py-1 rounded mb-2">
+                  <span>❤️</span> IMPACT
+                </div>
+                <h3 className="text-3xl font-black tracking-tighter text-slate-900">
+                  Support <span className="text-[#ED1C24]">ERCS</span>
+                </h3>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Payment Merchant</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button 
+                      onClick={() => setPaymentProvider('chapa')}
+                      className={`h-16 flex items-center gap-3 px-4 rounded-xl border-2 transition-all ${paymentProvider === 'chapa' ? 'border-slate-900 bg-slate-50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                    >
+                      <div className="h-8 w-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+                        <span className="text-emerald-500 font-black text-xs">C</span>
+                      </div>
+                      <div className="text-left">
+                        <div className="text-sm font-bold text-slate-900">Chapa</div>
+                        <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Fast and Secure</div>
+                      </div>
+                    </button>
+                    
+                    <button 
+                      onClick={() => setPaymentProvider('ethswitch')}
+                      className={`h-16 flex items-center gap-3 px-4 rounded-xl border-2 transition-all ${paymentProvider === 'ethswitch' ? 'border-slate-900 bg-slate-50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
+                    >
+                      <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                        <span className="text-blue-500 font-black text-xs">E</span>
+                      </div>
+                      <div className="text-left">
+                        <div className="text-sm font-bold text-slate-900">EthSwitch</div>
+                        <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Multi-Bank</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl p-5 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mission</span>
+                      <span className="font-bold text-sm text-slate-900 max-w-[180px] truncate">{paymentRequest.activities_skills}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Volunteers</span>
+                      <span className="font-black text-slate-900 text-sm">{paymentRequest.headcount}</span>
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-end border-t border-slate-100 pt-6">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Amount</div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-black text-slate-900">{(paymentRequest.payment_amount || 0).toLocaleString()}</span>
+                    <span className="text-sm font-bold text-[#ED1C24]">ETB</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSubmitPayment}
+                  disabled={submittingPayment}
+                  className="w-full h-14 bg-black hover:bg-slate-800 text-white rounded-xl font-black flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-4"
+                >
+                  <span className="text-lg">⚡</span>
+                  {submittingPayment ? "Processing..." : "Initiate Payment"}
+                </button>
+                
+                <div className="flex items-center justify-center gap-4 text-[9px] font-black uppercase tracking-widest text-slate-400 mt-4">
+                  <span className="flex items-center gap-1">🛡 Secure</span>
+                  <span className="text-slate-200">•</span>
+                  <span className="flex items-center gap-1">⚡ Instant</span>
+                </div>
               </div>
             </motion.div>
           </motion.div>
