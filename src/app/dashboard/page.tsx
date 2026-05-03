@@ -71,10 +71,12 @@ export default function DashboardPage() {
         const role = localStorage.getItem("user_role");
         const storedErcsId = localStorage.getItem("ercs_id");
         
-        const isMemberUser = role === "MEMBER" || role === "5";
+        // ROLE_volunteer = 5, ROLE_member = 6
+        const isMemberUser = role === "MEMBER" || role === "6";
+        const isVolunteerUser = role === "VOLUNTEER" || role === "5";
         let totalHours = 0;
 
-        if (!isMemberUser) {
+        if (isVolunteerUser) {
            // Fetch Volunteer Specific Data
            try {
              const [histRes, reqRes] = await Promise.all([
@@ -225,8 +227,9 @@ export default function DashboardPage() {
     }
   };
 
-  const isMember = user?.role === "MEMBER" || user?.role === "5" || user?.role === 5;
-  const isVolunteer = !isMember;
+  // ROLE_member = 6, ROLE_volunteer = 5
+  const isMember = user?.role === "MEMBER" || user?.role === "6" || user?.role === 6;
+  const isVolunteer = user?.role === "VOLUNTEER" || user?.role === "5" || user?.role === 5;
 
   const stats = [
     isVolunteer 

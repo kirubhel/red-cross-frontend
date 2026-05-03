@@ -329,7 +329,7 @@ export default function LandingPage() {
 
       <main className="relative z-10">
         {/* Hero Section */}
-        <section className="relative pt-16 pb-20 px-6 overflow-hidden min-h-[calc(100vh-64px)] flex items-center">
+        <section className="relative pt-10 pb-12 px-6 overflow-hidden min-h-[80vh] flex items-center">
           {/* Decorative Hero Swoosh */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none z-0 overflow-visible">
             <svg viewBox="0 0 1000 600" className="w-[150%] h-[150%] -translate-x-[15%]">
@@ -371,17 +371,17 @@ export default function LandingPage() {
             </svg>
           </div>
 
-          <div className="container mx-auto grid lg:grid-cols-[0.9fr_1.1fr] gap-8 xl:gap-16 items-center relative z-10">
+          <div className="container mx-auto grid lg:grid-cols-[0.85fr_1.15fr] gap-8 xl:gap-16 items-center relative z-10">
             <motion.div 
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
-              className="space-y-6"
+              className="space-y-5"
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-ercs-light text-ercs-red rounded-full text-[11px] font-black uppercase tracking-widest animate-pulse">
                 <ShieldCheck className="h-4 w-4" /> {t.hero.tagline}
               </div>
-              <h1 className={`${lang === 'en' ? 'text-6xl md:text-8xl lg:text-9xl' : 'text-5xl md:text-7xl lg:text-8xl'} font-black text-black leading-[0.85] tracking-tighter`}>
+              <h1 className={`${lang === 'en' ? 'text-5xl md:text-7xl lg:text-8xl' : 'text-4xl md:text-6xl lg:text-7xl'} font-black text-black leading-[0.9] tracking-tighter`}>
                 {t.hero.title1} <br />
                 <span className="relative inline-block">
                   <span className="text-[#ED1C24]">{t.hero.title2}</span> <br /> 
@@ -399,11 +399,11 @@ export default function LandingPage() {
                   </svg>
                 </span>
               </h1>
-              <p className={`${lang === 'en' ? 'text-xl md:text-2xl' : 'text-lg md:text-xl'} text-black/70 max-w-xl leading-relaxed font-medium`}>
+              <p className={`${lang === 'en' ? 'text-lg md:text-xl' : 'text-base md:text-lg'} text-black/70 max-w-xl leading-relaxed font-medium`}>
                 {t.hero.subtitle}
               </p>
               {/* Hero CTA Pathway Buttons */}
-              <div className="space-y-4 pt-6">
+              <div className="space-y-4 pt-4">
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -422,7 +422,7 @@ export default function LandingPage() {
                   >
                     <Link href="/join/member">
                       <button className="group flex items-center gap-3 sm:gap-4 bg-[#ED1C24] border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24]
-                        text-white rounded-full h-12 sm:h-16 px-6 sm:px-8 font-black text-sm sm:text-base
+                        text-white rounded-full h-12 sm:h-14 px-6 sm:px-8 font-black text-sm sm:text-base
                         shadow-2xl shadow-[#ED1C24]/30 transition-all duration-500
                         hover:-translate-y-2 hover:shadow-[#ED1C24]/40 cursor-pointer whitespace-nowrap">
                         <div className="h-8 w-8 rounded-full bg-white/20 flex items-center
@@ -443,7 +443,7 @@ export default function LandingPage() {
                     <button 
                       onClick={() => setIsDonationModalOpen(true)}
                       className="group flex items-center gap-3 sm:gap-4 bg-black border-2 border-black hover:bg-white hover:text-[#ED1C24] hover:border-[#ED1C24]
-                        text-white rounded-full h-12 sm:h-16 px-6 sm:px-8 font-black text-sm sm:text-base
+                        text-white rounded-full h-12 sm:h-14 px-6 sm:px-8 font-black text-sm sm:text-base
                         shadow-2xl shadow-black/20 transition-all duration-500
                         hover:-translate-y-2 hover:shadow-[#ED1C24]/30 cursor-pointer whitespace-nowrap">
                         <div className="h-8 w-8 rounded-full bg-white/15 group-hover:bg-[#ED1C24] group-hover:text-white
@@ -465,7 +465,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1, delay: 0.2 }}
-              className="relative aspect-[12/7] w-full max-w-2xl mx-auto lg:ml-auto"
+              className="relative aspect-[12/8] w-full max-w-3xl mx-auto lg:ml-auto"
             >
               <div className="absolute inset-0 bg-[#ED1C24]/10 rounded-[40px] translate-x-4 translate-y-4 blur-3xl opacity-50" />
               <div className="relative h-full w-full bg-white border-8 border-white rounded-[40px] shadow-2xl overflow-hidden group">

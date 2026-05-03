@@ -28,10 +28,7 @@ const menuItems = [
   { href: "/dashboard/profile", label: "My Profile", icon: User },
   { href: "/dashboard/volunteer", label: "Volunteering", icon: HandHeart },
   { href: "/dashboard/donations", label: "My Donations", icon: Heart },
-  { href: "/dashboard/membership", label: "Membership", icon: CreditCard },
   { href: "/dashboard/history", label: "Impact History", icon: History },
-  { href: "/dashboard/news", label: "ERCS News", icon: Newspaper },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 export function DashboardSidebar() {
@@ -48,10 +45,13 @@ export function DashboardSidebar() {
         // Map role IDs to labels
         const roleMap: Record<string, string> = {
           "1": "Super Admin",
-          "2": "Admin",
-          "3": "Regional Admin",
-          "4": "Volunteer",
-          "5": "Member",
+          "2": "Regional Admin",
+          "3": "Zonal Admin",
+          "4": "Woreda Admin",
+          "5": "Volunteer",
+          "6": "Member",
+          "7": "Branch Officer",
+          "8": "Organization",
           "MEMBER": "Member",
           "VOLUNTEER": "Volunteer"
         };
@@ -103,7 +103,9 @@ export function DashboardSidebar() {
          
          <div className={cn("flex flex-col whitespace-nowrap overflow-hidden transition-all duration-300", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
           <span className="text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">ERCS</span>
-          <span className="text-[9px] font-black text-[#ED1C24] uppercase tracking-[0.2em]">Member Portal</span>
+          <span className="text-[9px] font-black text-[#ED1C24] uppercase tracking-[0.2em]">
+            {user?.role === "Volunteer" ? "Volunteer Portal" : "Member Portal"}
+          </span>
          </div>
          
          <button 

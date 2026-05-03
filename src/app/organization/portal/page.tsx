@@ -111,6 +111,8 @@ export default function OrganizationPortal() {
   ]);
   const [volunteerType, setVolunteerType] = useState("General Volunteer");
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [tempPayload, setTempPayload] = useState<any>(null);
   
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "requests" | "profile" | "support">("dashboard");
@@ -138,6 +140,11 @@ export default function OrganizationPortal() {
     fetchPortalData();
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    const total = (Number(menCount) || 0) + (Number(womenCount) || 0);
+    setHeadcount(total > 0 ? total.toString() : "");
+  }, [menCount, womenCount]);
 
   useEffect(() => {
     if (showForm || selectedRequest) {
@@ -171,25 +178,40 @@ export default function OrganizationPortal() {
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!headcount || !qualifications) {
-      toast.error("Please fill in basic mission fields");
+    if (!menCount || !womenCount || !qualifications) {
+      toast.error("Please fill in men/women counts and qualifications");
       return;
     }
+
+    const activitiesSum = activities.reduce((acc, curr) => acc + (curr.count || 0), 0);
+    if (activitiesSum > Number(headcount)) {
+      toast.error(`Activity breakdown sum (${activitiesSum}) cannot exceed total headcount (${headcount})`);
+      return;
+    }
+
+    const payload = {
+      headcount: Number(headcount),
+      activities_skills: selectedAreas.join(", "),
+      men_count: Number(menCount),
+      women_count: Number(womenCount),
+      min_experience: Number(minExperience),
+      qualifications,
+      activities,
+      volunteer_type: volunteerType
+    };
+
+    setTempPayload(payload);
+    setShowConfirmModal(true);
+  };
+
+  const confirmSubmitRequest = async () => {
+    if (!tempPayload) return;
     setSubmitting(true);
     try {
-      const payload = {
-        headcount: Number(headcount),
-        activities_skills: selectedAreas.join(", "),
-        men_count: Number(menCount),
-        women_count: Number(womenCount),
-        min_experience: Number(minExperience),
-        qualifications,
-        activities,
-        volunteer_type: volunteerType
-      };
-      await api.post("/organizations/requests", payload);
+      await api.post("/organizations/requests", tempPayload);
       toast.success("Volunteer request created!");
       setShowForm(false);
+      setShowConfirmModal(false);
       
       // Reset
       setHeadcount("");
@@ -199,6 +221,7 @@ export default function OrganizationPortal() {
       setMinExperience("");
       setVolunteerType("General Volunteer");
       setActivities([{ name: "", count: 1 }]);
+      setSelectedAreas([]);
       
       fetchPortalData();
     } catch (err) {
@@ -713,10 +736,10 @@ export default function OrganizationPortal() {
                         <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Total Headcount</Label>
                         <Input 
                           type="number"
-                          placeholder="e.g. 10"
+                          placeholder="Calculated automatically"
                           value={headcount}
-                          onChange={(e) => setHeadcount(e.target.value)}
-                          className="h-16 bg-slate-50 border-slate-200 rounded-2xl font-bold text-lg text-slate-900"
+                          readOnly
+                          className="h-16 bg-slate-100 border-slate-200 rounded-2xl font-black text-lg text-slate-900 cursor-not-allowed"
                         />
                       </div>
                       <div className="space-y-3">
@@ -927,6 +950,60 @@ export default function OrganizationPortal() {
                     </div>
                   )}
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+        {showConfirmModal && tempPayload && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-6"
+          >
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setShowConfirmModal(false)} />
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="w-full max-w-lg bg-white rounded-[40px] p-10 shadow-2xl relative z-10 text-center"
+            >
+              <div className="h-20 w-20 bg-[#ED1C24]/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
+                <AlertCircle className="h-10 w-10 text-[#ED1C24]" />
+              </div>
+              <h2 className="text-3xl font-black tracking-tighter mb-4 text-slate-900">Confirm <span className="text-[#ED1C24]">Mission Request</span></h2>
+              <p className="text-slate-400 font-bold mb-8">You are requesting {tempPayload.headcount} volunteers. Please review the estimated costs below.</p>
+              
+              <div className="bg-slate-50 rounded-3xl p-6 mb-8 space-y-4 border border-slate-100">
+                <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-slate-500">
+                  <span>Volunteers</span>
+                  <span className="text-slate-900">{tempPayload.headcount}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-slate-500">
+                  <span>Rate per Volunteer</span>
+                  <span className="text-slate-900">{profile?.rate_per_volunteer || 0} ETB</span>
+                </div>
+                <div className="h-px bg-slate-200" />
+                <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-[#ED1C24]">
+                  <span>Total Estimated Cost</span>
+                  <span className="text-xl font-black text-slate-900">{(tempPayload.headcount * (profile?.rate_per_volunteer || 0)).toLocaleString()} ETB</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowConfirmModal(false)}
+                  className="h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] border-slate-200"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={confirmSubmitRequest}
+                  disabled={submitting}
+                  className="h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-[#ED1C24]/20"
+                >
+                  {submitting ? "Submitting..." : "Confirm & Send"}
+                </Button>
               </div>
             </motion.div>
           </motion.div>
