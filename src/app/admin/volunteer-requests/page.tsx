@@ -35,7 +35,7 @@ export default function AdminVolunteerRequestsPage() {
 
   // Modal States
   const [selectedReq, setSelectedReq] = useState<VolunteerRequest | null>(null);
-  const [actionType, setActionType] = useState<"APPROVE" | "EDIT_PAYMENT" | null>(null);
+  const [actionType, setActionType] = useState<"APPROVE" | "EDIT_PAYMENT" | "VERIFY_PAYMENT" | null>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -70,18 +70,19 @@ export default function AdminVolunteerRequestsPage() {
     setIsProcessing(true);
     try {
       if (actionType === "APPROVE") {
-        await api.put(`/admin/volunteer-requests/approve`, { 
-          request_id: selectedReq.id
-        });
-        toast.success("Request approved and volunteers auto-matched");
+        await api.put(`/admin/volunteer-requests/approve`, { request_id: selectedReq.id });
+        toast.success("Request approved — awaiting payment from organization");
       } else if (actionType === "EDIT_PAYMENT") {
-        await api.put(`/admin/volunteer-requests/payment`, { 
+        await api.put(`/admin/volunteer-requests/payment`, {
           request_id: selectedReq.id,
           payment_amount: paymentAmount
         });
         toast.success("Payment amount updated successfully");
+      } else if (actionType === "VERIFY_PAYMENT") {
+        await api.put(`/admin/volunteer-requests/verify-payment`, { request_id: selectedReq.id });
+        toast.success("Payment verified — volunteers are being matched!");
       }
-      fetchData(); // Refresh list to get updated status/amounts
+      fetchData();
       setSelectedReq(null);
       setActionType(null);
     } catch (err) {
@@ -207,7 +208,15 @@ export default function AdminVolunteerRequestsPage() {
                             onClick={() => { setSelectedReq(req); setActionType("APPROVE"); }} 
                             className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg h-8 px-4 font-black uppercase tracking-widest text-[9px]"
                         >
-                            Approve Match
+                            Approve
+                        </Button>
+                    )}
+                    {req.status === "APPROVED" && req.payment_status === "SUBMITTED" && (
+                        <Button 
+                            onClick={() => { setSelectedReq(req); setActionType("VERIFY_PAYMENT"); }} 
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-8 px-4 font-black uppercase tracking-widest text-[9px]"
+                        >
+                            Verify Payment
                         </Button>
                     )}
                   </TableCell>
@@ -225,15 +234,25 @@ export default function AdminVolunteerRequestsPage() {
             
             <div className="p-6 border-b bg-gray-50/50">
               <h2 className="text-2xl font-black text-black tracking-tighter">
-                {actionType === "APPROVE" ? "Approve & Match" : "Edit Payment Amount"}
+                {actionType === "APPROVE" ? "Approve Request" : actionType === "VERIFY_PAYMENT" ? "Verify Payment & Match" : "Edit Payment Amount"}
               </h2>
             </div>
 
             <div className="p-6 space-y-4">
               {actionType === "APPROVE" ? (
                 <p className="text-sm font-medium text-gray-600">
-                  Are you sure you want to approve this request? This will automatically match <strong>{selectedReq.headcount}</strong> volunteers with matching skills and assign them to <strong>{selectedReq.org_name}</strong>.
+                  Approve this request from <strong>{selectedReq.org_name}</strong>? The organization will then be notified to submit payment. Volunteer matching will only begin after payment is verified.
                 </p>
+              ) : actionType === "VERIFY_PAYMENT" ? (
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-gray-600">
+                    Confirm that payment from <strong>{selectedReq.org_name}</strong> has been received and verified.
+                  </p>
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">This will trigger auto-matching</p>
+                    <p className="text-sm font-bold text-emerald-900">{selectedReq.headcount} volunteers will be automatically assigned to {selectedReq.org_name}.</p>
+                  </div>
+                </div>
               ) : (
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-widest text-black mb-2 block">
@@ -254,7 +273,12 @@ export default function AdminVolunteerRequestsPage() {
               <Button 
                 onClick={submitAction}
                 disabled={isProcessing}
-                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-10 px-6 font-black uppercase tracking-widest text-[10px]"
+                className={cn(
+                  "text-white rounded-xl h-10 px-6 font-black uppercase tracking-widest text-[10px]",
+                  actionType === "VERIFY_PAYMENT"
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-blue-600 hover:bg-blue-700"
+                )}
               >
                 {isProcessing ? "Processing..." : "Confirm"}
               </Button>
