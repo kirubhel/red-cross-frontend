@@ -30,6 +30,7 @@ const menuItems = [
   { href: "/admin/volunteers", label: "Volunteers", icon: HandHeart },
   { href: "/admin/organizations", label: "Organizations", icon: Building2 },
   { href: "/admin/volunteer-requests", label: "Volunteer Requests", icon: ClipboardList },
+  { href: "/admin/certifications", label: "Certifications", icon: ShieldCheck },
   { href: "/admin/reports", label: "Reports & Analytics", icon: BarChart3 },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },
   { href: "/admin/notifications", label: "Notifications", icon: Bell },
@@ -40,6 +41,7 @@ const menuItems = [
   { href: "/admin/cms", label: "Landing Page CMS", icon: LayoutDashboard },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
+
 
 
 export function Sidebar() {
