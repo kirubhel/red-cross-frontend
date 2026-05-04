@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Building2, CheckCircle2, XCircle, Clock, Mail, User } from "lucide-react";
+import { Search, Building2, CheckCircle2, XCircle, Clock, Mail, User, Globe, Phone, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -264,20 +264,63 @@ export default function AdminOrganizationsPage() {
             {/* Modal Content - Action Details */}
             <div className="p-6 overflow-y-auto max-h-[50vh] space-y-6">
               
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Organization</div>
-                  <div className="font-black text-black text-sm">{selectedOrg.name}</div>
-                  <div className="text-[#ED1C24] text-[10px] font-bold mt-0.5">{selectedOrg.type}</div>
+                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                    <Building2 className="h-3 w-3" /> Organization
+                  </div>
+                  <div className="font-black text-black text-base tracking-tight uppercase">{selectedOrg.name}</div>
+                  <div className="text-[#ED1C24] text-[10px] font-black uppercase tracking-widest mt-1">{selectedOrg.type}</div>
                 </div>
+
                 <div>
-                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Contact Needs</div>
-                  <div className="font-black text-black text-sm">{selectedOrg.volunteers_needed} Personnel</div>
-                  <div className="text-gray-600 text-[10px] font-bold mt-0.5 border w-fit px-2 py-0.5 rounded-md bg-white border-gray-200">{selectedOrg.requirements || 'No specific requirements listed'}</div>
+                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                    <User className="h-3 w-3" /> Representative
+                  </div>
+                  <div className="font-black text-black text-sm">{selectedOrg.contact_person}</div>
+                  <div className="flex flex-col gap-1 mt-1.5">
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 lowercase">
+                      <Mail className="h-3 w-3 text-[#ED1C24]" /> {selectedOrg.email}
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500">
+                      <Phone className="h-3 w-3 text-[#ED1C24]" /> {selectedOrg.phone}
+                    </div>
+                  </div>
                 </div>
-                <div className="col-span-2">
-                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Description</div>
-                  <div className="font-bold text-gray-700 text-xs leading-relaxed">{selectedOrg.description || 'No detailed description provided.'}</div>
+
+                <div>
+                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                    <Globe className="h-3 w-3" /> Digital Presence
+                  </div>
+                  {selectedOrg.website ? (
+                    <a 
+                      href={selectedOrg.website.startsWith('http') ? selectedOrg.website : `https://${selectedOrg.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-[10px] font-black text-[#ED1C24] uppercase tracking-widest hover:bg-gray-50 transition-colors group"
+                    >
+                      Visit Website <ExternalLink className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </a>
+                  ) : (
+                    <div className="text-gray-400 text-[10px] font-bold italic">No website provided</div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1.5 flex items-center gap-2">
+                    <Clock className="h-3 w-3" /> Personnel Request
+                  </div>
+                  <div className="font-black text-black text-sm">{selectedOrg.volunteers_needed} Volunteers Needed</div>
+                  <div className="text-gray-600 text-[9px] font-black uppercase tracking-widest mt-1.5 border w-fit px-2 py-1 rounded-md bg-white border-gray-200 shadow-sm">
+                    {selectedOrg.requirements || 'Standard requirements apply'}
+                  </div>
+                </div>
+
+                <div className="col-span-1 md:col-span-2">
+                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Mission Description</div>
+                  <div className="font-bold text-gray-700 text-xs leading-relaxed bg-white/50 p-3 rounded-xl border border-gray-100">
+                    {selectedOrg.description || 'No detailed mission description provided.'}
+                  </div>
                 </div>
               </div>
 
