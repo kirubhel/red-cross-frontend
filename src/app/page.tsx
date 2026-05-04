@@ -767,54 +767,18 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Programs & Impact Section */}
-        <section className="py-24 px-6 bg-gray-50/50">
-          <div className="container mx-auto">
-            <div className="max-w-4xl mx-auto space-y-16">
-              <div className="space-y-6 text-center">
-                 <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter">{t.programsSection.title}</h2>
-                 <div className="h-1.5 w-24 bg-[#ED1C24] mx-auto rounded-full" />
-                 <p className="text-xl text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">
-                   {t.programsSection.content}
-                 </p>
-                 <div className="flex flex-wrap justify-center gap-4 pt-4">
-                    {t.programsSection.sources.map(source => (
-                      <div key={source} className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-black text-sm uppercase tracking-widest text-[#ED1C24]">
-                        {source}
-                      </div>
-                    ))}
-                 </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-12">
-                 <div className="bg-white p-10 rounded-[40px] shadow-xl border border-gray-100 space-y-6">
-                    <div className="h-14 w-14 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center font-black text-2xl">01</div>
-                    <h3 className="text-2xl font-black text-black">{t.programsSection.membershipTitle}</h3>
-                    <p className="text-gray-500 leading-relaxed font-medium whitespace-pre-wrap text-sm">
-                      {t.programsSection.membershipContent}
-                    </p>
-                 </div>
-                 <div className="bg-white p-10 rounded-[40px] shadow-xl border border-gray-100 space-y-6">
-                    <div className="h-14 w-14 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center font-black text-2xl">02</div>
-                    <h3 className="text-2xl font-black text-black">{t.programsSection.donationTitle}</h3>
-                    <p className="text-gray-500 leading-relaxed font-medium whitespace-pre-wrap text-sm">
-                      {t.programsSection.donationContent}
-                    </p>
-                    <div className="pt-4 border-t border-gray-50">
-                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24]">{t.programsSection.donationFooter}</p>
-                    </div>
-                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Voluntary Services Section */}
-        <section className="py-24 px-6 overflow-hidden">
+        <section className="py-16 px-6 overflow-hidden">
           <div className="container mx-auto">
-             <div className="relative bg-black rounded-[48px] overflow-hidden p-12 md:p-20">
+             <div className="relative bg-black rounded-[48px] overflow-hidden p-12 md:p-20 group border-2 border-[#ED1C24]">
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-[40%] h-full bg-white hidden md:block" 
+                     style={{ clipPath: 'polygon(25% 0, 100% 0, 100% 100%, 0% 100%)' }} />
                 <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none" 
                      style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+                
+                <Plus className="absolute top-10 right-20 h-20 w-20 text-black/5 rotate-12 hidden md:block" strokeWidth={4} />
                 
                 <div className="max-w-3xl space-y-10 relative z-10">
                    <div className="space-y-4">
@@ -836,38 +800,93 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Programs & Impact Section */}
+        <section className="py-24 px-6 bg-gray-50/50">
+          <div className="container mx-auto">
+            <div className="max-w-4xl mx-auto space-y-16">
+              <div className="space-y-6 text-center">
+                 <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter">{t.programsSection.title}</h2>
+                 <div className="h-1.5 w-24 bg-[#ED1C24] mx-auto rounded-full" />
+                 <p className="text-xl text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">
+                   {t.programsSection.content}
+                 </p>
+                 <div className="flex flex-wrap justify-center gap-4 pt-4">
+                    {t.programsSection.sources.map(source => (
+                      <div key={source} className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-black text-sm uppercase tracking-widest text-[#ED1C24]">
+                        {source}
+                      </div>
+                    ))}
+                 </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-12 items-stretch">
+                 <div className="bg-white p-10 rounded-[40px] shadow-xl border border-gray-100 flex flex-col h-full transition-all hover:shadow-2xl hover:-translate-y-1">
+                    <div className="h-14 w-14 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center font-black text-2xl mb-6">01</div>
+                    <h3 className="text-2xl font-black text-black mb-4">{t.programsSection.membershipTitle}</h3>
+                    <p className="text-gray-500 leading-relaxed font-medium whitespace-pre-wrap text-sm flex-grow mb-8">
+                      {t.programsSection.membershipContent}
+                    </p>
+                    <Link href="/join/member" className="mt-auto">
+                      <Button className="w-full h-14 bg-black hover:bg-[#ED1C24] text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2">
+                        {t.membership.cta} <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                 </div>
+                 <div className="bg-white p-10 rounded-[40px] shadow-xl border border-gray-100 flex flex-col h-full transition-all hover:shadow-2xl hover:-translate-y-1">
+                    <div className="h-14 w-14 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center font-black text-2xl mb-6">02</div>
+                    <h3 className="text-2xl font-black text-black mb-4">{t.programsSection.donationTitle}</h3>
+                    <p className="text-gray-500 leading-relaxed font-medium whitespace-pre-wrap text-sm flex-grow mb-8">
+                      {t.programsSection.donationContent}
+                    </p>
+                    <div className="space-y-6 mt-auto">
+                      <Button 
+                        onClick={() => setIsDonationModalOpen(true)}
+                        className="w-full h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
+                      >
+                        {t.hero.ctaDonate} <MotionHeart className="h-4 w-4" animate="heartbeat" variants={heartVariants} />
+                      </Button>
+                      <div className="pt-4 border-t border-gray-50 text-center">
+                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24]">{t.programsSection.donationFooter}</p>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Call to Action Banner */}
-        <section className="px-6 pb-32">
+        <section className="px-6 pb-16">
           <div className="container mx-auto">
              <div className="relative bg-[#ED1C24] rounded-[48px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(237,28,36,0.25)] border border-gray-100/10">
                 {/* Decorative Elements */}
                 <div className="absolute top-0 right-0 w-1/2 h-full bg-black/5 -skew-x-12 translate-x-1/2 pointer-events-none" />
                 <Plus className="absolute top-6 left-10 h-16 w-16 text-white/10 rotate-12 pointer-events-none" strokeWidth={4} />
                 
-                {/* Asymmetrical White Section - Expanded to minimize red and fix button overlap */}
-                <div className="absolute top-0 right-0 w-[45%] h-full bg-white hidden md:block" 
+                {/* Asymmetrical White Section */}
+                <div className="absolute top-0 right-0 w-[42%] h-full bg-white hidden md:block" 
                      style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 100%, 0% 100%)' }} />
                 
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between py-12 px-12 md:py-16 md:px-20 gap-16">
-                   <div className="md:w-[50%] space-y-8 text-center md:text-left">
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between py-10 px-10 md:py-12 md:px-16 gap-10">
+                   <div className="md:w-[50%] space-y-6 text-center md:text-left">
                       <div className="space-y-4">
-                         <h2 className="text-4xl md:text-6xl font-black text-white leading-[1.1] tracking-tighter">
+                         <h2 className="text-3xl md:text-5xl font-black text-white leading-[1.1] tracking-tighter">
                             {t.ctaBanner.title}
                          </h2>
                       </div>
-                      <div className="flex flex-col sm:flex-row gap-5 justify-center md:justify-start">
+                      <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                         <Link href="/join">
-                           <Button size="lg" className="bg-white hover:bg-black text-[#ED1C24] hover:text-white rounded-2xl h-16 px-10 text-lg font-black shadow-2xl transition-all hover:-translate-y-1 active:translate-y-0 flex items-center gap-3">
+                           <Button size="lg" className="bg-white hover:bg-black text-[#ED1C24] hover:text-white rounded-2xl h-14 px-8 text-base font-black shadow-2xl transition-all hover:-translate-y-1 active:translate-y-0 flex items-center gap-3">
                               {t.ctaBanner.volunteer} <ChevronRight className="h-5 w-5" />
                            </Button>
                         </Link>
                       </div>
                    </div>
 
-                   <div className="md:w-[40%] flex flex-col items-center justify-center space-y-6">
-                      <div className="text-center space-y-5">
+                   <div className="md:w-[40%] flex flex-col items-center justify-center space-y-4">
+                      <div className="text-center space-y-4">
                         <Link href="/join/member">
-                          <Button size="lg" className="bg-black hover:bg-[#ED1C24] text-white rounded-2xl h-16 px-10 text-lg font-black shadow-2xl transition-all hover:-translate-y-1 active:translate-y-0 whitespace-nowrap group relative z-20">
+                          <Button size="lg" className="bg-black hover:bg-[#ED1C24] text-white rounded-2xl h-14 px-8 text-base font-black shadow-2xl transition-all hover:-translate-y-1 active:translate-y-0 whitespace-nowrap group relative z-20">
                              {t.ctaBanner.membership} <Plus className="ml-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-500" strokeWidth={4} />
                           </Button>
                         </Link>
