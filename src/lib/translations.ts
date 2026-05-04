@@ -9,7 +9,8 @@ export const translations = {
       news: "News",
       organizations: "Volunteer Requests",
       portal: "Portal Access",
-      join: "Join Membership"
+      join: "Join Membership",
+      backToHome: "Back to Home"
     },
     hero: {
       tagline: "75 Years of Service",
@@ -211,7 +212,8 @@ export const translations = {
       news: "ዜናዎች",
       organizations: "የበጎ ፈቃድ ጥያቄ",
       portal: "የፖርታል መግቢያ",
-      join: "አባል ይሁኑ"
+      join: "አባል ይሁኑ",
+      backToHome: "ወደ ዋናው ገጽ"
     },
     hero: {
       tagline: "የ75 ዓመት አገልግሎት",
@@ -413,7 +415,8 @@ export const translations = {
       news: "Oduu",
       organizations: "Gaaffii Tajaajilaa",
       portal: "Galfata Poortaalii",
-      join: "Miseensa Ta'aa"
+      join: "Miseensa Ta'aa",
+      backToHome: "Gara Manaa"
     },
     hero: {
       tagline: "Waggaa 75 Tajaajilaa",

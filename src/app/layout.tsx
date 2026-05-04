@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { LanguageProvider } from "@/context/LanguageContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,8 +34,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-        <Toaster position="top-right" />
-        {children}
+        <LanguageProvider>
+          <Toaster position="top-right" />
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

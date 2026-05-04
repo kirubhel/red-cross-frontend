@@ -55,6 +55,8 @@ const ENGAGEMENT_AREAS = [
   "Other Services"
 ];
 
+import Header from "@/components/layout/Header";
+
 export default function VolunteerJoinPage() {
   const [step, setStep] = useState(1); // 1: Personal, 2: Engagement/Skills, 3: Success
   const [loading, setLoading] = useState(false);
@@ -253,6 +255,7 @@ export default function VolunteerJoinPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
+      <Header minimal={true} />
       <style jsx global>{`
         .PhoneInput {
           display: flex;
@@ -283,23 +286,6 @@ export default function VolunteerJoinPage() {
           cursor: pointer;
         }
       `}</style>
-
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-red-50 rounded-full blur-[120px] opacity-40" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-red-50 rounded-full blur-[120px] opacity-40" />
-      </div>
-
-       <header className="relative z-10 px-6 py-4 md:px-12 flex justify-between items-center">
-            <Link href="/" className="group flex items-center gap-1.5 text-black/40 hover:text-black transition-colors font-black uppercase tracking-widest text-[10px]">
-                 <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" /> Back to Home
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="bg-white p-1 rounded-md border border-gray-100 shadow-sm">
-                <Image src="/logo.jpg" alt="ERCS" width={24} height={24} unoptimized />
-              </div>
-              <span className="text-lg font-black text-black tracking-tighter uppercase">ERCS</span>
-            </div>
-       </header>
 
        <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-7xl grid lg:grid-cols-[1fr_640px] gap-20 items-start pt-10">

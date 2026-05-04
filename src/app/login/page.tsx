@@ -19,6 +19,7 @@ import {
   EyeOff
 } from "lucide-react";
 import api from "@/lib/api";
+import Header from "@/components/layout/Header";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -87,7 +88,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-white overflow-hidden relative">
+    <div className="min-h-screen w-full flex flex-col bg-white overflow-hidden relative">
+      <Header minimal={true} />
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-50 rounded-full blur-[120px] opacity-60" />
@@ -97,7 +99,7 @@ export default function LoginPage() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center p-6 md:p-12 gap-16">
+      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center p-6 md:p-12 gap-16 flex-1">
         
         {/* Brand Side (Visible on Desktop) */}
         <motion.div 

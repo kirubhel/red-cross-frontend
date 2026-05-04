@@ -22,12 +22,14 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import ImageCropper from "@/components/profile/ImageCropper";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
@@ -115,21 +117,44 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Size limit: 3MB
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("File too large", {
+        description: "Profile photo must be smaller than 3MB."
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      setSelectedImage(reader.result as string);
+    });
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setSelectedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
     try {
       setUploading(true);
+      
+      // Create a file from the blob
+      const file = new File([croppedBlob], "profile.jpg", { type: "image/jpeg" });
+      
       const fd = new FormData();
       fd.append("file", file);
 
-      // 1. Upload to storage (Let Axios handle boundary)
+      // 1. Upload to storage
       const uploadRes = await api.post("/person/profile/photo", fd);
       const photoUrl = uploadRes.data.url;
       
       if (!photoUrl) throw new Error("Storage server did not return a valid URL");
 
-      // 2. Update profile with new photo using the full existing data to avoid data loss
+      // 2. Update profile
       const personData = { ...(user || {}) };
       
-      // Map region_id to region for the Protobuf enum
       if (personData.region_id && !personData.region) {
         personData.region = personData.region_id;
       }
@@ -481,6 +506,16 @@ export default function ProfilePage() {
            </div>
         </div>
       </div>
+      {selectedImage && (
+        <ImageCropper 
+          image={selectedImage}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setSelectedImage(null);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+          }}
+        />
+      )}
     </div>
   );
 }

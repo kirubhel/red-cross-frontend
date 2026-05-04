@@ -5,21 +5,12 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Heart, Users, ChevronRight, ShieldCheck, Sparkles } from "lucide-react";
 
+import Header from "@/components/layout/Header";
+
 export default function JoinSelectionPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col selection:bg-ercs-red selection:text-white">
-      {/* Decorative background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[20%] left-[-5%] w-[30%] h-[30%] bg-ercs-red/5 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[20%] right-[-5%] w-[30%] h-[30%] bg-blue-500/5 rounded-full blur-[100px]" />
-      </div>
-
-      <header className="relative z-10 px-8 py-4">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-ercs-red transition-colors group">
-          <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-1" /> 
-          Back to Home
-        </Link>
-      </header>
+      <Header minimal={true} />
 
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pb-12">
         <motion.div 

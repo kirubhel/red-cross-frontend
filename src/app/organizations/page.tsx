@@ -45,6 +45,8 @@ type Organization = {
   status: string;
 };
 
+import Header from "@/components/layout/Header";
+
 export default function OrganizationsPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -151,30 +153,7 @@ export default function OrganizationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative overflow-hidden rounded-lg">
-              <Image 
-                src="/logo.png" 
-                alt="ERCS Logo" 
-                width={40} 
-                height={40} 
-                className="object-contain transition-transform duration-500 group-hover:scale-110" 
-                unoptimized
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-bold text-black leading-none tracking-tight">ERCS</span>
-              <span className="text-[10px] font-bold text-[#ED1C24] uppercase tracking-[0.2em]">Ethiopia</span>
-            </div>
-          </Link>
-          <Link href="/" className="text-sm font-bold text-black hover:text-[#ED1C24] transition-colors flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back to Home
-          </Link>
-        </div>
-      </header>
+      <Header minimal={true} />
 
       {/* Hero Section */}
       <section className="bg-black text-white py-24 relative overflow-hidden">

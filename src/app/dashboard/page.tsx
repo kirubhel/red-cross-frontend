@@ -32,6 +32,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import html2canvas from "html2canvas";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -43,6 +44,7 @@ export default function DashboardPage() {
 
   const [history, setHistory] = useState<any[]>([]);
   const [openRequests, setOpenRequests] = useState<any[]>([]);
+  const idCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,7 +93,10 @@ export default function DashboardPage() {
            }
         }
 
-        const issueDate = userData?.created_at ? new Date(userData.created_at) : new Date();
+        const isZeroDate = (d: Date) => d.getFullYear() <= 1;
+        const rawIssueDate = userData?.created_at ? new Date(userData.created_at) : new Date();
+        const issueDate = isZeroDate(rawIssueDate) ? new Date() : rawIssueDate;
+
         const membershipType = userData?.membership_type || "REGULAR";
         
         // Calculate Membership Expiry
@@ -111,6 +116,8 @@ export default function DashboardPage() {
 
         const diffTime = expiryDate.getTime() - new Date().getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const status = userData?.membership_status || userData?.status || "PENDING";
+        const isApproved = status.toUpperCase() === "APPROVED";
 
         const REGIONS: Record<number, string> = {
           1: "Addis Ababa",
@@ -138,13 +145,14 @@ export default function DashboardPage() {
           grandfatherName: userData?.grandfather_name || "",
           fullName: `${userData?.first_name || ""} ${userData?.father_name || ""} ${userData?.grandfather_name || ""}`.trim(),
           memberId: userData?.ercs_id || storedErcsId || "NOT_ASSIGNED",
-          status: userData?.membership_status || userData?.status || "PENDING",
+          status: status,
+          isApproved: isApproved,
           membershipType: membershipType,
           role: role || "MEMBER",
-          issueDate: issueDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-          expiryDate: membershipType.toUpperCase() === "LIFETIME" ? "LIFETIME" : expiryDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-          cardExpiry: cardExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-          daysLeft: diffDays > 0 ? diffDays : 0,
+          issueDate: !isApproved ? "PENDING" : issueDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          expiryDate: !isApproved ? "PENDING" : (membershipType.toUpperCase() === "LIFETIME" ? "LIFETIME" : expiryDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })),
+          cardExpiry: !isApproved ? "PENDING" : cardExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          daysLeft: isApproved ? (diffDays > 0 ? diffDays : 0) : 0,
           region: regionName,
           phone: userData?.phone_number || userData?.phone || "+251...",
           email: userData?.email || "N/A",
@@ -224,6 +232,54 @@ export default function DashboardPage() {
       });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const downloadIDCard = async () => {
+    if (!idCardRef.current) return;
+    
+    try {
+      const toastId = toast.loading("Generating your digital ID card...");
+      
+      const canvas = await html2canvas(idCardRef.current, {
+        scale: 4,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        imageTimeout: 5000,
+        onclone: (clonedDoc) => {
+          // 1. Remove all style/link tags to prevent 'oklch' parsing errors from Tailwind v4
+          const styles = clonedDoc.querySelectorAll('style, link[rel="stylesheet"]');
+          styles.forEach(s => s.remove());
+
+          // 2. Fix the container layout for the download
+          const el = clonedDoc.querySelector('[data-id-card-grid]') as HTMLElement;
+          if (el) {
+            el.style.display = 'flex';
+            el.style.flexDirection = 'row';
+            el.style.gap = '40px';
+            el.style.padding = '60px';
+            el.style.width = '1250px';
+            el.style.background = '#F8FAFC';
+            el.style.justifyContent = 'center';
+            el.style.alignItems = 'flex-start';
+            el.style.fontFamily = 'Inter, system-ui, sans-serif';
+          }
+        }
+      });
+      
+      const url = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `ERCS_ID_${user?.memberId || "Card"}.png`;
+      link.href = url;
+      link.click();
+      
+      toast.dismiss(toastId);
+      toast.success("ID Card downloaded successfully!");
+    } catch (err) {
+      console.error("Failed to generate ID card image:", err);
+      toast.error("Download failed", { description: "Could not generate ID card image." });
     }
   };
 
@@ -341,146 +397,157 @@ export default function DashboardPage() {
                 <h2 className="text-3xl font-black tracking-tighter">Digital ID Card</h2>
                 <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mt-1">Official ERCS {user?.role === "VOLUNTEER" ? "Volunteer" : "Membership"} Identification</p>
              </div>
-             <Button className="bg-[#ED1C24] hover:bg-black text-white px-8 h-14 rounded-2xl font-black tracking-widest uppercase text-xs shadow-xl shadow-red-500/20 transition-all flex items-center gap-2">
+             <Button 
+                onClick={downloadIDCard}
+                className="bg-[#ED1C24] hover:bg-black text-white px-8 h-14 rounded-2xl font-black tracking-widest uppercase text-xs shadow-xl shadow-red-500/20 transition-all flex items-center gap-2"
+              >
                 <Download className="h-4 w-4" /> Download ID Card
              </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            {/* Front View */}
-            <div className="space-y-4">
-              <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Card Front</p>
-              <div className="bg-white rounded-[24px] border-2 border-red-800/20 overflow-hidden shadow-2xl relative max-w-[500px] mx-auto aspect-[1.6/1]">
-                 <div className="bg-[#ED1C24] text-white p-4 flex items-center gap-3">
-                    <div className="bg-white p-1 rounded-lg shrink-0">
-                       <Image src="/logo.png" alt="ERCS" width={28} height={28} unoptimized />
-                    </div>
-                    <div className="flex flex-col">
-                       <span className="text-[10px] font-black leading-none uppercase tracking-tighter">Ethiopia Red Cross Society</span>
-                       <span className="text-[8px] font-bold opacity-70 uppercase">የኢትዮጵያ ቀይ መስቀል ማኅበር</span>
-                    </div>
-                 </div>
-                 
-                 <div className="p-6 flex gap-6 h-full relative overflow-hidden">
-                    {/* Watermark Stamp */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 opacity-[0.06] pointer-events-none rotate-12">
-                       {user?.idAssets?.stampUrl ? (
-                         <img src={user.idAssets.stampUrl} alt="Watermark" className="w-full h-full object-contain grayscale" />
-                       ) : (
-                         <Image src="/logo.png" alt="Watermark" width={200} height={200} unoptimized />
-                       )}
-                    </div>
-
-                    <div className="w-1/3 aspect-square bg-gray-100 rounded-xl border-2 border-red-100 overflow-hidden shrink-0 relative">
-                       {user?.photo ? (
-                          <img src={user.photo} alt="ID" className="w-full h-full object-cover" />
-                       ) : (
-                          <div className="w-full h-full flex items-center justify-center text-red-900/20">
-                             <User className="h-20 w-20" />
-                          </div>
-                       )}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                       {[
-                         { label: user?.role === "VOLUNTEER" ? "Volunteer ID" : "Member ID", val: user?.memberId },
-                         { label: "Name", val: user?.fullName || `${user?.firstName} ${user?.lastName}` },
-                         { label: user?.role === "VOLUNTEER" ? "Volunteer Type" : "Membership Type", val: user?.membershipType },
-                         { label: "Mobile Number", val: user?.phone || "+251..." },
-                         { label: "Region", val: user?.region },
-                         { label: "Issued Date", val: user?.issueDate },
-                         { label: "Expired Date", val: user?.cardExpiry }
-                       ].map((f, i) => (
-                         <div key={i} className="flex justify-between items-end border-b border-gray-50 pb-0.5">
-                            <span className="text-[7px] font-black text-red-900 uppercase tracking-widest">{f.label}</span>
-                            <span className="text-[9px] font-black text-gray-900">{f.val}</span>
+          <div 
+            ref={idCardRef} 
+              data-id-card-grid="true"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-10 p-4 bg-white"
+            >
+              {/* Front View */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                <p style={{ textAlign: 'center', fontSize: '10px', fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.3em', margin: 0 }}>Card Front</p>
+                <div 
+                  style={{ backgroundColor: 'white', borderRadius: '24px', border: '2px solid rgba(153, 27, 27, 0.15)', overflow: 'hidden', position: 'relative', width: '500px', height: '312px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)', flexShrink: 0 }}
+                >
+                   <div style={{ backgroundColor: '#ED1C24', color: 'white', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ backgroundColor: 'white', padding: '4px', borderRadius: '8px', flexShrink: 0 }}>
+                         <img src="/logo.png" alt="ERCS" width={28} height={28} crossOrigin="anonymous" />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                         <span style={{ fontSize: '10px', fontWeight: '900', lineHeight: '1', textTransform: 'uppercase', letterSpacing: '-0.025em' }}>Ethiopia Red Cross Society</span>
+                         <span style={{ fontSize: '8px', fontWeight: '700', opacity: '0.7', textTransform: 'uppercase' }}>የኢትዮጵያ ቀይ መስቀል ማኅበር</span>
+                      </div>
+                   </div>
+                   
+                   <div style={{ padding: '24px', display: 'flex', gap: '24px', height: '100%', position: 'relative', overflow: 'hidden' }}>
+                      {/* Watermark Stamp */}
+                      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(12deg)', width: '192px', height: '192px', opacity: '0.06', pointerEvents: 'none' }}>
+                         {user?.idAssets?.stampUrl ? (
+                           <img src={user.idAssets.stampUrl} alt="Watermark" style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'grayscale(100%)' }} crossOrigin="anonymous" />
+                         ) : (
+                           <img src="/logo.png" alt="Watermark" width={200} height={200} crossOrigin="anonymous" />
+                         )}
+                      </div>
+  
+                      <div style={{ width: '120px', height: '120px', backgroundColor: '#F3F4F6', borderRadius: '12px', border: '2px solid #FEE2E2', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                         {user?.photo ? (
+                            <img src={user.photo} alt="ID" style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
+                         ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(127, 29, 29, 0.2)' }}>
+                               <User style={{ width: '80px', height: '80px' }} />
+                            </div>
+                         )}
+                      </div>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                         {[
+                           { label: user?.role === "VOLUNTEER" ? "Volunteer ID" : "Member ID", val: user?.memberId },
+                           { label: "Name", val: user?.fullName },
+                           { label: user?.role === "VOLUNTEER" ? "Volunteer Type" : "Membership Type", val: user?.membershipType },
+                           { label: "Mobile Number", val: user?.phone || "+251..." },
+                           { label: "Region", val: user?.region },
+                           { label: "Issued Date", val: user?.issueDate },
+                           { label: "Expired Date", val: user?.cardExpiry }
+                         ].map((f, i) => (
+                           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid #F9FAFB', paddingBottom: '2px' }}>
+                              <span style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f.label}</span>
+                              <span style={{ fontSize: '9px', fontWeight: '900', color: '#111827' }}>{f.val}</span>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+                   
+                   <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', backgroundColor: '#ED1C24', padding: '6px 16px', textAlign: 'center' }}>
+                      <p style={{ fontSize: '8px', fontWeight: '700', color: 'white', textTransform: 'uppercase', letterSpacing: '-0.025em', fontStyle: 'italic', margin: 0 }}>Humanitarian Identity • {user?.role} • {user?.region}</p>
+                   </div>
+                </div>
+              </div>
+  
+              {/* Back View */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                <p style={{ textAlign: 'center', fontSize: '10px', fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.3em', margin: 0 }}>Card Back</p>
+                <div 
+                   style={{ backgroundColor: 'white', borderRadius: '24px', border: '2px solid rgba(153, 27, 27, 0.15)', overflow: 'hidden', position: 'relative', width: '500px', height: '312px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)', flexShrink: 0 }}
+                >
+                   <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ backgroundColor: '#ED1C24', color: 'white', padding: '12px', textAlign: 'center', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                         Emergency Contact & Authentication
+                      </div>
+                      
+                      <div style={{ flex: 1, padding: '24px', display: 'flex', gap: '32px' }}>
+                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                               <p style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Office Address</p>
+                               <p style={{ fontSize: '9px', fontWeight: '700', color: '#1F2937', lineHeight: '1.25', margin: 0 }}>
+                                  Ethiopian Red Cross Society HQ<br />
+                                  Bisrate Gebriel, In front of Zambia Embassy<br />
+                                  Addis Ababa, Ethiopia
+                               </p>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                               <p style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Contact Information</p>
+                               <p style={{ fontSize: '9px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
+                                  Tel: +251 11 551 91 00<br />
+                                  Email: info@redcrosseth.org<br />
+                                  Web: www.redcrosseth.org
+                               </p>
+                            </div>
                          </div>
-                       ))}
-                    </div>
-                 </div>
-                 
-                 <div className="absolute bottom-0 left-0 w-full bg-[#ED1C24] py-1.5 px-4 text-center">
-                    <p className="text-[8px] font-bold text-white uppercase tracking-tighter italic">Humanitarian Identity • {user?.role} • {user?.region}</p>
-                 </div>
+                         
+                         <div style={{ width: '33.333%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <div style={{ padding: '8px', backgroundColor: 'white', border: '2px solid #F3F4F6', borderRadius: '12px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                               <QRCodeCanvas 
+                                 value={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${user?.memberId}`}
+                                 size={64}
+                                 level={"H"}
+                                 includeMargin={false}
+                                 imageSettings={{
+                                   src: "/logo.png",
+                                   x: undefined,
+                                   y: undefined,
+                                   height: 12,
+                                   width: 12,
+                                   excavate: true,
+                                 }}
+                               />
+  
+                            </div>
+                            <p style={{ fontSize: '5px', fontWeight: '900', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.2em', textAlign: 'center', margin: 0 }}>Scan to Verify<br />{user?.memberId}</p>
+                         </div>
+                      </div>
+  
+                      <div style={{ padding: '0 24px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '40px' }}>
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center', flex: 1 }}>
+                            <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                               {user?.idAssets?.signature1Url ? (
+                                 <img src={user.idAssets.signature1Url} alt="Signature 1" style={{ height: '100%', objectFit: 'contain', filter: 'grayscale(100%)', opacity: 0.7 }} crossOrigin="anonymous" />
+                               ) : (
+                                 <span style={{ fontStyle: 'italic', fontFamily: 'serif', color: '#D1D5DB', fontSize: '12px' }}>Signature</span>
+                               )}
+                            </div>
+                            <p style={{ fontSize: '6px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', borderTop: '1px solid #F3F4F6', paddingTop: '4px', margin: 0 }}>General Secretary</p>
+                         </div>
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center', flex: 1 }}>
+                            <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                               {user?.idAssets?.signature2Url ? (
+                                 <img src={user.idAssets.signature2Url} alt="Signature 2" style={{ height: '100%', objectFit: 'contain', filter: 'grayscale(100%)', opacity: 0.7 }} crossOrigin="anonymous" />
+                               ) : (
+                                 <span style={{ fontStyle: 'italic', fontFamily: 'serif', color: '#D1D5DB', fontSize: '12px' }}>Signature</span>
+                               )}
+                            </div>
+                            <p style={{ fontSize: '6px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', borderTop: '1px solid #F3F4F6', paddingTop: '4px', margin: 0 }}>Branch Manager</p>
+                         </div>
+                      </div>
+                   </div>
+                </div>
               </div>
             </div>
-
-            {/* Back View */}
-            <div className="space-y-4">
-              <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Card Back</p>
-              <div className="bg-white rounded-[24px] border-2 border-red-800/20 overflow-hidden shadow-2xl relative max-w-[500px] mx-auto aspect-[1.6/1]">
-                 <div className="h-full flex flex-col">
-                    <div className="bg-[#ED1C24] text-white p-3 text-center text-[9px] font-black uppercase tracking-widest">
-                       Emergency Contact & Authentication
-                    </div>
-                    
-                    <div className="flex-1 p-6 flex gap-8">
-                       <div className="flex-1 space-y-3">
-                          <div className="space-y-1">
-                             <p className="text-[7px] font-black text-red-900 uppercase tracking-widest">Office Address</p>
-                             <p className="text-[9px] font-bold text-gray-800 leading-tight">
-                                Ethiopian Red Cross Society HQ<br />
-                                Bisrate Gebriel, In front of Zambia Embassy<br />
-                                Addis Ababa, Ethiopia
-                             </p>
-                          </div>
-                          <div className="space-y-1">
-                             <p className="text-[7px] font-black text-red-900 uppercase tracking-widest">Contact Information</p>
-                             <p className="text-[9px] font-bold text-gray-800">
-                                Tel: +251 11 551 91 00<br />
-                                Email: info@redcrosseth.org<br />
-                                Web: www.redcrosseth.org
-                             </p>
-                          </div>
-                       </div>
-                       
-                       <div className="w-1/3 flex flex-col items-center justify-center gap-2">
-                          <div className="p-2 bg-white border-2 border-gray-100 rounded-xl shadow-sm">
-                             <QRCodeCanvas 
-                               value={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${user?.memberId}`}
-                               size={64}
-                               level={"H"}
-                               includeMargin={false}
-                               imageSettings={{
-                                 src: "/logo.png",
-                                 x: undefined,
-                                 y: undefined,
-                                 height: 12,
-                                 width: 12,
-                                 excavate: true,
-                               }}
-                             />
-
-                          </div>
-                          <p className="text-[5px] font-black text-gray-400 uppercase tracking-[0.2em] text-center">Scan to Verify<br />{user?.memberId}</p>
-                       </div>
-                    </div>
-
-                    <div className="px-6 pb-6 flex justify-between items-end gap-10">
-                       <div className="space-y-1 text-center flex-1">
-                          <div className="h-8 flex items-center justify-center">
-                             {user?.idAssets?.signature1Url ? (
-                               <img src={user.idAssets.signature1Url} alt="Signature 1" className="h-full object-contain grayscale opacity-70" />
-                             ) : (
-                               <span className="italic font-serif text-gray-300 text-xs">Signature</span>
-                             )}
-                          </div>
-                          <p className="text-[6px] font-black text-red-900 uppercase border-t border-gray-100 pt-1">General Secretary</p>
-                       </div>
-                       <div className="space-y-1 text-center flex-1">
-                          <div className="h-8 flex items-center justify-center">
-                             {user?.idAssets?.signature2Url ? (
-                               <img src={user.idAssets.signature2Url} alt="Signature 2" className="h-full object-contain grayscale opacity-70" />
-                             ) : (
-                               <span className="italic font-serif text-gray-300 text-xs">Signature</span>
-                             )}
-                          </div>
-                          <p className="text-[6px] font-black text-red-900 uppercase border-t border-gray-100 pt-1">Branch Manager</p>
-                       </div>
-                    </div>
-                 </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Footer Support */}
@@ -591,10 +658,17 @@ export default function DashboardPage() {
                       <h2 className="text-3xl font-black tracking-tighter">Humanitarian Identity</h2>
                     </div>
                   </div>
-                  <div className="bg-green-500/20 border border-green-500/30 px-4 py-2 rounded-full flex items-center gap-2">
-                    <CheckCircle2 className="h-3 w-3 text-green-400" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-green-400">Verified Member</span>
-                  </div>
+                  {user?.isApproved ? (
+                    <div className="bg-green-500/20 border border-green-500/30 px-4 py-2 rounded-full flex items-center gap-2">
+                      <CheckCircle2 className="h-3 w-3 text-green-400" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-green-400">Verified Member</span>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-500/20 border border-amber-500/30 px-4 py-2 rounded-full flex items-center gap-2">
+                      <Clock className="h-3 w-3 text-amber-400" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">Awaiting Approval</span>
+                    </div>
+                  )}
                </div>
 
                 <div className="flex flex-col md:flex-row justify-between items-end gap-8">

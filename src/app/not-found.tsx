@@ -1,10 +1,13 @@
 import Link from 'next/link';
 import { Home, ShieldCheck, HeartPulse, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Header from '@/components/layout/Header';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 flex flex-col relative overflow-hidden">
+      <Header minimal={true} />
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
       {/* Background decorations */}
       <div className="absolute top-0 w-full h-1/2 bg-gradient-to-b from-red-50 to-transparent -z-10" />
       <div className="absolute -top-48 -left-48 w-96 h-96 bg-red-100 rounded-full blur-3xl opacity-50 -z-10" />
@@ -59,6 +62,7 @@ export default function NotFound() {
       {/* Footer text */}
       <div className="mt-12 text-sm text-slate-400 font-medium tracking-wide">
         &copy; {new Date().getFullYear()} Ethiopian Red Cross Society
+      </div>
       </div>
     </div>
   );

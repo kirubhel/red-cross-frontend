@@ -34,6 +34,8 @@ import WhoWeAre from "@/components/WhoWeAre";
 import NewsSection from "@/components/NewsSection";
 import WelcomeModal from "@/components/WelcomeModal";
 import DonationModal from "@/components/DonationModal";
+import Header from "@/components/layout/Header";
+import { useLanguage } from "@/context/LanguageContext";
 
 const MotionHeart = motion.create(Heart);
 
@@ -136,38 +138,36 @@ const heartVariants: Variants = {
 };
 
 export default function LandingPage() {
-  const [lang, setLang] = useState<Language>('en');
-  const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const { lang, t } = useLanguage();
   const [dynamicContent, setDynamicContent] = useState<Record<Language, typeof translations.en> | null>(null);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
-  const langRef = useRef<HTMLDivElement>(null);
   
-  // Use dynamic content if available, but merge with local translations so new keys are never missing
-  const t: typeof translations.en = {
-    ...translations[lang],
+  // Merge dynamic content with context translations
+  const mergedT: typeof translations.en = {
+    ...t,
     ...(dynamicContent?.[lang] || {}),
     hero: {
-      ...translations[lang].hero,
+      ...t.hero,
       ...(dynamicContent?.[lang]?.hero || {})
     },
     membership: {
-      ...translations[lang].membership,
+      ...t.membership,
       ...(dynamicContent?.[lang]?.membership || {}),
       tiers: {
-        ...(translations[lang].membership?.tiers || {}),
+        ...(t.membership?.tiers || {}),
         ...(dynamicContent?.[lang]?.membership?.tiers || {})
       }
     },
     programsSection: {
-      ...translations[lang].programsSection,
+      ...t.programsSection,
       ...(dynamicContent?.[lang]?.programsSection || {})
     },
     volunteerSection: {
-      ...translations[lang].volunteerSection,
+      ...t.volunteerSection,
       ...(dynamicContent?.[lang]?.volunteerSection || {})
     },
     contactSection: {
-      ...translations[lang].contactSection,
+      ...t.contactSection,
       ...(dynamicContent?.[lang]?.contactSection || {})
     }
   };
@@ -206,16 +206,6 @@ export default function LandingPage() {
     return () => { document.body.style.overflow = 'unset'; }
   }, [isDonationModalOpen]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (langRef.current && !langRef.current.contains(event.target as Node)) {
-        setShowLangDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   return (
     <div className="flex flex-col min-h-screen bg-white selection:bg-ercs-red selection:text-white overflow-x-hidden">
       <DonationModal isOpen={isDonationModalOpen} onClose={() => setIsDonationModalOpen(false)} />
@@ -226,106 +216,7 @@ export default function LandingPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-ercs-red/5 rounded-full blur-[120px]" />
       </div>
 
-      {/* Navigation */}
-      <motion.header 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md"
-      >
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 group cursor-pointer">
-            <div className="relative overflow-hidden rounded-md border border-gray-100 shadow-sm">
-              <Image 
-                src="/logo.jpg" 
-                alt="ERCS Logo" 
-                width={32} 
-                height={32} 
-                className="object-contain transition-transform duration-500 group-hover:scale-110" 
-                unoptimized
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-bold text-black leading-none tracking-tight">ERCS</span>
-              <span className="text-[9px] font-bold text-[#ED1C24] uppercase tracking-[0.2em]">Ethiopia</span>
-            </div>
-          </div>
-          
-          <nav className="hidden lg:flex items-center gap-10">
-            {[
-              { label: t.nav.about, href: "#about" },
-              { label: t.nav.services, href: "#services" },
-              { label: t.nav.impact, href: "#impact" },
-              { label: t.nav.news, href: "#news" },
-              { label: t.nav.organizations, href: "/organizations" }
-            ].map((item) => (
-              <Link 
-                key={item.label} 
-                href={item.href}
-                className={`${lang === 'en' ? 'text-sm' : 'text-xs'} font-bold text-black hover:text-[#ED1C24] transition-colors relative group`}
-              >
-                {item.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ED1C24] transition-all duration-300 group-hover:w-full" />
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <div className="relative" ref={langRef}>
-              <button 
-                onClick={() => setShowLangDropdown(!showLangDropdown)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 hover:border-[#ED1C24] hover:text-[#ED1C24] transition-all text-xs font-black uppercase tracking-wider cursor-pointer bg-white text-black"
-              >
-                <Languages className="h-3.5 w-3.5 text-black group-hover:text-[#ED1C24]" />
-                {lang === 'en' ? 'English' : lang === 'am' ? 'አማርኛ' : 'Afaan Oromoo'}
-                <ChevronDown className={`h-3 w-3 transition-transform duration-300 text-black ${showLangDropdown ? 'rotate-180' : ''}`} />
-              </button>
-
-              <AnimatePresence>
-                {showLangDropdown && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
-                  >
-                    {[
-                      { code: 'en', label: 'English', native: 'English' },
-                      { code: 'am', label: 'አማርኛ', native: 'Amharic' },
-                      { code: 'om', label: 'Afaan Oromo', native: 'Oromiffa' }
-                    ].map((l) => (
-                      <button
-                        key={l.code}
-                        onClick={() => {
-                          setLang(l.code as Language);
-                          setShowLangDropdown(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors text-left ${lang === l.code ? 'text-[#ED1C24] bg-red-50/50' : 'text-black'}`}
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold">{l.label}</span>
-                          <span className="text-[10px] opacity-50 font-medium uppercase tracking-wider">{l.native}</span>
-                        </div>
-                        {lang === l.code && <div className="h-1.5 w-1.5 rounded-full bg-[#ED1C24]" />}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            <div className="h-4 w-px bg-gray-200 hidden sm:block" />
-            <Link href="/login" className={`hidden sm:block ${lang === 'en' ? 'text-sm' : 'text-xs'} font-bold text-black hover:text-[#ED1C24] transition-colors`}>
-              {t.nav.portal}
-            </Link>
-            <div className="h-8 w-px bg-gray-200 hidden sm:block" />
-            <Link href="/join/volunteer">
-              <Button size="sm" className="bg-[#ED1C24] text-white border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24] rounded-full px-6 font-bold shadow-lg shadow-[#ED1C24]/20 transition-all hover:scale-105 active:scale-95 cursor-pointer">
-                {t.nav.join}
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </motion.header>
+      <Header />
 
       <main className="relative z-10">
         {/* Hero Section */}
@@ -379,13 +270,13 @@ export default function LandingPage() {
               className="space-y-5"
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-ercs-light text-ercs-red rounded-full text-[11px] font-black uppercase tracking-widest animate-pulse">
-                <ShieldCheck className="h-4 w-4" /> {t.hero.tagline}
+                <ShieldCheck className="h-4 w-4" /> {mergedT.hero.tagline}
               </div>
               <h1 className={`${lang === 'en' ? 'text-5xl md:text-7xl lg:text-8xl' : 'text-4xl md:text-6xl lg:text-7xl'} font-black text-black leading-[0.9] tracking-tighter`}>
-                {t.hero.title1} <br />
+                {mergedT.hero.title1} <br />
                 <span className="relative inline-block">
-                  <span className="text-[#ED1C24]">{t.hero.title2}</span> <br /> 
-                  {t.hero.title3}
+                  <span className="text-[#ED1C24]">{mergedT.hero.title2}</span> <br /> 
+                  {mergedT.hero.title3}
                   <svg className="absolute top-[95%] left-0 w-full h-10 -translate-y-1/2 pointer-events-none overflow-visible" viewBox="0 0 300 20" preserveAspectRatio="none">
                     <motion.path 
                       d="M1 15C50 12 150 5 299 10" 
@@ -400,7 +291,7 @@ export default function LandingPage() {
                 </span>
               </h1>
               <p className={`${lang === 'en' ? 'text-lg md:text-xl' : 'text-base md:text-lg'} text-black/70 max-w-xl leading-relaxed font-medium`}>
-                {t.hero.subtitle}
+                {mergedT.hero.subtitle}
               </p>
               {/* Hero CTA Pathway Buttons */}
               <div className="space-y-4 pt-4">
@@ -410,7 +301,7 @@ export default function LandingPage() {
                   transition={{ delay: 0.35 }}
                   className="text-[10px] font-black uppercase tracking-[0.3em] text-black/40"
                 >
-                  {(t.hero as any).pathwaysLabel}
+                  {(mergedT.hero as any).pathwaysLabel}
                 </motion.p>
 
                 <div className="flex flex-row items-center gap-4 pt-2">
@@ -429,7 +320,7 @@ export default function LandingPage() {
                           justify-center group-hover:bg-[#ED1C24] group-hover:text-white transition-colors flex-shrink-0">
                           <Users className="h-4 w-4" />
                         </div>
-                        {t.hero.ctaVolunteer || translations[lang].hero.ctaVolunteer || "Volunteer"}
+                        {mergedT.hero.ctaVolunteer || translations[lang].hero.ctaVolunteer || "Volunteer"}
                       </button>
                     </Link>
                   </motion.div>
@@ -454,7 +345,7 @@ export default function LandingPage() {
                             className="h-4 w-4"
                           />
                         </div>
-                        {t.hero.ctaDonate || translations[lang].hero.ctaDonate || "Donate"}
+                        {mergedT.hero.ctaDonate || translations[lang].hero.ctaDonate || "Donate"}
                     </button>
                   </motion.div>
                 </div>
@@ -470,7 +361,7 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-[#ED1C24]/10 rounded-[40px] translate-x-4 translate-y-4 blur-3xl opacity-50" />
               <div className="relative h-full w-full bg-white border-8 border-white rounded-[40px] shadow-2xl overflow-hidden group">
                  <Image 
-                    src={t.hero.imageUrl}
+                    src={mergedT.hero.imageUrl}
                     alt="ERCS 90 Years"
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -478,7 +369,7 @@ export default function LandingPage() {
                     unoptimized
                  />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
-                    <p className="text-white font-bold text-lg">{t.hero.anniversary}</p>
+                    <p className="text-white font-bold text-lg">{mergedT.hero.anniversary}</p>
                  </div>
 
                   {/* Floating Membership Button */}
@@ -511,7 +402,7 @@ export default function LandingPage() {
                           flex items-center justify-center transition-colors flex-shrink-0">
                           <ShieldCheck className="h-5 w-5" />
                         </div>
-                        {t.hero.ctaMembership || translations[lang].hero.ctaMembership || "Membership"}
+                        {mergedT.hero.ctaMembership || translations[lang].hero.ctaMembership || "Membership"}
                       </button>
                     </Link>
                   </motion.div>
@@ -523,7 +414,7 @@ export default function LandingPage() {
                 className="absolute -top-6 -right-6 p-4 bg-white rounded-2xl shadow-xl border border-gray-50 text-center z-20"
               >
                 <div className="text-2xl font-black text-[#ED1C24]">45k+</div>
-                <div className="text-[10px] uppercase font-black text-black/40">{t.hero.volunteers}</div>
+                <div className="text-[10px] uppercase font-black text-black/40">{mergedT.hero.volunteers}</div>
               </motion.div>
             </motion.div>
           </div>
@@ -537,10 +428,10 @@ export default function LandingPage() {
           <div className="container mx-auto px-6 relative z-10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-px md:bg-gray-800">
               {[
-                { label: t.stats.volunteers, value: 45000, suffix: "+", icon: Users, isCounter: true },
-                { label: t.stats.branches, value: 12, suffix: "+", icon: Globe, isCounter: true },
-                { label: t.stats.impact, value: t.stats.impactValue, icon: Activity },
-                { label: t.stats.founded, value: "1935", icon: Flame }
+                { label: mergedT.stats.volunteers, value: 45000, suffix: "+", icon: Users, isCounter: true },
+                { label: mergedT.stats.branches, value: 12, suffix: "+", icon: Globe, isCounter: true },
+                { label: mergedT.stats.impact, value: mergedT.stats.impactValue, icon: Activity },
+                { label: mergedT.stats.founded, value: "1935", icon: Flame }
               ].map((stat, i) => (
                 <div key={i} className="bg-gray-900 md:px-12 py-4 flex flex-col items-center md:items-start space-y-2">
                   <div className="text-[#ED1C24] text-xs font-black uppercase tracking-widest">{stat.label}</div>
@@ -558,15 +449,15 @@ export default function LandingPage() {
         </section>
 
         {/* Who We Are & About Section */}
-        <WhoWeAre lang={lang} content={t.whoWeAre} />
+        <WhoWeAre lang={lang} content={mergedT.whoWeAre} />
 
         {/* Services Section */}
         <section id="services" className="py-32 px-6">
           <div className="container mx-auto">
             <div className="max-w-xl mb-20">
-              <h2 className="text-sm font-black text-ercs-red uppercase tracking-[0.3em] mb-4">{t.services.badge}</h2>
+              <h2 className="text-sm font-black text-ercs-red uppercase tracking-[0.3em] mb-4">{mergedT.services.badge}</h2>
               <h3 className={`${lang === 'en' ? 'text-3xl md:text-4xl' : 'text-2xl md:text-3xl'} font-black text-black leading-[0.9] tracking-tighter`}>
-                {t.services.title}
+                {mergedT.services.title}
               </h3>
             </div>
 
@@ -577,7 +468,7 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
             >
-              {((t.services as any).items || []).filter(Boolean).map((service: any, i: number) => {
+              {((mergedT.services as any).items || []).filter(Boolean).map((service: any, i: number) => {
                 const iconName = service.icon || 'Activity';
                 const IconComponent = (({
                   Flame,
@@ -617,15 +508,15 @@ export default function LandingPage() {
           <div className="container mx-auto px-6">
             <div className="grid lg:grid-cols-2 gap-20 items-center">
               <div className="space-y-8">
-                <h2 className="text-sm font-black text-[#ED1C24] uppercase tracking-[0.3em]">{t.membership.badge}</h2>
+                <h2 className="text-sm font-black text-[#ED1C24] uppercase tracking-[0.3em]">{mergedT.membership.badge}</h2>
                 <h3 className={`${lang === 'en' ? 'text-5xl md:text-7xl' : 'text-4xl md:text-6xl'} font-black text-black leading-[0.9] tracking-tighter`}>
-                  {t.membership.title}
+                  {mergedT.membership.title}
                 </h3>
                 <p className={`${lang === 'en' ? 'text-xl' : 'text-lg'} text-black/60 font-medium leading-relaxed max-w-lg`}>
-                  {t.membership.desc}
+                  {mergedT.membership.desc}
                 </p>
                 <div className="space-y-4">
-                  {t.membership.features.map(item => (
+                  {mergedT.membership.features.map(item => (
                     <div key={item} className="flex items-center gap-3 font-bold text-black">
                       <ShieldCheck className="h-6 w-6 text-[#ED1C24]" /> {item}
                     </div>
@@ -633,7 +524,7 @@ export default function LandingPage() {
                 </div>
                 <Link href="/join/member">
                   <Button size="lg" className="bg-black border-2 border-black hover:bg-white hover:text-[#ED1C24] hover:border-[#ED1C24] text-white rounded-2xl h-16 px-10 text-lg font-black transition-all shadow-xl shadow-black/10">
-                    {t.membership.cta} <ChevronRight className="ml-2" />
+                    {mergedT.membership.cta} <ChevronRight className="ml-2" />
                   </Button>
                 </Link>
               </div>
@@ -655,7 +546,7 @@ export default function LandingPage() {
                              <div className="text-4xl font-black text-black">
                                <CountUp value={6.2} suffix="M+" />
                              </div>
-                             <div className="text-xs font-black text-black/40 uppercase tracking-widest">{t.membership.activeMembers}</div>
+                             <div className="text-xs font-black text-black/40 uppercase tracking-widest">{mergedT.membership.activeMembers}</div>
                           </div>
                        </div>
                         <div className="h-px bg-gray-100" />
@@ -668,7 +559,7 @@ export default function LandingPage() {
                                  <div className="h-px flex-1 bg-gray-50" />
                               </div>
                               <div className="grid gap-2">
-                                {(t.membership.tiers?.individual || []).map((tier: any, idx: number) => (
+                                {(mergedT.membership.tiers?.individual || []).map((tier: any, idx: number) => (
                                   <div key={idx} className="flex justify-between items-center group cursor-default p-2 rounded-xl hover:bg-red-50/50 transition-all border border-transparent hover:border-red-100/50">
                                     <span className="font-bold text-black tracking-tight group-hover:translate-x-1 transition-transform">{tier.name}</span>
                                     <span className="font-black text-[#ED1C24] bg-white border border-red-50 px-3 py-1 rounded-lg text-xs shadow-sm">{tier.price}</span>
@@ -685,7 +576,7 @@ export default function LandingPage() {
                                  <div className="h-px flex-1 bg-gray-50" />
                               </div>
                               <div className="grid gap-2">
-                                {(t.membership.tiers?.corporate || []).map((tier: any, idx: number) => (
+                                {(mergedT.membership.tiers?.corporate || []).map((tier: any, idx: number) => (
                                   <div key={idx} className="flex justify-between items-center group cursor-default p-2 rounded-xl hover:bg-purple-50/50 transition-all border border-transparent hover:border-purple-100/50">
                                     <span className="font-bold text-black tracking-tight group-hover:translate-x-1 transition-transform">{tier.name}</span>
                                     <span className="font-black text-purple-600 bg-white border border-purple-50 px-3 py-1 rounded-lg text-xs shadow-sm">{tier.price}</span>
@@ -702,18 +593,18 @@ export default function LandingPage() {
         </section>
 
         {/* News & Updates Section */}
-        <NewsSection lang={lang} content={t.news} />
+        <NewsSection lang={lang} content={mergedT.news} />
 
         {/* Donation Section */}
         <section className="py-32 px-6">
           <div className="container mx-auto max-w-5xl">
             <div className="text-center space-y-4 mb-20">
-              <h2 className="text-sm font-black text-[#ED1C24] uppercase tracking-[0.3em]">{t.donation.badge}</h2>
-              <h3 className={`${lang === 'en' ? 'text-5xl md:text-7xl' : 'text-4xl md:text-6xl'} font-black text-black tracking-tighter`}>{t.donation.title}</h3>
+              <h2 className="text-sm font-black text-[#ED1C24] uppercase tracking-[0.3em]">{mergedT.donation.badge}</h2>
+              <h3 className={`${lang === 'en' ? 'text-5xl md:text-7xl' : 'text-4xl md:text-6xl'} font-black text-black tracking-tighter`}>{mergedT.donation.title}</h3>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-               {t.donation.tiers.map((tier, i) => (
+               {mergedT.donation.tiers.map((tier, i) => (
                  <motion.div 
                     key={i} 
                     whileHover={{ y: -10 }}
@@ -745,7 +636,7 @@ export default function LandingPage() {
                           color: i === 0 ? "#ED1C24" : i === 1 ? "#0EA5E9" : "#991B1B"
                         }}
                       >
-                        {t.donation.selectGift}
+                        {mergedT.donation.selectGift}
                       </Button>
                     </div>
                  </motion.div>
@@ -754,14 +645,14 @@ export default function LandingPage() {
 
             <div className="mt-12 p-10 bg-black rounded-[40px] text-white flex flex-col md:flex-row items-center justify-between gap-8">
                <div className="space-y-2">
-                 <div className="text-2xl font-black">{t.donation.customTitle}</div>
-                 <p className="text-white/60 font-medium">{t.donation.customDesc}</p>
+                 <div className="text-2xl font-black">{mergedT.donation.customTitle}</div>
+                 <p className="text-white/60 font-medium">{mergedT.donation.customDesc}</p>
                </div>
                <Button 
                   onClick={() => setIsDonationModalOpen(true)}
                   className="bg-[#ED1C24] hover:bg-white hover:text-[#ED1C24] text-white rounded-xl h-14 px-10 font-bold transition-all"
                 >
-                  {t.donation.customCta}
+                  {mergedT.donation.customCta}
                 </Button>
             </div>
           </div>
@@ -783,16 +674,16 @@ export default function LandingPage() {
                 <div className="max-w-3xl space-y-10 relative z-10">
                    <div className="space-y-4">
                       <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none">
-                        {t.volunteerSection.title}
+                        {mergedT.volunteerSection.title}
                       </h2>
                       <div className="h-1.5 w-20 bg-[#ED1C24] rounded-full" />
                    </div>
                    <p className="text-xl text-white/70 leading-relaxed font-medium whitespace-pre-wrap">
-                      {t.volunteerSection.content}
+                      {mergedT.volunteerSection.content}
                    </p>
                    <div className="pt-6">
                       <p className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase">
-                        {t.volunteerSection.cta}
+                        {mergedT.volunteerSection.cta}
                       </p>
                    </div>
                 </div>
@@ -805,13 +696,13 @@ export default function LandingPage() {
           <div className="container mx-auto">
             <div className="max-w-4xl mx-auto space-y-16">
               <div className="space-y-6 text-center">
-                 <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter">{t.programsSection.title}</h2>
+                 <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter">{mergedT.programsSection.title}</h2>
                  <div className="h-1.5 w-24 bg-[#ED1C24] mx-auto rounded-full" />
                  <p className="text-xl text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">
-                   {t.programsSection.content}
+                   {mergedT.programsSection.content}
                  </p>
                  <div className="flex flex-wrap justify-center gap-4 pt-4">
-                    {t.programsSection.sources.map(source => (
+                    {mergedT.programsSection.sources.map(source => (
                       <div key={source} className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-black text-sm uppercase tracking-widest text-[#ED1C24]">
                         {source}
                       </div>
@@ -822,31 +713,31 @@ export default function LandingPage() {
               <div className="grid md:grid-cols-2 gap-12 items-stretch">
                  <div className="bg-white p-10 rounded-[40px] shadow-xl border border-gray-100 flex flex-col h-full transition-all hover:shadow-2xl hover:-translate-y-1">
                     <div className="h-14 w-14 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center font-black text-2xl mb-6">01</div>
-                    <h3 className="text-2xl font-black text-black mb-4">{t.programsSection.membershipTitle}</h3>
+                    <h3 className="text-2xl font-black text-black mb-4">{mergedT.programsSection.membershipTitle}</h3>
                     <p className="text-gray-500 leading-relaxed font-medium whitespace-pre-wrap text-sm flex-grow mb-8">
-                      {t.programsSection.membershipContent}
+                      {mergedT.programsSection.membershipContent}
                     </p>
                     <Link href="/join/member" className="mt-auto">
                       <Button className="w-full h-14 bg-black hover:bg-[#ED1C24] text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2">
-                        {t.membership.cta} <ArrowRight className="h-4 w-4" />
+                        {mergedT.membership.cta} <ArrowRight className="h-4 w-4" />
                       </Button>
                     </Link>
                  </div>
                  <div className="bg-white p-10 rounded-[40px] shadow-xl border border-gray-100 flex flex-col h-full transition-all hover:shadow-2xl hover:-translate-y-1">
                     <div className="h-14 w-14 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center font-black text-2xl mb-6">02</div>
-                    <h3 className="text-2xl font-black text-black mb-4">{t.programsSection.donationTitle}</h3>
+                    <h3 className="text-2xl font-black text-black mb-4">{mergedT.programsSection.donationTitle}</h3>
                     <p className="text-gray-500 leading-relaxed font-medium whitespace-pre-wrap text-sm flex-grow mb-8">
-                      {t.programsSection.donationContent}
+                      {mergedT.programsSection.donationContent}
                     </p>
                     <div className="space-y-6 mt-auto">
                       <Button 
                         onClick={() => setIsDonationModalOpen(true)}
                         className="w-full h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
                       >
-                        {t.hero.ctaDonate} <MotionHeart className="h-4 w-4" animate="heartbeat" variants={heartVariants} />
+                        {mergedT.hero.ctaDonate} <MotionHeart className="h-4 w-4" animate="heartbeat" variants={heartVariants} />
                       </Button>
                       <div className="pt-4 border-t border-gray-50 text-center">
-                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24]">{t.programsSection.donationFooter}</p>
+                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24]">{mergedT.programsSection.donationFooter}</p>
                       </div>
                     </div>
                  </div>
@@ -871,13 +762,13 @@ export default function LandingPage() {
                    <div className="md:w-[50%] space-y-6 text-center md:text-left">
                       <div className="space-y-4">
                          <h2 className="text-3xl md:text-5xl font-black text-white leading-[1.1] tracking-tighter">
-                            {t.ctaBanner.title}
+                            {mergedT.ctaBanner.title}
                          </h2>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                         <Link href="/join">
                            <Button size="lg" className="bg-white hover:bg-black text-[#ED1C24] hover:text-white rounded-2xl h-14 px-8 text-base font-black shadow-2xl transition-all hover:-translate-y-1 active:translate-y-0 flex items-center gap-3">
-                              {t.ctaBanner.volunteer} <ChevronRight className="h-5 w-5" />
+                              {mergedT.ctaBanner.volunteer} <ChevronRight className="h-5 w-5" />
                            </Button>
                         </Link>
                       </div>
@@ -887,12 +778,12 @@ export default function LandingPage() {
                       <div className="text-center space-y-4">
                         <Link href="/join/member">
                           <Button size="lg" className="bg-black hover:bg-[#ED1C24] text-white rounded-2xl h-14 px-8 text-base font-black shadow-2xl transition-all hover:-translate-y-1 active:translate-y-0 whitespace-nowrap group relative z-20">
-                             {t.ctaBanner.membership} <Plus className="ml-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-500" strokeWidth={4} />
+                             {mergedT.ctaBanner.membership} <Plus className="ml-2 h-5 w-5 group-hover:rotate-90 transition-transform duration-500" strokeWidth={4} />
                           </Button>
                         </Link>
                         <div className="space-y-0.5 mt-8">
                           <p className="text-black font-black text-xs uppercase tracking-[0.2em]">
-                            {t.ctaBanner.supporter}
+                            {mergedT.ctaBanner.supporter}
                           </p>
                         </div>
                       </div>
@@ -908,7 +799,7 @@ export default function LandingPage() {
              <div className="grid lg:grid-cols-2 gap-20 items-start">
                 <div className="space-y-12">
                    <div className="space-y-6">
-                      <h2 className="text-5xl md:text-6xl font-black text-black tracking-tighter">{t.contactSection.title}</h2>
+                      <h2 className="text-5xl md:text-6xl font-black text-black tracking-tighter">{mergedT.contactSection.title}</h2>
                       <p className="text-gray-500 text-lg font-medium max-w-md">
                         Have questions or want to collaborate? Reach out to our team using the form or contact details below.
                       </p>
@@ -950,7 +841,7 @@ export default function LandingPage() {
                             </div>
                             <div className="space-y-1.5">
                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Location Address</p>
-                               <p className="text-lg font-black text-black leading-tight underline decoration-[#ED1C24]/20 underline-offset-4">{t.contactSection.address}</p>
+                               <p className="text-lg font-black text-black leading-tight underline decoration-[#ED1C24]/20 underline-offset-4">{mergedT.contactSection.address}</p>
                             </div>
                          </div>
 
@@ -960,7 +851,7 @@ export default function LandingPage() {
                             </div>
                             <div className="space-y-1.5">
                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</p>
-                               <p className="text-lg font-black text-black break-all leading-tight">{t.contactSection.email}</p>
+                               <p className="text-lg font-black text-black break-all leading-tight">{mergedT.contactSection.email}</p>
                             </div>
                          </div>
 
@@ -971,7 +862,7 @@ export default function LandingPage() {
                                </div>
                                <div className="space-y-1.5">
                                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tel</p>
-                                  <p className="text-lg font-black text-black leading-tight whitespace-pre-line">{t.contactSection.tel}</p>
+                                  <p className="text-lg font-black text-black leading-tight whitespace-pre-line">{mergedT.contactSection.tel}</p>
                                </div>
                             </div>
                             <div className="flex gap-6 group">
@@ -980,7 +871,7 @@ export default function LandingPage() {
                                </div>
                                <div className="space-y-1.5">
                                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mobile</p>
-                                  <p className="text-lg font-black text-black leading-tight whitespace-pre-line">{t.contactSection.mobile}</p>
+                                  <p className="text-lg font-black text-black leading-tight whitespace-pre-line">{mergedT.contactSection.mobile}</p>
                                </div>
                             </div>
                          </div>
@@ -991,7 +882,7 @@ export default function LandingPage() {
                             </div>
                             <div className="space-y-1.5">
                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fax</p>
-                               <p className="text-lg font-black text-black leading-tight">{t.contactSection.fax}</p>
+                               <p className="text-lg font-black text-black leading-tight">{mergedT.contactSection.fax}</p>
                             </div>
                          </div>
                       </div>
@@ -1021,7 +912,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <p className="text-gray-400 text-lg leading-relaxed font-medium">
-                {t.footer.desc}
+                {mergedT.footer.desc}
               </p>
               <div className="flex gap-4">
                 {[Facebook, Twitter, Instagram, Linkedin].map((Icon, idx) => (
@@ -1033,7 +924,7 @@ export default function LandingPage() {
             </div>
 
             <div>
-              <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-10">{t.footer.mission}</h5>
+              <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-10">{mergedT.footer.mission}</h5>
               <ul className="space-y-4 font-bold">
                 {["Emergency Response", "Health & Wellness", "Clean Water (WASH)", "Community Growth", "Blood Donation"].map(u => (
                   <li key={u}><Link href="#" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group">
@@ -1045,7 +936,7 @@ export default function LandingPage() {
             </div>
 
             <div>
-              <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-10">{t.footer.involved}</h5>
+              <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-10">{mergedT.footer.involved}</h5>
               <ul className="space-y-4 font-bold">
                 {["Join as Volunteer", "Life Membership", "Corporate Giving", "Media Center", "Career Portal"].map(u => (
                   <li key={u}><Link href="#" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group">
@@ -1058,7 +949,7 @@ export default function LandingPage() {
 
             <div className="space-y-10">
               <div>
-                <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-8">{t.footer.location}</h5>
+                <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-8">{mergedT.footer.location}</h5>
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
                     <div className="h-12 w-12 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center shrink-0">
@@ -1108,7 +999,7 @@ export default function LandingPage() {
           <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="text-gray-500 text-sm font-bold uppercase tracking-widest text-center md:text-left">
               © {new Date().getFullYear()} Ethiopian Red Cross Society. <br className="md:hidden" />
-              <span className="hidden md:inline"> · </span> {t.footer.rights}
+              <span className="hidden md:inline"> · </span> {mergedT.footer.rights}
             </div>
             <div className="flex gap-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                <Link href="#" className="hover:text-[#ED1C24] transition-colors">Privacy</Link>
