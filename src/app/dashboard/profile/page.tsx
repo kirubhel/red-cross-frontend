@@ -38,6 +38,8 @@ export default function ProfilePage() {
     email: "",
     phone: "",
     region: 0,
+    zone: "",
+    woreda: "",
     bio: ""
   });
 
@@ -88,6 +90,8 @@ export default function ProfilePage() {
           email: data.email || "",
           phone: data.phone_number || "",
           region: data.region_id || data.region || 0,
+          zone: data.zone_id || data.zone || "",
+          woreda: data.woreda_id || data.woreda || "",
           bio: bio
         });
       } catch (err) {
@@ -389,23 +393,51 @@ export default function ProfilePage() {
                  </div>
               </div>
 
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Region / Branch</label>
-                    <div className="relative">
-                       <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
-                       <select 
-                          name="region"
-                          value={formData.region}
-                          onChange={handleInputChange}
-                          className="w-full bg-gray-50 border-none rounded-2xl h-14 pl-12 pr-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all appearance-none cursor-pointer"
-                       >
-                          <option value={0}>Select Region</option>
-                          {REGIONS.map(r => (
-                            <option key={r.id} value={r.id}>{r.name}</option>
-                          ))}
-                       </select>
-                    </div>
-                 </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Region / Branch</label>
+                        <div className="relative">
+                           <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
+                           <select 
+                              name="region"
+                              value={formData.region}
+                              disabled
+                              className="w-full bg-gray-50 border-none rounded-2xl h-14 pl-12 pr-6 font-bold text-gray-400 focus:ring-0 appearance-none cursor-not-allowed"
+                           >
+                              <option value={0}>Select Region</option>
+                              {REGIONS.map(r => (
+                                <option key={r.id} value={r.id}>{r.name}</option>
+                              ))}
+                           </select>
+                        </div>
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Zone</label>
+                        <div className="relative">
+                           <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
+                           <input 
+                              type="text" 
+                              value={formData.zone}
+                              readOnly
+                              className="w-full bg-gray-50 border-none rounded-2xl h-14 pl-12 pr-6 font-bold text-gray-400 cursor-not-allowed" 
+                              placeholder="N/A"
+                           />
+                        </div>
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Woreda</label>
+                        <div className="relative">
+                           <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
+                           <input 
+                              type="text" 
+                              value={formData.woreda}
+                              readOnly
+                              className="w-full bg-gray-50 border-none rounded-2xl h-14 pl-12 pr-6 font-bold text-gray-400 cursor-not-allowed" 
+                              placeholder="N/A"
+                           />
+                        </div>
+                     </div>
+                  </div>
 
               <div className="space-y-2">
                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Bio / About You</label>

@@ -110,6 +110,8 @@ export default function OrganizationPortal() {
     { name: "", count: 1 }
   ]);
   const [volunteerType, setVolunteerType] = useState("General Volunteer");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [tempPayload, setTempPayload] = useState<any>(null);
@@ -202,7 +204,9 @@ export default function OrganizationPortal() {
       min_experience: Number(minExperience),
       qualifications,
       activities,
-      volunteer_type: volunteerType
+      volunteer_type: volunteerType,
+      title,
+      description
     };
 
     setTempPayload(payload);
@@ -227,6 +231,8 @@ export default function OrganizationPortal() {
       setVolunteerType("General Volunteer");
       setActivities([{ name: "", count: 1 }]);
       setSelectedAreas([]);
+      setTitle("");
+      setDescription("");
       
       fetchPortalData();
     } catch (err) {
@@ -709,6 +715,29 @@ export default function OrganizationPortal() {
               </div>
 
               <form onSubmit={handleCreateRequest} className="space-y-12">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Mission Title *</Label>
+                    <Input 
+                      placeholder="e.g. Emergency First Aid Support at Meskel Square"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="h-16 bg-slate-50 border-slate-200 rounded-2xl font-black text-lg text-slate-900"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Mission Description *</Label>
+                    <textarea 
+                      placeholder="Describe the mission details, expectations, and impact..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="w-full p-6 bg-slate-50 border border-slate-200 rounded-2xl font-medium text-sm min-h-[120px] outline-none focus:ring-2 focus:ring-[#ED1C24]/10"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="grid md:grid-cols-2 gap-12">
                   <div className="space-y-8">
                     <div className="space-y-4">

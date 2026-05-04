@@ -77,6 +77,19 @@ export default function VolunteerPage() {
     }
   };
 
+  const handleApply = async (requestId: string) => {
+    try {
+      await api.post("/volunteer/apply", { request_id: requestId });
+      toast.success("Application submitted!", {
+        description: "The organization will review your profile."
+      });
+    } catch (err) {
+      toast.error("Failed to apply", {
+        description: "You may have already applied to this opportunity."
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center bg-white">
@@ -130,20 +143,34 @@ export default function VolunteerPage() {
                   className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 transition-all group cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-4">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] bg-red-50 px-2 py-1 rounded-md">
-                        {req.type || "EMERGENCY"}
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1">
+                        {req.org_name}
                       </span>
-                      <h3 className="text-lg font-black tracking-tight group-hover:text-[#ED1C24] transition-colors">{req.title}</h3>
+                      <h3 className="text-lg font-black tracking-tight group-hover:text-[#ED1C24] transition-colors leading-tight">
+                        {req.title}
+                      </h3>
                     </div>
-                    <Button variant="ghost" size="sm" className="rounded-full h-10 w-10 p-0 text-gray-300 group-hover:text-[#ED1C24] group-hover:bg-red-50">
-                      <ChevronRight className="h-5 w-5" />
+                    <Button 
+                      onClick={(e) => { e.stopPropagation(); handleApply(req.id); }}
+                      className="bg-black hover:bg-[#ED1C24] text-white px-6 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg"
+                    >
+                      Apply Now
                     </Button>
                   </div>
                   
-                  <p className="text-sm text-gray-500 line-clamp-2 mb-6 font-medium">
+                  <p className="text-sm text-gray-500 line-clamp-2 mb-4 font-medium">
                     {req.description}
                   </p>
+
+                  {/* Skills/Activities tags */}
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {req.activities_skills?.split(',').map((skill: string, sIdx: number) => (
+                      <span key={sIdx} className="px-3 py-1 bg-gray-50 border border-gray-100 rounded-lg text-[9px] font-black uppercase tracking-widest text-gray-400">
+                        {skill.trim()}
+                      </span>
+                    ))}
+                  </div>
 
                   <div className="flex flex-wrap items-center gap-4 text-gray-400 pt-4 border-t border-gray-50">
                     <div className="flex items-center gap-1.5 text-[11px] font-bold">

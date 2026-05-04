@@ -666,7 +666,7 @@ export default function DashboardPage() {
               <h3 className="text-xl font-black tracking-tighter text-blue-900">
                 Open Opportunities
               </h3>
-              <div className="space-y-4 relative z-10">
+              <div className="space-y-4 relative z-10 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                 {openRequests.map((req, idx) => (
                   <div key={idx} className="bg-white rounded-2xl p-4 shadow-sm border border-blue-50 hover:border-blue-200 transition-colors">
                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">{req.org_name}</p>
