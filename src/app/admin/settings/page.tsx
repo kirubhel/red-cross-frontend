@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, Save, Check, RefreshCw, Hash, ShieldAlert, MapPin, Map, Globe, Plus, Trash2, Edit3, MessageCircle } from "lucide-react";
+import { Settings, Save, Check, RefreshCw, Hash, ShieldAlert, MapPin, Map, Globe, Plus, Trash2, Edit3, MessageCircle, ShieldCheck, Key, Smartphone, Copy, CheckCircle2 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import api from "@/lib/api";
 
 type MemberIDConfig = {
@@ -44,7 +45,7 @@ export default function SystemSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<"id" | "regions" | "zones" | "woredas" | "assets" | "system">("id");
+  const [activeTab, setActiveTab] = useState<"id" | "regions" | "zones" | "woredas" | "assets" | "system" | "security">("id");
   
   const [regions, setRegions] = useState<Region[]>([]);
   const [locationHierarchy, setLocationHierarchy] = useState<LocationHierarchy>({ zones: [], woredas: [] });
@@ -73,6 +74,12 @@ export default function SystemSettingsPage() {
     serverPaymentPort: "8080",
     serverIp: "138.201.190.62"
   });
+
+  // 2FA Setup states
+  const [mfaSetup, setMfaSetup] = useState<{ secret: string; qrCodeUrl: string } | null>(null);
+  const [setupCode, setSetupCode] = useState("");
+  const [setupSuccess, setSetupSuccess] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentAssetKey, setCurrentAssetKey] = useState<string | null>(null);
@@ -144,6 +151,58 @@ export default function SystemSettingsPage() {
       console.error("Failed to fetch settings:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startMfaSetup = async () => {
+    try {
+      setSetupLoading(true);
+      const userStr = localStorage.getItem("access_token");
+      if (!userStr) return;
+      
+      // We need the user ID. For now, let's assume we can get it from a /me endpoint or similar.
+      // Or just use a temporary decoded token.
+      const payload = JSON.parse(atob(userStr.split('.')[1]));
+      const userId = payload.user_id;
+
+      const res = await api.post("/auth/setup-mfa", { user_id: userId });
+      setMfaSetup({
+        secret: res.data.secret,
+        qrCodeUrl: res.data.qr_code_url
+      });
+    } catch (err) {
+      console.error("MFA Setup failed", err);
+    } finally {
+      setSetupLoading(false);
+    }
+  };
+
+  const verifyMfaSetup = async () => {
+    try {
+      setSetupLoading(true);
+      const userStr = localStorage.getItem("access_token");
+      if (!userStr || !mfaSetup) return;
+      
+      const payload = JSON.parse(atob(userStr.split('.')[1]));
+      const userId = payload.user_id;
+
+      const res = await api.post("/auth/verify-mfa", { 
+        user_id: userId, 
+        code: setupCode,
+        secret: mfaSetup.secret
+      });
+
+      if (res.data.success) {
+        setSetupSuccess(true);
+        setMfaSetup(null);
+        setSetupCode("");
+      } else {
+        alert("Invalid code. Please try again.");
+      }
+    } catch (err) {
+      console.error("MFA Verification failed", err);
+    } finally {
+      setSetupLoading(false);
     }
   };
 
@@ -236,8 +295,8 @@ export default function SystemSettingsPage() {
             <p className="text-gray-500 font-medium text-sm">Manage core operational behaviors and identifier formatting rules.</p>
         </div>
         
-        <div className="flex bg-gray-100 p-1 rounded-xl">
-            {(["id", "regions", "zones", "woredas", "assets", "system"] as const).map((tab) => (
+        <div className="flex bg-gray-100 p-1 rounded-xl flex-wrap">
+            {(["id", "regions", "zones", "woredas", "assets", "system", "security"] as const).map((tab) => (
                 <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -740,6 +799,149 @@ export default function SystemSettingsPage() {
                         ))}
                     </div>
                 </div>
+            </motion.div>
+          )}
+
+          {activeTab === "security" && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+                <div className="flex items-center gap-4 pb-4 border-b border-gray-50">
+                    <div className="h-12 w-12 bg-red-50 rounded-xl flex items-center justify-center text-[#ED1C24]">
+                        <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-black text-black tracking-tighter">Security & Authentication</h3>
+                        <p className="text-gray-400 font-medium text-xs">Enhance account security with Two-Factor Authentication (2FA).</p>
+                    </div>
+                </div>
+
+                {!mfaSetup && !setupSuccess ? (
+                    <div className="grid md:grid-cols-2 gap-8 items-center">
+                        <div className="space-y-6">
+                            <div className="space-y-3">
+                                <h4 className="text-lg font-black text-black tracking-tight flex items-center gap-2">
+                                    <Key className="h-5 w-5 text-[#ED1C24]" /> Two-Factor Authentication
+                                </h4>
+                                <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                                    Protect your administrative account by requiring a 6-digit verification code from your mobile device in addition to your password.
+                                </p>
+                            </div>
+                            
+                            <div className="bg-red-50 p-4 rounded-2xl border border-red-100/50 space-y-3">
+                                <div className="flex items-center gap-2 text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">
+                                    <ShieldAlert className="h-3.5 w-3.5" /> High Security Recommended
+                                </div>
+                                <p className="text-[11px] text-[#ED1C24]/70 font-bold">
+                                    Admins are required to maintain the highest security standards. Enabling 2FA is strongly advised for all ERCS personnel.
+                                </p>
+                            </div>
+
+                            <Button 
+                                onClick={startMfaSetup} 
+                                disabled={setupLoading}
+                                className="bg-black hover:bg-[#ED1C24] text-white rounded-xl h-12 px-8 font-black uppercase tracking-widest text-[10px] transition-all shadow-lg shadow-black/5"
+                            >
+                                {setupLoading ? "Initializing..." : "Enable 2FA Now"}
+                            </Button>
+                        </div>
+                        <div className="hidden md:flex justify-center">
+                            <div className="relative w-64 h-64">
+                                <div className="absolute inset-0 bg-red-50 rounded-full blur-3xl opacity-50" />
+                                <div className="relative h-full w-full bg-white rounded-[40px] border border-gray-100 shadow-xl flex items-center justify-center">
+                                    <Smartphone className="h-32 w-32 text-gray-200" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ) : setupSuccess ? (
+                    <motion.div 
+                        initial={{ scale: 0.9, opacity: 0 }} 
+                        animate={{ scale: 1, opacity: 1 }} 
+                        className="flex flex-col items-center justify-center py-12 text-center space-y-6"
+                    >
+                        <div className="h-24 w-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center shadow-lg shadow-green-500/10">
+                            <CheckCircle2 className="h-12 w-12" />
+                        </div>
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-black text-black tracking-tight">2FA Successfully Enabled</h3>
+                            <p className="text-gray-500 font-medium text-sm max-w-sm">
+                                Your account is now protected. You will be asked for a verification code during your next sign-in.
+                            </p>
+                        </div>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setSetupSuccess(false)}
+                            className="h-10 px-6 rounded-xl font-black uppercase tracking-widest text-[10px] border-gray-200"
+                        >
+                            Back to Security
+                        </Button>
+                    </motion.div>
+                ) : (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }} 
+                        animate={{ opacity: 1, scale: 1 }} 
+                        className="grid md:grid-cols-2 gap-12"
+                    >
+                        <div className="space-y-8">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 bg-black text-white rounded-lg flex items-center justify-center text-[10px] font-black italic">1</div>
+                                    <h4 className="font-black text-black text-sm uppercase tracking-tight">Scan QR Code</h4>
+                                </div>
+                                <p className="text-xs text-gray-500 font-medium leading-relaxed pl-11">
+                                    Open your authenticator app (Google Authenticator, Authy, etc.) and scan the QR code to the right.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 bg-black text-white rounded-lg flex items-center justify-center text-[10px] font-black italic">2</div>
+                                    <h4 className="font-black text-black text-sm uppercase tracking-tight">Enter Verification Code</h4>
+                                </div>
+                                <div className="pl-11 space-y-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">6-Digit TOTP Code</Label>
+                                        <Input 
+                                            value={setupCode}
+                                            onChange={(e) => setSetupCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                            placeholder="000000"
+                                            className="h-12 bg-gray-50 border-gray-200 rounded-xl text-center text-xl font-black tracking-[0.4em] focus:ring-[#ED1C24]/10"
+                                        />
+                                    </div>
+                                    <Button 
+                                        onClick={verifyMfaSetup}
+                                        disabled={setupLoading || setupCode.length !== 6}
+                                        className="w-full h-12 bg-[#ED1C24] hover:bg-black text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-red-500/10"
+                                    >
+                                        {setupLoading ? "Verifying..." : "Complete Setup"}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-6">
+                            <div className="p-6 bg-white rounded-[32px] shadow-2xl shadow-black/5 border border-gray-100 flex items-center justify-center">
+                                <QRCodeSVG value={mfaSetup?.qrCodeUrl || ""} size={200} />
+                            </div>
+                            <div className="w-full max-w-xs space-y-2 text-center">
+                                <Label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Manual Setup Key</Label>
+                                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between gap-2 overflow-hidden">
+                                    <code className="text-[10px] font-black text-black truncate">{mfaSetup?.secret}</code>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-7 w-7 shrink-0 text-gray-400 hover:text-black"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(mfaSetup?.secret || "");
+                                            alert("Secret copied to clipboard!");
+                                        }}
+                                    >
+                                        <Copy className="h-3.5 w-3.5" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
             </motion.div>
           )}
 

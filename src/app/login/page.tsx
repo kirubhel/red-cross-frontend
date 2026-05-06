@@ -29,6 +29,40 @@ export default function LoginPage() {
   const [noPassword, setNoPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
+  const [userIdForMfa, setUserIdForMfa] = useState("");
+
+  const handleMfaLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await api.post("/auth/login-mfa", { user_id: userIdForMfa, code: mfaCode });
+      
+      const { access_token, role, ercs_id } = res.data;
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("access_token", access_token);
+      localStorage.setItem("user_role", role); 
+      if (ercs_id) localStorage.setItem("ercs_id", ercs_id);
+      
+      const isAdmin = role === "SUPER_ADMIN" || role === "REGIONAL_ADMIN" || role === 1 || role === 2;
+      const isOrg = role === "ORGANIZATION" || role === 8;
+      
+      if (isAdmin) {
+        router.push("/admin");
+      } else if (isOrg) {
+        router.push("/organization/portal");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      setError("Invalid 2FA code. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +72,13 @@ export default function LoginPage() {
     try {
       const res = await api.post("/auth/login", { identifier: email, password });
       
+      if (res.data.mfa_required) {
+        setMfaRequired(true);
+        setUserIdForMfa(res.data.user_id);
+        setLoading(false);
+        return;
+      }
+
       const { access_token, role, ercs_id } = res.data;
       localStorage.setItem("token", access_token);
       localStorage.setItem("access_token", access_token);
@@ -162,98 +203,153 @@ export default function LoginPage() {
               <p className="text-black/60 font-black text-[10px] uppercase tracking-widest">Sign in to your account</p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-8">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">Identifier</Label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
-                    <Input
-                      id="email"
-                      type="text"
-                      placeholder="Email, Phone, or Member ID"
-                      className="h-14 pl-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
+            {!mfaRequired ? (
+              <form onSubmit={handleLogin} className="space-y-8">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">Identifier</Label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
+                      <Input
+                        id="email"
+                        type="text"
+                        placeholder="Email, Phone, or Member ID"
+                        className="h-14 pl-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-1">
+                    <input
+                      type="checkbox"
+                      id="noPassword"
+                      checked={noPassword}
+                      onChange={(e) => {
+                        setNoPassword(e.target.checked);
+                        if (e.target.checked) setPassword("");
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-[#ED1C24] focus:ring-[#ED1C24]"
                     />
+                    <Label htmlFor="noPassword" className="text-xs font-bold text-black/60 cursor-pointer">
+                      Login without password (requires Member ID)
+                    </Label>
+                  </div>
+
+                  <div className={`space-y-2 transition-opacity duration-300 ${noPassword ? 'opacity-30 pointer-events-none' : ''}`}>
+                    <div className="flex justify-between items-center ml-1">
+                      <Label htmlFor="password" className="text-[9px] font-black uppercase tracking-widest text-black/60">Password</Label>
+                      <Link href="#" className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">Forgot?</Link>
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="h-14 pl-12 pr-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required={!noPassword}
+                        disabled={noPassword}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-black/60 hover:text-black transition-colors"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 ml-1">
-                  <input
-                    type="checkbox"
-                    id="noPassword"
-                    checked={noPassword}
-                    onChange={(e) => {
-                      setNoPassword(e.target.checked);
-                      if (e.target.checked) setPassword("");
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 text-[#ED1C24] focus:ring-[#ED1C24]"
-                  />
-                  <Label htmlFor="noPassword" className="text-xs font-bold text-black/60 cursor-pointer">
-                    Login without password (requires Member ID)
-                  </Label>
-                </div>
-
-                <div className={`space-y-2 transition-opacity duration-300 ${noPassword ? 'opacity-30 pointer-events-none' : ''}`}>
-                  <div className="flex justify-between items-center ml-1">
-                    <Label htmlFor="password" className="text-[9px] font-black uppercase tracking-widest text-black/60">Password</Label>
-                    <Link href="#" className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">Forgot?</Link>
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      className="h-14 pl-12 pr-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required={!noPassword}
-                      disabled={noPassword}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-black/60 hover:text-black transition-colors"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-red-50 text-[#ED1C24] p-4 rounded-xl text-sm font-bold text-center border border-red-100"
-                >
-                  {error}
-                </motion.div>
-              )}
-
-              <Button 
-                type="submit" 
-                className="w-full h-14 rounded-xl text-lg font-black shadow-xl shadow-red-500/15 active:scale-95 group overflow-hidden relative"
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="flex items-center gap-2">
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-                      <Plus className="h-4 w-4" />
-                    </motion.div>
-                    Authenticating...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    Sign In <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-red-50 text-[#ED1C24] p-4 rounded-xl text-sm font-bold text-center border border-red-100"
+                  >
+                    {error}
+                  </motion.div>
                 )}
-              </Button>
-            </form>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-14 rounded-xl text-lg font-black shadow-xl shadow-red-500/15 active:scale-95 group overflow-hidden relative"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+                        <Plus className="h-4 w-4" />
+                      </motion.div>
+                      Authenticating...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      Sign In <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleMfaLogin} className="space-y-8">
+                <div className="space-y-4 text-center">
+                  <div className="h-16 w-16 bg-red-50 text-[#ED1C24] rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/10">
+                    <ShieldCheck className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-black text-black tracking-tight uppercase">Verification Code</h3>
+                  <p className="text-sm text-black/60 font-bold">Please enter the 6-digit code from your authenticator app.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mfaCode" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">6-Digit Code</Label>
+                  <Input
+                    id="mfaCode"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="000 000"
+                    className="h-14 text-center text-2xl tracking-[0.5em] rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-black text-black"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-red-50 text-[#ED1C24] p-4 rounded-xl text-sm font-bold text-center border border-red-100"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+
+                <div className="flex flex-col gap-3">
+                  <Button 
+                    type="submit" 
+                    className="w-full h-14 rounded-xl text-lg font-black shadow-xl shadow-red-500/15 active:scale-95 transition-all"
+                    disabled={loading || mfaCode.length !== 6}
+                  >
+                    {loading ? "Verifying..." : "Verify & Sign In"}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost"
+                    onClick={() => setMfaRequired(false)}
+                    className="w-full h-12 rounded-xl text-xs font-black uppercase tracking-widest text-black/40 hover:text-black transition-colors"
+                  >
+                    Back to login
+                  </Button>
+                </div>
+              </form>
+            )}
 
             <div className="mt-8 pt-6 border-t border-gray-100 text-center">
               <p className="text-xs font-bold text-black/40">
