@@ -277,17 +277,6 @@ export default function LandingPage() {
                 <span className="relative inline-block">
                   <span className="text-[#ED1C24]">{mergedT.hero.title2}</span> <br /> 
                   {mergedT.hero.title3}
-                  <svg className="absolute top-[95%] left-0 w-full h-10 -translate-y-1/2 pointer-events-none overflow-visible" viewBox="0 0 300 20" preserveAspectRatio="none">
-                    <motion.path 
-                      d="M1 15C50 12 150 5 299 10" 
-                      stroke="#ED1C24" 
-                      strokeWidth="6" 
-                      strokeLinecap="round" 
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1, delay: 0.5 }}
-                    />
-                  </svg>
                 </span>
               </h1>
               <p className={`${lang === 'en' ? 'text-lg md:text-xl' : 'text-base md:text-lg'} text-black/70 max-w-xl leading-relaxed font-medium`}>
