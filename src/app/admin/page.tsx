@@ -7,7 +7,8 @@ import {
 } from 'recharts';
 import { 
   BarChart3, Settings2, Download, RefreshCcw, FileText, ChevronDown,
-  Maximize, Minimize, Layout, Map, Info, TrendingUp, Users, Target
+  Maximize, Minimize, Layout, Map, Info, TrendingUp, Users, Target,
+  Play, Pause
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
@@ -16,6 +17,18 @@ import { Button } from "@/components/ui/button";
 
 const ERCS_RED = "#ED1C24";
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', ERCS_RED, '#8b5cf6'];
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 p-4 font-bold text-xs">
+        <p className="text-gray-500 mb-1">{label}</p>
+        <p className="text-black scale-110 origin-left">{`${payload[0].value}`}</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -53,6 +66,7 @@ export default function DashboardPage() {
   const [woredas, setWoredas] = useState<any[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showRegionalInsights, setShowRegionalInsights] = useState(false);
+  const [isAutoPlay, setIsAutoPlay] = useState(false);
 
   const REGIONS_LIST = [
     { value: 1, label: "Addis Ababa" },
@@ -183,6 +197,22 @@ export default function DashboardPage() {
 
   }, [allPeople, allPayments, filterRegionId, filterZoneId, filterWoredaId, filterStatus, filterGender]);
 
+  // Auto-Play Logic
+  useEffect(() => {
+    let interval: any;
+    if (isAutoPlay) {
+      interval = setInterval(() => {
+        setFilterRegionId(prev => {
+          const next = prev + 1;
+          return next > 14 ? 0 : next;
+        });
+        setFilterZoneId(0);
+        setFilterWoredaId(0);
+      }, 10000); // Cycle every 10 seconds
+    }
+    return () => clearInterval(interval);
+  }, [isAutoPlay]);
+
   const toggleFullscreen = () => {
     if (!isFullscreen) {
       document.documentElement.requestFullscreen();
@@ -194,357 +224,242 @@ export default function DashboardPage() {
 
   const selectedRegionName = REGIONS_LIST.find(r => r.value === filterRegionId)?.label || "Global";
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-gray-100 p-4 font-bold text-xs">
-          <p className="text-gray-500 mb-1">{label}</p>
-          <p className="text-black scale-110 origin-left">{`${payload[0].value}`}</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+    <div className="flex flex-row gap-6 overflow-x-auto no-scrollbar h-[calc(100vh-60px)] pb-6 items-start">
       
-      {/* Header & Filters */}
-      <div className={cn(
-          "flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white rounded-3xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 transition-all duration-500",
+      {/* Column 1: Strategic Overview & Spotlight */}
+      <div className="flex flex-col gap-6 min-w-[450px] lg:min-w-[550px] h-full">
+        {/* Header & Filters moved inside the column or floating? Let's keep it in column 1 */}
+        <div className={cn(
+          "flex flex-col gap-6 bg-white rounded-3xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 transition-all duration-500",
           isFullscreen ? "sticky top-0 z-[100] shadow-xl" : ""
-      )}>
-        <div className="flex items-center gap-3 pl-4">
-          <div className="h-10 w-10 rounded-full border-2 border-[#ED1C24] flex items-center justify-center text-[#ED1C24] bg-red-50/50">
-            <Layout className="h-4 w-4" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-black tracking-tight">{selectedRegionName} Dashboard</h1>
-            <div className="flex items-center gap-2">
+        )}>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full border-2 border-[#ED1C24] flex items-center justify-center text-[#ED1C24] bg-red-50/50">
+              <Layout className="h-4 w-4" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-black tracking-tight">{selectedRegionName} Portal</h1>
+              <div className="flex items-center gap-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Live Infrastructure Monitoring</span>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={toggleFullscreen} variant="outline" className="h-10 w-10 rounded-xl p-0 border-gray-200">
-             {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
-          </Button>
           
-          {/* Region Dropdown */}
-          <div className="relative group">
-            <div className="flex flex-col bg-gray-50 rounded-2xl px-4 py-2 border border-gray-100 cursor-pointer hover:border-gray-200 hover:bg-gray-100 transition-colors">
-               <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-1">Region <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-black transition-colors" /></span>
-               <span className="text-sm font-black text-black">{REGIONS_LIST.find(r => r.value === filterRegionId)?.label || "Global (All)"}</span>
-            </div>
-            <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl shadow-black/5 border border-gray-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 max-h-[300px] overflow-y-auto">
-              <div onClick={() => { setFilterRegionId(0); setFilterZoneId(0); setFilterWoredaId(0); }} className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-black hover:bg-gray-50 rounded-xl cursor-pointer transition-colors">Global (All Regions)</div>
-              {REGIONS_LIST.map(r => (
-                <div key={r.value} onClick={() => { setFilterRegionId(r.value); setFilterZoneId(0); setFilterWoredaId(0); }} className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-black hover:bg-gray-50 rounded-xl cursor-pointer transition-colors">
-                  {r.label}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button 
+              onClick={() => setIsAutoPlay(!isAutoPlay)} 
+              variant="outline" 
+              className={cn(
+                "h-9 px-3 rounded-xl font-black text-[9px] uppercase tracking-widest border-gray-100 gap-2",
+                isAutoPlay ? "bg-red-50 text-[#ED1C24] border-[#ED1C24]" : ""
+              )}
+            >
+              {isAutoPlay ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+              {isAutoPlay ? "Stop" : "Auto-Play"}
+            </Button>
+            <Button onClick={toggleFullscreen} variant="outline" className="h-9 w-9 rounded-xl p-0 border-gray-100">
+              {isFullscreen ? <Minimize className="h-3 w-3" /> : <Maximize className="h-3 w-3" />}
+            </Button>
+            
+            {/* Location Filters - Compacted */}
+            <div className="flex gap-2 w-full mt-2">
+                {/* Region Compact */}
+                <div className="relative group flex-1">
+                    <div className="bg-gray-50 rounded-xl px-3 py-1.5 border border-gray-100 cursor-pointer hover:bg-gray-100">
+                        <span className="text-[8px] text-gray-400 font-bold uppercase tracking-widest block">Region</span>
+                        <span className="text-xs font-black text-black truncate">{REGIONS_LIST.find(r => r.value === filterRegionId)?.label || "Global"}</span>
+                    </div>
+                    <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 max-h-[250px] overflow-y-auto custom-scrollbar-small">
+                        <div onClick={() => { setFilterRegionId(0); setFilterZoneId(0); }} className="px-3 py-2 text-[10px] font-bold text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">Global</div>
+                        {REGIONS_LIST.map(r => (
+                            <div key={r.value} onClick={() => { setFilterRegionId(r.value); setFilterZoneId(0); }} className="px-3 py-2 text-[10px] font-bold text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">{r.label}</div>
+                        ))}
+                    </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Zone Dropdown */}
-          <div className="relative group">
-            <div className="flex flex-col bg-gray-50 rounded-2xl px-4 py-2 border border-gray-100 cursor-pointer hover:border-gray-200 hover:bg-gray-100 transition-colors">
-               <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-1">Zone <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-black transition-colors" /></span>
-               <span className="text-sm font-black text-black">{zones.find(z => z.id === filterZoneId)?.name || "All Zones"}</span>
-            </div>
-            <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl shadow-black/5 border border-gray-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 max-h-[300px] overflow-y-auto">
-              <div onClick={() => { setFilterZoneId(0); setFilterWoredaId(0); }} className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-black hover:bg-gray-50 rounded-xl cursor-pointer transition-colors">All Zones</div>
-              {zones.filter(z => filterRegionId === 0 || z.region_id === filterRegionId).map(z => (
-                <div key={z.id} onClick={() => { setFilterZoneId(z.id); setFilterWoredaId(0); }} className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-black hover:bg-gray-50 rounded-xl cursor-pointer transition-colors">
-                  {z.name}
+                {/* Zone Compact */}
+                <div className="relative group flex-1">
+                    <div className="bg-gray-50 rounded-xl px-3 py-1.5 border border-gray-100 cursor-pointer hover:bg-gray-100">
+                        <span className="text-[8px] text-gray-400 font-bold uppercase tracking-widest block">Zone</span>
+                        <span className="text-xs font-black text-black truncate">{zones.find(z => z.id === filterZoneId)?.name || "All"}</span>
+                    </div>
+                    <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 max-h-[250px] overflow-y-auto custom-scrollbar-small">
+                        <div onClick={() => setFilterZoneId(0)} className="px-3 py-2 text-[10px] font-bold text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">All Zones</div>
+                        {zones.filter(z => filterRegionId === 0 || z.region_id === filterRegionId).map(z => (
+                            <div key={z.id} onClick={() => setFilterZoneId(z.id)} className="px-3 py-2 text-[10px] font-bold text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer">{z.name}</div>
+                        ))}
+                    </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Woreda Dropdown */}
-          <div className="relative group">
-            <div className="flex flex-col bg-gray-50 rounded-2xl px-4 py-2 border border-gray-100 cursor-pointer hover:border-gray-200 hover:bg-gray-100 transition-colors">
-               <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-1">Woreda <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-black transition-colors" /></span>
-               <span className="text-sm font-black text-black">{woredas.find(w => w.id === filterWoredaId)?.name || "All Woredas"}</span>
-            </div>
-            <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl shadow-black/5 border border-gray-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 max-h-[300px] overflow-y-auto">
-              <div onClick={() => setFilterWoredaId(0)} className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-black hover:bg-gray-50 rounded-xl cursor-pointer transition-colors">All Woredas</div>
-              {woredas.filter(w => filterZoneId === 0 || w.zone_id === filterZoneId).map(w => (
-                <div key={w.id} onClick={() => setFilterWoredaId(w.id)} className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-black hover:bg-gray-50 rounded-xl cursor-pointer transition-colors">
-                  {w.name}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Status Dropdown */}
-          <div className="relative group">
-            <div className="flex flex-col bg-gray-50 rounded-2xl px-4 py-2 border border-gray-100 cursor-pointer hover:border-gray-200 hover:bg-gray-100 transition-colors">
-               <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-1">Status <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-black transition-colors" /></span>
-               <span className="text-sm font-black text-black">{filterStatus}</span>
-            </div>
-            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl shadow-black/5 border border-gray-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-              {['Payment: All', 'Payment: Paid', 'Payment: Pending'].map(r => (
-                <div key={r} onClick={() => setFilterStatus(r)} className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-black hover:bg-gray-50 rounded-xl cursor-pointer transition-colors">
-                  {r}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Gender Dropdown */}
-          <div className="relative group">
-            <div className="flex flex-col bg-gray-50 rounded-2xl px-4 py-2 border border-gray-100 cursor-pointer hover:border-gray-200 hover:bg-gray-100 transition-colors">
-               <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-1">Gender <ChevronDown className="h-3 w-3 text-gray-400 group-hover:text-black transition-colors" /></span>
-               <span className="text-sm font-black text-black">{filterGender}</span>
-            </div>
-            <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-2xl shadow-xl shadow-black/5 border border-gray-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-              {['Gender: All', 'Gender: Male', 'Gender: Female'].map(r => (
-                <div key={r} onClick={() => setFilterGender(r)} className="px-4 py-2.5 text-xs font-bold text-gray-600 hover:text-black hover:bg-gray-50 rounded-xl cursor-pointer transition-colors">
-                  {r}
-                </div>
-              ))}
             </div>
           </div>
         </div>
+
+        {/* KPI Grid in Column 1 */}
+        <div className="grid grid-cols-2 gap-4">
+          {[
+            { label: "Members", value: loading ? "..." : kpis.totalMembers.toString(), trend: kpis.growthRate, icon: Users, color: "blue" },
+            { label: "Pending", value: loading ? "..." : kpis.pendingApps.toString(), trend: "Review", icon: Info, color: "amber" },
+            { label: "Revenue", value: loading ? "..." : `ETB ${kpis.settled.toLocaleString()}`, trend: kpis.collectionRate, icon: TrendingUp, color: "green" },
+            { label: "Overdue", value: loading ? "..." : `ETB ${kpis.outstanding.toLocaleString()}`, trend: "Alert", icon: Target, color: "red" },
+          ].map((kpi, i) => (
+            <motion.div key={i} whileHover={{ y: -2, scale: 1.02 }} className="bg-white rounded-3xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 relative overflow-hidden group">
+               <div className={cn("absolute -top-4 -right-4 h-16 w-16 rounded-full opacity-[0.03]", kpi.color === "blue" ? "bg-blue-500" : kpi.color === "amber" ? "bg-amber-500" : kpi.color === "green" ? "bg-green-500" : "bg-red-500")} />
+               <div className="text-2xl font-black text-black tracking-tighter mb-0.5 leading-none">{kpi.value}</div>
+               <div className="text-[8px] text-gray-400 font-black uppercase tracking-widest">{kpi.label}</div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Regional Spotlight in Column 1 */}
+        <div className="flex-1">
+          <AnimatePresence mode="wait">
+            {filterRegionId > 0 ? (
+              <motion.div 
+                key={filterRegionId}
+                initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                className="bg-black text-white rounded-[40px] p-8 h-full relative overflow-hidden flex flex-col justify-between"
+              >
+                <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12"><Map className="h-32 w-32" /></div>
+                <div className="relative z-10">
+                   <span className="px-2 py-0.5 bg-[#ED1C24] text-[8px] font-black uppercase tracking-widest rounded-full">Spotlight</span>
+                   <h2 className="text-4xl font-black tracking-tighter mt-2 mb-4 leading-none">{selectedRegionName}</h2>
+                   <div className="flex gap-4">
+                      <div className="flex-1 p-4 bg-white/5 rounded-2xl border border-white/10 text-center">
+                         <div className="text-xl font-black">{((kpis.totalMembers / (allPeople.length || 1)) * 100).toFixed(1)}%</div>
+                         <div className="text-[7px] text-gray-500 font-black uppercase tracking-widest">Natl. Share</div>
+                      </div>
+                      <div className="flex-1 p-4 bg-white/5 rounded-2xl border border-white/10 text-center">
+                         <div className="text-xl font-black">{(kpis.settled / 1000).toFixed(1)}K</div>
+                         <div className="text-[7px] text-gray-500 font-black uppercase tracking-widest">Local Rev</div>
+                      </div>
+                   </div>
+                </div>
+                <div className="mt-8 pt-4 border-t border-white/5 overflow-x-auto no-scrollbar">
+                   <div className="flex gap-3 min-w-max">
+                      {zones.filter(z => z.region_id === filterRegionId).map((z, i) => (
+                        <div key={i} className="px-4 py-3 bg-white/5 rounded-xl border border-white/5">
+                           <div className="text-[7px] text-gray-500 font-black uppercase tracking-widest">Zone</div>
+                           <div className="text-[10px] font-black truncate max-w-[80px]">{z.name}</div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200 h-full flex flex-col items-center justify-center text-center p-8">
+                 <Map className="h-12 w-12 text-gray-200 mb-4" />
+                 <div className="text-xs font-black text-gray-400 uppercase tracking-widest">Select a Region to Unlock Insights</div>
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Total Membership Base", value: loading ? "..." : kpis.totalMembers.toString(), trend: kpis.growthRate, icon: Users, color: "blue" },
-          { label: "Pending Applications", value: loading ? "..." : kpis.pendingApps.toString(), trend: "Manual Review", icon: Info, color: "amber" },
-          { label: "Settled Revenue", value: loading ? "..." : `ETB ${kpis.settled.toLocaleString()}`, trend: kpis.collectionRate, icon: TrendingUp, color: "green" },
-          { label: "Outstanding Receivable", value: loading ? "..." : `ETB ${kpis.outstanding.toLocaleString()}`, trend: "Overdue", icon: Target, color: "red" },
-        ].map((kpi, i) => (
-          <motion.div 
-            key={i} 
-            whileHover={{ y: -5, scale: 1.02 }}
-            className="bg-white rounded-3xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 flex flex-col justify-center relative overflow-hidden group transition-all"
-          >
-            <div className={cn(
-                "absolute -top-4 -right-4 h-24 w-24 rounded-full opacity-[0.03] group-hover:opacity-[0.08] transition-opacity",
-                kpi.color === "blue" ? "bg-blue-500" : 
-                kpi.color === "amber" ? "bg-amber-500" : 
-                kpi.color === "green" ? "bg-green-500" : "bg-red-500"
-            )} />
-            <div className="flex items-center justify-between mb-4">
-               <div className={cn(
-                   "h-10 w-10 rounded-2xl flex items-center justify-center transition-colors",
-                   kpi.color === "blue" ? "bg-blue-50 text-blue-500" : 
-                   kpi.color === "amber" ? "bg-amber-50 text-amber-500" : 
-                   kpi.color === "green" ? "bg-green-50 text-green-500" : "bg-red-50 text-red-500"
-               )}>
-                  <kpi.icon className="h-5 w-5" />
-               </div>
-               <div className={cn(
-                   "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter",
-                   kpi.color === "blue" ? "bg-blue-50 text-blue-600" : 
-                   kpi.color === "amber" ? "bg-amber-50 text-amber-600" : 
-                   kpi.color === "green" ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
-               )}>
-                  {kpi.trend}
-               </div>
-            </div>
-            <div className="text-3xl font-black text-black tracking-tighter mb-0.5">{kpi.value}</div>
-            <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none">{kpi.label}</div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Regional Spotlight - Only show when a region is selected */}
-      <AnimatePresence>
-        {filterRegionId > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-black text-white rounded-[40px] p-8 relative overflow-hidden group"
-          >
-            <div className="absolute top-0 right-0 p-12 opacity-10 rotate-12 group-hover:rotate-0 transition-transform duration-700">
-               <Map className="h-48 w-48" />
-            </div>
-            <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
-               <div>
-                  <div className="flex items-center gap-3 mb-4">
-                     <span className="px-3 py-1 bg-[#ED1C24] text-white text-[10px] font-black uppercase tracking-widest rounded-full">Regional Spotlight</span>
-                     <div className="h-px w-12 bg-white/20" />
-                  </div>
-                  <h2 className="text-5xl font-black tracking-tighter mb-4 leading-none">{selectedRegionName}</h2>
-                  <p className="text-gray-400 text-sm font-medium leading-relaxed max-w-md">
-                     Deep insights for {selectedRegionName} administration. Currently monitoring {kpis.totalMembers} active members and {zones.filter(z => z.region_id === filterRegionId).length} administrative zones within this jurisdiction.
-                  </p>
-               </div>
-               <div className="grid grid-cols-2 gap-4">
-                  <div className="p-6 bg-white/5 rounded-3xl backdrop-blur-sm border border-white/10">
-                     <div className="text-2xl font-black mb-1">{((kpis.totalMembers / (allPeople.length || 1)) * 100).toFixed(1)}%</div>
-                     <div className="text-[9px] text-gray-500 font-black uppercase tracking-widest">Share of National Base</div>
-                  </div>
-                  <div className="p-6 bg-white/5 rounded-3xl backdrop-blur-sm border border-white/10">
-                     <div className="text-2xl font-black mb-1">ETB {(kpis.settled / 1000).toFixed(1)}K</div>
-                     <div className="text-[9px] text-gray-500 font-black uppercase tracking-widest">Localized Revenue</div>
-                  </div>
-               </div>
-            </div>
-
-            {/* Horizontal Zones Scroller */}
-            <div className="mt-12 pt-8 border-t border-white/5 overflow-x-auto no-scrollbar">
-               <div className="flex gap-4 min-w-max pb-4">
-                  {zones.filter(z => z.region_id === filterRegionId).map((z, i) => (
-                    <motion.div 
-                      key={i}
-                      whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
-                      className="px-6 py-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer transition-colors"
-                    >
-                       <div className="text-[9px] text-gray-500 font-black uppercase tracking-widest mb-1">Zone {i + 1}</div>
-                       <div className="text-xs font-black">{z.name}</div>
-                    </motion.div>
-                  ))}
-               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+      {/* Column 2: Demographics & Enrollment */}
+      <div className="flex flex-col gap-6 min-w-[400px] lg:min-w-[450px] h-full">
         {/* Gender Distribution */}
-        <div className="bg-white rounded-3xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 lg:col-span-1 flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-             <div className="flex items-center gap-2">
-               <div className="w-1 h-4 bg-[#ED1C24] rounded-full" />
-               <h3 className="text-xs font-black uppercase tracking-widest text-black">Distribution by Gender</h3>
-             </div>
-             <div className="flex gap-2 text-gray-400">
-               <Download className="h-4 w-4 cursor-pointer hover:text-black transition-colors" />
-               <RefreshCcw className="h-4 w-4 cursor-pointer hover:text-black transition-colors" />
-             </div>
+        <div className="bg-white rounded-[40px] p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 flex-1 flex flex-col">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-1 h-4 bg-[#ED1C24] rounded-full" />
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-black">Gender Dist.</h3>
           </div>
-          <div className="flex-1 min-h-[250px] w-full">
+          <div className="flex-1 min-h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={genderData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} fill="#8884d8" paddingAngle={2} dataKey="value">
+                <Pie data={genderData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} fill="#8884d8" paddingAngle={2} dataKey="value">
                   {genderData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Enrollment Category */}
-        <div className="bg-white rounded-3xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 lg:col-span-2 flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-             <div className="flex items-center gap-2">
-               <div className="w-1 h-4 bg-[#ED1C24] rounded-full" />
-               <h3 className="text-xs font-black uppercase tracking-widest text-black">Enrollment Category</h3>
-             </div>
-             <div className="flex gap-2 text-gray-400">
-               <Download className="h-4 w-4 cursor-pointer hover:text-black transition-colors" />
-               <RefreshCcw className="h-4 w-4 cursor-pointer hover:text-black transition-colors" />
-             </div>
+        <div className="bg-white rounded-[40px] p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 flex-1 flex flex-col">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-1 h-4 bg-[#ED1C24] rounded-full" />
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-black">Enrollment</h3>
           </div>
-          <div className="flex-1 min-h-[250px] w-full">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart layout="vertical" data={enrollmentData} margin={{ left: 100 }}>
+          <div className="flex-1 min-h-[200px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart layout="vertical" data={enrollmentData} margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f3f4f6" />
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 'bold' }} />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#6b7280', fontWeight: 'bold' }} />
+                <XAxis type="number" hide />
+                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#6b7280', fontWeight: 'bold' }} width={80} />
                 <Tooltip cursor={{ fill: '#fef2f2' }} content={<CustomTooltip />} />
-                <Bar dataKey="value" fill="#ED1C24" radius={[0, 4, 4, 0]} barSize={12} />
+                <Bar dataKey="value" fill="#ED1C24" radius={[0, 4, 4, 0]} barSize={10} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
-
       </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Growth & Retention */}
-        <div className="bg-white rounded-3xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 lg:col-span-2 flex flex-col">
+      {/* Column 3: Growth & Financial Health */}
+      <div className="flex flex-col gap-6 min-w-[450px] lg:min-w-[500px] h-full">
+        {/* Growth Analysis */}
+        <div className="bg-white rounded-[40px] p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 flex-1 flex flex-col">
           <div className="flex items-center justify-between mb-6">
-             <div className="flex items-center gap-2">
-               <div className="w-1 h-4 bg-black rounded-full" />
-               <h3 className="text-xs font-black uppercase tracking-widest text-black">Growth & Retention Analysis</h3>
-             </div>
-             <div className="flex items-center gap-4">
-               <div className="px-4 py-1.5 bg-gray-50 rounded-full text-[10px] font-black uppercase tracking-widest">Yearly</div>
-               <div className="flex gap-2 text-gray-400">
-                 <Download className="h-4 w-4 cursor-pointer hover:text-black transition-colors" />
-                 <RefreshCcw className="h-4 w-4 cursor-pointer hover:text-black transition-colors" />
-               </div>
-             </div>
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-4 bg-black rounded-full" />
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-black">Growth Analytics</h3>
+            </div>
           </div>
-          <div className="flex-1 min-h-[250px] w-full">
+          <div className="flex-1 min-h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={growthData} margin={{ right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 'bold' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 'bold' }} dx={-10} />
+                <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 'bold' }} dy={5} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 'bold' }} dx={-5} />
                 <Tooltip content={<CustomTooltip />} />
-                <Line type="monotone" dataKey="members" stroke="#10b981" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="members" stroke="#10b981" strokeWidth={3} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Financial Health */}
-        <div className="bg-white rounded-3xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 lg:col-span-1 flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-             <div className="flex items-center gap-2">
-               <div className="w-1 h-4 bg-black rounded-full" />
-               <h3 className="text-xs font-black uppercase tracking-widest text-black">Financial Health</h3>
-             </div>
-             <div className="flex gap-2 text-gray-400">
-               <Download className="h-4 w-4 cursor-pointer hover:text-black transition-colors" />
-             </div>
+        <div className="bg-white rounded-[40px] p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 flex-1 flex flex-col">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-1 h-4 bg-black rounded-full" />
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-black">Financial Health</h3>
           </div>
-          <div className="flex-1 min-h-[250px] w-full flex items-center justify-center relative">
+          <div className="flex-1 min-h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={financeData} cx="50%" cy="50%" innerRadius={70} outerRadius={90} fill="#8884d8" paddingAngle={2} dataKey="value">
+                <Pie data={financeData} cx="50%" cy="50%" innerRadius={55} outerRadius={75} fill="#8884d8" paddingAngle={2} dataKey="value">
                   {financeData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={['#f59e0b', '#10b981', ERCS_RED][index % 3]} />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '9px', fontWeight: 'bold' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
-
       </div>
 
-      {/* Row 3 - Geographic Reach */}
-      <div className="bg-white rounded-3xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 flex flex-col">
-          <div className="flex items-center justify-between mb-8">
-             <div className="flex items-center gap-2">
-               <div className="w-1 h-4 bg-[#ED1C24] rounded-full" />
-               <h3 className="text-xs font-black uppercase tracking-widest text-black">Geographic Reach</h3>
-             </div>
-             <div className="flex gap-2 text-gray-400">
-               <Download className="h-4 w-4 cursor-pointer hover:text-black transition-colors" />
-               <RefreshCcw className="h-4 w-4 cursor-pointer hover:text-black transition-colors" />
-             </div>
+      {/* Column 4: Geography & Activity */}
+      <div className="flex flex-col gap-6 min-w-[400px] lg:min-w-[450px] h-full">
+        {/* Geographic Reach */}
+        <div className="bg-white rounded-[40px] p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 flex-1 flex flex-col">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-1 h-4 bg-[#ED1C24] rounded-full" />
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-black">Top Jurisdictions</h3>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="flex-1 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={geographicData} margin={{ bottom: 40 }}>
+              <BarChart data={geographicData} margin={{ bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#6b7280', fontWeight: 'bold' }} angle={-45} textAnchor="end" dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 'bold' }} dx={-10} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#6b7280', fontWeight: 'bold' }} angle={-45} textAnchor="end" height={50} />
+                <YAxis hide />
                 <Tooltip cursor={{ fill: '#fef2f2' }} content={<CustomTooltip />} />
-                <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32}>
+                <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={20}>
                   {geographicData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#3b82f6' : '#6366f1'} />
                   ))}
@@ -554,36 +469,33 @@ export default function DashboardPage() {
           </div>
         </div>
 
-      {/* Row 4 - Recent Activity */}
-      <div className="bg-white rounded-3xl p-8 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 flex flex-col">
-          <div className="flex items-center justify-between mb-8">
-             <div className="flex items-center gap-2">
-               <div className="w-1 h-4 bg-black rounded-full" />
-               <h3 className="text-xs font-black uppercase tracking-widest text-black">Recent Activity</h3>
-             </div>
-             <button className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black transition-colors">View All</button>
+        {/* Recent Activity */}
+        <div className="bg-white rounded-[40px] p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-50 h-[320px] flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-4 bg-black rounded-full" />
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-black">Log</h3>
+            </div>
+            <button className="text-[8px] font-black uppercase tracking-widest text-gray-400 hover:text-black">All</button>
           </div>
-          <div className="space-y-4">
-             {allPeople.slice(0, 5).map((p, i) => (
-               <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-100 hover:bg-white hover:shadow-sm transition-all group">
-                  <div className="flex items-center gap-4">
-                     <div className="h-10 w-10 rounded-full bg-white border border-gray-100 flex items-center justify-center font-bold text-gray-400 group-hover:border-red-100 group-hover:text-red-500 transition-colors">
-                        {p.first_name?.[0]}{p.father_name?.[0]}
-                     </div>
-                     <div>
-                        <div className="text-sm font-black text-black">{p.first_name} {p.father_name}</div>
-                        <div className="text-[10px] text-gray-500 font-bold">{p.email || p.phone_number}</div>
-                     </div>
+          <div className="flex-1 space-y-2 overflow-y-auto custom-scrollbar-small pr-2">
+            {allPeople.slice(0, 8).map((p, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50 border border-gray-100 hover:bg-white transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-white border border-gray-100 flex items-center justify-center font-bold text-[10px] text-gray-400 capitalize">
+                    {p.first_name?.[0]}{p.father_name?.[0]}
                   </div>
-                  <div className="text-right">
-                     <div className="text-[10px] font-black text-black uppercase tracking-tighter">New Registration</div>
-                     <div className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{new Date(p.created_at).toLocaleDateString()}</div>
+                  <div>
+                    <div className="text-[11px] font-black text-black leading-none">{p.first_name}</div>
+                    <div className="text-[8px] text-gray-500 font-bold">{new Date(p.created_at).toLocaleDateString()}</div>
                   </div>
-               </div>
-             ))}
-             {allPeople.length === 0 && <div className="text-center py-10 text-gray-400 font-bold text-xs">No recent activity</div>}
+                </div>
+                <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              </div>
+            ))}
           </div>
         </div>
+      </div>
 
     </div>
   );
