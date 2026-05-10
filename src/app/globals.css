@@ -50,3 +50,11 @@ body {
 .custom-scrollbar-small::-webkit-scrollbar-thumb:hover {
   background: #e2e8f0;
 }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

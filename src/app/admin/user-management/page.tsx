@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck, Plus, Trash2, Save, XCircle,
-  CheckCircle2, UserX, User, Search, RefreshCw, X,
-  Eye, EyeOff
+  CheckCircle2, UserX, User, Users, Search, RefreshCw, X,
+  Eye, EyeOff, LayoutDashboard, HandHeart, Building2,
+  ClipboardList, BarChart3, CreditCard, Bell, Newspaper,
+  Settings, MapPin, Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +24,9 @@ type SystemUser = {
   phone_number: string;
   role: string;
   region_id: number;
+  zone_id: number;
+  woreda_id: number;
+  branch_id: number;
   status: string;
   created_at: string;
 };
@@ -32,6 +37,9 @@ type NewUserForm = {
   password: string;
   role: number;
   region: number;
+  zone: number;
+  woreda: number;
+  branch: number;
 };
 
 const ROLES = [
@@ -90,7 +98,28 @@ const DEFAULT_FORM: NewUserForm = {
   password: "",
   role: 5,
   region: 14,
+  zone: 0,
+  woreda: 0,
+  branch: 0,
 };
+
+const MODULE_PERMISSIONS = [
+  { id: "OVERVIEW", label: "Overview", icon: LayoutDashboard },
+  { id: "MEMBERS", label: "Members", icon: Users },
+  { id: "VOLUNTEERS", label: "Volunteers", icon: HandHeart },
+  { id: "ORGANIZATIONS", label: "Organizations", icon: Building2 },
+  { id: "VOLUNTEER_REQUESTS", label: "Volunteer Requests", icon: ClipboardList },
+  { id: "CERTIFICATIONS", label: "Certifications", icon: ShieldCheck },
+  { id: "REPORTS", label: "Reports & Analytics", icon: BarChart3 },
+  { id: "PAYMENTS", label: "Payments", icon: CreditCard },
+  { id: "NOTIFICATIONS", label: "Notifications", icon: Bell },
+  { id: "NEWS", label: "News & Media", icon: Newspaper },
+  { id: "USER_MANAGEMENT", label: "User Management", icon: ShieldCheck },
+  { id: "FORMS", label: "Form Configuration", icon: ClipboardList },
+  { id: "MEMBERSHIP_PLANS", label: "Membership Plans", icon: CreditCard },
+  { id: "CMS", label: "Landing Page CMS", icon: LayoutDashboard },
+  { id: "SETTINGS", label: "Settings", icon: Settings },
+];
 
 const ROLE_COLORS: Record<string | number, string> = {
   1: "bg-red-100 text-red-700",
@@ -128,11 +157,60 @@ export default function UserManagementPage() {
   const [editRole, setEditRole] = useState<number>(5);
   const [editStatus, setEditStatus] = useState<string>("ACTIVE");
   const [activeTab, setActiveTab] = useState<"ADMIN" | "MEMBER">("ADMIN");
+  const [zones, setZones] = useState<any[]>([]);
+  const [woredas, setWoredas] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [filterRegion, setFilterRegion] = useState<number>(0);
+  const [filterZone, setFilterZone] = useState<number>(0);
+  const [filterWoreda, setFilterWoreda] = useState<number>(0);
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await api.get("/person/profile");
+      setCurrentUser(res.data?.person);
+      if (res.data?.person) {
+        setForm(f => ({
+          ...f,
+          region: res.data.person.region_id || 14,
+          zone: res.data.person.zone_id || 0,
+          woreda: res.data.person.woreda_id || 0,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile", err);
+    }
+  }, []);
+
+  const fetchLocations = useCallback(async () => {
+    try {
+      const [zRes, wRes] = await Promise.all([
+        api.get("/location/zones"),
+        api.get("/location/woredas")
+      ]);
+      setZones(zRes.data?.zones || []);
+      setWoredas(wRes.data?.woredas || []);
+    } catch (err) {
+      console.error("Failed to fetch locations", err);
+    }
+  }, []);
+
+  useEffect(() => { fetchLocations(); fetchProfile(); }, [fetchLocations, fetchProfile]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/users?page=1&page_size=100");
+      let url = "/users?page=1&page_size=100";
+      if (currentUser?.role !== "SUPER_ADMIN" && currentUser?.role !== 1) {
+          if (currentUser?.region_id) url += `&region_id=${currentUser.region_id}`;
+          if (currentUser?.zone_id) url += `&zone_id=${currentUser.zone_id}`;
+          if (currentUser?.woreda_id) url += `&woreda_id=${currentUser.woreda_id}`;
+          if (currentUser?.branch_id) url += `&branch_id=${currentUser.branch_id}`;
+      } else {
+          if (filterRegion > 0) url += `&region_id=${filterRegion}`;
+          if (filterZone > 0) url += `&zone_id=${filterZone}`;
+          if (filterWoreda > 0) url += `&woreda_id=${filterWoreda}`;
+      }
+      const res = await api.get(url);
       if (res.data?.users) {
         setUsers(res.data.users);
       } else {
@@ -143,7 +221,7 @@ export default function UserManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentUser, filterRegion, filterZone, filterWoreda]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -164,6 +242,9 @@ export default function UserManagementPage() {
         password: form.password,
         role: form.role,
         region: form.region,
+        zone_id: form.zone,
+        woreda_id: form.woreda,
+        branch_id: form.branch,
       });
       toast.success("User created successfully.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> });
       setShowCreate(false);
@@ -200,6 +281,9 @@ export default function UserManagementPage() {
         id: selectedUser.id,
         role: editRole,
         region_id: selectedUser.region_id,
+        zone_id: selectedUser.zone_id,
+        woreda_id: selectedUser.woreda_id,
+        branch_id: selectedUser.branch_id,
         status: editStatus,
       });
       toast.success("User updated successfully.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> });
@@ -229,12 +313,15 @@ export default function UserManagementPage() {
     const isSearchMatch = u.email?.toLowerCase().includes(search.toLowerCase()) || 
                           u.phone_number?.includes(search);
     
-    // Role values 5 and 6 are Volunteer and Member
+    // Role values 5 and 6 are Volunteer and Member, 8 is Organization
     const roleVal = Number(u.role);
-    const isEndUser = roleVal === 5 || roleVal === 6 || u.role === "VOLUNTEER" || u.role === "MEMBER";
+    const isVolunteerOrMember = roleVal === 5 || roleVal === 6 || u.role === "VOLUNTEER" || u.role === "MEMBER";
+    const isOrg = roleVal === 8 || u.role === "ORGANIZATION";
     
-    if (activeTab === "ADMIN") return isSearchMatch && !isEndUser;
-    return isSearchMatch && isEndUser;
+    if (isOrg) return false; // Explicitly hide organizations as requested
+
+    if (activeTab === "ADMIN") return isSearchMatch && !isVolunteerOrMember;
+    return isSearchMatch && isVolunteerOrMember;
   });
 
   return (
@@ -299,6 +386,52 @@ export default function UserManagementPage() {
               placeholder="Search by email or phone..."
               className="pl-10 h-10 rounded-xl bg-white border-gray-200 text-sm font-medium text-black focus:ring-1 focus:ring-red-500/20"
             />
+          </div>
+
+          <div className="bg-gray-50/50 p-2.5 rounded-2xl border border-gray-100 space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Filters</span>
+              {(filterRegion > 0 || filterZone > 0 || filterWoreda > 0) && (
+                <button 
+                  onClick={() => { setFilterRegion(0); setFilterZone(0); setFilterWoreda(0); }}
+                  className="text-[9px] font-black text-red-500 uppercase tracking-widest hover:underline"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <select
+                value={filterRegion}
+                onChange={e => { setFilterRegion(Number(e.target.value)); setFilterZone(0); setFilterWoreda(0); }}
+                className="h-8 rounded-lg bg-white border border-gray-100 px-2 text-[10px] font-bold text-gray-600 focus:ring-1 focus:ring-red-500/20 appearance-none"
+              >
+                <option value={0}>Region</option>
+                {REGIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+
+              <select
+                value={filterZone}
+                onChange={e => { setFilterZone(Number(e.target.value)); setFilterWoreda(0); }}
+                className="h-8 rounded-lg bg-white border border-gray-100 px-2 text-[10px] font-bold text-gray-600 focus:ring-1 focus:ring-red-500/20 appearance-none"
+              >
+                <option value={0}>Zone</option>
+                {zones.filter(z => filterRegion === 0 || z.region_id === filterRegion).map(z => (
+                  <option key={z.id} value={z.id}>{z.name}</option>
+                ))}
+              </select>
+
+              <select
+                value={filterWoreda}
+                onChange={e => setFilterWoreda(Number(e.target.value))}
+                className="h-8 rounded-lg bg-white border border-gray-100 px-2 text-[10px] font-bold text-gray-600 focus:ring-1 focus:ring-red-500/20 appearance-none"
+              >
+                <option value={0}>Woreda</option>
+                {woredas.filter(w => filterZone === 0 || w.zone_id === filterZone).map(w => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
@@ -458,15 +591,66 @@ export default function UserManagementPage() {
                         {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                       </select>
                     </div>
-                    <div className="md:col-span-2 space-y-1.5">
+                    <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Region</Label>
                       <select
                         value={form.region}
-                        onChange={e => setForm(f => ({ ...f, region: Number(e.target.value) }))}
+                        onChange={e => setForm(f => ({ ...f, region: Number(e.target.value), zone: 0, woreda: 0 }))}
                         className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
                         {REGIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                       </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Zone</Label>
+                      <select
+                        value={form.zone}
+                        onChange={e => setForm(f => ({ ...f, zone: Number(e.target.value), woreda: 0 }))}
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
+                      >
+                        <option value={0}>All Zones</option>
+                        {zones.filter(z => z.region_id === form.region).map(z => (
+                          <option key={z.id} value={z.id}>{z.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Woreda</Label>
+                      <select
+                        value={form.woreda}
+                        onChange={e => setForm(f => ({ ...f, woreda: Number(e.target.value) }))}
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
+                      >
+                        <option value={0}>All Woredas</option>
+                        {woredas.filter(w => w.zone_id === form.zone).map(w => (
+                          <option key={w.id} value={w.id}>{w.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Branch (If applicable)</Label>
+                      <Input
+                        type="number"
+                        value={form.branch || ""}
+                        onChange={e => setForm(f => ({ ...f, branch: Number(e.target.value) }))}
+                        placeholder="Branch ID"
+                        className="h-10 rounded-xl bg-gray-50 text-black border-gray-100 font-bold text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Module Access Permissions</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {MODULE_PERMISSIONS.map(m => (
+                        <div key={m.id} className="flex items-center gap-2 p-2 rounded-lg border border-gray-50 bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                          <input type="checkbox" className="rounded border-gray-300 text-red-600 focus:ring-red-500" />
+                          <div className="flex items-center gap-1.5">
+                            <m.icon className="h-3 w-3 text-gray-400" />
+                            <span className="text-[10px] font-bold text-gray-600 truncate">{m.label}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
@@ -525,6 +709,50 @@ export default function UserManagementPage() {
                         <option value="SUSPENDED">Suspended</option>
                         <option value="INACTIVE">Inactive</option>
                       </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Region</Label>
+                      <select
+                        value={selectedUser.region_id}
+                        disabled
+                        className="flex h-10 w-full rounded-xl bg-gray-200 text-gray-500 border border-gray-100 px-3 font-bold text-sm appearance-none"
+                      >
+                        {REGIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Zone</Label>
+                      <select
+                        value={selectedUser.zone_id}
+                        disabled
+                        className="flex h-10 w-full rounded-xl bg-gray-200 text-gray-500 border border-gray-100 px-3 font-bold text-sm appearance-none"
+                      >
+                        <option value={0}>All Zones</option>
+                        {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Permissions section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Module Permissions</Label>
+                      <span className="text-[8px] font-black text-red-500 bg-red-50 px-2 py-0.5 rounded uppercase">Customizable Access</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {MODULE_PERMISSIONS.map(m => (
+                        <div key={m.id} className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-50 bg-gray-50/30 hover:bg-white hover:border-gray-100 hover:shadow-sm transition-all group">
+                          <input 
+                            type="checkbox" 
+                            checked={[1,2].includes(editRole)} // Mock logic for now
+                            className="rounded border-gray-300 text-red-600 focus:ring-red-500" 
+                          />
+                          <div className="flex items-center gap-2 min-w-0">
+                            <m.icon className="h-3.5 w-3.5 text-gray-400 group-hover:text-red-500 transition-colors shrink-0" />
+                            <span className="text-[10px] font-bold text-gray-600 truncate">{m.label}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
