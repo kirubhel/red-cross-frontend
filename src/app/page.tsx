@@ -141,6 +141,7 @@ export default function LandingPage() {
   const { lang, t } = useLanguage();
   const [dynamicContent, setDynamicContent] = useState<Record<Language, typeof translations.en> | null>(null);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
+  const [currentHeroImageIndex, setCurrentHeroImageIndex] = useState(0);
   
   // Merge dynamic content with context translations
   const mergedT: typeof translations.en = {
@@ -171,6 +172,20 @@ export default function LandingPage() {
       ...(dynamicContent?.[lang]?.contactSection || {})
     }
   };
+
+  // Get images from dynamic content or default to empty array
+  const heroImages = mergedT.hero.imageUrls || (mergedT.hero.imageUrl ? [mergedT.hero.imageUrl] : []);
+
+  // Auto-rotate hero images
+  useEffect(() => {
+    if (heroImages.length <= 1) return;
+    
+    const interval = setInterval(() => {
+      setCurrentHeroImageIndex((prev) => (prev + 1) % heroImages.length);
+    }, 5000); // Change image every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
 
   useEffect(() => {
     const fetchCMS = async () => {
@@ -349,14 +364,41 @@ export default function LandingPage() {
             >
               <div className="absolute inset-0 bg-[#ED1C24]/10 rounded-[40px] translate-x-4 translate-y-4 blur-3xl opacity-50" />
               <div className="relative h-full w-full bg-white border-8 border-white rounded-[40px] shadow-2xl overflow-hidden group">
-                 <Image 
-                    src={mergedT.hero.imageUrl}
-                    alt="ERCS 90 Years"
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    priority
-                    unoptimized
-                 />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentHeroImageIndex}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] as any }}
+                    className="absolute inset-0"
+                  >
+                    <Image 
+                      src={heroImages[currentHeroImageIndex] || mergedT.hero.imageUrl}
+                      alt="ERCS 90 Years"
+                      fill
+                      className="object-cover"
+                      priority
+                      unoptimized
+                    />
+                  </motion.div>
+                </AnimatePresence>
+                
+                {/* Image Navigation Indicators */}
+                {heroImages.length > 1 && (
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+                    {heroImages.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentHeroImageIndex(idx)}
+                        className={`h-1.5 rounded-full transition-all duration-500 ${
+                          currentHeroImageIndex === idx ? "w-8 bg-white" : "w-2 bg-white/40 hover:bg-white/60"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+
                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
                     <p className="text-white font-bold text-lg">{mergedT.hero.anniversary}</p>
                  </div>

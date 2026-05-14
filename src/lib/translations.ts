@@ -26,7 +26,8 @@ export const translations = {
       pathwaysLabel: "Choose your path to help:",
       volunteers: "Volunteers",
       anniversary: "Celebrating 90 Years of Humanitarian Excellence",
-      imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"
+      imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png",
+      imageUrls: ["https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"]
     },
     stats: {
       volunteers: "Volunteers",
@@ -229,7 +230,8 @@ export const translations = {
       pathwaysLabel: "ለመርዳት መንገድዎን ይምረጡ፡",
       volunteers: "በጎ ፈቃደኞች",
       anniversary: "የ90 ዓመታት የሰብአዊ አገልግሎት ልቀት በዓል",
-      imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"
+      imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png",
+      imageUrls: ["https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"]
     },
     stats: {
       volunteers: "በጎ ፈቃደኞች",
@@ -432,7 +434,8 @@ export const translations = {
       pathwaysLabel: "Gargaaruuf karaa keessan filadhaa:",
       volunteers: "Tajaajiltoota",
       anniversary: "Baga Waggaa 90ffaa Milkaa'ina Namoomaa Geessan",
-      imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"
+      imageUrl: "https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png",
+      imageUrls: ["https://redcrosseth.org/wp-content/uploads/2025/06/90-AMET-COVER-for-website-1200-by-700.png"]
     },
     stats: {
       volunteers: "Tajaajiltoota",

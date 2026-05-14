@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   Mail,
   Phone,
+  Trash2,
   MapPin,
   UserPlus
 } from "lucide-react";
@@ -61,7 +62,11 @@ export default function CMSPage() {
           ...translations[lang],
           ...data,
           nav: { ...translations[lang].nav, ...(data?.nav || {}) },
-          hero: { ...translations[lang].hero, ...(data?.hero || {}) },
+          hero: { 
+            ...translations[lang].hero, 
+            ...(data?.hero || {}),
+            imageUrls: data?.hero?.imageUrls || (data?.hero?.imageUrl ? [data.hero.imageUrl] : translations[lang].hero.imageUrls)
+          },
           whoWeAre: { ...translations[lang].whoWeAre, ...(data?.whoWeAre || {}) },
           services: { ...translations[lang].services, ...(data?.services || {}) },
           news: { ...translations[lang].news, ...(data?.news || {}) },
@@ -251,37 +256,108 @@ export default function CMSPage() {
                 className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Hero Image URL</Label>
-              <div className="flex gap-2">
-                <Input 
-                  value={current.hero.imageUrl} 
-                  onChange={(e) => updateField('hero', 'imageUrl', e.target.value)}
-                  className="rounded-xl h-12 font-bold border-gray-200 bg-white text-black flex-1"
-                />
-                <div className="relative">
+            <div className="space-y-4">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Hero Images (Slideshow)</Label>
+              <div className="grid gap-4">
+                {(current.hero.imageUrls || []).map((url, index) => (
+                  <div key={index} className="flex gap-2 items-center group">
+                    <div className="relative h-12 w-20 rounded-lg overflow-hidden border border-gray-100 shrink-0">
+                      <img src={url} alt={`Hero ${index}`} className="h-full w-full object-cover" />
+                    </div>
+                    <Input 
+                      value={url} 
+                      onChange={(e) => {
+                        const newUrls = [...(current.hero.imageUrls || [])];
+                        newUrls[index] = e.target.value;
+                        updateField('hero', 'imageUrls', newUrls);
+                      }}
+                      className="rounded-xl h-12 font-bold border-gray-200 bg-white text-black flex-1"
+                      placeholder="Image URL"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 border-gray-200"
+                      onClick={() => {
+                        const newUrls = (current.hero.imageUrls || []).filter((_, i) => i !== index);
+                        updateField('hero', 'imageUrls', newUrls);
+                      }}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl h-12 px-6 font-bold border-dashed border-[#ED1C24]/30 text-[#ED1C24] hover:bg-red-50 flex-1 justify-center gap-2"
+                  onClick={() => {
+                    const newUrls = [...(current.hero.imageUrls || []), ""];
+                    updateField('hero', 'imageUrls', newUrls);
+                  }}
+                >
+                  <Plus className="h-4 w-4" /> Add Image URL
+                </Button>
+                
+                <div className="relative shrink-0">
                   <input
                     type="file"
-                    id="hero-upload"
+                    id="hero-multi-upload"
                     className="hidden"
                     accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && handleUpload('hero', 'imageUrl', e.target.files[0])}
+                    multiple
+                    onChange={async (e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        const files = Array.from(e.target.files);
+                        const section = 'hero';
+                        const field = 'imageUrls';
+                        
+                        setIsUploading(`${section}-${field}`);
+                        
+                        try {
+                          const uploadPromises = files.map(file => {
+                            const formData = new FormData();
+                            formData.append('file', file);
+                            return api.post('/storage/upload', formData, {
+                              headers: { 'Content-Type': 'multipart/form-data' }
+                            });
+                          });
+
+                          const results = await Promise.all(uploadPromises);
+                          const newUrls = [...(current.hero.imageUrls || []), ...results.map(res => res.data.url)];
+                          updateField(section, field, newUrls);
+                        } catch (err) {
+                          console.error("Upload failed:", err);
+                          toast.error("Failed to upload one or more images.");
+                        } finally {
+                          setIsUploading(null);
+                        }
+                      }
+                    }}
                   />
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-12 w-12 rounded-xl border-dashed border-[#ED1C24]/30 hover:bg-red-50"
-                    onClick={() => document.getElementById('hero-upload')?.click()}
-                    disabled={isUploading === 'hero-imageUrl'}
+                    className="h-12 px-6 rounded-xl border-dashed border-[#ED1C24]/30 bg-red-50/30 text-[#ED1C24] hover:bg-red-50 font-bold gap-2"
+                    onClick={() => document.getElementById('hero-multi-upload')?.click()}
+                    disabled={isUploading === 'hero-imageUrls'}
                   >
-                    {isUploading === 'hero-imageUrl' ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-[#ED1C24]" />
+                    {isUploading === 'hero-imageUrls' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Upload className="h-5 w-5 text-[#ED1C24]" />
+                      <Upload className="h-4 w-4" />
                     )}
+                    Upload New Image
                   </Button>
                 </div>
               </div>
+              <p className="text-[10px] text-gray-400 font-medium ml-1 italic">
+                * These images will automatically rotate in the Hero section on the homepage.
+              </p>
             </div>
           </CardContent>
         </Card>
