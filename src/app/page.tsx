@@ -364,13 +364,16 @@ export default function LandingPage() {
             >
               <div className="absolute inset-0 bg-[#ED1C24]/10 rounded-[40px] translate-x-4 translate-y-4 blur-3xl opacity-50" />
               <div className="relative h-full w-full bg-white border-8 border-white rounded-[40px] shadow-2xl overflow-hidden group">
-                <AnimatePresence mode="wait">
+                <AnimatePresence initial={false}>
                   <motion.div
                     key={currentHeroImageIndex}
-                    initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] as any }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ 
+                      duration: 1.5, 
+                      ease: [0.4, 0, 0.2, 1] as any
+                    }}
                     className="absolute inset-0"
                   >
                     <Image 
