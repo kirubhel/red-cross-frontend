@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Users, ShieldCheck, Heart, X, Plus, ArrowRight } from "lucide-react";
 import { Language } from "@/lib/translations";
 
-const SESSION_KEY = "ercs_welcome_shown";
+const SESSION_KEY = "ercs_welcome_shown_v1"; // Versioned key
 
 interface PathwayCardProps {
   href: string;
@@ -30,49 +30,49 @@ function PathwayCard({
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }}
-      className="group relative flex flex-col bg-white rounded-[28px] overflow-hidden shadow-lg
-                 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100"
+      className="group relative flex flex-col bg-white rounded-[24px] overflow-hidden shadow-lg
+                 hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 border border-gray-100"
     >
       {/* Top accent bar */}
-      <div className="h-2 w-full" style={{ backgroundColor: accentColor }} />
+      <div className="h-1.5 w-full" style={{ backgroundColor: accentColor }} />
 
-      <div className="flex flex-col flex-grow p-8">
-        {/* Icon */}
-        <div
-          className="h-14 w-14 rounded-2xl flex items-center justify-center mb-6
-                     transition-transform duration-500 group-hover:rotate-12"
-          style={{ backgroundColor: bgColor, color: accentColor }}
-        >
-          {icon}
+      <div className="flex flex-col flex-grow p-5 sm:p-6">
+        {/* Icon & Badge Row */}
+        <div className="flex items-center gap-4 mb-4">
+          <div
+            className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center
+                       transition-transform duration-500 group-hover:rotate-12 shrink-0"
+            style={{ backgroundColor: bgColor, color: accentColor }}
+          >
+            {icon}
+          </div>
+          <div className="flex flex-col">
+            <span
+              className="text-[9px] font-black uppercase tracking-[0.2em]"
+              style={{ color: accentColor }}
+            >
+              {label}
+            </span>
+            <h3 className="text-lg font-black text-black leading-tight tracking-tight">
+              {headline}
+            </h3>
+          </div>
         </div>
 
-        {/* Badge */}
-        <span
-          className="text-[10px] font-black uppercase tracking-[0.25em] mb-2"
-          style={{ color: accentColor }}
-        >
-          {label}
-        </span>
-
-        {/* Headline */}
-        <h3 className="text-2xl font-black text-black leading-tight tracking-tight mb-3">
-          {headline}
-        </h3>
-
         {/* Description */}
-        <p className="text-sm text-black/60 font-medium leading-relaxed flex-grow">
+        <p className="text-[13px] text-black/60 font-medium leading-snug flex-grow line-clamp-3">
           {description}
         </p>
 
         {/* CTA */}
-        <Link href={href} onClick={onClose} className="mt-8 block group/btn">
+        <Link href={href} onClick={onClose} className="mt-4 block group/btn">
           <motion.div
             whileHover={{ x: 4 }}
-            className="flex items-center gap-2 font-black text-sm"
+            className="flex items-center gap-2 font-black text-xs"
             style={{ color: accentColor }}
           >
             {cta}
-            <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover/btn:translate-x-1" />
           </motion.div>
         </Link>
       </div>
@@ -87,38 +87,38 @@ interface WelcomeModalProps {
 const CONTENT = {
   en: {
     badge: "Welcome to ERCS",
-    title: "How would you like to help?",
+    title: "How can you help?",
     subtitle:
-      "Ethiopian Red Cross Society offers multiple ways to get involved. Choose the path that fits you.",
-    dismiss: "Explore on my own",
-    doNotShow: "Don't show again for this session",
+      "Join us in our humanitarian mission across Ethiopia.",
+    dismiss: "Explore",
+    doNotShow: "Don't show again",
     paths: [
       {
         href: "/join/volunteer",
         label: "Volunteer",
-        headline: "Become a Volunteer",
+        headline: "Volunteer",
         description:
-          "Give your time and skills to serve communities in need. From disaster response to health outreach — your hands make a difference.",
-        cta: "Volunteer now",
+          "Give your time and skills to serve communities in need. Your hands make a difference.",
+        cta: "Join now",
         accentColor: "#ED1C24",
         bgColor: "#FFF1F1",
       },
       {
         href: "/join/member",
         label: "Membership",
-        headline: "Join as a Member",
+        headline: "Member",
         description:
-          "Become a lifetime member of the Red Cross. Gain voting rights, participate in general assemblies, and shape our humanitarian mission.",
-        cta: "Join membership",
+          "Become a lifetime member. Gain voting rights and shape our mission.",
+        cta: "Join now",
         accentColor: "#0EA5E9",
         bgColor: "#F0F9FF",
       },
       {
         href: "/donate",
         label: "Donation",
-        headline: "Make a Donation",
+        headline: "Donate",
         description:
-          "Fund life-saving operations across Ethiopia. Your gift, however large or small, directly supports emergency response, clean water, and health services.",
+          "Fund life-saving operations. Your gift supports emergency response and health.",
         cta: "Donate now",
         accentColor: "#DC2626",
         bgColor: "#FFF7ED",
@@ -128,16 +128,15 @@ const CONTENT = {
   am: {
     badge: "ወደ ቀይ መስቀል እንኳን ደህና መጡ",
     title: "እንዴት ማገልገል ይፈልጋሉ?",
-    subtitle: "ኢ.ቀ.መ. ለመሳተፍ ብዙ መንገዶችን ያቀርባል፡፡ ለእርስዎ የሚስማማውን ይምረጡ።",
-    dismiss: "ብቻዬን ልቃኝ",
-    doNotShow: "በዚህ ክፍለ ጊዜ እንደገና አታሳይ",
+    subtitle: "በሰብአዊ ተግባራችን ላይ አብረውን ይሁኑ።",
+    dismiss: "ልቀጥል",
+    doNotShow: "ደግመህ አታሳይ",
     paths: [
       {
         href: "/join/volunteer",
         label: "በጎ ፈቃደኝነት",
-        headline: "በጎ ፈቃደኛ ይሁኑ",
-        description:
-          "ጊዜዎን ለሚፈልጉ ማህበረሰቦች ያቅርቡ። ከአደጋ ምላሽ እስከ የጤና አገልግሎት — ሁሉም ለውጥ ያመጣል።",
+        headline: "በጎ ፈቃደኛ",
+        description: "ጊዜዎን ለሚፈልጉ ማህበረሰቦች ያቅርቡ። ሁሉም ለውጥ ያመጣል።",
         cta: "አሁን ይቀላቀሉ",
         accentColor: "#ED1C24",
         bgColor: "#FFF1F1",
@@ -145,19 +144,17 @@ const CONTENT = {
       {
         href: "/join/member",
         label: "አባልነት",
-        headline: "አባል ይሁኑ",
-        description:
-          "የቀይ መስቀል የዕድሜ ልክ አባል ይሁኑ። የመምረጥ መብት ያገኛሉ እና ሰብአዊ ዓላማዎቻችንን ለምርጥ ይወስናሉ።",
-        cta: "አባልነትን ይቀላቀሉ",
+        headline: "አባልነት",
+        description: "የቀይ መስቀል አባል ይሁኑ። ሰብአዊ ዓላማዎቻችንን ይወስናሉ።",
+        cta: "አሁን ይቀላቀሉ",
         accentColor: "#0EA5E9",
         bgColor: "#F0F9FF",
       },
       {
         href: "/donate",
         label: "ልገሳ",
-        headline: "ልገሳ ያድርጉ",
-        description:
-          "በኢትዮጵያ ሕይወት አድን ስራዎችን ይደግፉ። ትንሽ든ትልቅ የሚሆን ስጦታ ለህብረተሰቡ ቀጥተኛ ጠቀሜታ አለው።",
+        headline: "ልገሳ",
+        description: "ሕይወት አድን ስራዎችን ይደግፉ። ስጦታዎ ለህብረተሰቡ ጠቃሚ ነው።",
         cta: "አሁን ይለግሱ",
         accentColor: "#DC2626",
         bgColor: "#FFF7ED",
@@ -167,17 +164,15 @@ const CONTENT = {
   om: {
     badge: "Gara ERCS Baga Nagaan Dhuftan",
     title: "Akkamiin gargaaruu barbaaddaa?",
-    subtitle:
-      "ERCS karaalee hirmaannaa hedduu dhiyeessa. Karaa isinitti ta'u filadhaa.",
-    dismiss: "Ofuma ilaala",
-    doNotShow: "Yeroo kanaaf irra deebi'amee hin agarsiisiin",
+    subtitle: "Ergama keenya irratti nu waliin hirmaadhaa.",
+    dismiss: "Itti fufi",
+    doNotShow: "Irra deebi'amee hin agarsiisiin",
     paths: [
       {
         href: "/join/volunteer",
         label: "Fedhaan Tajaajiluu",
-        headline: "Fedhaan-Laataa Ta'aa",
-        description:
-          "Yeroo fi dandeettii keessan hawaasa barbaadaniif kennaati. Deebii balaa irraa hamma tajaajila fayyaa — hojiin keessan jijjiirama fida.",
+        headline: "Fedhaan-Laataa",
+        description: "Yeroo fi dandeettii keessan hawaasa barbaadaniif kennaa.",
         cta: "Amma Makami",
         accentColor: "#ED1C24",
         bgColor: "#FFF1F1",
@@ -185,19 +180,17 @@ const CONTENT = {
       {
         href: "/join/member",
         label: "Miseensummaa",
-        headline: "Miseensa Ta'aa",
-        description:
-          "Miseensa dhaabbataa Fannoo Diimaa ta'aa. Mirga sagalee qabaadhu, yaa'ii irratti hirmaadhu, ergama keenya too'adhu.",
-        cta: "Miseensummaan Makami",
+        headline: "Miseensa",
+        description: "Miseensa dhaabbataa ta'aa. Ergama keenya too'adhaa.",
+        cta: "Amma Makami",
         accentColor: "#0EA5E9",
         bgColor: "#F0F9FF",
       },
       {
         href: "/donate",
         label: "Arjooma",
-        headline: "Arjoomaa",
-        description:
-          "Hojii lubbuu baraaruu Itiyoophiyaa keessatti maallaqqaan deeggari. Kenni kamiyyuu tajaajila ariifachiisaa, bishaan qulqulluu fi fayyaa deeggara.",
+        headline: "Arjooma",
+        description: "Hojii lubbuu baraaruu maallaqqaan deeggari.",
         cta: "Amma Arjoomi",
         accentColor: "#DC2626",
         bgColor: "#FFF7ED",
@@ -212,21 +205,33 @@ export default function WelcomeModal({ lang }: WelcomeModalProps) {
   const c = CONTENT[lang] || CONTENT.en;
 
   const ICONS = [
-    <Users key="users" className="h-7 w-7" />,
-    <ShieldCheck key="shield" className="h-7 w-7" />,
-    <Heart key="heart" className="h-7 w-7" />,
+    <Users key="users" className="h-5 w-5 sm:h-6 sm:w-6" />,
+    <ShieldCheck key="shield" className="h-5 w-5 sm:h-6 sm:w-6" />,
+    <Heart key="heart" className="h-5 w-5 sm:h-6 sm:w-6" />,
   ];
 
   useEffect(() => {
-    if (!sessionStorage.getItem(SESSION_KEY)) {
-      const timer = setTimeout(() => setIsOpen(true), 500);
+    if (!localStorage.getItem(SESSION_KEY)) {
+      const timer = setTimeout(() => setIsOpen(true), 1200);
       return () => clearTimeout(timer);
     }
   }, []);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
   const handleClose = () => {
     if (doNotShowChecked) {
-      sessionStorage.setItem(SESSION_KEY, "true");
+      localStorage.setItem(SESSION_KEY, "true");
     }
     setIsOpen(false);
   };
@@ -234,105 +239,108 @@ export default function WelcomeModal({ lang }: WelcomeModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          key="welcome-modal-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-8"
-          onClick={handleClose}
-        >
+        <div className="fixed inset-0 z-[200] flex items-center justify-center">
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-          {/* Modal */}
           <motion.div
-            key="welcome-modal-content"
-            initial={{ opacity: 0, scale: 0.92, y: 30 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }}
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-4xl bg-gray-50 rounded-[40px] shadow-2xl overflow-hidden"
-          >
-            {/* Header strip */}
-            <div className="bg-[#ED1C24] px-10 pt-10 pb-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-black/10 -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-              <Plus
-                className="absolute bottom-2 left-6 h-20 w-20 text-white/10 pointer-events-none"
-                strokeWidth={3}
-              />
+            key="welcome-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="absolute inset-0 bg-black/70 backdrop-blur-md"
+            onClick={handleClose}
+          />
 
-              <div className="relative z-10">
-                <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-white/70 mb-3">
-                  <Plus className="h-3 w-3" strokeWidth={4} />
-                  {c.badge}
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight tracking-tight">
-                  {c.title}
-                </h2>
-                <p className="text-white/70 font-medium mt-2 max-w-lg text-sm sm:text-base">
-                  {c.subtitle}
-                </p>
+          {/* Scrollable Container */}
+          <div className="absolute inset-0 overflow-y-auto py-10 px-4 sm:px-6 flex justify-center items-start pointer-events-none">
+            {/* Modal */}
+            <motion.div
+              key="welcome-modal-content"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 10 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as any }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden pointer-events-auto my-auto"
+            >
+              {/* Header strip */}
+              <div className="bg-[#ED1C24] px-6 py-8 sm:px-10 sm:py-10 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-black/10 -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+                <Plus
+                  className="absolute bottom-2 left-6 h-16 w-16 text-white/5 pointer-events-none"
+                  strokeWidth={3}
+                />
+
+                <div className="relative z-10 pr-10">
+                  <span className="inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-white/80 mb-2">
+                    <Plus className="h-3 w-3" strokeWidth={4} />
+                    {c.badge}
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-tight">
+                    {c.title}
+                  </h2>
+                  <p className="text-white/80 font-medium mt-1.5 max-w-md text-[13px] sm:text-sm">
+                    {c.subtitle}
+                  </p>
+                </div>
+
+                {/* Close button */}
+                <button
+                  onClick={handleClose}
+                  aria-label="Close welcome modal"
+                  className="absolute top-6 right-6 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20
+                             flex items-center justify-center text-white transition-all duration-200
+                             hover:scale-105 cursor-pointer z-20"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
 
-              {/* Close button */}
-              <button
-                onClick={handleClose}
-                aria-label="Close welcome modal"
-                className="absolute top-6 right-6 h-10 w-10 rounded-full bg-white/20 hover:bg-white/30
-                           flex items-center justify-center text-white transition-all duration-200
-                           hover:scale-110 cursor-pointer z-20"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Cards */}
-            <div className="p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-3 gap-5">
-              {c.paths.map((path, i) => (
-                <PathwayCard
-                  key={path.href}
-                  {...path}
-                  icon={ICONS[i]}
-                  delay={0.1 + i * 0.1}
-                  onClose={handleClose}
-                />
-              ))}
-            </div>
-
-            {/* Footer dismiss and Checkbox */}
-            <div className="px-6 sm:px-8 pb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <label className="flex items-center gap-2.5 cursor-pointer group select-none">
-                <div className="relative flex items-center justify-center h-5 w-5 rounded-[6px] border-[1.5px] border-gray-300 bg-white group-hover:border-[#ED1C24] transition-colors">
-                  <input 
-                    type="checkbox" 
-                    className="peer absolute opacity-0 h-0 w-0 cursor-pointer" 
-                    checked={doNotShowChecked}
-                    onChange={(e) => setDoNotShowChecked(e.target.checked)}
+              {/* Cards */}
+              <div className="px-6 py-6 sm:px-8 sm:py-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {c.paths.map((path, i) => (
+                  <PathwayCard
+                    key={path.href}
+                    {...path}
+                    icon={ICONS[i]}
+                    delay={0.1 + i * 0.1}
+                    onClose={handleClose}
                   />
-                  <svg
-                    className={`h-3.5 w-3.5 text-[#ED1C24] pointer-events-none transition-all duration-200 ${doNotShowChecked ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <span className="text-[13px] font-bold text-black/50 group-hover:text-black/80 transition-colors uppercase tracking-wide">
-                  {c.doNotShow}
-                </span>
-              </label>
+                ))}
+              </div>
 
-              <button
-                onClick={handleClose}
-                className="text-xs font-black text-black/30 hover:text-[#ED1C24] transition-colors uppercase tracking-[0.1em] cursor-pointer"
-              >
-                {c.dismiss} →
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
+              {/* Footer dismiss and Checkbox */}
+              <div className="px-6 pb-6 sm:px-8 sm:pb-8 flex flex-row items-center justify-between gap-4">
+                <label className="flex items-center gap-2 cursor-pointer group select-none">
+                  <div className="relative flex items-center justify-center h-4.5 w-4.5 rounded-[5px] border-[1.5px] border-gray-200 bg-white group-hover:border-[#ED1C24] transition-colors">
+                    <input 
+                      type="checkbox" 
+                      className="peer absolute opacity-0 h-0 w-0 cursor-pointer" 
+                      checked={doNotShowChecked}
+                      onChange={(e) => setDoNotShowChecked(e.target.checked)}
+                    />
+                    <svg
+                      className={`h-3 w-3 text-[#ED1C24] pointer-events-none transition-all duration-200 ${doNotShowChecked ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-[11px] font-bold text-black/40 group-hover:text-black/60 transition-colors uppercase tracking-wider">
+                    {c.doNotShow}
+                  </span>
+                </label>
+
+                <button
+                  onClick={handleClose}
+                  className="text-[10px] font-black text-black/30 hover:text-[#ED1C24] transition-colors uppercase tracking-[0.1em] cursor-pointer"
+                >
+                  {c.dismiss} →
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </div>
       )}
     </AnimatePresence>
   );
