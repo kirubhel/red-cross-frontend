@@ -127,17 +127,17 @@ export default function DashboardPage() {
           5: "Amhara",
           6: "Oromia",
           7: "Somali",
-          8: "Benishangul Gumuz",
-          9: "SNNPR",
+          8: "Benishangul Gumz",
+          9: "Central Ethiopia",
           10: "Gambela",
           11: "Harari",
           12: "Sidama",
-          13: "South West",
-          14: "Federal HQ"
+          13: "South West Ethiopia",
+          14: "South Ethiopia"
         };
 
         const regionId = userData?.region_id || userData?.region || 0;
-        const regionName = REGIONS[regionId] || userData?.region_name || "Federal HQ";
+        const regionName = REGIONS[regionId] || userData?.region_name || "South Ethiopia";
 
         setUser({
           firstName: userData?.first_name || "",

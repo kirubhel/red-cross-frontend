@@ -76,7 +76,7 @@ const ROLE_LABELS: Record<string | number, string> = {
 
 
 const REGIONS = [
-  { label: "Federal HQ", value: 14 },
+  { label: "South Ethiopia", value: 14 },
   { label: "Addis Ababa", value: 1 },
   { label: "Dire Dawa", value: 2 },
   { label: "Tigray", value: 3 },
@@ -84,12 +84,12 @@ const REGIONS = [
   { label: "Amhara", value: 5 },
   { label: "Oromia", value: 6 },
   { label: "Somali", value: 7 },
-  { label: "Benishangul-Gumuz", value: 8 },
-  { label: "SNNPR", value: 9 },
+  { label: "Benishangul Gumz", value: 8 },
+  { label: "Central Ethiopia", value: 9 },
   { label: "Gambela", value: 10 },
   { label: "Harari", value: 11 },
   { label: "Sidama", value: 12 },
-  { label: "South West", value: 13 },
+  { label: "South West Ethiopia", value: 13 },
 ];
 
 const DEFAULT_FORM: NewUserForm = {

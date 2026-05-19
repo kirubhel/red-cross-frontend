@@ -175,9 +175,9 @@ export default function MembersPage() {
             // Fallback if regions not loaded
             [
                 "1 - Addis Ababa", "2 - Dire Dawa", "3 - Tigray", "4 - Afar", 
-                "5 - Amhara", "6 - Oromia", "7 - Somali", "8 - Benishangul-Gumuz", 
-                "9 - SNNPR", "10 - Gambela", "11 - Harari", "12 - Sidama", 
-                "13 - South West", "14 - Federal HQ"
+                "5 - Amhara", "6 - Oromia", "7 - Somali", "8 - Benishangul Gumz", 
+                "9 - Central Ethiopia", "10 - Gambela", "11 - Harari", "12 - Sidama", 
+                "13 - South West Ethiopia", "14 - South Ethiopia"
             ].forEach((opt, i) => helperSheet.getCell(`A${i+1}`).value = opt);
         } else {
             regionOptions.forEach((opt, i) => helperSheet.getCell(`A${i+1}`).value = opt);

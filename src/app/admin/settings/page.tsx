@@ -50,6 +50,11 @@ export default function SystemSettingsPage() {
   const [regions, setRegions] = useState<Region[]>([]);
   const [locationHierarchy, setLocationHierarchy] = useState<LocationHierarchy>({ zones: [], woredas: [] });
   
+  // Filtering states
+  const [zoneRegionFilter, setZoneRegionFilter] = useState<number | "all">("all");
+  const [woredaRegionFilter, setWoredaRegionFilter] = useState<number | "all">("all");
+  const [woredaZoneFilter, setWoredaZoneFilter] = useState<string | "all">("all");
+  
   const [memberConfig, setMemberConfig] = useState<MemberIDConfig>({
     prefix: "ERCS-",
     padding: 6,
@@ -253,9 +258,10 @@ export default function SystemSettingsPage() {
   };
 
   const addZone = () => {
+    const defaultRegionId = zoneRegionFilter !== "all" ? zoneRegionFilter : (regions[0]?.id || 1);
     const newZone: Zone = {
       id: Math.random().toString(36).substr(2, 9),
-      region_id: regions[0]?.id || 1,
+      region_id: defaultRegionId,
       name: "New Zone",
       code: "Z00"
     };
@@ -264,9 +270,20 @@ export default function SystemSettingsPage() {
 
   const addWoreda = () => {
     if (locationHierarchy.zones.length === 0) return;
+    
+    let defaultZoneId = locationHierarchy.zones[0].id;
+    if (woredaZoneFilter !== "all") {
+      defaultZoneId = woredaZoneFilter;
+    } else if (woredaRegionFilter !== "all") {
+      const regionZones = locationHierarchy.zones.filter(z => z.region_id === woredaRegionFilter);
+      if (regionZones.length > 0) {
+        defaultZoneId = regionZones[0].id;
+      }
+    }
+
     const newWoreda: Woreda = {
       id: Math.random().toString(36).substr(2, 9),
-      zone_id: locationHierarchy.zones[0].id,
+      zone_id: defaultZoneId,
       name: "New Woreda",
       code: "W00"
     };
@@ -467,7 +484,7 @@ export default function SystemSettingsPage() {
 
           {activeTab === "zones" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                 <div className="flex items-center justify-between pb-4 border-b border-gray-50">
+                 <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-gray-50 gap-4">
                     <div className="flex items-center gap-4">
                         <div className="h-12 w-12 bg-red-50 rounded-xl flex items-center justify-center text-[#ED1C24]">
                             <MapPin className="h-6 w-6" />
@@ -477,20 +494,43 @@ export default function SystemSettingsPage() {
                             <p className="text-gray-400 font-medium text-xs">Configure regional zones and administrative areas.</p>
                         </div>
                     </div>
-                    <Button onClick={addZone} className="bg-black text-white rounded-xl h-10 px-6 font-black gap-2 text-xs">
-                        <Plus className="h-4 w-4" /> Add Zone
-                    </Button>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <Label className="text-[10px] font-black uppercase text-gray-400">Filter Region:</Label>
+                            <select 
+                                value={zoneRegionFilter}
+                                onChange={(e) => setZoneRegionFilter(e.target.value === "all" ? "all" : parseInt(e.target.value))}
+                                className="h-10 rounded-xl bg-gray-50 border border-gray-200 px-3 text-xs font-black text-black focus:ring-red-500 outline-none"
+                            >
+                                <option value="all">All Regions</option>
+                                {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                            </select>
+                        </div>
+                        <Button onClick={addZone} className="bg-black text-white rounded-xl h-10 px-6 font-black gap-2 text-xs">
+                            <Plus className="h-4 w-4" /> Add Zone
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="space-y-3">
-                    {locationHierarchy.zones.length === 0 && (
+                    {locationHierarchy.zones.length === 0 ? (
                         <div className="h-32 flex flex-col items-center justify-center text-gray-300 gap-2 font-medium text-sm">
                             <MapPin className="h-8 w-8 opacity-20" />
                             No zones created yet.
                         </div>
-                    )}
-                    <div className="grid gap-3">
-                        {locationHierarchy.zones.map((zone) => (
+                    ) : (
+                        (() => {
+                            const filteredZones = locationHierarchy.zones.filter(z => zoneRegionFilter === "all" || z.region_id === zoneRegionFilter);
+                            if (filteredZones.length === 0) {
+                                return (
+                                    <div className="h-32 flex flex-col items-center justify-center text-gray-400 gap-2 font-medium text-sm">
+                                        No zones found for the selected region.
+                                    </div>
+                                );
+                            }
+                            return (
+                                <div className="grid gap-3">
+                                    {filteredZones.map((zone) => (
                             <div key={zone.id} className="flex flex-col md:flex-row md:items-end gap-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-white transition-all shadow-sm">
                                 <div className="w-full md:w-56 space-y-1.5">
                                     <Label className="text-[9px] font-black uppercase text-gray-400 px-1">Parent Region</Label>
@@ -542,7 +582,10 @@ export default function SystemSettingsPage() {
                                 </div>
                             </div>
                         ))}
-                    </div>
+                                </div>
+                            );
+                        })()
+                    )}
                 </div>
             </motion.div>
           )}
@@ -722,7 +765,7 @@ export default function SystemSettingsPage() {
 
           {activeTab === "woredas" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                 <div className="flex items-center justify-between pb-4 border-b border-gray-50">
+                 <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-gray-50 gap-4">
                     <div className="flex items-center gap-4">
                         <div className="h-12 w-12 bg-red-50 rounded-xl flex items-center justify-center text-[#ED1C24]">
                             <Map className="h-6 w-6" />
@@ -732,20 +775,77 @@ export default function SystemSettingsPage() {
                             <p className="text-gray-400 font-medium text-xs">Manage district-level woredas linked to zones.</p>
                         </div>
                     </div>
-                    <Button onClick={addWoreda} disabled={locationHierarchy.zones.length === 0} className="bg-black text-white rounded-xl h-10 px-6 font-black gap-2 text-xs">
-                        <Plus className="h-4 w-4" /> Add Woreda
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <Label className="text-[10px] font-black uppercase text-gray-400">Region:</Label>
+                            <select 
+                                value={woredaRegionFilter}
+                                onChange={(e) => {
+                                    setWoredaRegionFilter(e.target.value === "all" ? "all" : parseInt(e.target.value));
+                                    setWoredaZoneFilter("all"); // Reset zone filter
+                                }}
+                                className="h-10 rounded-xl bg-gray-50 border border-gray-200 px-3 text-xs font-black text-black focus:ring-red-500 outline-none"
+                            >
+                                <option value="all">All Regions</option>
+                                {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Label className="text-[10px] font-black uppercase text-gray-400">Zone:</Label>
+                            <select 
+                                value={woredaZoneFilter}
+                                onChange={(e) => setWoredaZoneFilter(e.target.value)}
+                                className="h-10 rounded-xl bg-gray-50 border border-gray-200 px-3 text-xs font-black text-black focus:ring-red-500 outline-none w-40"
+                            >
+                                <option value="all">All Zones</option>
+                                {locationHierarchy.zones
+                                    .filter(z => woredaRegionFilter === "all" || z.region_id === woredaRegionFilter)
+                                    .map(z => <option key={z.id} value={z.id}>{z.name}</option>)
+                                }
+                            </select>
+                        </div>
+                        <Button onClick={addWoreda} disabled={locationHierarchy.zones.length === 0} className="bg-black text-white rounded-xl h-10 px-6 font-black gap-2 text-xs">
+                            <Plus className="h-4 w-4" /> Add Woreda
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="space-y-3">
-                    {locationHierarchy.woredas.length === 0 && (
+                    {locationHierarchy.woredas.length === 0 ? (
                         <div className="h-32 flex flex-col items-center justify-center text-gray-300 gap-2 font-medium text-sm">
                             <Map className="h-8 w-8 opacity-20" />
                             {locationHierarchy.zones.length === 0 ? "Create a Zone first." : "No woredas created yet."}
                         </div>
-                    )}
-                    <div className="grid gap-3">
-                        {locationHierarchy.woredas.map((woreda) => (
+                    ) : (
+                        (() => {
+                            const filteredWoredas = locationHierarchy.woredas.filter(w => {
+                                if (woredaZoneFilter !== "all") {
+                                    return w.zone_id === woredaZoneFilter;
+                                }
+                                if (woredaRegionFilter !== "all") {
+                                    const zone = locationHierarchy.zones.find(z => z.id === w.zone_id);
+                                    return zone && zone.region_id === woredaRegionFilter;
+                                }
+                                return true;
+                            });
+
+                            if (filteredWoredas.length === 0) {
+                                return (
+                                    <div className="h-32 flex flex-col items-center justify-center text-gray-400 gap-2 font-medium text-sm">
+                                        No woredas found for the selected filters.
+                                    </div>
+                                );
+                            }
+
+                            const displayedWoredas = filteredWoredas.slice(0, 200);
+
+                            return (
+                                <div className="space-y-3">
+                                    <div className="text-xs text-gray-500 font-medium px-1">
+                                        Showing {displayedWoredas.length} {filteredWoredas.length > 200 ? `of ${filteredWoredas.length} ` : ''}woredas
+                                    </div>
+                                    <div className="grid gap-3">
+                                        {displayedWoredas.map((woreda) => (
                             <div key={woreda.id} className="flex flex-col md:flex-row md:items-end gap-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-white transition-all shadow-sm">
                                 <div className="w-full md:w-56 space-y-1.5">
                                     <Label className="text-[9px] font-black uppercase text-gray-400 px-1">Parent Zone</Label>
@@ -797,7 +897,11 @@ export default function SystemSettingsPage() {
                                 </div>
                             </div>
                         ))}
-                    </div>
+                                    </div>
+                                </div>
+                            );
+                        })()
+                    )}
                 </div>
             </motion.div>
           )}

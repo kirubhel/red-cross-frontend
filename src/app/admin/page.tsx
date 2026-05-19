@@ -76,13 +76,13 @@ export default function DashboardPage() {
     { value: 5, label: "Amhara" },
     { value: 6, label: "Oromia" },
     { value: 7, label: "Somali" },
-    { value: 8, label: "Benishangul-Gumuz" },
-    { value: 9, label: "SNNPR" },
+    { value: 8, label: "Benishangul Gumz" },
+    { value: 9, label: "Central Ethiopia" },
     { value: 10, label: "Gambela" },
     { value: 11, label: "Harari" },
     { value: 12, label: "Sidama" },
-    { value: 13, label: "South West" },
-    { value: 14, label: "Federal HQ" }
+    { value: 13, label: "South West Ethiopia" },
+    { value: 14, label: "South Ethiopia" }
   ];
 
   useEffect(() => {
@@ -116,9 +116,9 @@ export default function DashboardPage() {
       
       const REGIONS: Record<string, string> = {
           "1": "Addis Ababa", "2": "Dire Dawa", "3": "Tigray", "4": "Afar", 
-          "5": "Amhara", "6": "Oromia", "7": "Somali", "8": "Benishangul-Gumuz", 
-          "9": "SNNPR", "10": "Gambela", "11": "Harari", "12": "Sidama", 
-          "13": "South West", "14": "Federal HQ"
+          "5": "Amhara", "6": "Oromia", "7": "Somali", "8": "Benishangul Gumz", 
+          "9": "Central Ethiopia", "10": "Gambela", "11": "Harari", "12": "Sidama", 
+          "13": "South West Ethiopia", "14": "South Ethiopia"
       };
 
       if (filterRegionId > 0) {

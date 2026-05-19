@@ -40,13 +40,13 @@ const REGION_ABBR: Record<string, string> = {
   "REGION_amhara": "AM",
   "REGION_oromia": "OR",
   "REGION_somali": "SM",
-  "REGION_benishangul_gumuz": "BG",
-  "REGION_snnpr": "SN",
+  "REGION_benishangul_gumz": "BG",
+  "REGION_central_ethiopia": "CE",
   "REGION_gambela": "GM",
   "REGION_harari": "HR",
   "REGION_sidama": "SD",
-  "REGION_south_west": "SW",
-  "REGION_federal_hq": "HQ",
+  "REGION_south_west_ethiopia": "SW",
+  "REGION_south_ethiopia": "SE",
 };
 
 const ALL_COUNTRIES = getCountries().map(country => ({
@@ -219,7 +219,7 @@ export default function MemberRegistrationPage() {
             const extractedGender = getVal("gender");
             
             // If Ethiopia, use Region ID, otherwise use Address field
-            const regionId = formData.country === "ET" ? (REGION_MAP_VALUE_TO_ID[formData.region] || 1) : 14; // 14 is Federal HQ / Other
+            const regionId = formData.country === "ET" ? (REGION_MAP_VALUE_TO_ID[formData.region] || 1) : 14; // 14 is South Ethiopia / Other
             const finalAddress = formData.country === "ET" ? "" : formData.internationalAddress;
 
             const res = await api.post("/join/member", {

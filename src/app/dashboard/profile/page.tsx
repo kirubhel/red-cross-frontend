@@ -53,13 +53,13 @@ export default function ProfilePage() {
     { id: 5, name: "Amhara" },
     { id: 6, name: "Oromia" },
     { id: 7, name: "Somali" },
-    { id: 8, name: "Benishangul Gumuz" },
-    { id: 9, name: "SNNPR" },
+    { id: 8, name: "Benishangul Gumz" },
+    { id: 9, name: "Central Ethiopia" },
     { id: 10, name: "Gambela" },
     { id: 11, name: "Harari" },
     { id: 12, name: "Sidama" },
-    { id: 13, name: "South West" },
-    { id: 14, name: "Federal HQ" }
+    { id: 13, name: "South West Ethiopia" },
+    { id: 14, name: "South Ethiopia" }
   ];
 
   useEffect(() => {
