@@ -884,7 +884,7 @@ export default function LandingPage() {
         </section>
 
         {/* Call to Action Banner */}
-        <section className="px-6 pb-16">
+        <section className="px-6 pt-24 pb-16">
           <div className="container mx-auto">
              <div className="relative bg-[#ED1C24] rounded-[48px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(237,28,36,0.25)] border border-gray-100/10">
                 {/* Decorative Elements */}
