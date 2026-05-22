@@ -13,8 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
-import en from 'react-phone-number-input/locale/en.json';
+import PhoneNumberInput, { buildFullPhoneNumber } from "@/components/ui/phone-number-input";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -139,10 +138,7 @@ const ROLE_COLORS: Record<string | number, string> = {
   "MEMBER": "bg-gray-100 text-gray-700",
 };
 
-const ALL_COUNTRY_CODES = getCountries().map(country => ({
-  code: `+${getCountryCallingCode(country)}`,
-  name: (en as any)[country] || country
-}));
+
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<SystemUser[]>([]);
@@ -152,7 +148,7 @@ export default function UserManagementPage() {
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
   const [form, setForm] = useState<NewUserForm>({ ...DEFAULT_FORM });
   const [saving, setSaving] = useState(false);
-  const [countryCode, setCountryCode] = useState("+251");
+  const [countryIso, setCountryIso] = useState("ET");
   const [showPassword, setShowPassword] = useState(false);
   const [editRole, setEditRole] = useState<number>(5);
   const [editStatus, setEditStatus] = useState<string>("ACTIVE");
@@ -232,9 +228,8 @@ export default function UserManagementPage() {
     }
     setSaving(true);
     try {
-      // Normalize: strip leading 0s and duplicate country code
-      const cleanPhone = form.phone_number.replace(/^0+/, "").replace(countryCode, "");
-      const finalPhone = `${countryCode}${cleanPhone}`;
+      // Build full E.164 phone number from ISO country + local digits
+      const finalPhone = buildFullPhoneNumber(countryIso, form.phone_number);
 
       await api.post("/users/create", {
         email: form.email,
@@ -544,23 +539,17 @@ export default function UserManagementPage() {
                     </div>
                     <div className="space-y-1.5">
                        <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Phone</Label>
-                       <div className="flex gap-2">
-                           <select 
-                               value={countryCode} 
-                               onChange={(e) => setCountryCode(e.target.value)}
-                               className="w-24 h-10 rounded-xl bg-gray-50 text-black border border-gray-100 font-bold text-[10px] appearance-none px-2 focus:ring-1 focus:ring-red-500/20"
-                           >
-                               {ALL_COUNTRY_CODES.sort((a, b) => (a.name || "").localeCompare(b.name || "")).map((c, i) => (
-                                   <option key={`${c.code}-${i}`} value={c.code} className="bg-white">{c.name} ({c.code})</option>
-                               ))}
-                           </select>
-                           <Input
-                               value={form.phone_number}
-                               onChange={e => setForm(f => ({ ...f, phone_number: e.target.value }))}
-                               placeholder="912345678"
-                               className="flex-1 h-10 rounded-xl bg-gray-50 text-black border-gray-100 font-bold text-sm"
-                           />
-                       </div>
+                       <PhoneNumberInput
+                           countryCode={countryIso}
+                           onCountryChange={(code) => {
+                               setCountryIso(code);
+                               setForm(f => ({ ...f, phone_number: "" }));
+                           }}
+                           localNumber={form.phone_number}
+                           onLocalNumberChange={(val) =>
+                               setForm(f => ({ ...f, phone_number: val }))
+                           }
+                       />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Password</Label>

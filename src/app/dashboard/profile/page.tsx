@@ -23,6 +23,20 @@ import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
+import PhoneNumberInput, { buildFullPhoneNumber, stripDialCode } from "@/components/ui/phone-number-input";
+import { getCountries, getCountryCallingCode } from "react-phone-number-input";
+
+const detectCountryFromPhone = (phone: string): string => {
+  if (!phone) return "ET";
+  const countries = getCountries();
+  for (const country of countries) {
+    const dialCode = `+${getCountryCallingCode(country)}`;
+    if (phone.startsWith(dialCode)) {
+      return country;
+    }
+  }
+  return "ET";
+};
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -31,6 +45,7 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [countryIso, setCountryIso] = useState("ET");
 
   // Form states
   const [formData, setFormData] = useState({
@@ -85,12 +100,17 @@ export default function ProfilePage() {
           console.warn("Failed to parse metadata", e);
         }
 
+        const rawPhone = data.phone_number || "";
+        const country = detectCountryFromPhone(rawPhone);
+        const localPhone = stripDialCode(rawPhone, country);
+
+        setCountryIso(country);
         setFormData({
           firstName: data.first_name || "",
           fatherName: data.father_name || "",
           grandfatherName: data.grandfather_name || "",
           email: data.email || "",
-          phone: data.phone_number || "",
+          phone: localPhone,
           region: data.region_id || data.region || 0,
           zone: data.zone_id || data.zone || "",
           woreda: data.woreda_id || data.woreda || "",
@@ -201,13 +221,15 @@ export default function ProfilePage() {
       meta.bio = formData.bio;
       const metaString = JSON.stringify(meta);
 
+      const fullPhone = buildFullPhoneNumber(countryIso, formData.phone);
+
       await api.put("/person/profile", {
         id: user?.id,
         first_name: formData.firstName,
         father_name: formData.fatherName,
         grandfather_name: formData.grandfatherName,
         email: formData.email,
-        phone_number: formData.phone,
+        phone_number: fullPhone,
         region: formData.region,
         metadata: metaString,
         photo_url: user?.photo_url
@@ -220,7 +242,7 @@ export default function ProfilePage() {
         first_name: formData.firstName,
         father_name: formData.fatherName,
         grandfather_name: formData.grandfatherName,
-        phone_number: formData.phone,
+        phone_number: fullPhone,
         metadata: metaString
       }));
 
@@ -404,17 +426,18 @@ export default function ProfilePage() {
                  </div>
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Phone Number</label>
-                    <div className="relative">
-                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
-                       <input 
-                          type="tel" 
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          className="w-full bg-gray-50 border-none rounded-2xl h-14 pl-12 pr-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all" 
-                          placeholder="+251 911..."
-                       />
-                    </div>
+                    <PhoneNumberInput
+                       countryCode={countryIso}
+                       onCountryChange={(code) => {
+                          setCountryIso(code);
+                          setFormData(prev => ({ ...prev, phone: "" }));
+                       }}
+                       localNumber={formData.phone}
+                       onLocalNumberChange={(val) =>
+                          setFormData(prev => ({ ...prev, phone: val }))
+                       }
+                       inputClassName="h-14 bg-gray-50 border-none text-gray-900 rounded-r-2xl font-bold text-sm focus:ring-0"
+                    />
                  </div>
               </div>
 

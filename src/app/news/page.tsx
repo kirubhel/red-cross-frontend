@@ -207,9 +207,11 @@ export default function NewsPage() {
                   </p>
 
                   <div className="pt-4">
-                    <Button variant="ghost" className="p-0 hover:bg-transparent text-[#ED1C24] font-bold flex items-center gap-2 group/btn cursor-pointer">
-                      Read Story <ArrowLeft className="h-4 w-4 rotate-180 transition-transform group-hover/btn:translate-x-1" />
-                    </Button>
+                    <Link href={`/news/${article.id}`}>
+                      <Button variant="ghost" className="p-0 hover:bg-transparent text-[#ED1C24] font-bold flex items-center gap-2 group/btn cursor-pointer">
+                        Read Story <ArrowLeft className="h-4 w-4 rotate-180 transition-transform group-hover/btn:translate-x-1" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </motion.div>

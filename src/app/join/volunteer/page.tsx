@@ -23,19 +23,13 @@ import {
   Check,
   Globe
 } from "lucide-react";
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
-import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
-import en from 'react-phone-number-input/locale/en.json';
+import PhoneNumberInput, { buildFullPhoneNumber, ALL_COUNTRIES } from "@/components/ui/phone-number-input";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS } from "@/lib/constants";
 
-const ALL_COUNTRIES = getCountries().map(country => ({
-  code: country,
-  name: (en as any)[country] || country,
-  callingCode: `+${getCountryCallingCode(country)}`
-})).sort((a, b) => a.name.localeCompare(b.name));
+
+
 
 const ENGAGEMENT_AREAS = [
   "First Aid Service",
@@ -207,13 +201,18 @@ export default function VolunteerJoinPage() {
 
             const regionId = formData.country === "ET" ? (REGION_MAP_VALUE_TO_ID[formData.region] || 1) : 14;
 
+            const fullPhone = buildFullPhoneNumber(
+                formData.country || "ET",
+                formData.phoneNumber
+            );
+
             // Register User
             const res = await api.post("/auth/register/volunteer", {
                 first_name: formData.firstName,
                 father_name: formData.fatherName,
                 grandfather_name: formData.grandfatherName,
                 email: formData.email,
-                phone_number: formData.phoneNumber,
+                phone_number: fullPhone,
                 password: formData.password,
                 region: regionId,
                 role: 5, // ROLE_volunteer
@@ -256,36 +255,7 @@ export default function VolunteerJoinPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
       <Header minimal={true} />
-      <style jsx global>{`
-        .PhoneInput {
-          display: flex;
-          align-items: center;
-          background: #f9fafb;
-          border-radius: 0.6rem;
-          padding: 0 1rem;
-          height: 2.5rem;
-          transition: all 0.2s;
-        }
-        .PhoneInput:focus-within {
-          box-shadow: 0 0 0 2px rgba(237, 28, 36, 0.08);
-        }
-        .PhoneInputInput {
-          flex: 1;
-          background: transparent;
-          border: none !important;
-          outline: none !important;
-          font-weight: 700;
-          font-size: 0.875rem;
-          padding-left: 0.75rem;
-          color: black;
-        }
-        .PhoneInputCountrySelect {
-          outline: none;
-          border: none;
-          background: transparent;
-          cursor: pointer;
-        }
-      `}</style>
+
 
        <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-7xl grid lg:grid-cols-[1fr_640px] gap-20 items-start pt-10">
@@ -342,13 +312,16 @@ export default function VolunteerJoinPage() {
                                               return (
                                                   <div key={field.id} className="space-y-1 group md:col-span-1">
                                                       <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
-                                                      <PhoneInput
-                                                         international
-                                                         defaultCountry={formData.country as any}
-                                                         value={formData.phoneNumber}
-                                                         onChange={(val) => setFormData({ ...formData, phoneNumber: val || "" })}
-                                                         placeholder={field.placeholder || "Enter phone number"}
-                                                         className="PhoneInput"
+                                                      <PhoneNumberInput
+                                                          countryCode={formData.country || "ET"}
+                                                          onCountryChange={(code) =>
+                                                              setFormData((prev: any) => ({ ...prev, country: code, phoneNumber: "" }))
+                                                          }
+                                                          localNumber={formData.phoneNumber}
+                                                          onLocalNumberChange={(val) =>
+                                                              setFormData((prev: any) => ({ ...prev, phoneNumber: val }))
+                                                          }
+                                                          required={field.required}
                                                       />
                                                   </div>
                                               );

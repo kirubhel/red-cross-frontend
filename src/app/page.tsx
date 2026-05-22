@@ -25,8 +25,10 @@ import {
   Twitter,
   Instagram,
   Linkedin,
-  Languages
+  Languages,
+  Award
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { translations, Language } from "@/lib/translations";
 import { useEffect, useRef, useState } from "react";
 import { useInView, useMotionValue, useSpring, useTransform } from "framer-motion";
@@ -695,91 +697,190 @@ export default function LandingPage() {
         </section>
 
 
-        {/* Voluntary Services Section */}
-        <section className="py-16 px-6 overflow-hidden">
-          <div className="container mx-auto">
-             <div className="relative bg-black rounded-[48px] overflow-hidden p-12 md:p-20 group border-2 border-[#ED1C24]">
-                {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-[40%] h-full bg-white hidden md:block" 
-                     style={{ clipPath: 'polygon(25% 0, 100% 0, 100% 100%, 0% 100%)' }} />
-                <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none" 
-                     style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-                
-                <Plus className="absolute top-10 right-20 h-20 w-20 text-black/5 rotate-12 hidden md:block" strokeWidth={4} />
-                
-                <div className="max-w-3xl space-y-10 relative z-10">
-                   <div className="space-y-4">
-                      <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-none">
-                        {mergedT.volunteerSection.title}
-                      </h2>
-                      <div className="h-1.5 w-20 bg-[#ED1C24] rounded-full" />
-                   </div>
-                   <p className="text-xl text-white/70 leading-relaxed font-medium whitespace-pre-wrap">
-                      {mergedT.volunteerSection.content}
-                   </p>
-                   <div className="pt-6">
-                      <p className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase">
-                        {mergedT.volunteerSection.cta}
-                      </p>
-                   </div>
-                </div>
-             </div>
-          </div>
-        </section>
-
-        {/* Programs & Impact Section */}
+        {/* Modernized Programs & Impact Section */}
         <section className="py-24 px-6 bg-gray-50/50">
           <div className="container mx-auto">
-            <div className="max-w-4xl mx-auto space-y-16">
-              <div className="space-y-6 text-center">
+            <div className="max-w-4xl mx-auto space-y-8 text-center mb-16">
                  <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter">{mergedT.programsSection.title}</h2>
                  <div className="h-1.5 w-24 bg-[#ED1C24] mx-auto rounded-full" />
-                 <p className="text-xl text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">
+                 <p className="text-lg md:text-xl text-gray-600 leading-relaxed font-medium">
                    {mergedT.programsSection.content}
                  </p>
                  <div className="flex flex-wrap justify-center gap-4 pt-4">
-                    {mergedT.programsSection.sources.map(source => (
+                    {mergedT.programsSection.sources.map((source: string) => (
                       <div key={source} className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-black text-sm uppercase tracking-widest text-[#ED1C24]">
                         {source}
                       </div>
                     ))}
                  </div>
-              </div>
+            </div>
 
-              <div className="grid md:grid-cols-2 gap-12 items-stretch">
-                 <div className="bg-white p-10 rounded-[40px] shadow-xl border border-gray-100 flex flex-col h-full transition-all hover:shadow-2xl hover:-translate-y-1">
-                    <div className="h-14 w-14 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center font-black text-2xl mb-6">01</div>
-                    <h3 className="text-2xl font-black text-black mb-4">{mergedT.programsSection.membershipTitle}</h3>
-                    <p className="text-gray-500 leading-relaxed font-medium whitespace-pre-wrap text-sm flex-grow mb-8">
-                      {mergedT.programsSection.membershipContent}
-                    </p>
-                    <Link href="/join/member" className="mt-auto">
-                      <Button className="w-full h-14 bg-black hover:bg-[#ED1C24] text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2">
-                        {mergedT.membership.cta} <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                 </div>
-                 <div className="bg-white p-10 rounded-[40px] shadow-xl border border-gray-100 flex flex-col h-full transition-all hover:shadow-2xl hover:-translate-y-1">
-                    <div className="h-14 w-14 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center font-black text-2xl mb-6">02</div>
-                    <h3 className="text-2xl font-black text-black mb-4">{mergedT.programsSection.donationTitle}</h3>
-                    <p className="text-gray-500 leading-relaxed font-medium whitespace-pre-wrap text-sm flex-grow mb-8">
-                      {mergedT.programsSection.donationContent}
-                    </p>
-                    <div className="space-y-6 mt-auto">
-                      <Button 
-                        onClick={() => setIsDonationModalOpen(true)}
-                        className="w-full h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
-                      >
-                        {mergedT.hero.ctaDonate} <MotionHeart className="h-4 w-4" animate="heartbeat" variants={heartVariants} />
-                      </Button>
-                      <div className="pt-4 border-t border-gray-50 text-center">
-                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24]">{mergedT.programsSection.donationFooter}</p>
-                      </div>
-                    </div>
-                 </div>
-              </div>
+            <div className="grid lg:grid-cols-2 gap-12">
+               {/* Membership Cards Grid */}
+               <div className="space-y-6">
+                  <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 h-full flex flex-col">
+                     <h3 className="text-2xl font-black text-black mb-4 flex items-center gap-3">
+                       <div className="w-10 h-10 rounded-full bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0">
+                         <Award className="w-5 h-5" />
+                       </div>
+                       {mergedT.programsSection.membershipTitle}
+                     </h3>
+                     <p className="text-gray-500 font-medium mb-8 leading-relaxed">{mergedT.programsSection.membershipContent}</p>
+                     
+                     {/* Interactive Tokens */}
+                     <div className="grid grid-cols-2 gap-4 mb-8">
+                        <div className="bg-rose-50/50 p-5 rounded-3xl border border-rose-100 hover:bg-rose-50 hover:-translate-y-1 transition-all">
+                           <ShieldCheck className="w-8 h-8 text-rose-500 mb-3" />
+                           <h4 className="font-black text-sm text-black mb-1">Digital Access</h4>
+                           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-tight">Instant Approval</p>
+                        </div>
+                        <div className="bg-amber-50/50 p-5 rounded-3xl border border-amber-100 hover:bg-amber-50 hover:-translate-y-1 transition-all">
+                           <Activity className="w-8 h-8 text-amber-500 mb-3" />
+                           <h4 className="font-black text-sm text-black mb-1">Voting Rights</h4>
+                           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-tight">General Assembly</p>
+                        </div>
+                     </div>
+
+                     <Link href="/join/member" className="block mt-auto">
+                       <Button className="w-full h-14 bg-black hover:bg-[#ED1C24] text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-black/10 hover:shadow-red-500/20">
+                         {mergedT.membership.cta} <ArrowRight className="h-4 w-4" />
+                       </Button>
+                     </Link>
+                  </div>
+               </div>
+
+               {/* Donation Explanation Cards */}
+               <div className="space-y-6">
+                  <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 h-full flex flex-col">
+                     <h3 className="text-2xl font-black text-black mb-4 flex items-center gap-3">
+                       <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                         <Heart className="w-5 h-5" />
+                       </div>
+                       {mergedT.programsSection.donationTitle}
+                     </h3>
+                     <p className="text-gray-500 font-medium mb-6 leading-relaxed">{mergedT.programsSection.donationContent}</p>
+                     
+                     <div className="space-y-4 mb-8 flex-grow">
+                        {[
+                          { title: "Emergency Response", icon: Flame, color: "text-orange-500", bg: "bg-orange-50" },
+                          { title: "Clean Water (WASH)", icon: Droplets, color: "text-blue-500", bg: "bg-blue-50" },
+                          { title: "Medical Supplies", icon: Activity, color: "text-emerald-500", bg: "bg-emerald-50" },
+                        ].map((cause, idx) => (
+                           <div key={idx} className="flex items-center gap-4 p-5 rounded-3xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all group cursor-default bg-gray-50/50 hover:bg-white">
+                              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${cause.bg} ${cause.color} group-hover:scale-110 group-hover:rotate-6 transition-all shadow-sm`}>
+                                 <cause.icon className="w-6 h-6" />
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-black text-black">{cause.title}</h4>
+                                <div className="h-1.5 w-full bg-gray-100 rounded-full mt-3 overflow-hidden">
+                                   <div className={`h-full w-[85%] transition-all duration-1000 origin-left ${cause.bg.replace('bg-', 'bg-').replace('50', '500')}`} />
+                                </div>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+
+                     <Button 
+                       onClick={() => setIsDonationModalOpen(true)}
+                       className="w-full h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 mt-auto"
+                     >
+                       {mergedT.hero.ctaDonate} <MotionHeart className="h-4 w-4" animate="heartbeat" variants={heartVariants} />
+                     </Button>
+                  </div>
+               </div>
             </div>
           </div>
+        </section>
+
+        {/* Volunteer Hub & Quick Form */}
+        <section className="py-24 px-6 overflow-hidden relative bg-slate-950">
+           {/* Glassmorphic Background */}
+           <div className="absolute inset-0 z-0">
+             <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-red-500/20 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/2" />
+             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/4" />
+             <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&q=80&w=1200')] opacity-5 bg-cover bg-center" />
+             <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" />
+           </div>
+
+           <div className="container mx-auto relative z-10 max-w-6xl">
+              <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-16 lg:gap-20 items-center">
+                 {/* Hub Info */}
+                 <div className="space-y-8">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-lg">
+                      <Users className="h-4 w-4 text-red-500" /> ERCS Volunteer Hub
+                    </div>
+                    
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[1.05]">
+                      {mergedT.volunteerSection.title}
+                    </h2>
+                    
+                    <p className="text-lg md:text-xl text-white/60 font-medium leading-relaxed">
+                      {mergedT.volunteerSection.content}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                       <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:bg-white/10 transition-colors group">
+                          <div className="text-4xl lg:text-5xl font-black text-white mb-2 group-hover:scale-105 transition-transform origin-left">
+                            <CountUp value={50000} suffix="+" />
+                          </div>
+                          <div className="text-[10px] font-black text-white/50 uppercase tracking-widest">Active Volunteers</div>
+                       </div>
+                       <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:bg-white/10 transition-colors group">
+                          <div className="text-4xl lg:text-5xl font-black text-white mb-2 group-hover:scale-105 transition-transform origin-left">
+                            <CountUp value={20} suffix="+" />
+                          </div>
+                          <div className="text-[10px] font-black text-white/50 uppercase tracking-widest">Regional Branches</div>
+                       </div>
+                    </div>
+                 </div>
+
+                 {/* Quick Signup Form */}
+                 <div className="bg-white/5 border border-white/10 p-8 md:p-10 rounded-[40px] shadow-2xl relative overflow-hidden backdrop-blur-2xl">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-red-500/20 rounded-full blur-[80px] pointer-events-none" />
+                    
+                    <div className="mb-8">
+                      <h3 className="text-2xl font-black text-white mb-2">Quick Signup</h3>
+                      <p className="text-sm font-medium text-white/60">Join the movement in less than a minute.</p>
+                    </div>
+                    
+                    <form 
+                      className="space-y-5"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        alert("Signup request initiated! (Mocked)");
+                      }}
+                    >
+                       <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                             <Label className="text-[10px] text-white/60 uppercase tracking-widest font-black ml-1">First Name</Label>
+                             <Input required className="bg-white/5 border-white/10 text-white rounded-2xl h-14 px-4 font-bold placeholder:text-white/20 focus-visible:ring-red-500 focus-visible:bg-white/10 transition-all" placeholder="Abebe" />
+                          </div>
+                          <div className="space-y-2">
+                             <Label className="text-[10px] text-white/60 uppercase tracking-widest font-black ml-1">Last Name</Label>
+                             <Input required className="bg-white/5 border-white/10 text-white rounded-2xl h-14 px-4 font-bold placeholder:text-white/20 focus-visible:ring-red-500 focus-visible:bg-white/10 transition-all" placeholder="Bekele" />
+                          </div>
+                       </div>
+                       <div className="space-y-2">
+                          <Label className="text-[10px] text-white/60 uppercase tracking-widest font-black ml-1">Email Address</Label>
+                          <Input required type="email" className="bg-white/5 border-white/10 text-white rounded-2xl h-14 px-4 font-bold placeholder:text-white/20 focus-visible:ring-red-500 focus-visible:bg-white/10 transition-all" placeholder="abebe@example.com" />
+                       </div>
+                       <div className="space-y-2">
+                          <Label className="text-[10px] text-white/60 uppercase tracking-widest font-black ml-1">Area of Interest</Label>
+                          <select required className="w-full bg-white/5 border border-white/10 text-white font-bold rounded-2xl h-14 px-4 focus:outline-none focus:ring-2 focus:ring-red-500 appearance-none transition-all">
+                            <option value="first_aid" className="text-black">First Aid & Emergency</option>
+                            <option value="wash" className="text-black">WASH Programs</option>
+                            <option value="youth" className="text-black">Youth Leadership</option>
+                            <option value="blood" className="text-black">Blood Donation Campaigns</option>
+                          </select>
+                       </div>
+                       <Button type="submit" className="w-full h-14 bg-[#ED1C24] hover:bg-white hover:text-black text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all mt-4 shadow-lg shadow-red-500/20 group">
+                         {mergedT.volunteerSection.cta}
+                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                       </Button>
+                    </form>
+                 </div>
+              </div>
+           </div>
         </section>
 
         {/* Call to Action Banner */}

@@ -49,7 +49,7 @@ export const translations = {
       valuesTitle: "Our Values",
       valuesText: "Guided by the 7 Principles: Humanity, Impartiality, Neutrality, Independence, Voluntary Service, Unity, and Universality.",
       imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200",
-      historyLink: "https://www.redcrosseth.org/who-we-are/background-and-history",
+      historyLink: "/history",
       historyLinkLabel: "Read Full History"
     },
     services: {
@@ -186,14 +186,14 @@ export const translations = {
       content: "Membership and donation provide a valuable opportunity to strengthen and build upon the local support for our organization and its causes. By introducing structured membership tiers, we can better segment our donors, enabling more targeted engagement and more efficient relationship management. These programs also equip us with effective tools to encourage advocacy, empowering supporters to actively promote our mission and campaigns. Furthermore, a well-designed membership system helps generate a more predictable and sustainable revenue stream, ensuring continuity in delivering our services and achieving our organizational goals.\n\nERCS has designed this powerful system which enables us to generate income so as to execute and facilitate these underlying mandates. Below are the only two sources of our financial income:",
       sources: ["Annual Membership Payment", "Money Donations"],
       membershipTitle: "Membership Payment",
-      membershipContent: "ERCS membership allows you to make online annual membership due payments digitally and instantly instead of collecting them in person or in cash. One of the most important components of this ERCS annual membership payment is to make payment simple, affordable, and easy to reach, and avoid the old and past difficult task requiring envelopes, letters, tear-off receipts, stamps, which took too much time, people and energy.\n\nThis ERCS system simplifies the process of collecting annual membership dues by enabling online registration at the same time as collecting annual membership payments.",
+      membershipContent: "ERCS membership allows you to easily pay your annual dues digitally and instantly. Our new system eliminates paperwork, saving time and energy while providing a seamless online registration process.",
       donationTitle: "Donation Payment",
-      donationContent: "We live in a world, where millions of people have their lives destroyed by internal conflicts and natural disasters. Amid the chaos and despair of these causes, Ethiopia Red Cross Society is a unique sign of hope to those whose lives have been shattered by any of these mentioned causes. Our neutrality gives our staff access to conflict zones where they can save lives and help rebuild them.\n\nERCS relief and rehabilitation efforts mostly depend on the collaboration of its volunteers, members, donors, the business community, and private as well as public institutions. This is the time for all of us to come together, mobilize resources and comfort victims.\n\nBut as the pressure on our resources continues to grow, ERCS need more funds to help the increasing number of men, women and children around the country who find themselves caught in the crossfire of conflict and natural disaster. ERCS instant donations for either regular or for admin configured donation causes is possible using this powerful system.",
+      donationContent: "Your donation helps us reach millions affected by conflicts and natural disasters. As a neutral body, we access hard-to-reach areas to save lives. Join our mission to mobilize resources, support victims, and provide urgent relief through our secure platform.",
       donationFooter: "YOUR DONATION GOES WHERE IT IS NEEDED MOST"
     },
     volunteerSection: {
       title: "Voluntary Services",
-      content: "Volunteering is at the heart of the Ethiopian Red Cross Society movement. It is central to all activities of the national society. Currently, tens of thousands of volunteers are registered throughout the country, involved in various humanitarian activities. Our humanitarian and development activities, food security and disaster preparedness/response, health and health related initiatives, HIV/AIDS prevention and control, and the promotion of humanitarian values.\n\nWorking together, our volunteers and staff members save lives and help thousands of people in need every year, and raise funds necessary to pay for our services. We bring about change not only by sending aid, but also by working through volunteers and partners to empower communities in Ethiopia, as it is one of poorest countries in the world.",
+      content: "Volunteering is the heart of ERCS. Tens of thousands of our volunteers drive vital humanitarian efforts—from disaster response and health initiatives to food security. Together, we empower communities across Ethiopia to build resilience and create lasting change.",
       cta: "CREATE LASTING CHANGE THROUGH VOLUNTEERING"
     },
     contactSection: {
@@ -253,7 +253,7 @@ export const translations = {
       valuesTitle: "እሴቶቻችን",
       valuesText: "በ7ቱ መርሆች የሚመራ፡ ሰብአዊነት፣ አድልዎ አለማድረግ፣ ገለልተኝነት፣ ነጻነት፣ የበጎ ፈቃድ አገልግሎት፣ አንድነት እና አለምአቀፋዊነት።",
       imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200",
-      historyLink: "https://www.redcrosseth.org/who-we-are/background-and-history",
+      historyLink: "/history",
       historyLinkLabel: "ሙሉ ታሪኩን ያንብቡ"
     },
     services: {
@@ -383,14 +383,14 @@ export const translations = {
       content: "የአባልነት እና ልገሳ ለድርጅታችን እና ለዓላማዎቹ ያለውን አካባቢያዊ ድጋፍ ለማጠናከር እና ለመገንባት ጠቃሚ ዕድል ይሰጣል።",
       sources: ["ዓመታዊ የአባልነት ክፍያ", "የገንዘብ ልገሳዎች"],
       membershipTitle: "የአባልነት ክፍያ",
-      membershipContent: "የኢ.ቀ.መ.ማ አባልነት ዓመታዊ የአባልነት ክፍያዎችን በአካል ወይም በጥሬ ገንዘብ ከመሰብሰብ ይልቅ በዲጂታል መንገድ በቅጽበት እንዲከፍሉ ያስችልዎታል።",
+      membershipContent: "የኢ.ቀ.መ.ማ አባልነት ዓመታዊ የአባልነት ክፍያዎችን በቀላሉ እና በቅጽበት በዲጂታል መንገድ እንዲከፍሉ ያስችልዎታል። አዲሱ ስርዓታችን ወረቀቶችን በማስወገድ ጊዜ እና ጉልበትን ይቆጥባል እንዲሁም ምቹ የኦንላይን ምዝገባን ያቀርባል።",
       donationTitle: "የልገሳ ክፍያ",
-      donationContent: "ሚሊዮን ሰዎች በውስጥ ግጭቶች እና በተፈጥሮ አደጋዎች ሕይወታቸው በሚጠፋበት ዓለም ውስጥ እንኖራለን።",
+      donationContent: "ልገሳዎ በግጭቶች እና ተፈጥሮ አደጋዎች ለተጎዱ በሚሊዮን የሚቆጠሩ ወገኖች እንድንደርስ ይረዳናል። በገለልተኝነት ህይወትን ለማዳን አስቸጋሪ ቦታዎች ላይ እንገባለን። የሕይወት አድን ስራዎቻችንን በልገሳዎ ይደግፉ።",
       donationFooter: "የእርስዎ ልገሳ በጣም በሚያስፈልግበት ቦታ ይውላል"
     },
     volunteerSection: {
       title: "የበጎ ፈቃድ አገልግሎቶች",
-      content: "በጎ ፈቃደኝነት የኢትዮጵያ ቀይ መስቀል ማህበር ንቅናቄ እምብርት ነው።",
+      content: "በጎ ፈቃደኝነት የኢትዮጵያ ቀይ መስቀል ማህበር የጀርባ አጥንት ነው። በአስር ሺዎች የሚቆጠሩ በጎ ፈቃደኞቻችን በአደጋ ምላሽ እና ጤና ዙሪያ አስፈላጊ የሆኑ ሰብአዊ ስራዎችን ያከናውናሉ። በማህበረሰቡ ውስጥ ዘላቂ ለውጥ ለማምጣት ይቀላቀሉን።",
       cta: "በበጎ ፈቃደኝነት ዘላቂ ለውጥ ይፍጠሩ"
     },
     contactSection: {
@@ -457,7 +457,7 @@ export const translations = {
       valuesTitle: "Gatataa Keenya",
       valuesText: "Qajeelfama torban kanaan qajeelfama: Namummaa, Wal-caalmaa dhabuu, Giddu-galeessummaa, Bilisummaa, Tajaajila Fedhii, Tokkummaa fi Addunyaa hundaa.",
       imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200",
-      historyLink: "https://www.redcrosseth.org/who-we-are/background-and-history",
+      historyLink: "/history",
       historyLinkLabel: "Seenaa Guutuu Dubbisi"
     },
     services: {
@@ -587,14 +587,14 @@ export const translations = {
       content: "Miseensummaafi kennatni deeggarsa naannoo dhaabbata keenyaafi dhimmoota isaatiif qabu cimsuufi irratti ijaaruuf carraaqqii guddaa dha.",
       sources: ["Kaffaltii Miseensummaa Waggaa", "Kennata Maallaqaa"],
       membershipTitle: "Kaffaltii Miseensummaa",
-      membershipContent: "Miseensummaan ERCS kaffaltii miseensummaa waggaa karaa dijitaalaa kaffaluuf isin dandeessisa.",
+      membershipContent: "Miseensummaan ERCS kaffaltii miseensummaa waggaa karaa dijitaalaatiin salphaatti akka kaffaltan isin dandeessisa. Sirni keenya haaraan yeroofi humna qusachuun galmee onlaayinii mijeessa.",
       donationTitle: "Kaffaltii Kennataa",
-      donationContent: "Addunyaa namoonni miiliyoonaan lakkaa'aman sababa walitti bu'iinsa keessootiifi balaa uumamaatiin jireenyi isaanii badu keessa jiraanna.",
+      donationContent: "Arjoomni keessan namoota miiliyoonaan lakkaa'aman rakkoo uumamaafi walitti bu'iinsaan miidhaman bira akka geenyu nu gargaara. Addunyaa kana keessatti deeggarsa ariifachiisaa dhiyeessuuf nu waliin ta'aa.",
       donationFooter: "KENNATNI KEESSAN IDDOO HUNDA CAALAA BARBAACHISUTTI OOLA"
     },
     volunteerSection: {
       title: "Tajaajila Fedhii",
-      content: "Fedhiin tajaajiluu wiirtuu sochii Sosayeti Qaxxaamura Diimaa Itoophiyaati.",
+      content: "Fedhiin tajaajiluu wiirtuu sochii Sosayeti Qaxxaamura Diimaa Itoophiyaati. Tajaajiltoonni keenya kumaatamatti lakkaa'aman hojii namoomaa murteessaa ta'e ni hojjetu. Waliin ta'uun hawaasa ni cimsinna.",
       cta: "TAJAAJILA FEDHIITIIN JIJJIIRAMA HIN BADNE FIKKERSAA"
     },
     contactSection: {

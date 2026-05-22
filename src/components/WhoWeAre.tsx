@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { 
   Target, 
@@ -79,17 +80,15 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
                 </div>
 
                 <motion.div variants={itemVariants} className="pt-4">
-                  <a 
+                  <Link 
                     href={local.historyLink} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
                     className="group inline-flex items-center gap-3 px-6 py-3 bg-white hover:bg-black text-black hover:text-white rounded-2xl font-black text-sm uppercase tracking-widest border border-black/10 transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1"
                   >
                     {local.historyLinkLabel}
                     <div className="w-8 h-8 rounded-full bg-ercs-red/10 flex items-center justify-center group-hover:bg-ercs-red transition-colors">
                       <History className="h-4 w-4 text-ercs-red group-hover:text-white" />
                     </div>
-                  </a>
+                  </Link>
                 </motion.div>
               </div>
             </motion.div>

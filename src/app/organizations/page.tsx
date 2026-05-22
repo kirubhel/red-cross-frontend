@@ -24,15 +24,9 @@ import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getCountries, getCountryCallingCode } from 'react-phone-number-input';
+import PhoneNumberInput, { buildFullPhoneNumber } from "@/components/ui/phone-number-input";
 import { toast } from "sonner";
-import en from 'react-phone-number-input/locale/en.json';
 import { cn } from "@/lib/utils";
-
-const ALL_COUNTRY_CODES = getCountries().map(country => ({
-  code: `+${getCountryCallingCode(country)}`,
-  name: (en as any)[country] || country
-}));
 
 type Organization = {
   id: string;
@@ -51,7 +45,7 @@ export default function OrganizationsPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [countryCode, setCountryCode] = useState("+251");
+  const [countryIso, setCountryIso] = useState("ET");
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [activeTab, setActiveTab] = useState("partners");
   const [orgTypes, setOrgTypes] = useState<string[]>([]);
@@ -108,8 +102,7 @@ export default function OrganizationsPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const cleanPhone = formData.phone.replace(/^0+/, "").replace(countryCode, "");
-      const finalPhone = `${countryCode}${cleanPhone}`;
+      const finalPhone = buildFullPhoneNumber(countryIso, formData.phone);
       const finalOrgType = formData.orgType === "other" ? formData.otherOrgType : formData.orgType;
 
       await api.post("/organizations/register", {
@@ -384,26 +377,18 @@ export default function OrganizationsPage() {
                                 </div>
                                 <div className="space-y-3">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Phone Number</label>
-                                    <div className="flex gap-2">
-                                        <select 
-                                            value={countryCode} 
-                                            onChange={(e) => setCountryCode(e.target.value)}
-                                            className="w-32 px-3 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-[10px] font-bold text-black shadow-sm appearance-none"
-                                        >
-                                            {ALL_COUNTRY_CODES.sort((a,b) => a.name.localeCompare(b.name)).map((c, i) => (
-                                                <option key={`${c.code}-${i}`} value={c.code} className="bg-white text-black">{c.name} ({c.code})</option>
-                                            ))}
-                                        </select>
-                                        <input 
-                                            type="tel" 
-                                            name="phone"
-                                            required
-                                            value={formData.phone}
-                                            onChange={handleChange}
-                                            className="flex-1 px-6 py-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-sm font-bold text-black shadow-sm placeholder:text-gray-400"
-                                            placeholder="912345678"
-                                        />
-                                    </div>
+                                    <PhoneNumberInput
+                                        countryCode={countryIso}
+                                        onCountryChange={(code) => {
+                                            setCountryIso(code);
+                                            setFormData(prev => ({ ...prev, phone: "" }));
+                                        }}
+                                        localNumber={formData.phone}
+                                        onLocalNumberChange={(val) =>
+                                            setFormData(prev => ({ ...prev, phone: val }))
+                                        }
+                                        inputClassName="px-6 py-4 bg-white border border-gray-200 rounded-r-2xl font-bold text-sm text-black"
+                                    />
                                 </div>
                             </div>
                             <div className="space-y-3">
