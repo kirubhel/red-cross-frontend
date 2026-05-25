@@ -43,18 +43,39 @@ export function AddMemberModal({ onClose, onSuccess, regions }: AddMemberModalPr
     setLoading(true);
 
     try {
+      // Map region integer to proto enum format
+      const regionId = parseInt(formData.region) || 1;
+      const regionMap: Record<number, string> = {
+        1: "REGION_addis_ababa",
+        2: "REGION_dire_dawa",
+        3: "REGION_tigray",
+        4: "REGION_afar",
+        5: "REGION_amhara",
+        6: "REGION_oromia",
+        7: "REGION_somali",
+        8: "REGION_benishangul_gumz",
+        9: "REGION_central_ethiopia",
+        10: "REGION_gambela",
+        11: "REGION_harari",
+        12: "REGION_sidama",
+        13: "REGION_south_west_ethiopia",
+        14: "REGION_south_ethiopia"
+      };
+
       const payload = {
         ...formData,
-        region: parseInt(formData.region) || 1,
+        region: regionMap[regionId] || "REGION_unspecified",
         metadata: "{}"
       };
       
+      console.log("Submitting payload:", payload);
       await api.post("/person", payload);
       toast.success("Member added successfully");
       onSuccess();
     } catch (err: any) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Failed to add member");
+      console.error("Failed to add member:", err.response?.data || err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error || "Failed to add member. Please check your network or token.";
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }

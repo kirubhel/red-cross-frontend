@@ -20,7 +20,8 @@ import {
   Newspaper,
   ShieldCheck,
   Building2,
-  BarChart3
+  BarChart3,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,7 @@ const navigationSections = [
     title: "Operations & Finance",
     items: [
       { href: "/admin/reports", label: "Reports & Analytics", icon: BarChart3 },
+      { href: "/admin/ai-features", label: "AI Capabilities", icon: Sparkles },
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
       { href: "/admin/notifications", label: "Notifications", icon: Bell },
       { href: "/admin/news", label: "News & Media", icon: Newspaper },

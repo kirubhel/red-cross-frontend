@@ -22,31 +22,49 @@ export default function AdminLayout({
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    // Connect to the SSE notification stream
-    const eventSource = new EventSource("http://localhost:50056/api/notifications/stream");
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-    eventSource.onmessage = (event) => {
-      try {
-        const notif = JSON.parse(event.data);
-        setUnreadCount((prev) => prev + 1);
-        
-        if (notif.type === "WARNING" || notif.type === "ALERT") {
-          toast.warning(notif.message, { description: new Date(notif.timestamp).toLocaleTimeString() });
-        } else {
-          toast.info(notif.message, { description: new Date(notif.timestamp).toLocaleTimeString() });
+    const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+    const streamURL = `${baseURL}/notifications/stream?token=${encodeURIComponent(token)}`;
+
+    let eventSource: EventSource;
+
+    const connect = () => {
+      console.log("Connecting to Real-Time Notification Stream...");
+      eventSource = new EventSource(streamURL);
+
+      eventSource.onmessage = (event) => {
+        try {
+          const notif = JSON.parse(event.data);
+          setUnreadCount((prev) => prev + 1);
+          
+          if (notif.type === "ALERT") {
+            toast.error(notif.message, { description: new Date(notif.timestamp).toLocaleTimeString() });
+          } else if (notif.type === "WARNING") {
+            toast.warning(notif.message, { description: new Date(notif.timestamp).toLocaleTimeString() });
+          } else {
+            toast.info(notif.message, { description: new Date(notif.timestamp).toLocaleTimeString() });
+          }
+        } catch (err) {
+          console.error("Error parsing notification", err);
         }
-      } catch (err) {
-        console.error("Error parsing notification", err);
-      }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error("EventSource failed:", error);
+        eventSource.close();
+        // Try to reconnect
+        setTimeout(connect, 5000);
+      };
     };
 
-    eventSource.onerror = (error) => {
-      console.error("EventSource failed:", error);
-      eventSource.close();
-    };
+    connect();
 
     return () => {
-      eventSource.close();
+      if (eventSource) {
+        eventSource.close();
+      }
     };
   }, []);
 

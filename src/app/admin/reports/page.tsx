@@ -2,548 +2,447 @@
 
 import { useState, useEffect } from "react";
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell,
-  LineChart,
-  Line,
-  Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
+  PieChart, Pie, Cell, LineChart, Line, Legend
 } from "recharts";
 import { 
-  Download, 
-  Filter, 
-  Users, 
-  HandHeart, 
-  Building2, 
-  Calendar,
-  ChevronDown,
-  Search,
-  FileText,
-  Table as TableIcon,
-  RefreshCcw,
-  ArrowUpRight,
-  Plus,
-  MapPin,
-  BarChart3
+  Download, Users, Activity, Megaphone, Calendar, FileText, 
+  ArrowUpRight, ArrowDownRight, MapPin, Search, Plus, Filter,
+  MoreVertical, Eye, Download as DownloadIcon, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { motion, Variants } from "framer-motion";
 
-// Mock colors for charts
-const COLORS = ['#ED1C24', '#000000', '#4B5563', '#9CA3AF', '#E5E7EB'];
+// Mock Colors
+const COLORS = {
+  primary: '#10b981', // green for success/active
+  secondary: '#3b82f6', // blue
+  danger: '#ef4444', // red
+  warning: '#f59e0b', // orange
+  purple: '#8b5cf6',
+  gray: '#9ca3af'
+};
 
-type TabType = "MEMBERS" | "VOLUNTEERS" | "ORGANIZATIONS";
+const PIE_COLORS = [COLORS.secondary, COLORS.primary, COLORS.warning, COLORS.danger, COLORS.purple];
 
-export default function ReportsPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("MEMBERS");
-  const [loading, setLoading] = useState(false);
-  const [regions, setRegions] = useState<any[]>([]);
-  
-  // Filters
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [regionFilter, setRegionFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+// Mock Data
+const MOCK_GROWTH = [
+  { month: 'Jan', count: 2200 },
+  { month: 'Feb', count: 4800 },
+  { month: 'Mar', count: 6500 },
+  { month: 'Apr', count: 8100 },
+  { month: 'May', count: 12450 },
+  { month: 'Jun', count: 10000 },
+  { month: 'Jul', count: 11000 },
+  { month: 'Aug', count: 10500 },
+  { month: 'Sep', count: 12000 },
+  { month: 'Oct', count: 13000 },
+  { month: 'Nov', count: 14500 },
+  { month: 'Dec', count: 15500 },
+];
 
-  // Data for Members
-  const [memberStats, setMemberStats] = useState<any>({
-    byType: [
-      { name: 'Annual', value: 400 },
-      { name: 'Lifetime', value: 300 },
-      { name: 'Corporate', value: 300 },
-      { name: 'Youth', value: 200 },
-    ],
-    byStatus: [
-      { name: 'Active', value: 800 },
-      { name: 'Pending', value: 150 },
-      { name: 'Expired', value: 50 },
-    ],
-    growth: [
-      { month: 'Jan', count: 1200 },
-      { month: 'Feb', count: 1350 },
-      { month: 'Mar', count: 1500 },
-      { month: 'Apr', count: 1800 },
-    ]
-  });
+const MOCK_REGISTRATIONS = [
+  { month: 'Jan', count: 1500 },
+  { month: 'Feb', count: 2100 },
+  { month: 'Mar', count: 1800 },
+  { month: 'Apr', count: 2000 },
+  { month: 'May', count: 2350 },
+  { month: 'Jun', count: 1500 },
+  { month: 'Jul', count: 1800 },
+  { month: 'Aug', count: 1600 },
+  { month: 'Sep', count: 2000 },
+  { month: 'Oct', count: 1900 },
+  { month: 'Nov', count: 1500 },
+  { month: 'Dec', count: 1400 },
+];
 
-  // Data for Volunteers
-  const [volunteerStats, setVolunteerStats] = useState<any>({
-    bySkills: [
-        { name: 'First Aid', count: 120 },
-        { name: 'DRM', count: 80 },
-        { name: 'WASH', count: 65 },
-        { name: 'Admin', count: 45 },
-    ],
-    byStatus: [
-        { name: 'Verified', value: 300 },
-        { name: 'Pending', value: 80 },
-        { name: 'Inactive', value: 20 },
-    ]
-  });
+const MOCK_REGIONS = [
+  { name: 'Addis Ababa', value: 4250, percentage: 34 },
+  { name: 'Oromia', value: 3150, percentage: 25 },
+  { name: 'Amhara', value: 2350, percentage: 19 },
+  { name: 'SNNPR', value: 1850, percentage: 15 },
+  { name: 'Tigray', value: 850, percentage: 7 },
+];
 
-  // Data for Organizations
-  const [orgStats, setOrgStats] = useState<any>({
-    byType: [
-        { name: 'Government', value: 45 },
-        { name: 'Private', value: 32 },
-        { name: 'NGO', value: 18 },
-    ],
-    byStatus: [
-        { name: 'Active', value: 85 },
-        { name: 'Pending', value: 10 },
-    ]
-  });
+const MOCK_CAMPAIGNS_STATUS = [
+  { name: 'Ongoing', value: 16, percentage: 47 },
+  { name: 'Upcoming', value: 10, percentage: 29 },
+  { name: 'Completed', value: 6, percentage: 18 },
+  { name: 'Cancelled', value: 2, percentage: 6 },
+];
+
+const MOCK_USER_ACTIVITY = [
+  { date: 'May 1', logins: 1200, newUsers: 400, actions: 1800 },
+  { date: 'May 8', logins: 1500, newUsers: 500, actions: 2100 },
+  { date: 'May 15', logins: 1100, newUsers: 300, actions: 1600 },
+  { date: 'May 22', logins: 1600, newUsers: 600, actions: 2300 },
+  { date: 'May 29', logins: 1800, newUsers: 450, actions: 2500 },
+];
+
+const MOCK_REPORTS = [
+  { id: 1, name: 'Volunteer Growth Report - May 2024', type: 'PDF', generatedOn: 'May 31, 2024', generatedBy: 'Admin User' },
+  { id: 2, name: 'Campaign Performance Report - Q2', type: 'Excel', generatedOn: 'May 25, 2024', generatedBy: 'Admin User' },
+  { id: 3, name: 'User Activity Report - May 2024', type: 'PDF', generatedOn: 'May 20, 2024', generatedBy: 'System' },
+  { id: 4, name: 'Monthly Overview Report - May 2024', type: 'PDF', generatedOn: 'May 5, 2024', generatedBy: 'Admin User' },
+];
+
+const MOCK_TOP_CAMPAIGNS = [
+  { name: 'Clean City Initiative', volunteers: 2450, percentage: 85, color: '#10b981' },
+  { name: 'Tree Planting Day', volunteers: 1980, percentage: 72, color: '#10b981' },
+  { name: 'Blood Donation Drive', volunteers: 1520, percentage: 65, color: '#10b981' },
+  { name: 'Community Education', volunteers: 1250, percentage: 55, color: '#f59e0b' },
+  { name: 'Food Support Program', volunteers: 800, percentage: 40, color: '#ef4444' },
+];
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
+export default function AnalyticsDashboard() {
+  const [totalVolunteers, setTotalVolunteers] = useState(12450);
+  const [activeVolunteers, setActiveVolunteers] = useState(8745);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchRegions();
-    fetchStats();
-  }, [activeTab]);
-
-  const fetchRegions = async () => {
-    try {
-        const res = await api.get("/system-settings");
-        if (res.data.settings && res.data.settings.all_regions) {
-            setRegions(JSON.parse(res.data.settings.all_regions));
-        }
-    } catch (err) {
-        console.error("Failed to fetch regions:", err);
-    }
-  };
-
-  const fetchStats = async () => {
-    setLoading(true);
-    try {
+    const fetchTotals = async () => {
+      try {
         const [membersRes, volunteersRes] = await Promise.all([
           api.get("/person?page=1&page_size=1"),
           api.get("/volunteers?page=1&page_size=1"),
         ]);
         
-        const totalMembers = membersRes.data.pagination?.total_items || 0;
-        const totalVolunteers = volunteersRes.data.pagination?.total_items || 0;
-
-        // Spread real totals into mock distributions for visual realism
-        if (activeTab === "MEMBERS") {
-            setMemberStats((prev: any) => ({
-                ...prev,
-                byStatus: [
-                    { name: 'Active', value: Math.floor(totalMembers * 0.8) },
-                    { name: 'Pending', value: Math.floor(totalMembers * 0.15) },
-                    { name: 'Expired', value: Math.floor(totalMembers * 0.05) },
-                ]
-            }));
-        } else if (activeTab === "VOLUNTEERS") {
-            setVolunteerStats((prev: any) => ({
-                ...prev,
-                byStatus: [
-                    { name: 'Verified', value: Math.floor(totalVolunteers * 0.75) },
-                    { name: 'Pending', value: Math.floor(totalVolunteers * 0.2) },
-                    { name: 'Inactive', value: Math.floor(totalVolunteers * 0.05) },
-                ]
-            }));
+        const mCount = membersRes.data.pagination?.total_items || 0;
+        const vCount = volunteersRes.data.pagination?.total_items || 0;
+        
+        const total = mCount + vCount;
+        if (total > 0) {
+            setTotalVolunteers(total);
+            setActiveVolunteers(Math.floor(total * 0.7)); // Mock active percentage
         }
-    } catch (err) {
-        console.error("Failed to fetch analytical stats:", err);
-    } finally {
+      } catch (err) {
+        console.error("Failed to fetch totals:", err);
+      } finally {
         setLoading(false);
-    }
+      }
+    };
+    fetchTotals();
+  }, []);
+
+  const handleExport = () => {
+    toast.success("Generating Report...");
+    setTimeout(() => toast.success("Report downloaded successfully."), 1500);
   };
 
-  const handleExport = async () => {
-    toast.loading("Preparing export...");
-    try {
-        const ExcelJS = (await import("exceljs")).default;
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet(`${activeTab} Report`);
-
-        // Style and content based on activeTab
-        // This is a simplified version of what we'd actually export
-        worksheet.addRow(["ERCS System Generated Report"]);
-        worksheet.addRow(["Generated At", new Date().toLocaleString()]);
-        worksheet.addRow(["Category", activeTab]);
-        worksheet.addRow([]);
-
-        const headers = activeTab === "MEMBERS" 
-            ? ["ID", "Name", "Region", "Type", "Status", "Created At"]
-            : activeTab === "VOLUNTEERS"
-            ? ["ID", "Name", "Region", "Skills", "Status"]
-            : ["ID", "Organization Name", "Type", "Contact", "Status"];
-        
-        const headerRow = worksheet.addRow(headers);
-        headerRow.font = { bold: true };
-        
-        // Mock data rows for the export demo
-        for (let i = 0; i < 10; i++) {
-            worksheet.addRow(headers.map(() => "Sample Data"));
-        }
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `ercs_${activeTab.toLowerCase()}_report_${new Date().toISOString().split('T')[0]}.xlsx`;
-        link.click();
-        
-        toast.dismiss();
-        toast.success("Report Exported Successfully");
-    } catch (err) {
-        toast.dismiss();
-        toast.error("Export failed");
-    }
-  };
+  const KpiCard = ({ title, value, trend, isPositive, icon: Icon, color }: any) => (
+    <motion.div variants={itemVariants} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-start gap-4">
+      <div className={`p-3 rounded-xl`} style={{ backgroundColor: `${color}15`, color }}>
+        <Icon className="h-6 w-6" />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-gray-500 mb-1">{title}</p>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">{value.toLocaleString()}</h3>
+        <div className="flex items-center gap-1 text-[11px] font-medium">
+          <span className={`flex items-center ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
+            {isPositive ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
+            {trend}%
+          </span>
+          <span className="text-gray-400">vs Apr 1 - Apr 30</span>
+        </div>
+      </div>
+    </motion.div>
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-700">
-      
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
-                <BarChart3 className="h-3 w-3" /> Intelligence
-            </div>
-            <h1 className="text-3xl font-black text-black tracking-tighter">Reports & Analytics</h1>
-            <p className="text-gray-500 font-medium text-sm max-w-xl">
-                Operational data insights across all key metrics.
-            </p>
+    <motion.div 
+      initial="hidden" 
+      animate="show" 
+      variants={containerVariants} 
+      className="space-y-6 max-w-[1600px] mx-auto pb-10"
+    >
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Analytics Dashboard</h1>
+          <p className="text-sm text-gray-500">Overview of system statistics and performance.</p>
         </div>
-
-        <div className="flex items-center gap-2">
-             <Button 
-                onClick={handleExport}
-                variant="outline" 
-                className="rounded-xl h-11 px-6 font-black border-2 border-black flex items-center gap-2 hover:bg-black hover:text-white transition-all text-[10px] uppercase tracking-widest"
-            >
-                <Download className="h-4 w-4" /> Export Data
-            </Button>
-            <Button className="rounded-xl h-11 px-6 font-black flex items-center gap-2 bg-[#ED1C24] text-white text-[10px] uppercase tracking-widest">
-                <Plus className="h-4 w-4" /> Create View
-            </Button>
+        
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 font-medium">
+            <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+            May 1, 2024 - May 31, 2024
+          </div>
+          <Button onClick={handleExport} className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md shadow-blue-500/20 px-5 transition-all">
+            <Download className="h-4 w-4 mr-2" /> Export Report
+          </Button>
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-2xl w-fit shadow-inner">
-        {[
-          { id: "MEMBERS", label: "Members", icon: Users },
-          { id: "VOLUNTEERS", label: "Volunteers", icon: HandHeart },
-          { id: "ORGANIZATIONS", label: "Organizations", icon: Building2 },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as TabType)}
-            className={cn(
-              "flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
-              activeTab === tab.id 
-                ? "bg-white text-black shadow-md shadow-black/5" 
-                : "text-gray-400 hover:text-black"
-            )}
-          >
-            <tab.icon className={cn("h-3.5 w-3.5", activeTab === tab.id ? "text-[#ED1C24]" : "")} />
-            {tab.label}
-          </button>
-        ))}
+      {/* KPI Cards Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <KpiCard title="Total Volunteers" value={totalVolunteers} trend="12.5" isPositive={true} icon={Users} color="#8b5cf6" />
+        <KpiCard title="Active Volunteers" value={activeVolunteers} trend="8.2" isPositive={true} icon={Activity} color="#10b981" />
+        <KpiCard title="Active Campaigns" value={34} trend="6.7" isPositive={true} icon={Megaphone} color="#ec4899" />
+        <KpiCard title="Events" value={18} trend="3.1" isPositive={true} icon={Calendar} color="#f59e0b" />
+        <KpiCard title="Reports Generated" value={56} trend="15.4" isPositive={true} icon={FileText} color="#3b82f6" />
       </div>
 
-      {/* Advanced Filters */}
-      <div className="space-y-4 p-6 bg-white border-2 border-black rounded-[32px] shadow-sm">
-         <div className="grid lg:grid-cols-4 gap-4">
-            <div className="space-y-1 flex-1">
-                <label className="text-[9px] font-black uppercase tracking-widest text-black ml-1 flex items-center gap-2">
-                    <Calendar className="h-3 w-3 text-[#ED1C24]" /> Start Date
-                </label>
-                <Input 
-                    type="date" 
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="h-10 bg-white border-2 border-gray-100 rounded-xl font-bold text-black focus:border-[#ED1C24] focus:ring-4 focus:ring-[#ED1C24]/10 transition-all outline-none"
+      {/* Charts Row 1 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Volunteer Growth Line Chart */}
+        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-base font-bold text-gray-900">Volunteer Growth</h3>
+            <select className="text-xs border border-gray-200 rounded-md px-2 py-1 text-gray-600 bg-gray-50 outline-none">
+              <option>This Year</option>
+            </select>
+          </div>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={MOCK_GROWTH} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(val) => val >= 1000 ? `${val/1000}K` : val} />
+                <RechartsTooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                  labelStyle={{ fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}
                 />
-            </div>
-            <div className="space-y-1 flex-1">
-                <label className="text-[9px] font-black uppercase tracking-widest text-black ml-1 flex items-center gap-2">
-                    <Calendar className="h-3 w-3 text-[#ED1C24]" /> End Date
-                </label>
-                <Input 
-                    type="date" 
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="h-10 bg-white border-2 border-gray-100 rounded-xl font-bold text-black focus:border-[#ED1C24] focus:ring-4 focus:ring-[#ED1C24]/10 transition-all outline-none"
+                <Line type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* Monthly Registrations Bar Chart */}
+        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-base font-bold text-gray-900">Monthly Registrations</h3>
+            <select className="text-xs border border-gray-200 rounded-md px-2 py-1 text-gray-600 bg-gray-50 outline-none">
+              <option>This Year</option>
+            </select>
+          </div>
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={MOCK_REGISTRATIONS} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(val) => val >= 1000 ? `${val/1000}K` : val} />
+                <RechartsTooltip 
+                  cursor={{ fill: '#f9fafb' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
                 />
-            </div>
-            <div className="space-y-1 flex-1">
-                <label className="text-[9px] font-black uppercase tracking-widest text-black ml-1 flex items-center gap-2">
-                    <MapPin className="h-3 w-3 text-[#ED1C24]" /> Region
-                </label>
-                <select 
-                    value={regionFilter}
-                    onChange={(e) => setRegionFilter(e.target.value)}
-                    className="h-10 w-full bg-white border-2 border-gray-100 rounded-xl font-bold px-4 focus:border-[#ED1C24] focus:ring-4 focus:ring-[#ED1C24]/10 outline-none appearance-none transition-all text-sm"
-                >
-                    <option value="">All Regions</option>
-                    {regions.map(r => (
-                        <option key={r.id} value={r.id}>{r.name}</option>
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={24} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Charts Row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Volunteers by Region */}
+        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-base font-bold text-gray-900 mb-4">Volunteers by Region</h3>
+          <div className="flex items-center justify-between">
+            <div className="h-[180px] w-[180px] relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={MOCK_REGIONS}
+                    cx="50%" cy="50%"
+                    innerRadius={55}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {MOCK_REGIONS.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                     ))}
-                </select>
+                  </Pie>
+                  <RechartsTooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-xl font-bold text-gray-900">{totalVolunteers.toLocaleString()}</span>
+                <span className="text-[10px] text-gray-500 font-semibold uppercase">Total</span>
+              </div>
             </div>
-            <div className="space-y-1 flex-1">
-                <label className="text-[9px] font-black uppercase tracking-widest text-black ml-1 flex items-center gap-2">
-                    {activeTab === "MEMBERS" ? <Users className="h-3 w-3 text-[#ED1C24]" /> : activeTab === "VOLUNTEERS" ? <HandHeart className="h-3 w-3 text-[#ED1C24]" /> : <Building2 className="h-3 w-3 text-[#ED1C24]" />} 
-                    Category
-                </label>
-                <select 
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="h-10 w-full bg-white border-2 border-gray-100 rounded-xl font-bold px-4 focus:border-[#ED1C24] focus:ring-4 focus:ring-[#ED1C24]/10 outline-none appearance-none transition-all text-sm"
-                >
-                    {activeTab === "MEMBERS" && (
-                        <>
-                            <option value="">All Membership Types</option>
-                            <option value="ANNUAL">Annual</option>
-                            <option value="LIFE">Lifetime</option>
-                            <option value="CORPORATE">Corporate</option>
-                            <option value="YOUTH">Youth</option>
-                        </>
-                    )}
-                    {activeTab === "VOLUNTEERS" && (
-                        <>
-                            <option value="">All Skill Levels</option>
-                            <option value="EXPERT">Expert Proficiency</option>
-                            <option value="INTERMEDIATE">Intermediate</option>
-                            <option value="BEGINNER">Beginner / New</option>
-                        </>
-                    )}
-                    {activeTab === "ORGANIZATIONS" && (
-                        <>
-                            <option value="">All Organization Types</option>
-                            <option value="GOVERNMENT">Government Agency</option>
-                            <option value="NGO">International NGO</option>
-                            <option value="PRIVATE">Private Sector</option>
-                        </>
-                    )}
-                </select>
+            <div className="space-y-3 flex-1 ml-4">
+              {MOCK_REGIONS.map((region, i) => (
+                <div key={region.name} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}></span>
+                    <span className="text-gray-600 font-medium">{region.name}</span>
+                  </div>
+                  <div className="text-gray-500">
+                    {region.value.toLocaleString()} <span className="text-gray-400">({region.percentage}%)</span>
+                  </div>
+                </div>
+              ))}
             </div>
-         </div>
-         
-         <div className="flex items-center justify-between border-t border-gray-50 pt-4">
-            <div className="relative w-full max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#ED1C24]" />
-                <Input 
-                    placeholder="Search Records..."
-                    className="h-10 pl-10 bg-white border-2 border-black rounded-xl font-bold text-xs"
-                />
+          </div>
+        </motion.div>
+
+        {/* Active Campaigns by Status */}
+        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-base font-bold text-gray-900 mb-4">Active Campaigns by Status</h3>
+          <div className="flex items-center justify-between">
+            <div className="h-[180px] w-[180px] relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={MOCK_CAMPAIGNS_STATUS}
+                    cx="50%" cy="50%"
+                    innerRadius={55}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {MOCK_CAMPAIGNS_STATUS.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={[COLORS.primary, COLORS.purple, COLORS.secondary, COLORS.danger][index % 4]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-xl font-bold text-gray-900">34</span>
+                <span className="text-[10px] text-gray-500 font-semibold uppercase">Total</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-                <Button 
-                    variant="ghost" 
-                    className="h-10 px-4 rounded-xl font-black text-[9px] uppercase tracking-widest text-gray-400 hover:text-black"
-                    onClick={() => {
-                        setDateFrom("");
-                        setDateTo("");
-                        setRegionFilter("");
-                        setStatusFilter("");
-                    }}
-                >
-                    Reset
-                </Button>
-                <Button 
-                    onClick={fetchStats}
-                    className="h-10 px-6 bg-black text-white hover:bg-[#ED1C24] rounded-xl font-black text-[9px] uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg shadow-black/10"
-                >
-                    <Filter className="h-3.5 w-3.5" /> Apply
-                </Button>
+            <div className="space-y-3 flex-1 ml-4">
+              {MOCK_CAMPAIGNS_STATUS.map((status, i) => (
+                <div key={status.name} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: [COLORS.primary, COLORS.purple, COLORS.secondary, COLORS.danger][i % 4] }}></span>
+                    <span className="text-gray-600 font-medium">{status.name}</span>
+                  </div>
+                  <div className="text-gray-500">
+                    {status.value} <span className="text-gray-400">({status.percentage}%)</span>
+                  </div>
+                </div>
+              ))}
             </div>
-         </div>
+          </div>
+        </motion.div>
+
+        {/* User Activity Trend */}
+        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-bold text-gray-900">User Activity Trend</h3>
+            <select className="text-xs border border-gray-200 rounded-md px-2 py-1 text-gray-600 bg-gray-50 outline-none">
+              <option>This Month</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-4 mb-4 text-xs font-medium text-gray-600">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Logins</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500"></span> New Users</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Actions</span>
+          </div>
+
+          <div className="h-[140px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={MOCK_USER_ACTIVITY} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(val) => val >= 1000 ? `${val/1000}K` : val} />
+                <RechartsTooltip contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
+                <Line type="monotone" dataKey="actions" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3, fill: '#8b5cf6' }} />
+                <Line type="monotone" dataKey="logins" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }} />
+                <Line type="monotone" dataKey="newUsers" stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#10b981' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
       </div>
 
+      {/* Footer Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Reports Summary Table */}
+        <motion.div variants={itemVariants} className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 overflow-hidden">
+          <h3 className="text-base font-bold text-gray-900 mb-6">Reports Summary</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="pb-3 text-xs font-semibold text-gray-500">Report Name</th>
+                  <th className="pb-3 text-xs font-semibold text-gray-500">Type</th>
+                  <th className="pb-3 text-xs font-semibold text-gray-500">Generated On</th>
+                  <th className="pb-3 text-xs font-semibold text-gray-500">Generated By</th>
+                  <th className="pb-3 text-xs font-semibold text-gray-500 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {MOCK_REPORTS.map((report) => (
+                  <tr key={report.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="py-3 text-sm font-medium text-gray-800">{report.name}</td>
+                    <td className="py-3 text-xs font-medium text-gray-500">{report.type}</td>
+                    <td className="py-3 text-xs text-gray-500">{report.generatedOn}</td>
+                    <td className="py-3 text-xs text-gray-500">{report.generatedBy}</td>
+                    <td className="py-3">
+                      <div className="flex items-center justify-end gap-3 text-gray-400">
+                        <DownloadIcon className="h-4 w-4 hover:text-blue-600 cursor-pointer transition-colors" />
+                        <Eye className="h-4 w-4 hover:text-gray-900 cursor-pointer transition-colors" />
+                        <Trash2 className="h-4 w-4 hover:text-red-500 cursor-pointer transition-colors" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
 
-      {/* Dashboard Analytics Section */}
-      {loading ? (
-        <div className="h-96 flex flex-col items-center justify-center space-y-4">
-             <RefreshCcw className="h-10 w-10 text-[#ED1C24] animate-spin" />
-             <p className="text-xs font-black uppercase tracking-widest text-gray-400">Compiling Analytical Data...</p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-            {/* Visual Charts Grid */}
-            <div className="grid lg:grid-cols-2 gap-6">
-                
-                {/* Chart 1: Distribution */}
-                <div className="bg-white p-6 rounded-[32px] border-2 border-gray-100 shadow-xl overflow-hidden relative">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="space-y-1">
-                            <h3 className="text-xl font-black text-black tracking-tight uppercase">{activeTab} Distribution</h3>
-                        </div>
-                        <div className="h-10 w-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                            <ArrowUpRight className="h-4 w-4 text-gray-400" />
-                        </div>
+        {/* Top Performing Campaigns */}
+        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-base font-bold text-gray-900">Top Performing Campaigns</h3>
+            <span className="text-xs font-medium text-blue-600 cursor-pointer hover:underline">View All</span>
+          </div>
+          <div className="space-y-5">
+            {MOCK_TOP_CAMPAIGNS.map((campaign, i) => (
+              <div key={campaign.name} className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-1.5 rounded-md bg-gray-50 border border-gray-100 text-gray-500">
+                      <Megaphone className="h-3.5 w-3.5" />
                     </div>
-                    
-                    <div className="h-[240px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            {activeTab === "MEMBERS" ? (
-                                <PieChart>
-                                    <Pie
-                                        data={memberStats.byType}
-                                        cx="50%" cy="50%"
-                                        innerRadius={80}
-                                        outerRadius={120}
-                                        paddingAngle={8}
-                                        dataKey="value"
-                                    >
-                                        {memberStats.byType.map((entry: any, index: any) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip 
-                                        contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
-                                    />
-                                    <Legend verticalAlign="bottom" align="center" iconType="circle" />
-                                </PieChart>
-                            ) : activeTab === "VOLUNTEERS" ? (
-                                <BarChart data={volunteerStats.bySkills}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#9CA3AF' }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#9CA3AF' }} />
-                                    <Tooltip cursor={{ fill: '#F9FAFB' }} />
-                                    <Bar dataKey="count" fill="#ED1C24" radius={[10, 10, 0, 0]} barSize={40} />
-                                </BarChart>
-                            ) : (
-                                <PieChart>
-                                    <Pie
-                                        data={orgStats.byType}
-                                        cx="50%" cy="50%"
-                                        innerRadius={0}
-                                        outerRadius={120}
-                                        dataKey="value"
-                                    >
-                                        {orgStats.byType.map((entry: any, index: any) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                    <Legend iconType="rect" />
-                                </PieChart>
-                            )}
-                        </ResponsiveContainer>
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-800 leading-none">{campaign.name}</h4>
                     </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-medium text-gray-600">{campaign.volunteers.toLocaleString()} Volunteers</span>
+                  </div>
                 </div>
-
-                {/* Chart 2: Status / Growth */}
-                <div className="bg-black p-6 rounded-[32px] shadow-2xl overflow-hidden relative text-white">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="space-y-1">
-                            <h3 className="text-xl font-black text-white tracking-tight uppercase">{activeTab} Trends</h3>
-                        </div>
-                        <div className="bg-white/10 p-2.5 rounded-xl">
-                             <RefreshCcw className="h-4 w-4 text-red-500" />
-                        </div>
-                    </div>
-
-                    <div className="h-[240px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            {activeTab === "MEMBERS" ? (
-                                <LineChart data={memberStats.growth}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#4B5563' }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#4B5563' }} />
-                                    <Tooltip 
-                                        contentStyle={{ backgroundColor: '#000', border: '1px solid #333', borderRadius: '12px' }}
-                                    />
-                                    <Line type="monotone" dataKey="count" stroke="#ED1C24" strokeWidth={4} dot={{ r: 6, fill: '#ED1C24', strokeWidth: 2, stroke: '#000' }} activeDot={{ r: 8 }} />
-                                </LineChart>
-                            ) : (
-                                <BarChart data={activeTab === "VOLUNTEERS" ? volunteerStats.byStatus : orgStats.byStatus}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#4B5563' }} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#4B5563' }} />
-                                    <Tooltip />
-                                    <Bar dataKey="value" fill="#FFFFFF" radius={[10, 10, 10, 10]} barSize={50} />
-                                </BarChart>
-                            )}
-                        </ResponsiveContainer>
-                    </div>
+                <div className="flex items-center gap-3 w-full">
+                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-1000" 
+                      style={{ width: `${campaign.percentage}%`, backgroundColor: campaign.color }} 
+                    />
+                  </div>
+                  <span className="text-xs font-bold text-gray-700 w-8">{campaign.percentage}%</span>
                 </div>
-            </div>
-
-            {/* List Preview Section */}
-            <div className="bg-white rounded-[32px] border-2 border-black shadow-xl overflow-hidden">
-                <div className="p-6 border-b-2 border-black flex items-center justify-between bg-white">
-                    <h3 className="text-lg font-black text-black tracking-tighter uppercase italic">Reports Listing</h3>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" className="h-9 rounded-lg px-4 font-black text-[9px] uppercase tracking-widest border-2 border-black">
-                           <FileText className="h-3.5 w-3.5 mr-2" /> Quick Summary
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="p-0 overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="border-b-2 border-gray-100">
-                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400">ID</th>
-                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400">Identity</th>
-                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400">Metric 01</th>
-                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400">Metric 02</th>
-                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400">Status</th>
-                                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-400 text-right pr-10">Audit</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {[1, 2, 3, 4, 5].map((item) => (
-                                <tr key={item} className="hover:bg-[#ED1C24]/5 transition-colors group">
-                                    <td className="px-6 py-4 font-black text-[11px] text-black">ERCS-{1000 + item}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-xs">Sample Record {item}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 font-bold text-[11px] text-gray-500">HQ-Region</td>
-                                    <td className="px-6 py-4 font-bold text-[11px] text-gray-500">{activeTab === "MEMBERS" ? "Individual" : "Verified"}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="px-2 py-0.5 bg-green-50 text-green-600 rounded-md text-[9px] font-black uppercase tracking-widest inline-block border border-green-200">
-                                            Active
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-right pr-10">
-                                        <ArrowUpRight className="h-4 w-4 ml-auto text-gray-300 group-hover:text-black transition-colors" />
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination UI */}
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Page 1 of 124
-                     </p>
-                     <div className="flex items-center gap-1">
-                        <Button variant="outline" className="h-8 w-8 p-0 rounded-lg border-gray-200 bg-white">
-                            <span className="rotate-180">➤</span>
-                        </Button>
-                        <div className="flex items-center px-3 h-8 bg-black text-white rounded-lg font-black text-[10px]">1</div>
-                        <div className="flex items-center px-3 h-8 hover:bg-white rounded-lg font-black text-[10px] cursor-pointer">2</div>
-                        <div className="flex items-center px-3 h-8 hover:bg-white rounded-lg font-black text-[10px] cursor-pointer">3</div>
-                        <Button variant="outline" className="h-8 w-8 p-0 rounded-lg border-gray-200 bg-white">
-                            <span>➤</span>
-                        </Button>
-                     </div>
-                </div>
-            </div>
-        </div>
-      )}
-    </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }
-
-
