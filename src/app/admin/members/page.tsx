@@ -15,6 +15,7 @@ import {
 import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { AddMemberModal } from "@/components/admin/AddMemberModal";
 
 type Member = {
   id: string;
@@ -53,6 +54,7 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -440,7 +442,10 @@ export default function MembersPage() {
             >
                 <FileText className="h-4 w-4" /> PDF
             </Button>
-            <Button className="rounded-xl h-10 px-6 font-black shadow-xl shadow-red-500/10 flex items-center gap-2 bg-[#ED1C24] text-white text-[10px] uppercase tracking-widest">
+            <Button 
+                onClick={() => setShowAddMemberModal(true)}
+                className="rounded-xl h-10 px-6 font-black shadow-xl shadow-red-500/10 flex items-center gap-2 bg-[#ED1C24] text-white text-[10px] uppercase tracking-widest"
+            >
                 <Plus className="h-4 w-4" /> Add Member
             </Button>
         </div>
@@ -817,6 +822,17 @@ export default function MembersPage() {
               <div className="bg-ercs-red text-white p-4 font-black text-2xl">ERCS</div>
           </div>
       </div>
+      
+      {showAddMemberModal && (
+        <AddMemberModal 
+            onClose={() => setShowAddMemberModal(false)} 
+            onSuccess={() => {
+                setShowAddMemberModal(false);
+                fetchMembers();
+            }}
+            regions={regions}
+        />
+      )}
     </div>
   );
 }

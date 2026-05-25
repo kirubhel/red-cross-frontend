@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
+import { toast } from "sonner";
+import { AiChatWidget } from "@/components/admin/AiChatWidget";
 import { 
   Bell, 
   Search, 
@@ -16,6 +19,37 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    // Connect to the SSE notification stream
+    const eventSource = new EventSource("http://localhost:50056/api/notifications/stream");
+
+    eventSource.onmessage = (event) => {
+      try {
+        const notif = JSON.parse(event.data);
+        setUnreadCount((prev) => prev + 1);
+        
+        if (notif.type === "WARNING" || notif.type === "ALERT") {
+          toast.warning(notif.message, { description: new Date(notif.timestamp).toLocaleTimeString() });
+        } else {
+          toast.info(notif.message, { description: new Date(notif.timestamp).toLocaleTimeString() });
+        }
+      } catch (err) {
+        console.error("Error parsing notification", err);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("EventSource failed:", error);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+
   return (
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden font-sans">
       <Sidebar />
@@ -45,9 +79,16 @@ export default function AdminLayout({
             <div className="h-8 w-px bg-gray-100 hidden sm:block" />
 
             {/* Notifications */}
-            <button className="relative p-3 rounded-full hover:bg-gray-50 transition-colors text-gray-400 hover:text-black">
+            <button 
+              onClick={() => setUnreadCount(0)}
+              className="relative p-3 rounded-full hover:bg-gray-50 transition-colors text-gray-400 hover:text-black"
+            >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-[#ED1C24] border-2 border-white" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-[#ED1C24] border-2 border-white text-[8px] font-bold text-white flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
             </button>
             
             {/* User Profile */}
@@ -90,6 +131,9 @@ export default function AdminLayout({
               {children}
            </div>
         </main>
+        
+        {/* AI Chat Assistant Widget */}
+        <AiChatWidget />
       </div>
     </div>
   );
