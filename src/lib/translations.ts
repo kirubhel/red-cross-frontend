@@ -20,7 +20,7 @@ export const translations = {
       subtitle: "Join the Ethiopian Red Cross Society (ERCS) to make a difference in your community. We believe in the power of humanity to overcome any challenge.",
       ctaPrimary: "Get Started",
       ctaSecondary: "Donate Now",
-      ctaVolunteer: "Become a Volunteer",
+      ctaVolunteer: "Join as Volunteer",
       ctaMembership: "Membership",
       ctaDonate: "Donate",
       pathwaysLabel: "Choose your path to help:",

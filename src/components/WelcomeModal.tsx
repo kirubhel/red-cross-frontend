@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, ShieldCheck, Heart, X, Plus, ArrowRight } from "lucide-react";
+import { Users, ShieldCheck, Heart, X, Plus, ArrowRight, Globe } from "lucide-react";
 import { Language } from "@/lib/translations";
 
 const SESSION_KEY = "ercs_welcome_shown_v1"; // Versioned key
@@ -123,6 +123,16 @@ const CONTENT = {
         accentColor: "#DC2626",
         bgColor: "#FFF7ED",
       },
+      {
+        href: "http://localhost:3001/organizations",
+        label: "Volunteer Hub",
+        headline: "Volunteer Hub",
+        description:
+          "Quick sign up, track active volunteers, explore branch opportunities, and access resources.",
+        cta: "Enter hub",
+        accentColor: "#8B5CF6",
+        bgColor: "#F5F3FF",
+      },
     ],
   },
   am: {
@@ -158,6 +168,15 @@ const CONTENT = {
         cta: "አሁን ይለግሱ",
         accentColor: "#DC2626",
         bgColor: "#FFF7ED",
+      },
+      {
+        href: "http://localhost:3001/organizations",
+        label: "የበጎ ፈቃድ ማዕከል",
+        headline: "የበጎ ፈቃድ ማዕከል",
+        description: "በፍጥነት ይመዝገቡ፣ ንቁ በጎ ፈቃደኞችን ይከታተሉ፣ የቅርንጫፍ እድሎችን ያግኙ።",
+        cta: "ማዕከሉን ይጎብኙ",
+        accentColor: "#8B5CF6",
+        bgColor: "#F5F3FF",
       },
     ],
   },
@@ -195,6 +214,15 @@ const CONTENT = {
         accentColor: "#DC2626",
         bgColor: "#FFF7ED",
       },
+      {
+        href: "http://localhost:3001/organizations",
+        label: "Wiirtuu Fedhii",
+        headline: "Wiirtuu Fedhii",
+        description: "Saffisaan galmaa'aa, tajaajiltoota sosocho'an hordofaa, carraaqqii dameewwanii argadhaa.",
+        cta: "Wiirtuu seeni",
+        accentColor: "#8B5CF6",
+        bgColor: "#F5F3FF",
+      },
     ],
   },
 };
@@ -208,6 +236,7 @@ export default function WelcomeModal({ lang }: WelcomeModalProps) {
     <Users key="users" className="h-5 w-5 sm:h-6 sm:w-6" />,
     <ShieldCheck key="shield" className="h-5 w-5 sm:h-6 sm:w-6" />,
     <Heart key="heart" className="h-5 w-5 sm:h-6 sm:w-6" />,
+    <Globe key="globe" className="h-5 w-5 sm:h-6 sm:w-6" />,
   ];
 
   useEffect(() => {
@@ -261,7 +290,7 @@ export default function WelcomeModal({ lang }: WelcomeModalProps) {
               exit={{ opacity: 0, scale: 0.98, y: 10 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] as any }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden pointer-events-auto my-auto"
+              className="relative w-full max-w-2xl sm:max-w-5xl bg-white rounded-[32px] shadow-2xl overflow-hidden pointer-events-auto my-auto"
             >
               {/* Header strip */}
               <div className="bg-[#ED1C24] px-6 py-8 sm:px-10 sm:py-10 relative overflow-hidden">
@@ -297,7 +326,7 @@ export default function WelcomeModal({ lang }: WelcomeModalProps) {
               </div>
 
               {/* Cards */}
-              <div className="px-6 py-6 sm:px-8 sm:py-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="px-6 py-6 sm:px-8 sm:py-8 grid grid-cols-1 sm:grid-cols-4 gap-4">
                 {c.paths.map((path, i) => (
                   <PathwayCard
                     key={path.href}

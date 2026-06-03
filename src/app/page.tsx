@@ -793,7 +793,7 @@ export default function LandingPage() {
         </section>
 
         {/* Volunteer Hub & Quick Form */}
-        <section className="py-24 px-6 overflow-hidden relative bg-slate-950">
+        <section id="volunteer-hub" className="py-24 px-6 overflow-hidden relative bg-slate-950">
            {/* Glassmorphic Background */}
            <div className="absolute inset-0 z-0">
              <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-red-500/20 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/2" />
