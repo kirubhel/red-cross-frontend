@@ -20,7 +20,7 @@ export const translations = {
       subtitle: "Join the Ethiopian Red Cross Society (ERCS) to make a difference in your community. We believe in the power of humanity to overcome any challenge.",
       ctaPrimary: "Get Started",
       ctaSecondary: "Donate Now",
-      ctaVolunteer: "Become a Member",
+      ctaVolunteer: "Become a Volunteer",
       ctaMembership: "Membership",
       ctaDonate: "Donate",
       pathwaysLabel: "Choose your path to help:",
@@ -50,7 +50,8 @@ export const translations = {
       valuesText: "Guided by the 7 Principles: Humanity, Impartiality, Neutrality, Independence, Voluntary Service, Unity, and Universality.",
       imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200",
       historyLink: "/history",
-      historyLinkLabel: "Read Full History"
+      historyLinkLabel: "Read Full History",
+      showLess: "Show Less"
     },
     services: {
       badge: "What we do",
@@ -224,7 +225,7 @@ export const translations = {
       subtitle: "በማህበረሰቡ ውስጥ ለውጥ ለማምጣት የኢትዮጵያ ቀይ መስቀል ማህበርን ይቀላቀሉ። ማንኛውንም ፈተና ለማሸነፍ በሰው ልጅ ኃይል እናምናለን።",
       ctaPrimary: "ይጀምሩ",
       ctaSecondary: "አሁን ይለግሱ",
-      ctaVolunteer: "አባል ይሁኑ",
+      ctaVolunteer: "በጎ ፈቃደኛ ይሁኑ",
       ctaMembership: "አባልነት",
       ctaDonate: "ልገሳ",
       pathwaysLabel: "ለመርዳት መንገድዎን ይምረጡ፡",
@@ -254,7 +255,8 @@ export const translations = {
       valuesText: "በ7ቱ መርሆች የሚመራ፡ ሰብአዊነት፣ አድልዎ አለማድረግ፣ ገለልተኝነት፣ ነጻነት፣ የበጎ ፈቃድ አገልግሎት፣ አንድነት እና አለምአቀፋዊነት።",
       imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200",
       historyLink: "/history",
-      historyLinkLabel: "ሙሉ ታሪኩን ያንብቡ"
+      historyLinkLabel: "ሙሉ ታሪኩን ያንብቡ",
+      showLess: "ያነሰ አሳይ"
     },
     services: {
       badge: "የምንሰራቸው ስራዎች",
@@ -428,7 +430,7 @@ export const translations = {
       subtitle: "Hawaasa keessatti jijjiirama fiduuf Waldaa Fannoo Diimaa Itiyoophiyaa (ERCS) tti makamaa. Nuti humna namoomaa kanaan qormaata kamiyyuu mo'achuu ni dandeenya jennee amanna.",
       ctaPrimary: "Eegali",
       ctaSecondary: "Amma Arjoomi",
-      ctaVolunteer: "Miseensa Ta'aa",
+      ctaVolunteer: "Fedheen Hojjedhu",
       ctaMembership: "Miseensummaa",
       ctaDonate: "Arjooma",
       pathwaysLabel: "Gargaaruuf karaa keessan filadhaa:",
@@ -458,7 +460,8 @@ export const translations = {
       valuesText: "Qajeelfama torban kanaan qajeelfama: Namummaa, Wal-caalmaa dhabuu, Giddu-galeessummaa, Bilisummaa, Tajaajila Fedhii, Tokkummaa fi Addunyaa hundaa.",
       imageUrl: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=1200",
       historyLink: "/history",
-      historyLinkLabel: "Seenaa Guutuu Dubbisi"
+      historyLinkLabel: "Seenaa Guutuu Dubbisi",
+      showLess: "Gabaabsi"
     },
     services: {
       badge: "Maal Hojjenna",

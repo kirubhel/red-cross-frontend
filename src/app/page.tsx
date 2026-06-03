@@ -318,7 +318,7 @@ export default function LandingPage() {
                     transition={{ delay: 0.45, duration: 0.5, ease: [0.16, 1, 0.3, 1] as any }}
                     className="w-[calc(50%-6px)] sm:w-auto"
                   >
-                    <Link href="/join/member" className="block w-full">
+                    <Link href="/join/volunteer" className="block w-full">
                       <button className="group w-full sm:w-auto flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 bg-[#ED1C24] border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24]
                         text-white rounded-[20px] sm:rounded-full h-auto py-3 sm:py-0 sm:h-14 px-4 sm:px-8 font-black text-[11px] sm:text-sm
                         shadow-xl shadow-[#ED1C24]/30 transition-all duration-500
@@ -327,7 +327,7 @@ export default function LandingPage() {
                           justify-center group-hover:bg-[#ED1C24] group-hover:text-white transition-colors flex-shrink-0">
                           <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         </div>
-                        {mergedT.hero.ctaVolunteer || translations[lang].hero.ctaVolunteer || "Volunteer"}
+                        {translations[lang].hero.ctaVolunteer || "Volunteer"}
                       </button>
                     </Link>
                   </motion.div>

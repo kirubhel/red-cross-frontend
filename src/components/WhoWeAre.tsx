@@ -1,14 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Target, 
   Eye, 
   Heart, 
   History,
-  Info
+  Info,
+  ChevronDown
 } from "lucide-react";
 import { Language, translations } from "@/lib/translations";
 
@@ -39,6 +41,15 @@ const itemVariants = {
 export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
   const t = translations[lang];
   const local = content || t.whoWeAre;
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const text1 = local.storyText1 || "";
+  const text2 = local.storyText2 || "";
+  const isLong = text1.length > 280 || (text1.length + text2.length) > 280;
+
+  const showText1 = (isLong && !isExpanded && text1.length > 280)
+    ? text1.slice(0, 277) + "..."
+    : text1;
 
   return (
     <section id="about" className="py-24 md:py-32 bg-[#F9FAFB] relative overflow-hidden">
@@ -66,7 +77,7 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
                   {local.title}
                 </h3>
               </div>
-
+ 
               <div className="relative pl-8 border-l-4 border-ercs-red/20 space-y-6">
                 <div className="flex items-center gap-3">
                    <div className="h-10 w-10 rounded-full bg-white shadow-md flex items-center justify-center text-ercs-red">
@@ -75,21 +86,38 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
                    <h4 className="text-lg font-black text-black">{local.storyTitle}</h4>
                 </div>
                 <div className="space-y-6 text-black/60 font-medium text-sm leading-relaxed max-w-xl">
-                  <p>{local.storyText1}</p>
-                  <p>{local.storyText2}</p>
+                  <p>{isExpanded ? text1 : showText1}</p>
+                  <AnimatePresence initial={false}>
+                    {(isExpanded || !isLong) && text2 && (
+                      <motion.p
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        {text2}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                 </div>
-
-                <motion.div variants={itemVariants} className="pt-4">
-                  <Link 
-                    href={local.historyLink} 
-                    className="group inline-flex items-center gap-3 px-6 py-3 bg-white hover:bg-black text-black hover:text-white rounded-2xl font-black text-sm uppercase tracking-widest border border-black/10 transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1"
-                  >
-                    {local.historyLinkLabel}
-                    <div className="w-8 h-8 rounded-full bg-ercs-red/10 flex items-center justify-center group-hover:bg-ercs-red transition-colors">
-                      <History className="h-4 w-4 text-ercs-red group-hover:text-white" />
-                    </div>
-                  </Link>
-                </motion.div>
+ 
+                {isLong && (
+                  <motion.div variants={itemVariants} className="pt-4">
+                    <button 
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="group inline-flex items-center gap-3 px-6 py-3 bg-white hover:bg-black text-black hover:text-white rounded-2xl font-black text-sm uppercase tracking-widest border border-black/10 transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+                    >
+                      {isExpanded 
+                        ? (local.showLess || t.whoWeAre.showLess || "Show Less") 
+                        : (local.historyLinkLabel || "Read Full History")
+                      }
+                      <div className="w-8 h-8 rounded-full bg-ercs-red/10 flex items-center justify-center group-hover:bg-ercs-red transition-colors">
+                        <ChevronDown className={`h-4 w-4 text-ercs-red group-hover:text-white transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+                    </button>
+                  </motion.div>
+                )}
               </div>
             </motion.div>
 
