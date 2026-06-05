@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend
@@ -698,10 +699,10 @@ export default function DashboardPage() {
               <PieChart>
                 <Pie 
                   data={getGeographicChartData()} 
-                  cx="30%" 
+                  cx="35%" 
                   cy="50%" 
-                  innerRadius={60} 
-                  outerRadius={80} 
+                  innerRadius={50} 
+                  outerRadius={70} 
                   paddingAngle={2} 
                   dataKey="value"
                 >
@@ -720,7 +721,7 @@ export default function DashboardPage() {
               </PieChart>
             </ResponsiveContainer>
             <div className={cn(
-              "absolute top-1/2 left-[30%] -translate-x-1/2 -translate-y-1/2",
+              "absolute top-1/2 left-[35%] -translate-x-1/2 -translate-y-1/2",
               "text-center pointer-events-none"
             )}>
               <p className="text-xl font-black text-black leading-none">
@@ -776,62 +777,70 @@ export default function DashboardPage() {
             Quick Actions
           </h3>
           <div className="grid grid-cols-2 gap-4 flex-1">
-            <button className={cn(
-              "flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
-              "bg-gray-50 hover:bg-blue-50 hover:border-blue-100 transition-colors group"
-            )}>
-              <div className={cn(
-                "h-10 w-10 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center",
-                "group-hover:scale-110 transition-transform"
+            <Link href="/admin/user-management?create=true" className="flex">
+              <button className={cn(
+                "w-full flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
+                "bg-gray-50 hover:bg-blue-50 hover:border-blue-100 transition-colors group cursor-pointer"
               )}>
-                <UserPlus className="h-5 w-5" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-black">
-                Add Volunteer
-              </span>
-            </button>
-            <button className={cn(
-              "flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
-              "bg-gray-50 hover:bg-green-50 hover:border-green-100 transition-colors group"
-            )}>
-              <div className={cn(
-                "h-10 w-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center",
-                "group-hover:scale-110 transition-transform"
+                <div className={cn(
+                  "h-10 w-10 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center",
+                  "group-hover:scale-110 transition-transform"
+                )}>
+                  <UserPlus className="h-5 w-5" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-black">
+                  Add Volunteer
+                </span>
+              </button>
+            </Link>
+            <Link href="/admin/notifications" className="flex">
+              <button className={cn(
+                "w-full flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
+                "bg-gray-50 hover:bg-green-50 hover:border-green-100 transition-colors group cursor-pointer"
               )}>
-                <Megaphone className="h-5 w-5" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-black">
-                Create Campaign
-              </span>
-            </button>
-            <button className={cn(
-              "flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
-              "bg-gray-50 hover:bg-orange-50 hover:border-orange-100 transition-colors group"
-            )}>
-              <div className={cn(
-                "h-10 w-10 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center",
-                "group-hover:scale-110 transition-transform"
+                <div className={cn(
+                  "h-10 w-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center",
+                  "group-hover:scale-110 transition-transform"
+                )}>
+                  <Megaphone className="h-5 w-5" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-black">
+                  Create Campaign
+                </span>
+              </button>
+            </Link>
+            <Link href="/admin/news" className="flex">
+              <button className={cn(
+                "w-full flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
+                "bg-gray-50 hover:bg-orange-50 hover:border-orange-100 transition-colors group cursor-pointer"
               )}>
-                <Calendar className="h-5 w-5" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-black">
-                Create Event
-              </span>
-            </button>
-            <button className={cn(
-              "flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
-              "bg-gray-50 hover:bg-purple-50 hover:border-purple-100 transition-colors group"
-            )}>
-              <div className={cn(
-                "h-10 w-10 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center",
-                "group-hover:scale-110 transition-transform"
+                <div className={cn(
+                  "h-10 w-10 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center",
+                  "group-hover:scale-110 transition-transform"
+                )}>
+                  <Calendar className="h-5 w-5" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-black">
+                  Create Event
+                </span>
+              </button>
+            </Link>
+            <Link href="/admin/reports" className="flex">
+              <button className={cn(
+                "w-full flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
+                "bg-gray-50 hover:bg-purple-50 hover:border-purple-100 transition-colors group cursor-pointer"
               )}>
-                <Edit3 className="h-5 w-5" />
-              </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-black">
-                Generate Report
-              </span>
-            </button>
+                <div className={cn(
+                  "h-10 w-10 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center",
+                  "group-hover:scale-110 transition-transform"
+                )}>
+                  <Edit3 className="h-5 w-5" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-black">
+                  Generate Report
+                </span>
+              </button>
+            </Link>
           </div>
         </div>
       </div>

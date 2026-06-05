@@ -190,7 +190,18 @@ export default function UserManagementPage() {
     }
   }, []);
 
-  useEffect(() => { fetchLocations(); fetchProfile(); }, [fetchLocations, fetchProfile]);
+   useEffect(() => { fetchLocations(); fetchProfile(); }, [fetchLocations, fetchProfile]);
+ 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("create") === "true") {
+        setShowCreate(true);
+        setSelectedUser(null);
+        setForm({ ...DEFAULT_FORM });
+      }
+    }
+  }, []);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);

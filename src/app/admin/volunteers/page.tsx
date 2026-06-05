@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import {
@@ -187,9 +188,11 @@ export default function VolunteersPage() {
             >
                 <FileText className="h-4 w-4 mr-2" /> Export PDF
             </Button>
-            <Button className="rounded-xl h-10 px-6 font-black shadow-lg shadow-red-500/10 flex items-center gap-2">
-                <Plus className="h-4 w-4" /> Add Field Member
-            </Button>
+            <Link href="/admin/user-management?create=true">
+              <Button className="rounded-xl h-10 px-6 font-black shadow-lg shadow-red-500/10 flex items-center gap-2">
+                  <Plus className="h-4 w-4" /> Add Volunteer
+              </Button>
+            </Link>
         </div>
       </div>
 
