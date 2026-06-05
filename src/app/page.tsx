@@ -311,146 +311,51 @@ export default function LandingPage() {
                   {(mergedT.hero as any).pathwaysLabel || "Choose your path to help"}
                 </motion.p>
 
-                {/* Premium 2×2 pathway card grid */}
-                <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto lg:mx-0">
-                  {/* Volunteer */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.88, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ delay: 0.42, duration: 0.55, ease: [0.16, 1, 0.3, 1] as any }}
-                    whileHover={{ y: -4, scale: 1.03 }}
+                {/* Donate — compact pill CTA */}
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.42, duration: 0.55, ease: [0.16, 1, 0.3, 1] as any }}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="inline-flex"
+                >
+                  <button
+                    onClick={() => setIsDonationModalOpen(true)}
+                    className="group relative flex items-center gap-3 pl-2 pr-5 py-2 rounded-full
+                      bg-gradient-to-r from-gray-900 via-gray-800 to-black
+                      border border-white/10 shadow-lg shadow-black/25
+                      hover:shadow-red-500/30 hover:border-red-500/30
+                      transition-all duration-400 cursor-pointer overflow-hidden"
                   >
-                    <Link href="/join/volunteer" className="block">
-                      <div className="group relative overflow-hidden rounded-2xl p-4 cursor-pointer
-                        bg-gradient-to-br from-[#ED1C24] to-[#b91017]
-                        shadow-lg shadow-red-500/30 hover:shadow-2xl hover:shadow-red-500/50
-                        transition-shadow duration-500 border border-white/10">
-                        {/* Glow orb */}
-                        <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/20 rounded-full
-                          blur-xl group-hover:scale-150 transition-transform duration-700" />
-                        <div className="relative z-10 flex flex-col gap-2.5">
-                          <div className="h-9 w-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center
-                            justify-center group-hover:bg-white/30 transition-colors duration-300
-                            group-hover:rotate-6 transition-transform">
-                            <Users className="h-4 w-4 text-white" />
-                          </div>
-                          <div>
-                            <p className="text-white/60 text-[9px] font-black uppercase tracking-widest">Join us</p>
-                            <p className="text-white font-black text-sm leading-tight">
-                              {translations[lang].hero.ctaVolunteer || "Volunteer"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1 text-white/70 group-hover:text-white transition-colors">
-                            <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
+                    {/* Glow pulse behind icon */}
+                    <div className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full
+                      bg-red-500/20 blur-md group-hover:bg-red-500/40 transition-all duration-500" />
 
-                  {/* Donate */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.88, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ delay: 0.52, duration: 0.55, ease: [0.16, 1, 0.3, 1] as any }}
-                    whileHover={{ y: -4, scale: 1.03 }}
-                  >
-                    <button onClick={() => setIsDonationModalOpen(true)} className="block w-full text-left">
-                      <div className="group relative overflow-hidden rounded-2xl p-4 cursor-pointer
-                        bg-gradient-to-br from-gray-900 to-black
-                        shadow-lg shadow-black/30 hover:shadow-2xl hover:shadow-black/50
-                        transition-shadow duration-500 border border-white/5">
-                        <div className="absolute -top-4 -right-4 w-16 h-16 bg-red-500/20 rounded-full
-                          blur-xl group-hover:scale-150 transition-transform duration-700" />
-                        <div className="relative z-10 flex flex-col gap-2.5">
-                          <div className="h-9 w-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center
-                            justify-center group-hover:bg-red-500/30 transition-colors duration-300">
-                            <MotionHeart
-                              variants={heartVariants}
-                              animate="heartbeat"
-                              className="h-4 w-4 text-white"
-                            />
-                          </div>
-                          <div>
-                            <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Give</p>
-                            <p className="text-white font-black text-sm leading-tight">
-                              {mergedT.hero.ctaDonate || "Donate"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1 text-white/40 group-hover:text-white transition-colors">
-                            <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  </motion.div>
+                    {/* Icon pill */}
+                    <div className="relative h-8 w-8 rounded-full bg-white/10 flex items-center
+                      justify-center group-hover:bg-red-500/40 transition-colors duration-300 flex-shrink-0">
+                      <MotionHeart
+                        variants={heartVariants}
+                        animate="heartbeat"
+                        className="h-4 w-4 text-white"
+                      />
+                    </div>
 
-                  {/* Membership */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.88, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ delay: 0.62, duration: 0.55, ease: [0.16, 1, 0.3, 1] as any }}
-                    whileHover={{ y: -4, scale: 1.03 }}
-                  >
-                    <Link href="/join/member" className="block">
-                      <div className="group relative overflow-hidden rounded-2xl p-4 cursor-pointer
-                        bg-gradient-to-br from-sky-500 to-blue-600
-                        shadow-lg shadow-sky-500/30 hover:shadow-2xl hover:shadow-sky-500/50
-                        transition-shadow duration-500 border border-white/10">
-                        <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/25 rounded-full
-                          blur-xl group-hover:scale-150 transition-transform duration-700" />
-                        <div className="relative z-10 flex flex-col gap-2.5">
-                          <div className="h-9 w-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center
-                            justify-center group-hover:bg-white/30 transition-colors duration-300
-                            group-hover:rotate-6 transition-transform">
-                            <ShieldCheck className="h-4 w-4 text-white" />
-                          </div>
-                          <div>
-                            <p className="text-white/60 text-[9px] font-black uppercase tracking-widest">Become a</p>
-                            <p className="text-white font-black text-sm leading-tight">
-                              {mergedT.hero.ctaMembership || "Member"}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1 text-white/70 group-hover:text-white transition-colors">
-                            <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
+                    {/* Label */}
+                    <span className="relative flex flex-col items-start leading-none">
+                      <span className="text-white/40 text-[8px] font-black uppercase tracking-[0.18em]">
+                        Support us
+                      </span>
+                      <span className="text-white font-black text-sm tracking-tight">
+                        {mergedT.hero.ctaDonate || "Donate"}
+                      </span>
+                    </span>
 
-                  {/* Volunteer Hub */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.88, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ delay: 0.72, duration: 0.55, ease: [0.16, 1, 0.3, 1] as any }}
-                    whileHover={{ y: -4, scale: 1.03 }}
-                  >
-                    <Link href="/organizations" className="block">
-                      <div className="group relative overflow-hidden rounded-2xl p-4 cursor-pointer
-                        bg-gradient-to-br from-violet-500 to-purple-700
-                        shadow-lg shadow-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/50
-                        transition-shadow duration-500 border border-white/10">
-                        <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/20 rounded-full
-                          blur-xl group-hover:scale-150 transition-transform duration-700" />
-                        <div className="relative z-10 flex flex-col gap-2.5">
-                          <div className="h-9 w-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center
-                            justify-center group-hover:bg-white/30 transition-colors duration-300
-                            group-hover:rotate-6 transition-transform">
-                            <Globe className="h-4 w-4 text-white" />
-                          </div>
-                          <div>
-                            <p className="text-white/60 text-[9px] font-black uppercase tracking-widest">Volunteer</p>
-                            <p className="text-white font-black text-sm leading-tight">Request</p>
-                          </div>
-                          <div className="flex items-center gap-1 text-white/70 group-hover:text-white transition-colors">
-                            <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform duration-300" />
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                </div>
+                    <ArrowRight className="h-3.5 w-3.5 text-white/40 group-hover:text-white
+                      group-hover:translate-x-1 transition-all duration-300 ml-1" />
+                  </button>
+                </motion.div>
               </div>
             </motion.div>
 
@@ -500,45 +405,8 @@ export default function LandingPage() {
                   </div>
                 )}
 
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6 md:p-8">
-                    <p className="text-white font-bold text-base md:text-lg">{mergedT.hero.anniversary}</p>
-                 </div>
-
-                  {/* Floating Membership Button */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ 
-                      opacity: 1, 
-                      scale: 1,
-                      y: [0, -10, 0] 
-                    }}
-                    transition={{ 
-                      opacity: { duration: 0.8, delay: 0.8 },
-                      scale: { duration: 0.8, delay: 0.8 },
-                      y: { 
-                        duration: 6, 
-                        repeat: Infinity, 
-                        ease: "easeInOut",
-                        delay: 1.6
-                      }
-                    }}
-                    className="absolute bottom-3 right-3 md:bottom-6 md:right-6 z-30 hidden sm:block"
-                  >
-                    <Link href="/join/member">
-                      <button className="group flex items-center gap-2 md:gap-3 bg-white hover:bg-[#ED1C24]
-                        text-black hover:text-white rounded-xl md:rounded-3xl h-10 md:h-16 pl-3 md:pl-6 pr-4 md:pr-8 font-black text-[10px] md:text-lg
-                        border-2 border-black/10 hover:border-[#ED1C24]
-                        shadow-xl shadow-black/10 transition-all duration-500
-                        hover:-translate-y-1 cursor-pointer whitespace-nowrap">
-                        <div className="h-5 w-5 md:h-10 md:w-10 rounded-full bg-black/5 group-hover:bg-white/20
-                          flex items-center justify-center transition-colors flex-shrink-0">
-                          <ShieldCheck className="h-3 w-3 md:h-5 md:w-5" />
-                        </div>
-                        {mergedT.hero.ctaMembership || translations[lang].hero.ctaMembership || "Membership"}
-                      </button>
-                    </Link>
-                  </motion.div>
               </div>
+
 
               {/* Stats Floaties */}
               <motion.div 

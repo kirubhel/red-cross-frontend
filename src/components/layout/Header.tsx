@@ -50,7 +50,6 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
     { label: t.nav.services, href: "/#services" },
     { label: t.nav.impact, href: "/#impact" },
     { label: t.nav.news, href: "/#news" },
-    { label: t.nav.organizations, href: "/organizations" }
   ];
 
   return (
@@ -80,7 +79,7 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
         {minimal ? (
           <div className="flex-1" />
         ) : !showBackToHome ? (
-          <nav className="hidden lg:flex items-center gap-10">
+          <nav className="hidden lg:flex items-center gap-8">
             {navLinks.map((item) => (
               <Link 
                 key={item.label} 
@@ -91,6 +90,25 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ED1C24] transition-all duration-300 group-hover:w-full" />
               </Link>
             ))}
+
+            {/* Separator */}
+            <div className="h-5 w-px bg-gray-200" />
+
+            {/* Volunteer Request — accented pill */}
+            <Link
+              href="/organizations"
+              className="group flex items-center gap-1.5 px-3 py-1 rounded-full
+                border border-[#ED1C24]/30 bg-[#ED1C24]/5
+                hover:bg-[#ED1C24] hover:border-[#ED1C24]
+                transition-all duration-300"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-[#ED1C24] group-hover:bg-white
+                transition-colors duration-300 shrink-0" />
+              <span className={`${lang === 'en' ? 'text-xs' : 'text-[10px]'} font-black text-[#ED1C24]
+                group-hover:text-white transition-colors duration-300 whitespace-nowrap`}>
+                {t.nav.organizations}
+              </span>
+            </Link>
           </nav>
         ) : (
           <Link href="/" className="text-sm font-bold text-black hover:text-[#ED1C24] transition-colors flex items-center gap-2">
@@ -152,8 +170,19 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
               </Link>
               <div className="h-8 w-px bg-gray-200 hidden lg:block" />
               <Link href="/join/volunteer" className="hidden lg:block">
-                <Button size="sm" className="bg-[#ED1C24] text-white border-2 border-[#ED1C24] hover:bg-white hover:text-[#ED1C24] rounded-full px-6 font-bold shadow-lg shadow-[#ED1C24]/20 transition-all hover:scale-105 active:scale-95 cursor-pointer">
-                  {t.nav.join}
+                <Button
+                  size="sm"
+                  className="bg-white text-[#ED1C24] border-2 border-[#ED1C24] hover:bg-[#ED1C24] hover:text-white rounded-full px-5 font-bold shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  {t.nav.joinVolunteer}
+                </Button>
+              </Link>
+              <Link href="/join/member" className="hidden lg:block">
+                <Button
+                  size="sm"
+                  className="bg-black text-white border-2 border-black hover:bg-white hover:text-black rounded-full px-5 font-bold shadow-lg shadow-black/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  {t.nav.becomeMember}
                 </Button>
               </Link>
 
@@ -189,6 +218,21 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
                   {item.label}
                 </Link>
               ))}
+
+              {/* Volunteer Request — accented pill in mobile */}
+              <Link
+                href="/organizations"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="inline-flex items-center gap-2 self-start px-4 py-2 rounded-full
+                  border border-[#ED1C24]/40 bg-[#ED1C24]/5 hover:bg-[#ED1C24]
+                  transition-all duration-300 group"
+              >
+                <span className="h-2 w-2 rounded-full bg-[#ED1C24] group-hover:bg-white transition-colors" />
+                <span className="text-base font-black text-[#ED1C24] group-hover:text-white transition-colors">
+                  {t.nav.organizations}
+                </span>
+              </Link>
+
               <div className="h-px bg-gray-100 my-2" />
               <Link 
                 href="/login" 
@@ -198,8 +242,13 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
                 {t.nav.portal}
               </Link>
               <Link href="/join/volunteer" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button className="w-full bg-[#ED1C24] text-white h-14 rounded-2xl text-lg font-black shadow-xl shadow-[#ED1C24]/20">
-                  {t.nav.join}
+                <Button className="w-full bg-white text-[#ED1C24] border-2 border-[#ED1C24] h-14 rounded-2xl text-lg font-black shadow-sm">
+                  {t.nav.joinVolunteer}
+                </Button>
+              </Link>
+              <Link href="/join/member" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button className="w-full bg-black text-white h-14 rounded-2xl text-lg font-black shadow-xl shadow-black/20">
+                  {t.nav.becomeMember}
                 </Button>
               </Link>
             </div>

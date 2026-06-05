@@ -7,9 +7,11 @@ export const translations = {
       services: "Services",
       impact: "Impact",
       news: "News",
-      organizations: "Volunteer Requests",
+      organizations: "Volunteer Request",
       portal: "Portal Access",
       join: "Join Membership",
+      joinVolunteer: "Join as Volunteer",
+      becomeMember: "Become a Member",
       backToHome: "Back to Home"
     },
     hero: {
@@ -215,6 +217,8 @@ export const translations = {
       organizations: "የበጎ ፈቃድ ጥያቄ",
       portal: "የፖርታል መግቢያ",
       join: "አባል ይሁኑ",
+      joinVolunteer: "በጎ ፈቃደኛ ይሁኑ",
+      becomeMember: "አባል ይሁኑ",
       backToHome: "ወደ ዋናው ገጽ"
     },
     hero: {
@@ -420,6 +424,8 @@ export const translations = {
       organizations: "Gaaffii Tajaajilaa",
       portal: "Galfata Poortaalii",
       join: "Miseensa Ta'aa",
+      joinVolunteer: "Fedheen Hojjedhu",
+      becomeMember: "Miseensa Ta'aa",
       backToHome: "Gara Manaa"
     },
     hero: {

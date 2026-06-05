@@ -229,7 +229,8 @@ const CONTENT = {
 
 export default function WelcomeModal({ lang }: WelcomeModalProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [doNotShowChecked, setDoNotShowChecked] = useState(false);
+  // Defaults to true — closing always persists the flag, so the modal shows only once.
+  const [doNotShowChecked, setDoNotShowChecked] = useState(true);
   const c = CONTENT[lang] || CONTENT.en;
 
   const ICONS = [
