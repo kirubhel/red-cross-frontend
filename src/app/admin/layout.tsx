@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { toast } from "sonner";
 import { AiChatWidget } from "@/components/admin/AiChatWidget";
+import api from "@/lib/api";
 import { 
   Bell, 
   Search, 
@@ -20,6 +21,35 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingOrgs, setPendingOrgs] = useState<any[]>([]);
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchPendingOrgs = async () => {
+      try {
+        const res = await api.get('/organizations');
+        const list = res.data.organizations || [];
+        setPendingOrgs(list.filter((org: any) => org.status === 'PENDING'));
+      } catch (err) {
+        console.error("Failed to fetch pending organizations", err);
+      }
+    };
+    fetchPendingOrgs();
+
+    const interval = setInterval(fetchPendingOrgs, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -97,17 +127,95 @@ export default function AdminLayout({
             <div className="h-8 w-px bg-gray-100 hidden sm:block" />
 
             {/* Notifications */}
-            <button 
-              onClick={() => setUnreadCount(0)}
-              className="relative p-3 rounded-full hover:bg-gray-50 transition-colors text-gray-400 hover:text-black"
-            >
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-[#ED1C24] border-2 border-white text-[8px] font-bold text-white flex items-center justify-center">
-                  {unreadCount}
-                </span>
+            <div className="relative" ref={notifRef}>
+              <button 
+                onClick={() => {
+                  setUnreadCount(0);
+                  setShowNotifDropdown(!showNotifDropdown);
+                }}
+                className="relative p-3 rounded-full hover:bg-gray-50
+                  transition-colors text-gray-400 hover:text-black
+                  cursor-pointer"
+              >
+                <Bell className="h-5 w-5" />
+                {(unreadCount > 0 || pendingOrgs.length > 0) && (
+                  <span className="absolute top-1 right-1 h-4 w-4 rounded-full
+                    bg-[#ED1C24] border-2 border-white text-[8px] font-bold
+                    text-white flex items-center justify-center"
+                  >
+                    {unreadCount || pendingOrgs.length}
+                  </span>
+                )}
+              </button>
+
+              {showNotifDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white
+                  rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)]
+                  border border-gray-100 p-4 z-50 animate-in fade-in
+                  slide-in-from-top-2 duration-200"
+                >
+                  <div className="flex items-center justify-between border-b
+                    border-gray-50 pb-2 mb-3"
+                  >
+                    <span className="text-xs font-black text-black uppercase
+                      tracking-wider"
+                    >
+                      Notifications
+                    </span>
+                    {pendingOrgs.length > 0 && (
+                      <span className="bg-red-50 text-[#ED1C24] text-[9px]
+                        font-black px-2 py-0.5 rounded-full uppercase
+                        tracking-wider"
+                      >
+                        {pendingOrgs.length} pending
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {pendingOrgs.length > 0 ? (
+                      pendingOrgs.map((org: any) => (
+                        <div 
+                          key={org.id} 
+                          onClick={() => {
+                            setShowNotifDropdown(false);
+                            window.location.href = "/admin/organizations";
+                          }}
+                          className="p-3 rounded-xl bg-red-50/50 hover:bg-red-50
+                            border border-transparent hover:border-red-100/50
+                            transition-all cursor-pointer flex gap-3
+                            items-start"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-white flex
+                            items-center justify-center border border-red-50
+                            text-[#ED1C24] shrink-0 font-black text-xs"
+                          >
+                            ORG
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-black text-black
+                              leading-snug truncate"
+                            >
+                              Approval Required
+                            </p>
+                            <p className="text-[10px] text-gray-500 font-bold
+                              leading-normal truncate"
+                            >
+                              Organization &ldquo;{org.name}&rdquo; is waiting for approval
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-6 text-center">
+                        <p className="text-xs font-bold text-gray-400">
+                          No notifications present
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
             
             {/* User Profile */}
             <div className="relative group/profile">

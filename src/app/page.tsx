@@ -172,6 +172,14 @@ export default function LandingPage() {
     contactSection: {
       ...t.contactSection,
       ...(dynamicContent?.[lang]?.contactSection || {})
+    },
+    ctaBanner: {
+      ...t.ctaBanner,
+      ...(dynamicContent?.[lang]?.ctaBanner || {})
+    },
+    footer: {
+      ...t.footer,
+      ...(dynamicContent?.[lang]?.footer || {})
     }
   };
 
@@ -993,80 +1001,142 @@ export default function LandingPage() {
       </main>
 
       {/* Refined Footer */}
-      <footer className="bg-gray-950 text-white pt-32 relative overflow-hidden">
+      <footer className="bg-gray-950 text-white pt-16 relative overflow-hidden">
         {/* Subtle Map Grid Overlay */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-             style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div 
+          className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+          style={{ 
+            backgroundImage: "radial-gradient(#fff 1px, transparent 1px)", 
+            backgroundSize: "40px 40px" 
+          }} 
+        />
         
-        <div className="container mx-auto px-6 relative z-10 mb-24">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
-            <div className="space-y-8">
+        <div className="container mx-auto px-6 relative z-10 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+            <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="bg-white p-1 rounded-lg">
-                  <Image src="/logo.png" alt="ERCS Logo" width={80} height={80} className="object-contain" unoptimized />
+                  <Image 
+                    src="/logo.png" 
+                    alt="ERCS Logo" 
+                    width={85} 
+                    height={85} 
+                    className="object-contain" 
+                    unoptimized 
+                  />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-2xl font-black tracking-tighter uppercase leading-none">ERCS</span>
-                  <span className="text-[10px] font-black text-[#ED1C24] uppercase tracking-[0.2em]">Ethiopia</span>
+                  <span className="text-xl font-black tracking-tighter uppercase leading-none">
+                    ERCS
+                  </span>
+                  <span className="text-[9px] font-black text-[#ED1C24] uppercase tracking-[0.2em]">
+                    Ethiopia
+                  </span>
                 </div>
               </div>
-              <p className="text-gray-400 text-lg leading-relaxed font-medium">
+              <p className="text-gray-400 text-sm leading-relaxed font-medium">
                 {mergedT.footer.desc}
               </p>
-              <div className="flex gap-4">
-                {[Facebook, Twitter, Instagram, Linkedin].map((Icon, idx) => (
-                  <Link key={idx} href="#" className="h-10 w-10 rounded-full bg-gray-900 flex items-center justify-center border border-gray-800 hover:bg-[#ED1C24] hover:border-[#ED1C24] transition-all duration-300 group">
-                    <Icon className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
-                  </Link>
+              <div className="flex gap-3">
+                {[
+                  { Icon: Facebook, url: mergedT.footer.facebook },
+                  { Icon: Twitter, url: mergedT.footer.twitter },
+                  { Icon: Instagram, url: mergedT.footer.instagram },
+                  { Icon: Linkedin, url: mergedT.footer.linkedin }
+                ].map(({ Icon, url }, idx) => (
+                  <a 
+                    key={idx} 
+                    href={url || "#"} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="h-9 w-9 rounded-full bg-gray-900 flex items-center
+                      justify-center border border-gray-800 hover:bg-[#ED1C24]
+                      hover:border-[#ED1C24] transition-all duration-300 group"
+                  >
+                    <Icon className="h-4.5 w-4.5 text-gray-400 group-hover:text-white transition-colors" />
+                  </a>
                 ))}
               </div>
             </div>
 
             <div>
-              <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-10">{mergedT.footer.mission}</h5>
-              <ul className="space-y-4 font-bold">
-                {["Emergency Response", "Health & Wellness", "Clean Water (WASH)", "Community Growth", "Blood Donation"].map(u => (
-                  <li key={u}><Link href="#" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#ED1C24] opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {u}
-                  </Link></li>
+              <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-4">
+                {mergedT.footer.mission}
+              </h5>
+              <ul className="space-y-2.5 font-bold text-sm">
+                {[
+                  "Emergency Response", 
+                  "Health & Wellness", 
+                  "Clean Water (WASH)", 
+                  "Community Growth", 
+                  "Blood Donation"
+                ].map(u => (
+                  <li key={u}>
+                    <Link 
+                      href="#" 
+                      className="text-gray-400 hover:text-white transition-colors
+                        flex items-center gap-2 group"
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#ED1C24] opacity-0
+                        group-hover:opacity-100 transition-opacity" />
+                      {u}
+                    </Link>
+                  </li>
                 ))}
               </ul>
             </div>
 
             <div>
-              <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-10">{mergedT.footer.involved}</h5>
-              <ul className="space-y-4 font-bold">
-                {["Join as Volunteer", "Life Membership", "Corporate Giving", "Media Center", "Career Portal"].map(u => (
-                  <li key={u}><Link href="#" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#ED1C24] opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {u}
-                  </Link></li>
+              <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-4">
+                {mergedT.footer.involved}
+              </h5>
+              <ul className="space-y-2.5 font-bold text-sm">
+                {[
+                  "Join as Volunteer", 
+                  "Life Membership", 
+                  "Corporate Giving", 
+                  "Media Center", 
+                  "Career Portal"
+                ].map(u => (
+                  <li key={u}>
+                    <Link 
+                      href="#" 
+                      className="text-gray-400 hover:text-white transition-colors
+                        flex items-center gap-2 group"
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#ED1C24] opacity-0
+                        group-hover:opacity-100 transition-opacity" />
+                      {u}
+                    </Link>
+                  </li>
                 ))}
               </ul>
             </div>
 
-            <div className="space-y-10">
+            <div className="space-y-6">
               <div>
-                <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-8">{mergedT.footer.location}</h5>
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center shrink-0">
-                      <MapPin className="h-6 w-6 text-[#ED1C24]" />
+                <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-4">
+                  {mergedT.footer.location}
+                </h5>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-gray-900 border border-gray-800
+                      flex items-center justify-center shrink-0">
+                      <MapPin className="h-5 w-5 text-[#ED1C24]" />
                     </div>
-                    <div className="text-gray-400 font-bold leading-snug">
+                    <div className="text-gray-400 font-bold leading-snug text-xs">
                       Ras Desta Damtew Ave, <br />
                       Addis Ababa, Ethiopia
                     </div>
                   </div>
                   
                   {/* Interactive Map Embed */}
-                  <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-gray-800 group">
+                  <div className="relative w-full h-32 rounded-2xl overflow-hidden border border-gray-800 group">
                     <iframe 
                       src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3940.50972230733!2d38.7562883!3d9.0171633!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x164b8593cc18e53d%3A0x6a05953051412035!2sEthiopian%20Red%20Cross%20Society!5e0!3m2!1sen!2set!4v1700000000000!5m2!1sen!2set" 
                       width="100%" 
                       height="100%" 
-                      style={{ border: 0, filter: 'grayscale(1) invert(0.9) contrast(1.2) brightness(0.8)' }} 
+                      style={{ border: 0, filter: "grayscale(1) invert(0.9) contrast(1.2) brightness(0.8)" }} 
                       allowFullScreen 
                       loading="lazy" 
                       referrerPolicy="no-referrer-when-downgrade"
@@ -1075,17 +1145,23 @@ export default function LandingPage() {
                     <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/10 rounded-2xl" />
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center shrink-0">
-                      <Phone className="h-6 w-6 text-[#ED1C24]" />
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-gray-900 border border-gray-800
+                      flex items-center justify-center shrink-0">
+                      <Phone className="h-4.5 w-4.5 text-[#ED1C24]" />
                     </div>
-                    <div className="text-gray-400 font-bold">+251 11 515 3820</div>
+                    <div className="text-gray-400 font-bold text-xs">
+                      {mergedT.contactSection.tel?.split(",")[0] || "+251 11 515 3820"}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center shrink-0">
-                      <Mail className="h-6 w-6 text-[#ED1C24]" />
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-gray-900 border border-gray-800
+                      flex items-center justify-center shrink-0">
+                      <Mail className="h-4.5 w-4.5 text-[#ED1C24]" />
                     </div>
-                    <div className="text-gray-400 font-bold hover:text-white transition-colors">info@redcrosseth.org</div>
+                    <div className="text-gray-400 font-bold hover:text-white transition-colors text-xs">
+                      {mergedT.contactSection.email?.split(" or ")[0] || "info@redcrosseth.org"}
+                    </div>
                   </div>
                 </div>
               </div>

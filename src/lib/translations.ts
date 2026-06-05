@@ -182,7 +182,11 @@ export const translations = {
       mission: "Our Mission",
       involved: "Get Involved",
       location: "Headquarters Location",
-      rights: "Alleviating Human Suffering Since 1935."
+      rights: "Alleviating Human Suffering Since 1935.",
+      facebook: "https://facebook.com",
+      twitter: "https://twitter.com",
+      instagram: "https://instagram.com",
+      linkedin: "https://linkedin.com"
     },
     programsSection: {
       title: "Membership and Donation Payments",
@@ -412,7 +416,11 @@ export const translations = {
       mission: "ተልዕኳችን",
       involved: "ይሳተፉ",
       location: "የዋናው መሥሪያ ቤት ቦታ",
-      rights: "ከ1935 ጀምሮ የሰውን ልጅ ስቃይ ማቃለል።"
+      rights: "ከ1935 ጀምሮ የሰውን ልጅ ስቃይ ማቃለል።",
+      facebook: "https://facebook.com",
+      twitter: "https://twitter.com",
+      instagram: "https://instagram.com",
+      linkedin: "https://linkedin.com"
     }
   },
   om: {
@@ -619,7 +627,11 @@ export const translations = {
       mission: "Ergama Keenya",
       involved: "Hirmaadhaa",
       location: "Bakka Waajjira Ol-aanaa",
-      rights: "Waggaa 1935 jalqabee dhiphuu namoomaa hir'isuu."
+      rights: "Waggaa 1935 jalqabee dhiphuu namoomaa hir'isuu.",
+      facebook: "https://facebook.com",
+      twitter: "https://twitter.com",
+      instagram: "https://instagram.com",
+      linkedin: "https://linkedin.com"
     }
   }
 };

@@ -892,6 +892,53 @@ export default function CMSPage() {
                 />
               </div>
             </div>
+
+            <div className="h-px bg-gray-100 my-4" />
+            <div className="text-xs font-black uppercase tracking-[0.2em] text-[#ED1C24] mb-4">
+              Social Media Links
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">
+                  Facebook URL
+                </Label>
+                <Input 
+                  value={current.footer.facebook || ""} 
+                  onChange={(e) => updateField('footer', 'facebook', e.target.value)}
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">
+                  Twitter URL
+                </Label>
+                <Input 
+                  value={current.footer.twitter || ""} 
+                  onChange={(e) => updateField('footer', 'twitter', e.target.value)}
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">
+                  Instagram URL
+                </Label>
+                <Input 
+                  value={current.footer.instagram || ""} 
+                  onChange={(e) => updateField('footer', 'instagram', e.target.value)}
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">
+                  LinkedIn URL
+                </Label>
+                <Input 
+                  value={current.footer.linkedin || ""} 
+                  onChange={(e) => updateField('footer', 'linkedin', e.target.value)}
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

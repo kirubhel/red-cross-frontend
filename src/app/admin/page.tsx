@@ -10,9 +10,9 @@ import {
 } from 'recharts';
 import { 
   Users, CheckCircle, Megaphone, Calendar, ChevronDown, 
-  UserPlus, Edit3, ShieldAlert, TrendingUp, Search
+  UserPlus, Edit3, ShieldAlert, TrendingUp, Search, X
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -234,6 +234,7 @@ function RecentVolunteersTable({ volunteers }: { volunteers: Volunteer[] }) {
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
+  const [showActivitiesModal, setShowActivitiesModal] = useState(false);
 
   // States
   const [allRegistry, setAllRegistry] = useState<any[]>([]);
@@ -654,7 +655,10 @@ export default function DashboardPage() {
             <h3 className="text-sm font-black text-black uppercase tracking-widest">
               Recent Activities
             </h3>
-            <span className="text-[10px] font-bold text-blue-500 cursor-pointer hover:underline">
+            <span 
+              onClick={() => setShowActivitiesModal(true)}
+              className="text-[10px] font-bold text-blue-500 cursor-pointer hover:underline"
+            >
               View All
             </span>
           </div>
@@ -847,6 +851,82 @@ export default function DashboardPage() {
 
       {/* Recent Volunteers Section */}
       <RecentVolunteersTable volunteers={filteredList.slice(0, 5)} />
+
+      {/* Recent Activities Modal */}
+      <AnimatePresence>
+        {showActivitiesModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowActivitiesModal(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative bg-white rounded-[32px] p-8 max-w-lg w-full shadow-2xl overflow-hidden z-10"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+                <div>
+                  <h3 className="text-xl font-black text-black tracking-tight uppercase">
+                    All Recent Activities
+                  </h3>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
+                    System activity log
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowActivitiesModal(false)}
+                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-black cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                {[
+                  { icon: UserPlus, title: "New volunteer registered", desc: "Sara Ahmed joined as a volunteer.", time: "2m ago", color: "text-green-500", bg: "bg-green-50" },
+                  { icon: Megaphone, title: "Campaign updated", desc: "'Clean City Initiative' was updated.", time: "15m ago", color: "text-blue-500", bg: "bg-blue-50" },
+                  { icon: Calendar, title: "New event created", desc: "'Tree Planting Day' created successfully.", time: "1h ago", color: "text-orange-500", bg: "bg-orange-50" },
+                  { icon: Edit3, title: "User role changed", desc: "John Doe's role changed to Manager.", time: "2h ago", color: "text-purple-500", bg: "bg-purple-50" },
+                  { icon: ShieldAlert, title: "Login from new device", desc: "Login detected from Chrome on Windows.", time: "3h ago", color: "text-red-500", bg: "bg-red-50" },
+                  { icon: UserPlus, title: "New member registered", desc: "Abebe Kebede joined as a member.", time: "1d ago", color: "text-green-500", bg: "bg-green-50" },
+                  { icon: Megaphone, title: "Donation goal achieved", desc: "Water project raised 50k ETB.", time: "2d ago", color: "text-blue-500", bg: "bg-blue-50" },
+                ].map((act, i) => (
+                  <div key={i} className="flex gap-4 p-2.5 rounded-2xl hover:bg-gray-50/50 transition-colors">
+                    <div className={cn(
+                      "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
+                      act.bg,
+                      act.color
+                    )}>
+                      <act.icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-black leading-snug">{act.title}</p>
+                      <p className="text-[10px] font-medium text-gray-500 leading-normal mt-0.5">{act.desc}</p>
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap pt-0.5">
+                      {act.time}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
+                <Button 
+                  onClick={() => setShowActivitiesModal(false)}
+                  className="bg-black hover:bg-[#ED1C24] text-white rounded-xl h-11 px-6 font-bold text-xs"
+                >
+                  Close Log
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
