@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { translations, Language } from "@/lib/translations";
+import { footerSocialIconOptions, FooterSocialIcon } from "@/lib/footer-links";
 
 type CMSContent = typeof translations.en;
 
@@ -76,7 +77,13 @@ export default function CMSPage() {
             ...(data?.membership || {}),
             tiers: { ...(translations[lang].membership?.tiers || {}), ...(data?.membership?.tiers || {}) }
           },
-          footer: { ...translations[lang].footer, ...(data?.footer || {}) },
+          footer: { 
+            ...translations[lang].footer, 
+            ...(data?.footer || {}),
+            missionLinks: data?.footer?.missionLinks || translations[lang].footer.missionLinks || [],
+            involvedLinks: data?.footer?.involvedLinks || translations[lang].footer.involvedLinks || [],
+            socialLinks: data?.footer?.socialLinks || translations[lang].footer.socialLinks || []
+          },
           ctaBanner: { ...translations[lang].ctaBanner, ...(data?.ctaBanner || {}) },
           programsSection: { ...translations[lang].programsSection, ...(data?.programsSection || {}) },
           volunteerSection: { ...translations[lang].volunteerSection, ...(data?.volunteerSection || {}) },
@@ -357,6 +364,69 @@ export default function CMSPage() {
               </div>
               <p className="text-[10px] text-gray-400 font-medium ml-1 italic">
                 * These images will automatically rotate in the Hero section on the homepage.
+              </p>
+            </div>
+
+            {/* Mobile Application File Upload */}
+            <div className="h-px bg-gray-100 my-6" />
+            <div className="space-y-4">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Mobile Application Package (.apk)</Label>
+              <div className="flex gap-2 items-center">
+                <Input 
+                  value={current.hero.appDownloadUrl || ""} 
+                  onChange={(e) => updateField('hero', 'appDownloadUrl', e.target.value)}
+                  className="rounded-xl h-12 font-bold border-gray-200 bg-white text-black flex-1"
+                  placeholder="App Download URL (or upload an APK below)"
+                />
+                <div className="relative shrink-0">
+                  <input
+                    type="file"
+                    id="hero-app-upload"
+                    className="hidden"
+                    accept=".apk,application/vnd.android.package-archive"
+                    onChange={async (e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        const file = e.target.files[0];
+                        const section = 'hero';
+                        const field = 'appDownloadUrl';
+                        
+                        setIsUploading(`${section}-${field}`);
+                        
+                        try {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          const res = await api.post('/storage/upload', formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                          });
+                          updateField(section, field, res.data.url);
+                          toast.success("Mobile App package uploaded successfully!");
+                        } catch (err) {
+                          console.error("App upload failed:", err);
+                          toast.error("Failed to upload App package.");
+                        } finally {
+                          setIsUploading(null);
+                        }
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 px-6 rounded-xl border-dashed border-[#ED1C24]/30 bg-red-50/30 text-[#ED1C24] hover:bg-red-50 font-bold gap-2"
+                    onClick={() => document.getElementById('hero-app-upload')?.click()}
+                    disabled={isUploading === 'hero-appDownloadUrl'}
+                  >
+                    {isUploading === 'hero-appDownloadUrl' ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    Upload APK
+                  </Button>
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-400 font-medium ml-1 italic">
+                * This file will be downloadable via the "Download App" button in the Hero section of the homepage.
               </p>
             </div>
           </CardContent>
@@ -893,50 +963,247 @@ export default function CMSPage() {
               </div>
             </div>
 
-            <div className="h-px bg-gray-100 my-4" />
-            <div className="text-xs font-black uppercase tracking-[0.2em] text-[#ED1C24] mb-4">
-              Social Media Links
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Footer Phone Number</Label>
+                <Input 
+                  value={current.footer.phone || ""} 
+                  onChange={(e) => updateField('footer', 'phone', e.target.value)}
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
+                  placeholder="+251-115-18-01-80"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Footer Email Address</Label>
+                <Input 
+                  value={current.footer.email || ""} 
+                  onChange={(e) => updateField('footer', 'email', e.target.value)}
+                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
+                  placeholder="geremew.ashenafi@redcrosseth.org"
+                />
+              </div>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">
-                  Facebook URL
+
+            <div className="h-px bg-gray-100 my-6" />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-black uppercase tracking-[0.2em] text-[#ED1C24] ml-1">
+                  Our Mission Links
                 </Label>
-                <Input 
-                  value={current.footer.facebook || ""} 
-                  onChange={(e) => updateField('footer', 'facebook', e.target.value)}
-                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
-                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl h-9 px-4 font-bold border-dashed border-[#ED1C24]/30 text-[#ED1C24] hover:bg-red-50"
+                  onClick={() => {
+                    const newLinks = [...(current.footer.missionLinks || []), { label: "", href: "#" }];
+                    updateField('footer', 'missionLinks', newLinks);
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Link
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">
-                  Twitter URL
-                </Label>
-                <Input 
-                  value={current.footer.twitter || ""} 
-                  onChange={(e) => updateField('footer', 'twitter', e.target.value)}
-                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
-                />
+              
+              <div className="grid gap-3">
+                {(current.footer.missionLinks || []).map((link: any, index: number) => (
+                  <div key={index} className="flex gap-3 items-center bg-gray-50/50 p-3 rounded-2xl border border-gray-100">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold text-gray-400 uppercase ml-1">Label</Label>
+                        <Input 
+                          value={link.label} 
+                          onChange={(e) => {
+                            const newLinks = [...(current.footer.missionLinks || [])];
+                            newLinks[index] = { ...newLinks[index], label: e.target.value };
+                            updateField('footer', 'missionLinks', newLinks);
+                          }}
+                          placeholder="e.g. Emergency Response"
+                          className="rounded-xl h-10 font-bold bg-white text-black border-gray-200"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold text-gray-400 uppercase ml-1">Href / URL</Label>
+                        <Input 
+                          value={link.href} 
+                          onChange={(e) => {
+                            const newLinks = [...(current.footer.missionLinks || [])];
+                            newLinks[index] = { ...newLinks[index], href: e.target.value };
+                            updateField('footer', 'missionLinks', newLinks);
+                          }}
+                          placeholder="e.g. /#services"
+                          className="rounded-xl h-10 font-bold bg-white text-black border-gray-200"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 border-gray-200 self-end"
+                      onClick={() => {
+                        const newLinks = (current.footer.missionLinks || []).filter((_: any, i: number) => i !== index);
+                        updateField('footer', 'missionLinks', newLinks);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">
-                  Instagram URL
+            </div>
+
+            <div className="h-px bg-gray-100 my-6" />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-black uppercase tracking-[0.2em] text-[#ED1C24] ml-1">
+                  Get Involved Links
                 </Label>
-                <Input 
-                  value={current.footer.instagram || ""} 
-                  onChange={(e) => updateField('footer', 'instagram', e.target.value)}
-                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
-                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl h-9 px-4 font-bold border-dashed border-[#ED1C24]/30 text-[#ED1C24] hover:bg-red-50"
+                  onClick={() => {
+                    const newLinks = [...(current.footer.involvedLinks || []), { label: "", href: "#" }];
+                    updateField('footer', 'involvedLinks', newLinks);
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Link
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">
-                  LinkedIn URL
+              
+              <div className="grid gap-3">
+                {(current.footer.involvedLinks || []).map((link: any, index: number) => (
+                  <div key={index} className="flex gap-3 items-center bg-gray-50/50 p-3 rounded-2xl border border-gray-100">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold text-gray-400 uppercase ml-1">Label</Label>
+                        <Input 
+                          value={link.label} 
+                          onChange={(e) => {
+                            const newLinks = [...(current.footer.involvedLinks || [])];
+                            newLinks[index] = { ...newLinks[index], label: e.target.value };
+                            updateField('footer', 'involvedLinks', newLinks);
+                          }}
+                          placeholder="e.g. Join as Volunteer"
+                          className="rounded-xl h-10 font-bold bg-white text-black border-gray-200"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold text-gray-400 uppercase ml-1">Href / URL</Label>
+                        <Input 
+                          value={link.href} 
+                          onChange={(e) => {
+                            const newLinks = [...(current.footer.involvedLinks || [])];
+                            newLinks[index] = { ...newLinks[index], href: e.target.value };
+                            updateField('footer', 'involvedLinks', newLinks);
+                          }}
+                          placeholder="e.g. /join/volunteer"
+                          className="rounded-xl h-10 font-bold bg-white text-black border-gray-200"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 border-gray-200 self-end"
+                      onClick={() => {
+                        const newLinks = (current.footer.involvedLinks || []).filter((_: any, i: number) => i !== index);
+                        updateField('footer', 'involvedLinks', newLinks);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="h-px bg-gray-100 my-6" />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-black uppercase tracking-[0.2em] text-[#ED1C24] ml-1">
+                  Social Media Links
                 </Label>
-                <Input 
-                  value={current.footer.linkedin || ""} 
-                  onChange={(e) => updateField('footer', 'linkedin', e.target.value)}
-                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200"
-                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl h-9 px-4 font-bold border-dashed border-[#ED1C24]/30 text-[#ED1C24] hover:bg-red-50"
+                  onClick={() => {
+                    const newLinks = [...(current.footer.socialLinks || []), { label: "Facebook", url: "", icon: "facebook" }];
+                    updateField('footer', 'socialLinks', newLinks);
+                  }}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Social Account
+                </Button>
+              </div>
+              
+              <div className="grid gap-3">
+                {(current.footer.socialLinks || []).map((link: any, index: number) => (
+                  <div key={index} className="flex gap-3 items-center bg-gray-50/50 p-3 rounded-2xl border border-gray-100">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1">
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold text-gray-400 uppercase ml-1">Platform Label</Label>
+                        <Input 
+                          value={link.label} 
+                          onChange={(e) => {
+                            const newLinks = [...(current.footer.socialLinks || [])];
+                            newLinks[index] = { ...newLinks[index], label: e.target.value };
+                            updateField('footer', 'socialLinks', newLinks);
+                          }}
+                          placeholder="e.g. Facebook"
+                          className="rounded-xl h-10 font-bold bg-white text-black border-gray-200"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold text-gray-400 uppercase ml-1">Icon Type</Label>
+                        <select 
+                          value={link.icon} 
+                          onChange={(e) => {
+                            const newLinks = [...(current.footer.socialLinks || [])];
+                            newLinks[index] = {
+                              ...newLinks[index],
+                              icon: e.target.value as FooterSocialIcon,
+                            };
+                            updateField('footer', 'socialLinks', newLinks);
+                          }}
+                          className="w-full bg-white text-black font-bold rounded-xl h-10 px-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 appearance-none transition-all"
+                        >
+                          {footerSocialIconOptions.map((opt: any) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold text-gray-400 uppercase ml-1">URL</Label>
+                        <Input 
+                          value={link.url} 
+                          onChange={(e) => {
+                            const newLinks = [...(current.footer.socialLinks || [])];
+                            newLinks[index] = { ...newLinks[index], url: e.target.value };
+                            updateField('footer', 'socialLinks', newLinks);
+                          }}
+                          placeholder="https://facebook.com/ercs"
+                          className="rounded-xl h-10 font-bold bg-white text-black border-gray-200"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 border-gray-200 self-end"
+                      onClick={() => {
+                        const newLinks = (current.footer.socialLinks || []).filter((_: any, i: number) => i !== index);
+                        updateField('footer', 'socialLinks', newLinks);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
           </CardContent>

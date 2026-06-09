@@ -522,10 +522,18 @@ export default function ProfilePage() {
               <div className="p-2 bg-white rounded-xl border border-gray-100">
                  <AlertCircle className="h-5 w-5 text-amber-500" />
               </div>
-              <div>
+              <div className="flex-1">
                  <p className="text-xs font-black uppercase tracking-tight text-gray-900">Important Security Notice</p>
                  <p className="text-[11px] font-medium text-gray-400 mt-1">Changes to your name or {user?.role === "VOLUNTEER" ? "volunteer" : "membership"} ID may require manual verification from an ERCS administrator before they are reflected on your identification card.</p>
               </div>
+           </div>
+           <div className="mt-4 flex justify-end">
+             <Link
+               href="/delete-account"
+               className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 transition-colors flex items-center gap-1.5"
+             >
+               Delete my account
+             </Link>
            </div>
         </div>
       </div>

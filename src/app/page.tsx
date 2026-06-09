@@ -26,10 +26,12 @@ import {
   Instagram,
   Linkedin,
   Languages,
-  Award
+  Award,
+  Smartphone
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { translations, Language } from "@/lib/translations";
+import { footerSocialIconMap } from "@/lib/footer-links";
 import { useEffect, useRef, useState } from "react";
 import { useInView, useMotionValue, useSpring, useTransform } from "framer-motion";
 import WhoWeAre from "@/components/WhoWeAre";
@@ -179,7 +181,10 @@ export default function LandingPage() {
     },
     footer: {
       ...t.footer,
-      ...(dynamicContent?.[lang]?.footer || {})
+      ...(dynamicContent?.[lang]?.footer || {}),
+      missionLinks: dynamicContent?.[lang]?.footer?.missionLinks || t.footer.missionLinks || [],
+      involvedLinks: dynamicContent?.[lang]?.footer?.involvedLinks || t.footer.involvedLinks || [],
+      socialLinks: dynamicContent?.[lang]?.footer?.socialLinks || t.footer.socialLinks || []
     }
   };
 
@@ -319,51 +324,98 @@ export default function LandingPage() {
                   {(mergedT.hero as any).pathwaysLabel || "Choose your path to help"}
                 </motion.p>
 
-                {/* Donate — compact pill CTA */}
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.42, duration: 0.55, ease: [0.16, 1, 0.3, 1] as any }}
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="inline-flex"
-                >
-                  <button
-                    onClick={() => setIsDonationModalOpen(true)}
-                    className="group relative flex items-center gap-3 pl-2 pr-5 py-2 rounded-full
-                      bg-gradient-to-r from-gray-900 via-gray-800 to-black
-                      border border-white/10 shadow-lg shadow-black/25
-                      hover:shadow-red-500/30 hover:border-red-500/30
-                      transition-all duration-400 cursor-pointer overflow-hidden"
+                {/* CTA Buttons Row */}
+                <div className="flex flex-wrap gap-4 items-center justify-center lg:justify-start w-full">
+                  {/* Donate — compact pill CTA */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.42, duration: 0.55, ease: [0.16, 1, 0.3, 1] as any }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="inline-flex"
                   >
-                    {/* Glow pulse behind icon */}
-                    <div className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full
-                      bg-red-500/20 blur-md group-hover:bg-red-500/40 transition-all duration-500" />
+                    <button
+                      onClick={() => setIsDonationModalOpen(true)}
+                      className="group relative flex items-center gap-3 pl-2 pr-5 py-2 rounded-full
+                        bg-gradient-to-r from-gray-900 via-gray-800 to-black
+                        border border-white/10 shadow-lg shadow-black/25
+                        hover:shadow-red-500/30 hover:border-red-500/30
+                        transition-all duration-400 cursor-pointer overflow-hidden"
+                    >
+                      {/* Glow pulse behind icon */}
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full
+                        bg-red-500/20 blur-md group-hover:bg-red-500/40 transition-all duration-500" />
 
-                    {/* Icon pill */}
-                    <div className="relative h-8 w-8 rounded-full bg-white/10 flex items-center
-                      justify-center group-hover:bg-red-500/40 transition-colors duration-300 flex-shrink-0">
-                      <MotionHeart
-                        variants={heartVariants}
-                        animate="heartbeat"
-                        className="h-4 w-4 text-white"
-                      />
-                    </div>
+                      {/* Icon pill */}
+                      <div className="relative h-8 w-8 rounded-full bg-white/10 flex items-center
+                        justify-center group-hover:bg-red-500/40 transition-colors duration-300 flex-shrink-0">
+                        <MotionHeart
+                          variants={heartVariants}
+                          animate="heartbeat"
+                          className="h-4 w-4 text-white"
+                        />
+                      </div>
 
-                    {/* Label */}
-                    <span className="relative flex flex-col items-start leading-none">
-                      <span className="text-white/40 text-[8px] font-black uppercase tracking-[0.18em]">
-                        Support us
+                      {/* Label */}
+                      <span className="relative flex flex-col items-start leading-none">
+                        <span className="text-white/40 text-[8px] font-black uppercase tracking-[0.18em]">
+                          Support us
+                        </span>
+                        <span className="text-white font-black text-sm tracking-tight">
+                          {mergedT.hero.ctaDonate || "Donate"}
+                        </span>
                       </span>
-                      <span className="text-white font-black text-sm tracking-tight">
-                        {mergedT.hero.ctaDonate || "Donate"}
-                      </span>
-                    </span>
 
-                    <ArrowRight className="h-3.5 w-3.5 text-white/40 group-hover:text-white
-                      group-hover:translate-x-1 transition-all duration-300 ml-1" />
-                  </button>
-                </motion.div>
+                      <ArrowRight className="h-3.5 w-3.5 text-white/40 group-hover:text-white
+                        group-hover:translate-x-1 transition-all duration-300 ml-1" />
+                    </button>
+                  </motion.div>
+
+                  {/* Download App — glassmorphic premium CTA */}
+                  {mergedT.hero.appDownloadUrl && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.48, duration: 0.55, ease: [0.16, 1, 0.3, 1] as any }}
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="inline-flex"
+                    >
+                      <a
+                        href={mergedT.hero.appDownloadUrl}
+                        download
+                        className="group relative flex items-center gap-3 pl-2 pr-5 py-2 rounded-full
+                          bg-[#ED1C24] hover:bg-black border border-white/10 shadow-lg shadow-red-500/10
+                          hover:shadow-red-500/35 hover:border-red-400/30
+                          transition-all duration-400 cursor-pointer overflow-hidden text-left"
+                      >
+                        {/* Glow pulse behind icon */}
+                        <div className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full
+                          bg-white/10 blur-md group-hover:bg-white/25 transition-all duration-500" />
+
+                        {/* Icon pill */}
+                        <div className="relative h-8 w-8 rounded-full bg-white/20 flex items-center
+                          justify-center group-hover:bg-white/30 transition-colors duration-300 flex-shrink-0">
+                          <Smartphone className="h-4 w-4 text-white" />
+                        </div>
+
+                        {/* Label */}
+                        <span className="relative flex flex-col items-start leading-none">
+                          <span className="text-white/60 text-[8px] font-black uppercase tracking-[0.18em]">
+                            Get Mobile App
+                          </span>
+                          <span className="text-white font-black text-sm tracking-tight">
+                            {mergedT.hero.ctaDownloadApp || "Download App"}
+                          </span>
+                        </span>
+
+                        <ArrowRight className="h-3.5 w-3.5 text-white/60 group-hover:text-white
+                          group-hover:translate-x-1 transition-all duration-300 ml-1" />
+                      </a>
+                    </motion.div>
+                  )}
+                </div>
               </div>
             </motion.div>
 
@@ -601,9 +653,124 @@ export default function LandingPage() {
         </section>
 
         {/* News & Updates Section */}
-        <NewsSection lang={lang} content={mergedT.news} />
+       
+        
 
-        {/* Donation Section */}
+
+
+        {/* Modernized Programs & Impact Section */}
+        <section className="py-24 px-6 bg-gray-950 relative overflow-hidden">
+          {/* Faded Red Cross background art */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+            <svg viewBox="0 0 200 200" className="w-[700px] h-[700px] opacity-[0.03]" fill="#ED1C24" xmlns="http://www.w3.org/2000/svg">
+              <rect x="75" y="0" width="50" height="200" rx="6" />
+              <rect x="0" y="75" width="200" height="50" rx="6" />
+            </svg>
+          </div>
+          <div className="pointer-events-none absolute top-0 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-[120px]" />
+          <div className="pointer-events-none absolute bottom-0 right-1/4 w-96 h-96 bg-red-500/5 rounded-full blur-[120px]" />
+
+          <div className="container mx-auto relative z-10">
+            <div className="max-w-4xl mx-auto space-y-8 text-center mb-16">
+                 <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter">{mergedT.programsSection.title}</h2>
+                 <div className="h-1.5 w-24 bg-[#ED1C24] mx-auto rounded-full" />
+                 <p className="text-lg md:text-xl text-gray-400 leading-relaxed font-medium">
+                   {mergedT.programsSection.content}
+                 </p>
+
+                 {/* Source Buttons */}
+                 <div className="flex flex-wrap justify-center gap-4 pt-2">
+                   <Link href="/join/member">
+                     <button className="group relative overflow-hidden inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-[#ED1C24] text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-red-500/25 hover:shadow-red-500/40 transition-all duration-300 hover:-translate-y-0.5">
+                       <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
+                       <Award className="w-4 h-4 shrink-0" />
+                       {mergedT.programsSection.sources[0] ?? "Annual Membership Payment"}
+                     </button>
+                   </Link>
+                   <button
+                     onClick={() => setIsDonationModalOpen(true)}
+                     className="group relative overflow-hidden inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-white/5 text-white font-black text-sm uppercase tracking-widest border border-white/10 shadow-xl hover:bg-[#ED1C24] hover:border-[#ED1C24] hover:shadow-red-500/30 transition-all duration-300 hover:-translate-y-0.5"
+                   >
+                     <span className="absolute inset-0 bg-white/5 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12" />
+                     <Heart className="w-4 h-4 shrink-0" />
+                     {mergedT.programsSection.sources[1] ?? "Money Donations"}
+                   </button>
+                 </div>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-8">
+               {/* Membership Card */}
+               <div className="bg-white/5 border border-white/10 p-8 rounded-[40px] h-full flex flex-col backdrop-blur-sm">
+                  <h3 className="text-2xl font-black text-white mb-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 text-[#ED1C24] flex items-center justify-center shrink-0">
+                      <Award className="w-5 h-5" />
+                    </div>
+                    {mergedT.programsSection.membershipTitle}
+                  </h3>
+                  <p className="text-gray-400 font-medium mb-8 leading-relaxed">{mergedT.programsSection.membershipContent}</p>
+
+                  <div className="grid grid-cols-2 gap-4 mb-8">
+                     <div className="bg-rose-500/5 border border-rose-500/10 p-5 rounded-3xl hover:bg-rose-500/10 hover:-translate-y-1 transition-all">
+                        <ShieldCheck className="w-8 h-8 text-rose-400 mb-3" />
+                        <h4 className="font-black text-sm text-white mb-1">Digital Access</h4>
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-tight">Instant Approval</p>
+                     </div>
+                     <div className="bg-amber-500/5 border border-amber-500/10 p-5 rounded-3xl hover:bg-amber-500/10 hover:-translate-y-1 transition-all">
+                        <Activity className="w-8 h-8 text-amber-400 mb-3" />
+                        <h4 className="font-black text-sm text-white mb-1">Voting Rights</h4>
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-tight">General Assembly</p>
+                     </div>
+                  </div>
+
+                  <Link href="/join/member" className="block mt-auto">
+                    <Button className="w-full h-14 bg-white hover:bg-[#ED1C24] text-black hover:text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-black/30 hover:shadow-red-500/20">
+                      {mergedT.membership.cta} <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+               </div>
+
+               {/* Donation Card */}
+               <div className="bg-white/5 border border-white/10 p-8 rounded-[40px] h-full flex flex-col backdrop-blur-sm">
+                  <h3 className="text-2xl font-black text-white mb-4 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                      <Heart className="w-5 h-5" />
+                    </div>
+                    {mergedT.programsSection.donationTitle}
+                  </h3>
+                  <p className="text-gray-400 font-medium mb-6 leading-relaxed">{mergedT.programsSection.donationContent}</p>
+
+                  <div className="space-y-3 mb-8 flex-grow">
+                     {[
+                       { title: "Emergency Response", icon: Flame, color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/10", bar: "bg-orange-500" },
+                       { title: "Clean Water (WASH)", icon: Droplets, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/10", bar: "bg-blue-500" },
+                       { title: "Medical Supplies", icon: Activity, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/10", bar: "bg-emerald-500" },
+                     ].map((cause, idx) => (
+                        <div key={idx} className={`flex items-center gap-4 p-5 rounded-3xl border ${cause.border} hover:bg-white/5 transition-all group cursor-default`}>
+                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${cause.bg} ${cause.color} group-hover:scale-110 group-hover:rotate-6 transition-all`}>
+                              <cause.icon className="w-6 h-6" />
+                           </div>
+                           <div className="flex-1">
+                             <h4 className="font-black text-white">{cause.title}</h4>
+                             <div className="h-1.5 w-full bg-white/5 rounded-full mt-3 overflow-hidden">
+                                <div className={`h-full w-[85%] ${cause.bar} opacity-60 rounded-full`} />
+                             </div>
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+
+                  <Button
+                    onClick={() => setIsDonationModalOpen(true)}
+                    className="w-full h-14 bg-[#ED1C24] hover:bg-white hover:text-black text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 mt-auto"
+                  >
+                    {mergedT.hero.ctaDonate} <MotionHeart className="h-4 w-4" animate="heartbeat" variants={heartVariants} />
+                  </Button>
+               </div>
+            </div>
+          </div>
+        </section>
+
+{/* Donation Section */}
         <section className="py-32 px-6">
           <div className="container mx-auto max-w-5xl">
             <div className="text-center space-y-4 mb-20">
@@ -665,102 +832,7 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
-
-        {/* Modernized Programs & Impact Section */}
-        <section className="py-24 px-6 bg-gray-50/50">
-          <div className="container mx-auto">
-            <div className="max-w-4xl mx-auto space-y-8 text-center mb-16">
-                 <h2 className="text-4xl md:text-5xl font-black text-black tracking-tighter">{mergedT.programsSection.title}</h2>
-                 <div className="h-1.5 w-24 bg-[#ED1C24] mx-auto rounded-full" />
-                 <p className="text-lg md:text-xl text-gray-600 leading-relaxed font-medium">
-                   {mergedT.programsSection.content}
-                 </p>
-                 <div className="flex flex-wrap justify-center gap-4 pt-4">
-                    {mergedT.programsSection.sources.map((source: string) => (
-                      <div key={source} className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 font-black text-sm uppercase tracking-widest text-[#ED1C24]">
-                        {source}
-                      </div>
-                    ))}
-                 </div>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-12">
-               {/* Membership Cards Grid */}
-               <div className="space-y-6">
-                  <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 h-full flex flex-col">
-                     <h3 className="text-2xl font-black text-black mb-4 flex items-center gap-3">
-                       <div className="w-10 h-10 rounded-full bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0">
-                         <Award className="w-5 h-5" />
-                       </div>
-                       {mergedT.programsSection.membershipTitle}
-                     </h3>
-                     <p className="text-gray-500 font-medium mb-8 leading-relaxed">{mergedT.programsSection.membershipContent}</p>
-                     
-                     {/* Interactive Tokens */}
-                     <div className="grid grid-cols-2 gap-4 mb-8">
-                        <div className="bg-rose-50/50 p-5 rounded-3xl border border-rose-100 hover:bg-rose-50 hover:-translate-y-1 transition-all">
-                           <ShieldCheck className="w-8 h-8 text-rose-500 mb-3" />
-                           <h4 className="font-black text-sm text-black mb-1">Digital Access</h4>
-                           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-tight">Instant Approval</p>
-                        </div>
-                        <div className="bg-amber-50/50 p-5 rounded-3xl border border-amber-100 hover:bg-amber-50 hover:-translate-y-1 transition-all">
-                           <Activity className="w-8 h-8 text-amber-500 mb-3" />
-                           <h4 className="font-black text-sm text-black mb-1">Voting Rights</h4>
-                           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-tight">General Assembly</p>
-                        </div>
-                     </div>
-
-                     <Link href="/join/member" className="block mt-auto">
-                       <Button className="w-full h-14 bg-black hover:bg-[#ED1C24] text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-xl shadow-black/10 hover:shadow-red-500/20">
-                         {mergedT.membership.cta} <ArrowRight className="h-4 w-4" />
-                       </Button>
-                     </Link>
-                  </div>
-               </div>
-
-               {/* Donation Explanation Cards */}
-               <div className="space-y-6">
-                  <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100 h-full flex flex-col">
-                     <h3 className="text-2xl font-black text-black mb-4 flex items-center gap-3">
-                       <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-                         <Heart className="w-5 h-5" />
-                       </div>
-                       {mergedT.programsSection.donationTitle}
-                     </h3>
-                     <p className="text-gray-500 font-medium mb-6 leading-relaxed">{mergedT.programsSection.donationContent}</p>
-                     
-                     <div className="space-y-4 mb-8 flex-grow">
-                        {[
-                          { title: "Emergency Response", icon: Flame, color: "text-orange-500", bg: "bg-orange-50" },
-                          { title: "Clean Water (WASH)", icon: Droplets, color: "text-blue-500", bg: "bg-blue-50" },
-                          { title: "Medical Supplies", icon: Activity, color: "text-emerald-500", bg: "bg-emerald-50" },
-                        ].map((cause, idx) => (
-                           <div key={idx} className="flex items-center gap-4 p-5 rounded-3xl border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all group cursor-default bg-gray-50/50 hover:bg-white">
-                              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${cause.bg} ${cause.color} group-hover:scale-110 group-hover:rotate-6 transition-all shadow-sm`}>
-                                 <cause.icon className="w-6 h-6" />
-                              </div>
-                              <div className="flex-1">
-                                <h4 className="font-black text-black">{cause.title}</h4>
-                                <div className="h-1.5 w-full bg-gray-100 rounded-full mt-3 overflow-hidden">
-                                   <div className={`h-full w-[85%] transition-all duration-1000 origin-left ${cause.bg.replace('bg-', 'bg-').replace('50', '500')}`} />
-                                </div>
-                              </div>
-                           </div>
-                        ))}
-                     </div>
-
-                     <Button 
-                       onClick={() => setIsDonationModalOpen(true)}
-                       className="w-full h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 mt-auto"
-                     >
-                       {mergedT.hero.ctaDonate} <MotionHeart className="h-4 w-4" animate="heartbeat" variants={heartVariants} />
-                     </Button>
-                  </div>
-               </div>
-            </div>
-          </div>
-        </section>
+         <NewsSection lang={lang} content={mergedT.news} />
 
         {/* Volunteer Hub & Quick Form */}
         <section id="volunteer-hub" className="py-24 px-6 overflow-hidden relative bg-slate-950">
@@ -1012,7 +1084,7 @@ export default function LandingPage() {
         />
         
         <div className="container mx-auto px-6 relative z-10 mb-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="bg-white p-1 rounded-lg">
@@ -1038,75 +1110,39 @@ export default function LandingPage() {
                 {mergedT.footer.desc}
               </p>
               <div className="flex gap-3">
-                {[
-                  { Icon: Facebook, url: mergedT.footer.facebook },
-                  { Icon: Twitter, url: mergedT.footer.twitter },
-                  { Icon: Instagram, url: mergedT.footer.instagram },
-                  { Icon: Linkedin, url: mergedT.footer.linkedin }
-                ].map(({ Icon, url }, idx) => (
-                  <a 
-                    key={idx} 
-                    href={url || "#"} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="h-9 w-9 rounded-full bg-gray-900 flex items-center
-                      justify-center border border-gray-800 hover:bg-[#ED1C24]
-                      hover:border-[#ED1C24] transition-all duration-300 group"
-                  >
-                    <Icon className="h-4.5 w-4.5 text-gray-400 group-hover:text-white transition-colors" />
-                  </a>
-                ))}
+                {(mergedT.footer.socialLinks || []).map((link: any, idx: number) => {
+                  const Icon = footerSocialIconMap[link.icon as keyof typeof footerSocialIconMap] || Globe;
+                  return (
+                    <a 
+                      key={idx} 
+                      href={link.url || "#"} 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-9 w-9 rounded-full bg-gray-900 flex items-center
+                        justify-center border border-gray-800 hover:bg-[#ED1C24]
+                        hover:border-[#ED1C24] transition-all duration-300 group"
+                      title={link.label}
+                    >
+                      <Icon className="h-4.5 w-4.5 text-gray-400 group-hover:text-white transition-colors" />
+                    </a>
+                  );
+                })}
               </div>
             </div>
 
-            <div>
-              <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-4">
-                {mergedT.footer.mission}
-              </h5>
-              <ul className="space-y-2.5 font-bold text-sm">
-                {[
-                  "Emergency Response", 
-                  "Health & Wellness", 
-                  "Clean Water (WASH)", 
-                  "Community Growth", 
-                  "Blood Donation"
-                ].map(u => (
-                  <li key={u}>
-                    <Link 
-                      href="#" 
-                      className="text-gray-400 hover:text-white transition-colors
-                        flex items-center gap-2 group"
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#ED1C24] opacity-0
-                        group-hover:opacity-100 transition-opacity" />
-                      {u}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h5 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-4">
+            <div className="flex flex-col items-start text-left mx-auto">
+              <h5 className="text-sm md:text-base font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-4">
                 {mergedT.footer.involved}
               </h5>
-              <ul className="space-y-2.5 font-bold text-sm">
-                {[
-                  "Join as Volunteer", 
-                  "Life Membership", 
-                  "Corporate Giving", 
-                  "Media Center", 
-                  "Career Portal"
-                ].map(u => (
-                  <li key={u}>
+              <ul className="space-y-3 font-black text-base w-full max-w-[260px] text-left">
+                {(mergedT.footer.involvedLinks || []).map((link: any, idx: number) => (
+                  <li key={idx}>
                     <Link 
-                      href="#" 
-                      className="text-gray-400 hover:text-white transition-colors
-                        flex items-center gap-2 group"
+                      href={link.href || "#"} 
+                      className="text-gray-300 hover:text-white transition-colors flex items-center justify-start gap-2 group"
                     >
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#ED1C24] opacity-0
-                        group-hover:opacity-100 transition-opacity" />
-                      {u}
+                      <div className="w-2 h-2 rounded-full bg-[#ED1C24] opacity-0 group-hover:opacity-100 transition-opacity" />
+                      {link.label}
                     </Link>
                   </li>
                 ))}
@@ -1151,7 +1187,7 @@ export default function LandingPage() {
                       <Phone className="h-4.5 w-4.5 text-[#ED1C24]" />
                     </div>
                     <div className="text-gray-400 font-bold text-xs">
-                      {mergedT.contactSection.tel?.split(",")[0] || "+251 11 515 3820"}
+                      {mergedT.footer.phone || mergedT.contactSection.tel?.split(",")[0] || "+251-115-18-01-80"}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -1160,7 +1196,7 @@ export default function LandingPage() {
                       <Mail className="h-4.5 w-4.5 text-[#ED1C24]" />
                     </div>
                     <div className="text-gray-400 font-bold hover:text-white transition-colors text-xs">
-                      {mergedT.contactSection.email?.split(" or ")[0] || "info@redcrosseth.org"}
+                      {mergedT.footer.email || mergedT.contactSection.email?.split(" or ")[0] || "geremew.ashenafi@redcrosseth.org"}
                     </div>
                   </div>
                 </div>
@@ -1177,9 +1213,10 @@ export default function LandingPage() {
               <span className="hidden md:inline"> · </span> {mergedT.footer.rights}
             </div>
             <div className="flex gap-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-               <Link href="#" className="hover:text-[#ED1C24] transition-colors">Privacy</Link>
+               <Link href="/privacy" className="hover:text-[#ED1C24] transition-colors">Privacy</Link>
                <Link href="#" className="hover:text-[#ED1C24] transition-colors">Terms</Link>
                <Link href="#" className="hover:text-[#ED1C24] transition-colors">Cookies</Link>
+               <Link href="/delete-account" className="hover:text-[#ED1C24] transition-colors">Delete Account</Link>
             </div>
           </div>
         </div>

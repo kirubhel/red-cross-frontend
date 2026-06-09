@@ -1,3 +1,5 @@
+import { defaultFooterInvolvedLinks, defaultFooterMissionLinks, defaultFooterSocialLinks } from "./footer-links";
+
 export type Language = 'en' | 'am' | 'om';
 
 export const translations = {
@@ -25,6 +27,8 @@ export const translations = {
       ctaVolunteer: "Join as Volunteer",
       ctaMembership: "Membership",
       ctaDonate: "Donate",
+      ctaDownloadApp: "Download App",
+      appDownloadUrl: "",
       pathwaysLabel: "Choose your path to help:",
       volunteers: "Volunteers",
       anniversary: "Celebrating 90 Years of Humanitarian Excellence",
@@ -183,10 +187,15 @@ export const translations = {
       involved: "Get Involved",
       location: "Headquarters Location",
       rights: "Alleviating Human Suffering Since 1935.",
+      socialLinks: defaultFooterSocialLinks,
+      missionLinks: defaultFooterMissionLinks,
+      involvedLinks: defaultFooterInvolvedLinks,
       facebook: "https://facebook.com",
       twitter: "https://twitter.com",
       instagram: "https://instagram.com",
-      linkedin: "https://linkedin.com"
+      linkedin: "https://linkedin.com",
+      phone: "+251-115-18-01-80",
+      email: "geremew.ashenafi@redcrosseth.org"
     },
     programsSection: {
       title: "Membership and Donation Payments",
@@ -236,6 +245,8 @@ export const translations = {
       ctaVolunteer: "በጎ ፈቃደኛ ይሁኑ",
       ctaMembership: "አባልነት",
       ctaDonate: "ልገሳ",
+      ctaDownloadApp: "መተግበሪያውን ያውርዱ",
+      appDownloadUrl: "",
       pathwaysLabel: "ለመርዳት መንገድዎን ይምረጡ፡",
       volunteers: "በጎ ፈቃደኞች",
       anniversary: "የ90 ዓመታት የሰብአዊ አገልግሎት ልቀት በዓል",
@@ -417,10 +428,15 @@ export const translations = {
       involved: "ይሳተፉ",
       location: "የዋናው መሥሪያ ቤት ቦታ",
       rights: "ከ1935 ጀምሮ የሰውን ልጅ ስቃይ ማቃለል።",
+      socialLinks: defaultFooterSocialLinks,
+      missionLinks: defaultFooterMissionLinks,
+      involvedLinks: defaultFooterInvolvedLinks,
       facebook: "https://facebook.com",
       twitter: "https://twitter.com",
       instagram: "https://instagram.com",
-      linkedin: "https://linkedin.com"
+      linkedin: "https://linkedin.com",
+      phone: "+251-115-18-01-80",
+      email: "geremew.ashenafi@redcrosseth.org"
     }
   },
   om: {
@@ -447,6 +463,8 @@ export const translations = {
       ctaVolunteer: "Fedheen Hojjedhu",
       ctaMembership: "Miseensummaa",
       ctaDonate: "Arjooma",
+      ctaDownloadApp: "Appilikeeshinii Buufadhu",
+      appDownloadUrl: "",
       pathwaysLabel: "Gargaaruuf karaa keessan filadhaa:",
       volunteers: "Tajaajiltoota",
       anniversary: "Baga Waggaa 90ffaa Milkaa'ina Namoomaa Geessan",
@@ -628,10 +646,15 @@ export const translations = {
       involved: "Hirmaadhaa",
       location: "Bakka Waajjira Ol-aanaa",
       rights: "Waggaa 1935 jalqabee dhiphuu namoomaa hir'isuu.",
+      socialLinks: defaultFooterSocialLinks,
+      missionLinks: defaultFooterMissionLinks,
+      involvedLinks: defaultFooterInvolvedLinks,
       facebook: "https://facebook.com",
       twitter: "https://twitter.com",
       instagram: "https://instagram.com",
-      linkedin: "https://linkedin.com"
+      linkedin: "https://linkedin.com",
+      phone: "+251-115-18-01-80",
+      email: "geremew.ashenafi@redcrosseth.org"
     }
   }
 };
