@@ -301,6 +301,13 @@ export default function MemberRegistrationPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="w-full bg-white p-6 md:p-8 rounded-[32px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)] border border-gray-100 h-fit"
             >
+
+        <div className="w-full text-left mb-8"> {/* Increased space below the header block */}
+  <h1 className="text-2xl md:text-3xl font-black text-black tracking-normal uppercase leading-none">
+    Member &nbsp; Registration &nbsp; Form
+</h1>
+    <div className="mt-3 h-1 w-12 bg-[#ED1C24] rounded-full" /> {/* Added space above the accent line */}
+</div>
                 <AnimatePresence mode="wait">
                     {step === 1 && (
                         <motion.div key="step1" {...stepVariants}>

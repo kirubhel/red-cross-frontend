@@ -1131,23 +1131,25 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-col items-start text-left mx-auto">
-              <h5 className="text-sm md:text-base font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-4">
-                {mergedT.footer.involved}
-              </h5>
-              <ul className="space-y-3 font-black text-base w-full max-w-[260px] text-left">
-                {(mergedT.footer.involvedLinks || []).map((link: any, idx: number) => (
-                  <li key={idx}>
-                    <Link 
-                      href={link.href || "#"} 
-                      className="text-gray-300 hover:text-white transition-colors flex items-center justify-start gap-2 group"
-                    >
-                      <div className="w-2 h-2 rounded-full bg-[#ED1C24] opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
+  <h5 className="text-sm md:text-base font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-4">
+    {mergedT.footer.involved}
+  </h5>
+  <ul className="space-y-3 font-black text-base w-full max-w-[260px] text-left">
+    {(mergedT.footer.involvedLinks || []).map((link: any, idx: number) => (
+      <li key={idx}>
+        <Link 
+          href={link.href || "#"} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-gray-300 hover:text-white transition-colors flex items-center justify-start gap-2 group"
+        >
+          <div className="w-2 h-2 rounded-full bg-[#ED1C24] opacity-0 group-hover:opacity-100 transition-opacity" />
+          {link.label}
+        </Link>
+      </li>
+    ))}
+  </ul>
+</div>
 
             <div className="space-y-6">
               <div>
