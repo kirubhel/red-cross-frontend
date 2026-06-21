@@ -150,9 +150,7 @@ export default function PrivacyPolicyPage() {
               </thead>
               <tbody>
                 {[
-                  ["Chapa", "Payment gateway for donations and membership fees", "Amount, email, first and last name, transaction reference"],
                   ["ArifPay", "Mobile money payments (TELEBIRR, CBEBirr, MPESA, EBIRR, AWASH BIRR)", "Amount, description, email, phone number"],
-                  ["ETHSWITCH", "Ethiopian interbank payment network", "Amount and transaction reference (processed server-side)"],
                 ].map(([svc, purpose, data], i) => (
                   <tr key={i}>
                     <td className="p-3 border border-gray-200 font-bold">{svc}</td>

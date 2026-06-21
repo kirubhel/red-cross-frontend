@@ -130,7 +130,6 @@ export default function OrganizationPortal() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentRequest, setPaymentRequest] = useState<VolunteerRequest | null>(null);
   const [paymentProofUrl, setPaymentProofUrl] = useState("");
-  const [paymentProvider, setPaymentProvider] = useState<"chapa" | "ethswitch">("chapa");
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
@@ -290,17 +289,22 @@ export default function OrganizationPortal() {
     if (!paymentRequest) return;
     setSubmittingPayment(true);
     try {
-      await api.post("/organizations/requests/payment", {
-        request_id: paymentRequest.id,
-        proof_url: paymentProofUrl || "BANK_TRANSFER"
+      const response = await api.post("/payment/initiate", {
+        invoice_id: paymentRequest.id,
+        provider: "ARIFPAY",
+        amount: paymentRequest.payment_amount,
+        currency: "ETB",
+        email: profile?.email || "organization@redcrosseth.org",
+        first_name: profile?.name || profile?.organization_name || "Organization",
+        last_name: "Member",
+        payer_phone: profile?.phone || profile?.phone_number || ""
       });
-      toast.success("Payment proof submitted! Awaiting admin verification.");
-      setPaymentProofUrl("");
-      setShowPaymentModal(false);
-      setPaymentRequest(null);
-      fetchPortalData();
+      if (!response.data?.payment_url) {
+        throw new Error("ArifPay did not return a payment URL");
+      }
+      window.location.href = response.data.payment_url;
     } catch (err) {
-      toast.error("Failed to submit payment");
+      toast.error("Failed to start ArifPay payment");
     } finally {
       setSubmittingPayment(false);
     }
@@ -1104,32 +1108,17 @@ export default function OrganizationPortal() {
               <div className="space-y-6">
                 <div>
                   <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Payment Merchant</div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button 
-                      onClick={() => setPaymentProvider('chapa')}
-                      className={`h-16 flex items-center gap-3 px-4 rounded-xl border-2 transition-all ${paymentProvider === 'chapa' ? 'border-slate-900 bg-slate-50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
-                    >
-                      <div className="h-8 w-8 bg-emerald-50 rounded-lg flex items-center justify-center">
-                        <span className="text-emerald-500 font-black text-xs">C</span>
+                  <div className="grid grid-cols-1 gap-3">
+                    {/* Chapa and EthSwitch are intentionally disabled. */}
+                    <div className="h-16 flex items-center gap-3 px-4 rounded-xl border-2 border-slate-900 bg-slate-50">
+                      <div className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 border border-gray-100 bg-white">
+                        <img src="/PaymentProviders/ArifPay.png" alt="ArifPay" className="w-full h-full object-contain p-1" />
                       </div>
                       <div className="text-left">
-                        <div className="text-sm font-bold text-slate-900">Chapa</div>
-                        <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Fast and Secure</div>
+                        <div className="text-sm font-bold text-slate-900">ArifPay</div>
+                        <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Secure Ethiopian Gateway</div>
                       </div>
-                    </button>
-                    
-                    <button 
-                      onClick={() => setPaymentProvider('ethswitch')}
-                      className={`h-16 flex items-center gap-3 px-4 rounded-xl border-2 transition-all ${paymentProvider === 'ethswitch' ? 'border-slate-900 bg-slate-50' : 'border-slate-100 hover:border-slate-200 bg-white'}`}
-                    >
-                      <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <span className="text-blue-500 font-black text-xs">E</span>
-                      </div>
-                      <div className="text-left">
-                        <div className="text-sm font-bold text-slate-900">EthSwitch</div>
-                        <div className="text-[8px] font-black uppercase tracking-widest text-slate-400">Multi-Bank</div>
-                      </div>
-                    </button>
+                    </div>
                   </div>
                 </div>
 

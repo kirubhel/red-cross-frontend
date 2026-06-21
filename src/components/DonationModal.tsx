@@ -1,15 +1,23 @@
 "use client";
 import React, { useState } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Heart, Shield, Zap, X, CreditCard, KeyRound } from "lucide-react";
+import { CheckCircle2, Heart, Shield, Zap, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
+import PhoneNumberInput, { getLocalPhoneLength, buildFullPhoneNumber } from "@/components/ui/phone-number-input";
 
 const PAYMENT_METHODS = [
+  {
+    id: "ARIFPAY",
+    name: "ArifPay",
+    logo: "/PaymentProviders/ArifPay.png",
+    description: "Secure Ethiopian payment gateway",
+  },
+  /*
+  Disabled legacy gateways:
   {
     id: "CHAPA",
     name: "Chapa",
@@ -22,6 +30,7 @@ const PAYMENT_METHODS = [
     logo: "/images/etswitch.png",
     description: "Multi-bank interoperability with local cards",
   }
+  */
 ];
 
 interface DonationModalProps {
@@ -32,37 +41,47 @@ interface DonationModalProps {
 export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
   const [amount, setAmount] = useState("100");
   const [customAmount, setCustomAmount] = useState("");
-  const [provider, setProvider] = useState("CHAPA");
+  const [provider, setProvider] = useState("ARIFPAY");
+  const [countryCode, setCountryCode] = useState("ET");
+  const [localNumber, setLocalNumber] = useState("");
+  const [paymentError, setPaymentError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  
-  // Simulated gateway state
-  const [simulating, setSimulating] = useState(false);
-  const [simStep, setSimStep] = useState(0);
-
   const finalAmount = customAmount || amount;
 
+  const maxPhoneLength = getLocalPhoneLength(countryCode);
+  const isPhoneInvalid = localNumber.trim() !== "" && localNumber.length !== maxPhoneLength;
+
   const handleDonate = async () => {
+    setPaymentError("");
+    
+    if (localNumber.length !== maxPhoneLength) {
+      setPaymentError(`Please enter a valid ${maxPhoneLength}-digit local phone number.`);
+      return;
+    }
+    const normalizedPhone = buildFullPhoneNumber(countryCode, localNumber).replace(/\D/g, "");
+
     setLoading(true);
     try {
       const res = await api.post("/payment/initiate", {
         amount: parseFloat(finalAmount),
         currency: "ETB",
         provider: provider,
+        payer_phone: normalizedPhone,
         email: "donor@redcrosseth.org",
         first_name: "Anonymous",
         last_name: "Donor",
       });
-      if (res.data?.checkout_url) {
+      if (res.data?.payment_url) {
         setSuccess(true);
-        window.location.href = res.data.checkout_url;
+        window.location.href = res.data.payment_url;
       } else {
         throw new Error("No checkout URL returned");
       }
     } catch (err) {
-      console.warn("Payment API failed, falling back to simulated checkout", err);
+      console.error("ArifPay checkout failed", err);
+      setPaymentError("Unable to start ArifPay checkout. Please try again.");
       setLoading(false);
-      setSimulating(true);
     }
   };
 
@@ -118,55 +137,12 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                       <CheckCircle2 className="w-10 h-10" />
                   </motion.div>
                   <h1 className="text-3xl font-black text-black tracking-tighter">Redirecting...</h1>
-                  <p className="text-sm text-gray-500 font-medium leading-relaxed">Please wait while we securely connect you to {provider === 'CHAPA' ? 'Chapa' : 'EthSwitch'} to complete your {finalAmount} ETB donation.</p>
+                  <p className="text-sm text-gray-500 font-medium leading-relaxed">Please wait while we securely connect you to ArifPay to complete your {finalAmount} ETB donation.</p>
                   <div className="flex justify-center gap-2 pb-4">
                       <div className="w-1.5 h-1.5 bg-[#ED1C24] rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                       <div className="w-1.5 h-1.5 bg-[#ED1C24] rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                       <div className="w-1.5 h-1.5 bg-[#ED1C24] rounded-full animate-bounce"></div>
                   </div>
-                </div>
-              ) : simulating ? (
-                <div className="p-6 sm:p-8 space-y-6">
-                  <div className="text-center space-y-2">
-                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-50 text-amber-500 mb-2">
-                        <Shield className="w-6 h-6" />
-                     </div>
-                     <h2 className="text-2xl font-black text-black">Simulator Gateway</h2>
-                     <p className="text-xs text-gray-500 font-bold">Offline / Local Dev Mode Fallback</p>
-                  </div>
-
-                  {simStep === 0 ? (
-                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                       <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/50">Mock Card / Account Number</Label>
-                          <div className="relative">
-                            <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <Input placeholder="0000 0000 0000 0000" className="h-12 pl-12 rounded-xl border-gray-200 font-bold tracking-widest text-lg" defaultValue="4111 1111 1111 1111" />
-                          </div>
-                       </div>
-                       <Button className="w-full h-14 bg-black text-white hover:bg-gray-800 rounded-xl font-black uppercase tracking-widest text-xs" onClick={() => setSimStep(1)}>
-                         Send Mock OTP
-                       </Button>
-                    </motion.div>
-                  ) : (
-                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                       <div className="space-y-4 text-center">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-black/50 flex items-center justify-center gap-2">
-                            <KeyRound className="w-3 h-3" /> Enter Mock OTP
-                          </Label>
-                          <div className="flex justify-center gap-2">
-                             {[1,2,3,4].map(i => (
-                                <Input key={i} className="w-12 h-14 text-center text-xl font-black rounded-xl border-gray-200 focus:border-black" placeholder="-" maxLength={1} defaultValue={i} />
-                             ))}
-                          </div>
-                       </div>
-                       <Button className="w-full h-14 bg-[#ED1C24] text-white hover:bg-red-700 rounded-xl font-black uppercase tracking-widest text-xs" onClick={() => {
-                          window.location.href = `/payment/success?amount=${finalAmount}&currency=ETB&email=donor@redcrosseth.org&tx_ref=SIM-${Math.floor(Math.random()*1000000)}&first_name=Anonymous&last_name=Donor`;
-                       }}>
-                         Confirm & Pay {finalAmount} ETB
-                       </Button>
-                    </motion.div>
-                  )}
                 </div>
               ) : (
                 <div className="p-6 sm:p-8">
@@ -222,10 +198,25 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                         </div>
                     </div>
 
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-black/30 ml-1">Phone Number</Label>
+                      <PhoneNumberInput
+                        countryCode={countryCode}
+                        onCountryChange={setCountryCode}
+                        localNumber={localNumber}
+                        onLocalNumberChange={setLocalNumber}
+                        className={cn(
+                          "h-12 rounded-xl bg-gray-50 border-none font-bold transition-all",
+                          isPhoneInvalid && "border border-red-500 bg-red-50/50"
+                        )}
+                        inputClassName="text-sm font-bold text-black placeholder:text-gray-300"
+                      />
+                    </div>
+
                     {/* Provider Selection */}
                     <div className="space-y-3">
                         <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-black/30 ml-1">Payment Merchant</Label>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 gap-2">
                             {PAYMENT_METHODS.map((method) => (
                                 <div 
                                     key={method.id}
@@ -237,16 +228,15 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                                           : "bg-gray-50 border-transparent hover:border-gray-100"
                                     )}
                                 >
-                                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-1.5 shrink-0 shadow-sm border border-gray-50">
-                                        <Image 
-                                          src={method.logo} 
-                                          alt={method.name} 
-                                          width={24} 
-                                          height={24} 
-                                          className="object-contain"
-                                          unoptimized
-                                        />
-                                    </div>
+                                    {method.logo ? (
+                                        <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 shadow-sm border border-gray-100 bg-white">
+                                            <img src={method.logo} alt={method.name} className="w-full h-full object-contain p-1" />
+                                        </div>
+                                    ) : (
+                                        <div className="w-8 h-8 rounded-lg bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 shadow-sm border border-red-100 text-[10px] font-black">
+                                            AP
+                                        </div>
+                                    )}
                                     <div className="flex-1 min-w-0">
                                         <h3 className={cn(
                                           "font-black text-[13px] tracking-tight leading-none mb-0.5 truncate",
@@ -261,6 +251,9 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
 
                     {/* Summary and Pay */}
                     <div className="space-y-4 pt-2">
+                        {paymentError && (
+                          <p className="text-xs font-bold text-red-600 bg-red-50 rounded-xl p-3">{paymentError}</p>
+                        )}
                         <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-100/50">
                            <div className="space-y-0">
                               <span className="text-[8px] font-black uppercase tracking-[0.15em] text-black/30">Total Contribution</span>

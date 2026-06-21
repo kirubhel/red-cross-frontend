@@ -30,7 +30,7 @@ export default function DonationsPage() {
   const [donateForm, setDonateForm] = useState({
     amount: "",
     purpose: "GENERAL", // GENERAL, EMERGENCY, HEALTH
-    paymentMethod: "TELEBIRR"
+    paymentMethod: "ARIFPAY"
   });
 
   useEffect(() => {
@@ -57,11 +57,18 @@ export default function DonationsPage() {
         purpose: donateForm.purpose,
         payment_method: donateForm.paymentMethod
       });
-      toast.success("Thank you for your donation!", {
-        description: "Your contribution makes a real difference."
+      const payment = await api.post("/payment/initiate", {
+        provider: "ARIFPAY",
+        amount: parseFloat(donateForm.amount),
+        currency: "ETB",
+        email: "donor@redcrosseth.org",
+        first_name: "ERCS",
+        last_name: "Donor"
       });
-      setIsDonateModalOpen(false);
-      fetchDonations();
+      if (!payment.data?.payment_url) {
+        throw new Error("ArifPay did not return a payment URL");
+      }
+      window.location.href = payment.data.payment_url;
     } catch (err) {
       toast.error("Failed to process donation");
     }
@@ -179,8 +186,10 @@ export default function DonationsPage() {
                         </td>
                         <td className="px-8 py-5">
                            <div className="flex items-center gap-2">
-                              <div className="h-6 w-6 bg-blue-50 rounded-md flex items-center justify-center text-[10px] font-black text-blue-600">TB</div>
-                              <span className="text-xs font-bold text-gray-600">{d.payment_method || "Telebirr"}</span>
+                              <div className="h-6 w-6 rounded-md overflow-hidden flex items-center justify-center shrink-0 border border-gray-100 bg-white">
+                                 <img src="/PaymentProviders/ArifPay.png" alt="ArifPay" className="w-full h-full object-contain p-0.5" />
+                              </div>
+                              <span className="text-xs font-bold text-gray-600">{d.payment_method || "ArifPay"}</span>
                            </div>
                         </td>
                         <td className="px-8 py-5 text-right">
@@ -265,29 +274,14 @@ export default function DonationsPage() {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-black/40 ml-1">Payment Method</label>
-                  <div className="grid grid-cols-2 gap-4">
-                     <button
-                        type="button"
-                        onClick={() => setDonateForm({...donateForm, paymentMethod: "TELEBIRR"})}
-                        className={cn(
-                          "flex items-center gap-3 p-4 rounded-2xl border transition-all",
-                          donateForm.paymentMethod === "TELEBIRR" ? "bg-blue-50 border-blue-200" : "bg-gray-50 border-transparent"
-                        )}
-                     >
-                        <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xs">TB</div>
-                        <span className={cn("text-sm font-black", donateForm.paymentMethod === "TELEBIRR" ? "text-blue-600" : "text-gray-400")}>Telebirr</span>
-                     </button>
-                     <button
-                        type="button"
-                        onClick={() => setDonateForm({...donateForm, paymentMethod: "CBE"})}
-                        className={cn(
-                          "flex items-center gap-3 p-4 rounded-2xl border transition-all",
-                          donateForm.paymentMethod === "CBE" ? "bg-purple-50 border-purple-200" : "bg-gray-50 border-transparent"
-                        )}
-                     >
-                        <div className="h-10 w-10 bg-purple-900 rounded-xl flex items-center justify-center text-white font-black text-xs">CBE</div>
-                        <span className={cn("text-sm font-black", donateForm.paymentMethod === "CBE" ? "text-purple-900" : "text-gray-400")}>CBE Birr</span>
-                     </button>
+                  <div className="grid grid-cols-1 gap-4">
+                     {/* Direct Telebirr and CBE options are disabled; ArifPay presents supported methods at checkout. */}
+                     <div className="flex items-center gap-3 p-4 rounded-2xl border bg-red-50 border-red-200">
+                        <div className="h-10 w-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-gray-100 bg-white">
+                           <img src="/PaymentProviders/ArifPay.png" alt="ArifPay" className="w-full h-full object-contain p-1" />
+                        </div>
+                        <span className="text-sm font-black text-[#ED1C24]">ArifPay</span>
+                     </div>
                   </div>
                 </div>
 
