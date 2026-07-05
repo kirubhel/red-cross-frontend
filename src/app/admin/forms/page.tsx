@@ -16,11 +16,14 @@ import {
   GripVertical,
   Check,
   Layout,
-  Settings2
+  Settings2,
+  Loader2,
+  FileSpreadsheet
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import type { Cell, CellValue } from "exceljs";
 
 type FormField = {
   id: string;
@@ -31,6 +34,56 @@ type FormField = {
   placeholder: string;
   options?: { label: string; value: string }[];
   dataSource?: string;
+  sourceColumn?: string;
+  nullableCount?: number;
+  duplicateCount?: number;
+  sampleValues?: string[];
+};
+
+type ExcelCellValue = string | number | boolean | null;
+
+const normalizeFieldId = (value: string) => {
+  const cleaned = value
+    .trim()
+    .replace(/[^a-zA-Z0-9]+(.)/g, (_, char: string) => char.toUpperCase())
+    .replace(/^[^a-zA-Z]+/, "");
+  return cleaned ? cleaned.charAt(0).toLowerCase() + cleaned.slice(1) : `field_${Date.now()}`;
+};
+
+const readExcelCell = (cell: Cell): ExcelCellValue => {
+  const value = cell?.value;
+  if (value === undefined || value === null || value === "") return null;
+  if (value instanceof Date) return value.toISOString().split("T")[0];
+  if (typeof value === "object") {
+    if ("text" in value) return String(value.text).trim() || null;
+    if ("result" in value) return value.result === undefined || value.result === null ? null : String(value.result).trim();
+    if ("richText" in value && Array.isArray(value.richText)) {
+      const text = value.richText.map((part: { text?: string }) => part.text || "").join("").trim();
+      return text || null;
+    }
+    return JSON.stringify(value);
+  }
+  if (typeof value === "string") return value.trim() || null;
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  return String(value).trim() || null;
+};
+
+const inferFieldType = (label: string, values: string[]): FormField["type"] => {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("email")) return "email";
+  if (normalized.includes("mobile") || normalized.includes("phone") || normalized.includes("tel")) return "tel";
+  if (normalized.includes("date")) return "date";
+  if (values.length > 0 && values.every(value => /^-?\d+(\.\d+)?$/.test(value))) return "number";
+  const uniqueValues = new Set(values.map(value => value.toLowerCase()));
+  if (uniqueValues.size > 0 && uniqueValues.size <= 12 && values.length >= uniqueValues.size) return "select";
+  return "text";
+};
+
+const buildOptions = (values: string[]) => {
+  return Array.from(new Set(values.filter(Boolean))).slice(0, 50).map(value => ({
+    label: value,
+    value,
+  }));
 };
 
 const FieldItem = ({ field, updateField, removeField, isCoreField }: { field: FormField, updateField: any, removeField: any, isCoreField: any }) => {
@@ -63,6 +116,25 @@ const FieldItem = ({ field, updateField, removeField, isCoreField }: { field: Fo
             onChange={(e) => updateField(field.id, { label: e.target.value })}
             className="h-11 rounded-xl bg-gray-50 border-none font-bold text-sm text-black"
           />
+          {field.sourceColumn && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              <span className="px-2 py-0.5 rounded-md bg-gray-100 text-[8px] font-black uppercase tracking-widest text-gray-500">
+                Excel: {field.sourceColumn}
+              </span>
+              <span className={cn(
+                "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest",
+                field.nullableCount === 0 ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
+              )}>
+                Nulls: {field.nullableCount || 0}
+              </span>
+              <span className={cn(
+                "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest",
+                field.duplicateCount === 0 ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"
+              )}>
+                Duplicates: {field.duplicateCount || 0}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-1.5">
@@ -226,6 +298,7 @@ export default function FormConfigurationPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [importingExcel, setImportingExcel] = useState(false);
 
   useEffect(() => {
     fetchConfig();
@@ -273,6 +346,94 @@ export default function FormConfigurationPage() {
     setFields(fields.map(f => f.id === id ? { ...f, ...updates } : f));
   };
 
+  const importFieldsFromExcel = async (file?: File | null) => {
+    if (!file) return;
+    setImportingExcel(true);
+
+    try {
+      const ExcelJS = await import("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await file.arrayBuffer());
+
+      const worksheet = workbook.worksheets.find(sheet => sheet.actualRowCount > 0);
+      if (!worksheet) {
+        toast.error("No worksheet data found");
+        return;
+      }
+
+      let headerRowNumber = 1;
+      let headers: string[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (headers.length > 0) return;
+        const values = row.values as CellValue[];
+        const candidateHeaders = values.slice(1).map((value, index) => {
+          const raw = value === undefined || value === null ? "" : String(value).trim();
+          return raw || `Column ${index + 1}`;
+        });
+        if (candidateHeaders.some(Boolean)) {
+          headerRowNumber = rowNumber;
+          headers = candidateHeaders;
+        }
+      });
+
+      const seenHeaders = new Map<string, number>();
+      const uniqueHeaders = headers.map((header, index) => {
+        const base = header || `Column ${index + 1}`;
+        const seen = seenHeaders.get(base) || 0;
+        seenHeaders.set(base, seen + 1);
+        return seen === 0 ? base : `${base} ${seen + 1}`;
+      });
+
+      const columnValues = uniqueHeaders.map(() => [] as ExcelCellValue[]);
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber <= headerRowNumber) return;
+        uniqueHeaders.forEach((_, index) => {
+          columnValues[index].push(readExcelCell(row.getCell(index + 1)));
+        });
+      });
+
+      const generatedFields = uniqueHeaders.map((header, index) => {
+        const rawValues = columnValues[index] || [];
+        const filledValues = rawValues
+          .filter((value): value is string | number | boolean => value !== null && String(value).trim() !== "")
+          .map(value => String(value).trim());
+        const nullableCount = rawValues.length - filledValues.length;
+        const valueCounts = filledValues.reduce<Record<string, number>>((acc, value) => {
+          const key = value.toLowerCase();
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        const duplicateCount = Object.values(valueCounts).reduce((total, count) => total + Math.max(count - 1, 0), 0);
+        const inferredType = inferFieldType(header, filledValues);
+        const idBase = normalizeFieldId(header);
+        const id = fields.some(field => field.id === idBase) ? `${idBase}_${Date.now()}_${index}` : idBase;
+
+        return {
+          id,
+          label: header,
+          type: inferredType,
+          required: nullableCount === 0 && rawValues.length > 0,
+          unique: filledValues.length > 0 && duplicateCount === 0,
+          placeholder: `Enter ${header.toLowerCase()}`,
+          options: inferredType === "select" ? buildOptions(filledValues) : undefined,
+          dataSource: inferredType === "select" ? "MANUAL" : undefined,
+          sourceColumn: header,
+          nullableCount,
+          duplicateCount,
+          sampleValues: Array.from(new Set(filledValues)).slice(0, 5),
+        } satisfies FormField;
+      });
+
+      setFields(generatedFields);
+      toast.success(`Loaded ${generatedFields.length} fields from ${file.name}`);
+    } catch (err) {
+      console.error("Failed to import Excel form fields:", err);
+      toast.error("Failed to read Excel columns");
+    } finally {
+      setImportingExcel(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -303,25 +464,39 @@ export default function FormConfigurationPage() {
           <p className="text-gray-500 font-medium text-base">Customize the registration flow for volunteers and members.</p>
         </div>
 
-        <div className="flex bg-gray-100 p-1.5 rounded-2xl border border-gray-200 shadow-inner">
-          <button 
-            onClick={() => setFormType("MEMBER")}
-            className={cn(
-              "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all",
-              formType === "MEMBER" ? "bg-white text-black shadow-md" : "text-gray-500 hover:text-black"
-            )}
-          >
-            <Users className="h-4 w-4" /> Members
-          </button>
-          <button 
-            onClick={() => setFormType("VOLUNTEER")}
-            className={cn(
-              "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all",
-              formType === "VOLUNTEER" ? "bg-white text-black shadow-md" : "text-gray-500 hover:text-black"
-            )}
-          >
-            <HandHeart className="h-4 w-4" /> Volunteers
-          </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <label className="h-12 px-5 rounded-2xl border border-gray-200 bg-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+            {importingExcel ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 text-[#ED1C24]" />}
+            Import Excel Columns
+            <input
+              type="file"
+              accept=".xlsx"
+              className="hidden"
+              disabled={importingExcel || saving}
+              onChange={(e) => importFieldsFromExcel(e.target.files?.[0])}
+            />
+          </label>
+
+          <div className="flex bg-gray-100 p-1.5 rounded-2xl border border-gray-200 shadow-inner">
+            <button 
+              onClick={() => setFormType("MEMBER")}
+              className={cn(
+                "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all",
+                formType === "MEMBER" ? "bg-white text-black shadow-md" : "text-gray-500 hover:text-black"
+              )}
+            >
+              <Users className="h-4 w-4" /> Members
+            </button>
+            <button 
+              onClick={() => setFormType("VOLUNTEER")}
+              className={cn(
+                "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all",
+                formType === "VOLUNTEER" ? "bg-white text-black shadow-md" : "text-gray-500 hover:text-black"
+              )}
+            >
+              <HandHeart className="h-4 w-4" /> Volunteers
+            </button>
+          </div>
         </div>
       </div>
 

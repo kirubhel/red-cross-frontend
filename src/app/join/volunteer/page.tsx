@@ -186,25 +186,53 @@ export default function VolunteerJoinPage() {
         }
         setStep(2);
     } else {
-        if (formData.engagementAreas.length === 0) {
+        let finalAreas: string[] = [];
+        if (formData.general === "YES") finalAreas.push("General");
+        if (formData.youth === "YES") finalAreas.push("Youth");
+        if (formData.professional === "YES") finalAreas.push("Professional");
+        if (formData.leadership === "YES") finalAreas.push("Leadership");
+
+        if (finalAreas.length === 0 && (!formData.engagementAreas || formData.engagementAreas.length === 0)) {
             setError("Please select at least one engagement area.");
             return;
         }
 
+        if (finalAreas.length === 0) {
+            finalAreas = [...(formData.engagementAreas || [])];
+        }
+
         setLoading(true);
         try {
-            // Prepare engagement areas
-            let finalAreas = [...formData.engagementAreas];
-            if (finalAreas.includes("Other Services") && formData.otherEngagementArea) {
-                finalAreas = finalAreas.map(a => a === "Other Services" ? `Other: ${formData.otherEngagementArea}` : a);
-            }
-
             const regionId = formData.country === "ET" ? (REGION_MAP_VALUE_TO_ID[formData.region] || 1) : 14;
 
             const fullPhone = buildFullPhoneNumber(
                 formData.country || "ET",
                 formData.phoneNumber
             );
+
+            // Collect dynamic metadata fields
+            const metadataObj: any = {
+                country: formData.country,
+                international_address: formData.country === 'ET' ? "" : formData.internationalAddress,
+                zone_id: formData.zone,
+                woreda_id: formData.woreda
+            };
+
+            // Loop through all custom form fields to add non-standard fields into metadata
+            if (Array.isArray(formConfig)) {
+                const standardFields = ['firstName', 'fatherName', 'grandfatherName', 'email', 'phone', 'gender', 'region', 'country', 'password', 'confirmPassword'];
+                formConfig.forEach((field: any) => {
+                    if (!standardFields.includes(field.id)) {
+                        metadataObj[field.id] = formData[field.id];
+                    }
+                });
+            }
+
+            const interests = [];
+            if (formData.area) interests.push(`Area:${formData.area}`);
+            if (formData.educationLevel) interests.push(`Education:${formData.educationLevel}`);
+            if (formData.organizationName) interests.push(`OrgName:${formData.organizationName}`);
+            if (formData.organizationType) interests.push(`OrgType:${formData.organizationType}`);
 
             // Register User
             const res = await api.post("/auth/register/volunteer", {
@@ -216,16 +244,15 @@ export default function VolunteerJoinPage() {
                 password: formData.password,
                 region: regionId,
                 role: 5, // ROLE_volunteer
-                skills: formData.skills ? [formData.skills] : [],
-                interests: formData.interests ? [formData.interests] : [],
+                skills: formData.languages ? formData.languages.split(",").map((s: string) => s.trim()).filter(Boolean) : [],
+                interests: interests,
                 engagement_areas: finalAreas,
                 gender: formData.gender,
-                metadata: JSON.stringify({
-                    country: formData.country,
-                    international_address: formData.country === 'ET' ? "" : formData.internationalAddress,
-                    zone_id: formData.zone,
-                    woreda_id: formData.woreda
-                })
+                date_of_birth: formData.dateOfBirth || "",
+                profession: formData.occupation || "",
+                address: formData.kebele || "",
+                country: formData.country === "ET" ? "Ethiopia" : (formData.country || ""),
+                metadata: JSON.stringify(metadataObj)
             });
 
             // Save session

@@ -29,11 +29,16 @@ import {
     Calendar, 
     User,
     Briefcase,
-    Home
+    Home,
+    Upload,
+    Loader2,
+    CheckCircle2,
+    AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import type { Cell, CellValue } from "exceljs";
 
 type Volunteer = {
   id: string;
@@ -63,6 +68,53 @@ type Region = {
     code: string;
 };
 
+type ImportedCellValue = string | number | boolean | null;
+
+type ImportedRow = {
+  rowNumber: number;
+  data: Record<string, ImportedCellValue>;
+  importIssue?: string;
+};
+
+type ImportResult = {
+  success: number;
+  failed: number;
+  errors: string[];
+};
+
+const normalizeHeader = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const getImportValue = (row: ImportedRow, aliases: string[]) => {
+  const aliasSet = new Set(aliases.map(normalizeHeader));
+  const entry = Object.entries(row.data).find(([key]) => aliasSet.has(normalizeHeader(key)));
+  if (!entry || entry[1] === null) return "";
+  return String(entry[1]).trim();
+};
+
+const normalizeGender = (value: string) => {
+  const normalized = value.trim().toLowerCase();
+  if (["f", "female", "woman"].includes(normalized)) return "Female";
+  if (["m", "male", "man"].includes(normalized)) return "Male";
+  return value.trim();
+};
+
+const cellValueToText = (value: ImportedCellValue) => {
+  if (value === null) return "";
+  return String(value).trim();
+};
+
+const hasCellText = (value: CellValue): value is CellValue & { text: string } => {
+  return typeof value === "object" && value !== null && "text" in value;
+};
+
+const hasFormulaResult = (value: CellValue): value is CellValue & { result: CellValue } => {
+  return typeof value === "object" && value !== null && "result" in value;
+};
+
+const hasRichText = (value: CellValue): value is CellValue & { richText: { text?: string }[] } => {
+  return typeof value === "object" && value !== null && "richText" in value && Array.isArray(value.richText);
+};
+
 export default function VolunteersPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
@@ -73,6 +125,21 @@ export default function VolunteersPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [importColumns, setImportColumns] = useState<string[]>([]);
+  const [importRows, setImportRows] = useState<ImportedRow[]>([]);
+  const [importFileName, setImportFileName] = useState("");
+  const [importRegion, setImportRegion] = useState("1");
+  const [parsingImport, setParsingImport] = useState(false);
+  const [submittingImport, setSubmittingImport] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+
+  // New Upgrade States
+  const [occupationFilter, setOccupationFilter] = useState("");
+  const [areaFilter, setAreaFilter] = useState("");
+  const [classificationFilter, setClassificationFilter] = useState("");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState("");
+  const [clearingRegistry, setClearingRegistry] = useState(false);
 
   useEffect(() => {
     fetchRegions();
@@ -161,6 +228,412 @@ export default function VolunteersPage() {
     }
   };
 
+  const downloadTemplate = async () => {
+    try {
+      const ExcelJS = await import("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Volunteers Template");
+
+      // Set up headers
+      const headers = [
+        "Mobile", "Name", "Father Name", "Last Name", "Gender", 
+        "Date of Birth (Eth)", "Registration Date", "Occupation", 
+        "Organization Name", "Organization Type", "Education Level", 
+        "Area", "Languages", "Kebele", "Email", 
+        "General", "Youth", "Professional", "Leadership"
+      ];
+
+      worksheet.addRow(headers);
+
+      // Style headers
+      const headerRow = worksheet.getRow(1);
+      headerRow.height = 25;
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFED1C24" } // ERCS Red
+        };
+        cell.font = {
+          name: "Segoe UI",
+          bold: true,
+          color: { argb: "FFFFFFFF" },
+          size: 11
+        };
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "center"
+        };
+      });
+
+      // Add sample rows (2-100) with data validation
+      const totalRows = 100;
+      for (let i = 2; i <= totalRows; i++) {
+        // Gender column (E)
+        worksheet.getCell(`E${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: ['"Male,Female"']
+        };
+
+        // Occupation column (H)
+        worksheet.getCell(`H${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: ['"Farmer,Business Person,Civil Servant,House Wife,Military,NGO,Self Employed,Student,Police,Diplomat,Others"']
+        };
+
+        // Organization Type column (J)
+        worksheet.getCell(`J${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: ['"Government,Ngo,Private,Association"']
+        };
+
+        // Education Level column (K)
+        worksheet.getCell(`K${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: ['"Below Primary School,Primary School Completed,High School Completed,Degree,Masters,PHD"']
+        };
+
+        // Area column (L)
+        worksheet.getCell(`L${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: ['"URBAN,RURAL"']
+        };
+
+        // Classifications: General (P), Youth (Q), Professional (R), Leadership (S)
+        const classCols = ["P", "Q", "R", "S"];
+        classCols.forEach((col) => {
+          worksheet.getCell(`${col}${i}`).dataValidation = {
+            type: "list",
+            allowBlank: true,
+            formulae: ['"YES,NO"']
+          };
+        });
+      }
+
+      // Add dummy data for first row as help
+      worksheet.addRow([
+        "+251911223344", "Sara", "Belay", "Tadesse", "Female", 
+        "12/04/1995", "05/07/2026", "NGO", "ERCS", "Ngo", 
+        "Degree", "URBAN", "Amharic, English", "Kebele 03, House 405", "sara@example.com", 
+        "YES", "NO", "YES", "NO"
+      ]);
+
+      // Set columns auto-width
+      worksheet.columns.forEach((column) => {
+        let maxLen = 0;
+        column.eachCell!({ includeEmpty: true }, (cell) => {
+          const val = cell.value ? String(cell.value) : "";
+          if (val.length > maxLen) maxLen = val.length;
+        });
+        column.width = Math.max(maxLen + 4, 15);
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "volunteer_registration_template.xlsx";
+      link.click();
+      toast.success("Excel Template downloaded successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate template");
+    }
+  };
+
+  const handleClearRegistry = async () => {
+    if (clearConfirmText !== "CLEAR") {
+      toast.error("Please type 'CLEAR' to confirm");
+      return;
+    }
+    setClearingRegistry(true);
+    try {
+      const res = await api.delete("/volunteers/clear");
+      toast.success(res.data?.message || "Successfully cleared volunteer registry!");
+      setVolunteers([]);
+      setShowClearConfirm(false);
+      setClearConfirmText("");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to clear registry.");
+    } finally {
+      setClearingRegistry(false);
+    }
+  };
+
+  const readExcelCell = (cell: Cell): ImportedCellValue => {
+    const value = cell?.value;
+    if (value === undefined || value === null || value === "") return null;
+    if (value instanceof Date) return value.toISOString().split("T")[0];
+    if (typeof value === "object") {
+      if (hasCellText(value)) return String(value.text).trim() || null;
+      if (hasFormulaResult(value)) return value.result === undefined || value.result === null ? null : String(value.result).trim();
+      if (hasRichText(value)) {
+        const text = value.richText.map((part) => part.text || "").join("").trim();
+        return text || null;
+      }
+      return JSON.stringify(value);
+    }
+    if (typeof value === "string") return value.trim() || null;
+    if (typeof value === "number" || typeof value === "boolean") return value;
+    return String(value).trim() || null;
+  };
+
+  const handleImportFile = async (file?: File | null) => {
+    if (!file) return;
+    setParsingImport(true);
+    setImportResult(null);
+
+    try {
+      const ExcelJS = await import("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      const buffer = await file.arrayBuffer();
+      await workbook.xlsx.load(buffer);
+
+      const worksheet = workbook.worksheets.find(sheet => sheet.actualRowCount > 0);
+      if (!worksheet) {
+        toast.error("No worksheet data found");
+        return;
+      }
+
+      let headerRowNumber = 1;
+      let headers: string[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (headers.length > 0) return;
+        const values = row.values as CellValue[];
+        const candidateHeaders = values.slice(1).map((value, index) => {
+          const raw = value === undefined || value === null ? "" : String(value).trim();
+          return raw || `Column ${index + 1}`;
+        });
+        if (candidateHeaders.some(Boolean)) {
+          headerRowNumber = rowNumber;
+          headers = candidateHeaders;
+        }
+      });
+
+      const seenHeaders = new Map<string, number>();
+      const uniqueHeaders = headers.map((header, index) => {
+        const base = header || `Column ${index + 1}`;
+        const seen = seenHeaders.get(base) || 0;
+        seenHeaders.set(base, seen + 1);
+        return seen === 0 ? base : `${base} ${seen + 1}`;
+      });
+
+      const rows: ImportedRow[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber <= headerRowNumber) return;
+        const data = uniqueHeaders.reduce<Record<string, ImportedCellValue>>((acc, header, index) => {
+          acc[header] = readExcelCell(row.getCell(index + 1));
+          return acc;
+        }, {});
+        const hasAnyValue = Object.values(data).some(value => value !== null && String(value).trim() !== "");
+        if (hasAnyValue) rows.push({ rowNumber, data });
+      });
+
+      setImportColumns(uniqueHeaders);
+      setImportRows(rows);
+      setImportFileName(file.name);
+      toast.success(`Parsed ${rows.length} volunteer rows`);
+    } catch (err) {
+      console.error("Failed to parse volunteer import:", err);
+      toast.error("Failed to parse Excel file");
+    } finally {
+      setParsingImport(false);
+    }
+  };
+
+  const downloadDefectiveWorkbook = async (failedRows: ImportedRow[]) => {
+    if (failedRows.length === 0) return;
+
+    const ExcelJS = await import("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Defective Volunteers");
+    const issueColumn = "Import Issue";
+
+    worksheet.addRow(["Source Row", ...importColumns, issueColumn]);
+    worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+    worksheet.getRow(1).fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFB91C1C" },
+    };
+
+    failedRows.forEach((row) => {
+      const issue = row.importIssue || "Unknown import issue";
+      const addedRow = worksheet.addRow([
+        row.rowNumber,
+        ...importColumns.map((column) => row.data[column] ?? null),
+        issue,
+      ]);
+
+      addedRow.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFFFE4E6" },
+        };
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFFECACA" } },
+          left: { style: "thin", color: { argb: "FFFECACA" } },
+          bottom: { style: "thin", color: { argb: "FFFECACA" } },
+          right: { style: "thin", color: { argb: "FFFECACA" } },
+        };
+      });
+
+      const issueCell = addedRow.getCell(importColumns.length + 2);
+      issueCell.note = issue;
+      addedRow.getCell(1).note = issue;
+    });
+
+    worksheet.columns.forEach((column) => {
+      column.width = Math.min(Math.max(Number(column.header?.toString().length || 12) + 4, 14), 36);
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const safeName = importFileName.replace(/\.xlsx$/i, "") || "volunteer_import";
+    link.href = url;
+    link.download = `${safeName}_defects.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const buildVolunteerPayload = (row: ImportedRow, index: number) => {
+    const firstName = getImportValue(row, ["Name", "First Name", "FirstName"]);
+    const fatherName = getImportValue(row, ["Father Name", "FatherName", "Middle Name", "Last Name"]);
+    const grandfatherName = getImportValue(row, ["Last Name", "Grandfather Name", "GrandfatherName"]);
+    const phoneNumber = getImportValue(row, ["Mobile", "Phone", "Phone Number", "phone_number"]);
+    const email = getImportValue(row, ["Email", "Email Address"]);
+    const gender = normalizeGender(getImportValue(row, ["Gender"]));
+    const dateOfBirth = getImportValue(row, ["Date of Birth (Eth)", "Date of Birth", "DOB"]);
+    const occupation = getImportValue(row, ["Occupation", "Profession"]);
+    const kebele = getImportValue(row, ["Kebele"]);
+    const area = getImportValue(row, ["Area"]);
+    const languages = getImportValue(row, ["Languages"]);
+    const educationLevel = getImportValue(row, ["Education Level", "EducationLevel"]);
+    const orgName = getImportValue(row, ["Organization Name", "OrganizationName"]);
+    const orgType = getImportValue(row, ["Organization Type", "OrganizationType"]);
+
+    const engagementAreas = ["General", "Youth", "Professional", "Leadership"]
+      .filter(column => {
+        const val = cellValueToText(row.data[column]).toLowerCase();
+        return val === "yes" || val === "1" || val === "true";
+      });
+
+    const interests = [];
+    if (area) interests.push(`Area:${area.toUpperCase()}`);
+    if (educationLevel) interests.push(`Education:${educationLevel}`);
+    if (orgName) interests.push(`OrgName:${orgName}`);
+    if (orgType) interests.push(`OrgType:${orgType}`);
+
+    const metadataObj = {
+      source: "volunteer_excel_import",
+      file_name: importFileName,
+      imported_at: new Date().toISOString(),
+      source_row_number: row.rowNumber,
+      nullable_columns: row.data,
+      date_of_birth: dateOfBirth || null,
+      occupation: occupation || null,
+      kebele: kebele || null,
+      educationLevel: educationLevel || null,
+      organizationName: orgName || null,
+      organizationType: orgType || null,
+      area: area || null,
+      languages: languages || null,
+    };
+
+    return {
+      first_name: firstName,
+      father_name: fatherName,
+      grandfather_name: grandfatherName,
+      phone_number: phoneNumber,
+      email,
+      password: `ERCS@${phoneNumber.slice(-4) || String(index + 1).padStart(4, "0")}`,
+      region: Number(importRegion) || 1,
+      role: 5,
+      gender,
+      date_of_birth: dateOfBirth,
+      profession: occupation,
+      address: kebele,
+      country: "Ethiopia",
+      engagement_areas: engagementAreas,
+      skills: languages ? languages.split(",").map(item => item.trim()).filter(Boolean) : [],
+      interests: interests,
+      metadata: JSON.stringify(metadataObj),
+    };
+  };
+
+  const submitImportedVolunteers = async () => {
+    if (importRows.length === 0) {
+      toast.error("Choose an Excel file before importing");
+      return;
+    }
+
+    setSubmittingImport(true);
+    const result: ImportResult = { success: 0, failed: 0, errors: [] };
+    const failedRows: ImportedRow[] = [];
+
+    for (const [index, row] of importRows.entries()) {
+      const payload = buildVolunteerPayload(row, index);
+      if (!payload.first_name && !payload.phone_number) {
+        const issue = "Missing name and phone";
+        result.failed += 1;
+        result.errors.push(`Row ${row.rowNumber}: ${issue}`);
+        failedRows.push({ ...row, importIssue: issue });
+        continue;
+      }
+
+      try {
+        await api.post("/auth/register/volunteer", payload);
+        result.success += 1;
+      } catch (err: unknown) {
+        result.failed += 1;
+        const error = err as { response?: { data?: { message?: string } | string }, message?: string };
+        const message = (typeof error.response?.data === "object" ? error.response.data.message : error.response?.data) || error.message || "Import failed";
+        result.errors.push(`Row ${row.rowNumber}: ${message}`);
+        failedRows.push({ ...row, importIssue: message });
+      }
+    }
+
+    setImportResult(result);
+    setImportRows(failedRows);
+    setSubmittingImport(false);
+    if (result.failed === 0) {
+      toast.success(`Imported ${result.success} volunteers`);
+    } else {
+      toast.warning(`Imported ${result.success}, failed ${result.failed}`);
+      try {
+        await downloadDefectiveWorkbook(failedRows);
+      } catch (err) {
+        console.error("Failed to create defect workbook:", err);
+        toast.error("Failed to download defect workbook");
+      }
+    }
+    fetchVolunteers();
+  };
+
+  const getArea = (v: Volunteer) => v.interests?.find(i => i.startsWith("Area:"))?.replace("Area:", "") || "Not Specified";
+  const getEducation = (v: Volunteer) => v.interests?.find(i => i.startsWith("Education:"))?.replace("Education:", "") || "Not Specified";
+  const getOrgName = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgName:"))?.replace("OrgName:", "") || "N/A";
+  const getOrgType = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgType:"))?.replace("OrgType:", "") || "N/A";
+
+  const filteredVolunteers = volunteers.filter(v => {
+    if (occupationFilter && v.profession !== occupationFilter) return false;
+    if (areaFilter && getArea(v).toUpperCase() !== areaFilter.toUpperCase()) return false;
+    if (classificationFilter && !v.engagement_areas?.includes(classificationFilter)) return false;
+    return true;
+  });
+
   return (
     <div className="space-y-10 print:p-0 text-black">
       {/* Header Section */}
@@ -174,6 +647,20 @@ export default function VolunteersPage() {
         </div>
 
         <div className="flex items-center gap-3">
+            <Button 
+                onClick={downloadTemplate}
+                variant="outline" 
+                className="rounded-xl h-10 px-6 font-black border-gray-200 flex items-center gap-2"
+            >
+                <Upload className="h-4 w-4 rotate-180" /> Download Template
+            </Button>
+            <Button 
+                onClick={() => setShowClearConfirm(true)}
+                variant="destructive" 
+                className="rounded-xl h-10 px-6 font-black bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+            >
+                <X className="h-4 w-4" /> Clear Registry
+            </Button>
             <Button 
                 onClick={exportToCSV}
                 variant="outline" 
@@ -248,15 +735,184 @@ export default function VolunteersPage() {
                     </select>
                 </div>
 
-                <div className="flex items-end pb-0.5">
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Area</label>
+                    <select 
+                        value={areaFilter}
+                        onChange={(e) => setAreaFilter(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg bg-white border border-gray-200 font-bold text-xs outline-none"
+                    >
+                        <option value="">All Areas</option>
+                        <option value="URBAN">Urban</option>
+                        <option value="RURAL">Rural</option>
+                    </select>
+                </div>
+
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Classification</label>
+                    <select 
+                        value={classificationFilter}
+                        onChange={(e) => setClassificationFilter(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg bg-white border border-gray-200 font-bold text-xs outline-none"
+                    >
+                        <option value="">All Classifications</option>
+                        <option value="General">General</option>
+                        <option value="Youth">Youth</option>
+                        <option value="Professional">Professional</option>
+                        <option value="Leadership">Leadership</option>
+                    </select>
+                </div>
+
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Occupation</label>
+                    <select 
+                        value={occupationFilter}
+                        onChange={(e) => setOccupationFilter(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg bg-white border border-gray-200 font-bold text-xs outline-none"
+                    >
+                        <option value="">All Occupations</option>
+                        <option value="Farmer">Farmer</option>
+                        <option value="Business Person">Business Person</option>
+                        <option value="Civil Servant">Civil Servant</option>
+                        <option value="House Wife">House Wife</option>
+                        <option value="Military">Military</option>
+                        <option value="NGO">NGO</option>
+                        <option value="Self Employed">Self Employed</option>
+                        <option value="Student">Student</option>
+                        <option value="Police">Police</option>
+                        <option value="Diplomat">Diplomat</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+
+                <div className="flex items-end pb-0.5 md:col-span-3 justify-end">
                     <Button 
-                        onClick={() => { setRegionFilter(""); setStatusFilter(""); setSearch(""); }}
+                        onClick={() => { 
+                            setRegionFilter(""); 
+                            setStatusFilter(""); 
+                            setSearch(""); 
+                            setAreaFilter(""); 
+                            setClassificationFilter(""); 
+                            setOccupationFilter(""); 
+                        }}
                         variant="ghost" 
                         className="h-10 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-gray-400"
                     >
-                        <X className="h-3 w-3 mr-2" /> Reset
+                        <X className="h-3 w-3 mr-2" /> Reset Filters
                     </Button>
                 </div>
+            </div>
+        )}
+      </div>
+
+      <div className="print:hidden rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-gray-50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Excel Import</p>
+                <h2 className="text-lg font-black text-black tracking-tight">Import Volunteers</h2>
+                <p className="text-xs font-bold text-gray-400 mt-1">
+                    Successful rows are removed after upload; defective rows stay red with the issue attached.
+                </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <select
+                    value={importRegion}
+                    onChange={(e) => setImportRegion(e.target.value)}
+                    className="h-10 min-w-[180px] rounded-xl border border-gray-200 bg-white px-3 text-xs font-black outline-none"
+                >
+                    {(regions.length > 0 ? regions : [{ id: 1, name: "Addis Ababa", code: "AA" }]).map(region => (
+                        <option key={region.id} value={region.id}>{region.name}</option>
+                    ))}
+                </select>
+                <label className="h-10 px-5 rounded-xl border border-gray-200 bg-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors">
+                    {parsingImport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    Choose Excel
+                    <input
+                        type="file"
+                        accept=".xlsx"
+                        className="hidden"
+                        disabled={parsingImport || submittingImport}
+                        onChange={(e) => handleImportFile(e.target.files?.[0])}
+                    />
+                </label>
+                <Button
+                    onClick={submitImportedVolunteers}
+                    disabled={importRows.length === 0 || parsingImport || submittingImport}
+                    className="h-10 px-5 rounded-xl font-black text-xs"
+                >
+                    {submittingImport ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                    Upload {importRows.length > 0 ? importRows.length : ""}
+                </Button>
+            </div>
+        </div>
+
+        {(importRows.length > 0 || importResult) && (
+            <div className="p-5 space-y-4">
+                {importRows.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        <span className="px-2 py-1 rounded-md bg-gray-50 text-gray-500">{importFileName}</span>
+                        <span>{importRows.length} remaining rows</span>
+                        <span>{importColumns.length} columns</span>
+                    </div>
+                )}
+
+                {importResult && (
+                    <div className={cn(
+                        "rounded-xl border p-4 text-sm font-bold",
+                        importResult.failed === 0 ? "bg-green-50 border-green-100 text-green-700" : "bg-amber-50 border-amber-100 text-amber-800"
+                    )}>
+                        <div className="flex items-center gap-2">
+                            {importResult.failed === 0 ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                            <span>{importResult.success} imported, {importResult.failed} failed</span>
+                        </div>
+                        {importResult.errors.length > 0 && (
+                            <div className="mt-3 max-h-28 overflow-y-auto space-y-1 text-xs">
+                                {importResult.errors.slice(0, 20).map(error => (
+                                    <p key={error}>{error}</p>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {importRows.length > 0 && (
+                    <div className="overflow-x-auto rounded-xl border border-gray-100">
+                        <table className="min-w-full text-left">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="sticky left-0 bg-gray-50 px-3 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">Row</th>
+                                    {importColumns.map(column => (
+                                        <th key={column} className="px-3 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">
+                                            {column}
+                                        </th>
+                                    ))}
+                                    <th className="px-3 py-3 text-[9px] font-black uppercase tracking-widest text-red-600 whitespace-nowrap">Issue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {importRows.slice(0, 8).map(row => (
+                                    <tr key={row.rowNumber} className={cn("border-t border-gray-50", row.importIssue && "bg-red-50")}>
+                                        <td className={cn("sticky left-0 px-3 py-2 text-[10px] font-black", row.importIssue ? "bg-red-50 text-red-500" : "bg-white text-gray-400")}>{row.rowNumber}</td>
+                                        {importColumns.map(column => (
+                                            <td key={`${row.rowNumber}-${column}`} className={cn("px-3 py-2 text-xs font-bold whitespace-nowrap", row.importIssue ? "text-red-700" : "text-gray-600")}>
+                                                {row.data[column] === null ? <span className="text-gray-300 italic">null</span> : String(row.data[column])}
+                                            </td>
+                                        ))}
+                                        <td className="px-3 py-2 text-xs font-black text-red-600 whitespace-nowrap">
+                                            {row.importIssue || "---"}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {importRows.length > 8 && (
+                            <div className="px-3 py-2 bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                Showing first 8 rows for preview
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         )}
       </div>
@@ -283,12 +939,12 @@ export default function VolunteersPage() {
                       </div>
                    </TableCell>
                 </TableRow>
-            ) : volunteers.length === 0 ? (
+            ) : filteredVolunteers.length === 0 ? (
                 <TableRow>
                    <TableCell colSpan={6} className="h-32 text-center text-gray-400 font-bold italic text-xs">No volunteers found matching your criteria</TableCell>
                 </TableRow>
             ) : (
-                volunteers.map((v) => (
+                filteredVolunteers.map((v) => (
                     <TableRow key={v.id} className="hover:bg-gray-50/50 transition-colors border-gray-50 font-bold">
                     <TableCell className="px-6 py-4">
                         <span className="font-black text-black text-sm leading-tight uppercase tracking-tighter">{v.first_name} {v.last_name}</span>
@@ -475,6 +1131,28 @@ export default function VolunteersPage() {
                                     {(!selectedVolunteer.engagement_areas || selectedVolunteer.engagement_areas.length === 0) && <p className="text-xs text-gray-400 font-bold italic">No areas selected</p>}
                                 </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-gray-100">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase">Education Level</p>
+                                    <p className="text-xs font-bold text-black">{getEducation(selectedVolunteer)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase">Geographic Area</p>
+                                    <p className="text-xs font-bold text-black">{getArea(selectedVolunteer)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase">Organization</p>
+                                    <p className="text-xs font-bold text-black">
+                                        {getOrgName(selectedVolunteer) !== "N/A" ? `${getOrgName(selectedVolunteer)} (${getOrgType(selectedVolunteer)})` : "Not Specified"}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase">Languages</p>
+                                    <p className="text-xs font-bold text-black">{selectedVolunteer.skills?.join(", ") || "None Specified"}</p>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Skills</p>
@@ -536,6 +1214,59 @@ export default function VolunteersPage() {
         </div>
       )}
 
+      {/* Clear Registry Confirmation Modal */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-white rounded-[32px] shadow-2xl w-full max-w-md border border-gray-100 p-6 space-y-6"
+            >
+                <div className="space-y-2">
+                    <p className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5">
+                        <AlertCircle className="h-4 w-4" /> Danger Zone
+                    </p>
+                    <h2 className="text-xl font-black tracking-tight text-black">
+                        Clear Volunteer Registry
+                    </h2>
+                    <p className="text-xs text-gray-500 font-medium leading-relaxed">
+                        This operation is highly destructive and cannot be undone. It will delete all volunteers, profiles, deployments, and related user accounts from the database. People holding active memberships will NOT be deleted.
+                    </p>
+                    <p className="text-xs font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-100">
+                        Please type <span className="font-black underline">CLEAR</span> below to authorize this deletion.
+                    </p>
+                </div>
+
+                <div className="space-y-4">
+                    <Input 
+                        value={clearConfirmText}
+                        onChange={(e) => setClearConfirmText(e.target.value)}
+                        placeholder="Type CLEAR to confirm"
+                        className="h-11 rounded-xl bg-gray-50 border-none font-bold text-sm text-black"
+                    />
+
+                    <div className="flex gap-3">
+                        <Button 
+                            onClick={handleClearRegistry}
+                            disabled={clearConfirmText !== "CLEAR" || clearingRegistry}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+                        >
+                            {clearingRegistry && <Loader2 className="h-4 w-4 animate-spin" />}
+                            Execute Deletion
+                        </Button>
+                        <Button 
+                            onClick={() => { setShowClearConfirm(false); setClearConfirmText(""); }}
+                            variant="outline" 
+                            className="flex-1 rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest border-gray-200"
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+      )}
+
       {/* Print-only Report Header */}
       <div className="hidden print:block mb-8">
           <div className="flex items-start justify-between">
@@ -546,7 +1277,7 @@ export default function VolunteersPage() {
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Region Scope:</span> {regions.find(r => String(r.id) === regionFilter)?.name || "All National Branches"}</div>
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Status Filter:</span> {statusFilter || "All Volunteers"}</div>
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Generated On:</span> {new Date().toLocaleString()}</div>
-                    <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Record Count:</span> {volunteers.length}</div>
+                    <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Record Count:</span> {filteredVolunteers.length}</div>
                 </div>
               </div>
               <div className="bg-[#ED1C24] text-white p-6 font-black text-3xl">ERCS</div>
