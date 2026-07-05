@@ -132,6 +132,7 @@ export default function VolunteersPage() {
   const [parsingImport, setParsingImport] = useState(false);
   const [submittingImport, setSubmittingImport] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importPage, setImportPage] = useState(1);
 
   // New Upgrade States
   const [occupationFilter, setOccupationFilter] = useState("");
@@ -140,6 +141,12 @@ export default function VolunteersPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearConfirmText, setClearConfirmText] = useState("");
   const [clearingRegistry, setClearingRegistry] = useState(false);
+
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
     fetchRegions();
@@ -154,12 +161,18 @@ export default function VolunteersPage() {
     return () => { document.body.style.overflow = 'unset'; }
   }, [showModal]);
 
+  // Reset page to 1 when filters or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter]);
+
+  // Fetch volunteers when page, page size, or filters change
   useEffect(() => {
     const timer = setTimeout(() => {
-        fetchVolunteers();
-    }, 500);
+      fetchVolunteers();
+    }, 300);
     return () => clearTimeout(timer);
-  }, [search, regionFilter, statusFilter]);
+  }, [currentPage, pageSize, search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter]);
 
   const fetchRegions = async () => {
     try {
@@ -175,9 +188,16 @@ export default function VolunteersPage() {
   const fetchVolunteers = async () => {
     setLoading(true);
     try {
-      const url = `/volunteers?search=${search}&region=${regionFilter}&status=${statusFilter}`;
+      let finalSearch = search;
+      if (occupationFilter) finalSearch += ` occupation:${occupationFilter.replace(/\s+/g, '_')}`;
+      if (areaFilter) finalSearch += ` area:${areaFilter}`;
+      if (classificationFilter) finalSearch += ` class:${classificationFilter}`;
+
+      const url = `/volunteers?search=${encodeURIComponent(finalSearch)}&region=${regionFilter}&status=${statusFilter}&page=${currentPage}&page_size=${pageSize}`;
       const res = await api.get(url);
       setVolunteers(res.data.volunteers || []);
+      setTotalPages(res.data.pagination?.total_pages || 1);
+      setTotalItems(res.data.pagination?.total_items || 0);
     } catch (err) {
       console.error("Failed to fetch volunteers:", err);
       toast.error("Failed to load volunteers");
@@ -439,6 +459,7 @@ export default function VolunteersPage() {
       setImportColumns(uniqueHeaders);
       setImportRows(rows);
       setImportFileName(file.name);
+      setImportPage(1);
       toast.success(`Parsed ${rows.length} volunteer rows`);
     } catch (err) {
       console.error("Failed to parse volunteer import:", err);
@@ -508,6 +529,41 @@ export default function VolunteersPage() {
     URL.revokeObjectURL(url);
   };
 
+  const formatDOBForBackend = (dobStr: string): string => {
+    if (!dobStr) return "";
+    
+    // Check if already in YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dobStr)) {
+      return dobStr;
+    }
+    
+    // Try parsing DD/MM/YYYY or DD-MM-YYYY
+    const parts = dobStr.split(/[\/\-]/);
+    if (parts.length === 3) {
+      const part0 = parts[0].trim();
+      const part1 = parts[1].trim();
+      const part2 = parts[2].trim();
+      
+      // Check if it matches DD/MM/YYYY where YYYY is 4 digits
+      if (part0.length <= 2 && part1.length <= 2 && part2.length === 4) {
+        const day = part0.padStart(2, '0');
+        const month = part1.padStart(2, '0');
+        const year = part2;
+        return `${year}-${month}-${day}`;
+      }
+      
+      // Check if it matches YYYY/MM/DD
+      if (part0.length === 4 && part1.length <= 2 && part2.length <= 2) {
+        const year = part0;
+        const month = part1.padStart(2, '0');
+        const day = part2.padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    }
+    
+    return dobStr;
+  };
+
   const buildVolunteerPayload = (row: ImportedRow, index: number) => {
     const firstName = getImportValue(row, ["Name", "First Name", "FirstName"]);
     const fatherName = getImportValue(row, ["Father Name", "FatherName", "Middle Name", "Last Name"]);
@@ -542,7 +598,7 @@ export default function VolunteersPage() {
       imported_at: new Date().toISOString(),
       source_row_number: row.rowNumber,
       nullable_columns: row.data,
-      date_of_birth: dateOfBirth || null,
+      date_of_birth: formatDOBForBackend(dateOfBirth) || null,
       occupation: occupation || null,
       kebele: kebele || null,
       educationLevel: educationLevel || null,
@@ -562,7 +618,7 @@ export default function VolunteersPage() {
       region: Number(importRegion) || 1,
       role: 5,
       gender,
-      date_of_birth: dateOfBirth,
+      date_of_birth: formatDOBForBackend(dateOfBirth),
       profession: occupation,
       address: kebele,
       country: "Ethiopia",
@@ -607,6 +663,7 @@ export default function VolunteersPage() {
 
     setImportResult(result);
     setImportRows(failedRows);
+    setImportPage(1);
     setSubmittingImport(false);
     if (result.failed === 0) {
       toast.success(`Imported ${result.success} volunteers`);
@@ -627,12 +684,7 @@ export default function VolunteersPage() {
   const getOrgName = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgName:"))?.replace("OrgName:", "") || "N/A";
   const getOrgType = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgType:"))?.replace("OrgType:", "") || "N/A";
 
-  const filteredVolunteers = volunteers.filter(v => {
-    if (occupationFilter && v.profession !== occupationFilter) return false;
-    if (areaFilter && getArea(v).toUpperCase() !== areaFilter.toUpperCase()) return false;
-    if (classificationFilter && !v.engagement_areas?.includes(classificationFilter)) return false;
-    return true;
-  });
+  const filteredVolunteers = volunteers;
 
   return (
     <div className="space-y-10 print:p-0 text-black">
@@ -877,40 +929,65 @@ export default function VolunteersPage() {
                 )}
 
                 {importRows.length > 0 && (
-                    <div className="overflow-x-auto rounded-xl border border-gray-100">
-                        <table className="min-w-full text-left">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="sticky left-0 bg-gray-50 px-3 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">Row</th>
-                                    {importColumns.map(column => (
-                                        <th key={column} className="px-3 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap">
-                                            {column}
-                                        </th>
-                                    ))}
-                                    <th className="px-3 py-3 text-[9px] font-black uppercase tracking-widest text-red-600 whitespace-nowrap">Issue</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {importRows.slice(0, 8).map(row => (
-                                    <tr key={row.rowNumber} className={cn("border-t border-gray-50", row.importIssue && "bg-red-50")}>
-                                        <td className={cn("sticky left-0 px-3 py-2 text-[10px] font-black", row.importIssue ? "bg-red-50 text-red-500" : "bg-white text-gray-400")}>{row.rowNumber}</td>
-                                        {importColumns.map(column => (
-                                            <td key={`${row.rowNumber}-${column}`} className={cn("px-3 py-2 text-xs font-bold whitespace-nowrap", row.importIssue ? "text-red-700" : "text-gray-600")}>
-                                                {row.data[column] === null ? <span className="text-gray-300 italic">null</span> : String(row.data[column])}
-                                            </td>
+                    <div className="rounded-xl border border-gray-100 overflow-hidden bg-white shadow-sm">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full text-left">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="sticky left-0 bg-gray-50 px-3 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap border-b border-gray-100">Row</th>
+                                        {importColumns.slice(0, 8).map(column => (
+                                            <th key={column} className="px-3 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap border-b border-gray-100">
+                                                {column}
+                                            </th>
                                         ))}
-                                        <td className="px-3 py-2 text-xs font-black text-red-600 whitespace-nowrap">
-                                            {row.importIssue || "---"}
-                                        </td>
+                                        <th className="px-3 py-3 text-[9px] font-black uppercase tracking-widest text-red-600 whitespace-nowrap border-b border-gray-100">Issue</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        {importRows.length > 8 && (
-                            <div className="px-3 py-2 bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                                Showing first 8 rows for preview
+                                </thead>
+                                <tbody>
+                                    {importRows.slice((importPage - 1) * 10, importPage * 10).map(row => (
+                                        <tr key={row.rowNumber} className={cn("border-t border-gray-50 transition-colors hover:bg-gray-50/50", row.importIssue && "bg-red-50/20 hover:bg-red-50/30")}>
+                                            <td className={cn("sticky left-0 px-3 py-2 text-[10px] font-black border-r", row.importIssue ? "bg-red-100/80 text-red-600 border-red-200/50" : "bg-white text-gray-400 border-gray-100")}>{row.rowNumber}</td>
+                                            {importColumns.slice(0, 8).map(column => (
+                                                <td key={`${row.rowNumber}-${column}`} className={cn("px-3 py-2 text-xs font-bold whitespace-nowrap border-r", row.importIssue ? "bg-red-100/60 text-red-700 border-red-200/50" : "text-gray-600 border-gray-100")}>
+                                                    {row.data[column] === null ? <span className="text-gray-300 italic">null</span> : String(row.data[column])}
+                                                </td>
+                                            ))}
+                                            <td className={cn("px-3 py-2 text-xs font-black whitespace-nowrap", row.importIssue ? "bg-red-100/80 text-red-600" : "text-gray-400")}>
+                                                {row.importIssue || "---"}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                Showing {((importPage - 1) * 10) + 1}-{Math.min(importPage * 10, importRows.length)} of {importRows.length} rows (Previewing first 8 data columns)
                             </div>
-                        )}
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 px-3 rounded-lg font-black text-[9px] uppercase tracking-widest bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
+                                    onClick={() => setImportPage(prev => Math.max(1, prev - 1))}
+                                    disabled={importPage === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <span className="text-[10px] font-black text-gray-500 px-1">
+                                    Page {importPage} of {Math.ceil(importRows.length / 10)}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 px-3 rounded-lg font-black text-[9px] uppercase tracking-widest bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
+                                    onClick={() => setImportPage(prev => Math.min(Math.ceil(importRows.length / 10), prev + 1))}
+                                    disabled={importPage >= Math.ceil(importRows.length / 10)}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -1003,6 +1080,85 @@ export default function VolunteersPage() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border border-gray-100 rounded-2xl shadow-sm print:hidden">
+        <div className="text-xs font-bold text-gray-500">
+          Showing <span className="font-black text-black">{totalItems > 0 ? ((currentPage - 1) * pageSize) + 1 : 0}</span> to{" "}
+          <span className="font-black text-black">{Math.min(currentPage * pageSize, totalItems)}</span> of{" "}
+          <span className="font-black text-black">{totalItems}</span> volunteers
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs font-black outline-none cursor-pointer hover:bg-gray-50"
+            >
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-3 rounded-lg font-black text-[9px] uppercase tracking-widest bg-white border-gray-200 hover:bg-gray-50 text-gray-700 disabled:opacity-50"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1 || loading}
+            >
+              Previous
+            </Button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => {
+                  return p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1;
+                })
+                .map((p, idx, arr) => {
+                  const showEllipsisBefore = idx > 0 && p - arr[idx - 1] > 1;
+                  return (
+                    <div key={p} className="flex items-center">
+                      {showEllipsisBefore && <span className="text-gray-400 text-xs px-1">...</span>}
+                      <Button
+                        variant={p === currentPage ? "default" : "outline"}
+                        size="sm"
+                        className={cn(
+                          "h-8 w-8 p-0 rounded-lg font-black text-xs transition-all",
+                          p === currentPage
+                            ? "bg-[#ED1C24] hover:bg-[#ED1C24]/90 text-white shadow-md shadow-red-500/10"
+                            : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                        )}
+                        onClick={() => setCurrentPage(p)}
+                        disabled={loading}
+                      >
+                        {p}
+                      </Button>
+                    </div>
+                  );
+                })}
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-3 rounded-lg font-black text-[9px] uppercase tracking-widest bg-white border-gray-200 hover:bg-gray-50 text-gray-700 disabled:opacity-50"
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages || loading}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Volunteer Detail Modal */}
