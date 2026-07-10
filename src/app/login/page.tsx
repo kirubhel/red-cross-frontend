@@ -23,7 +23,7 @@ import Header from "@/components/layout/Header";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [noPassword, setNoPassword] = useState(false);
@@ -70,7 +70,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await api.post("/auth/login", { identifier: email, password });
+      const res = await api.post("/auth/login", { identifier: identifier.trim(), password });
       
       if (res.data.mfa_required) {
         setMfaRequired(true);
@@ -207,16 +207,18 @@ export default function LoginPage() {
               <form onSubmit={handleLogin} className="space-y-8">
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">Identifier</Label>
+                    <Label htmlFor="identifier" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">Phone number, email, or member ID</Label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
                       <Input
-                        id="email"
-                        type="text"
-                        placeholder="Email, Phone, or Member ID"
+                        id="identifier"
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="username"
+                        placeholder="e.g. 0911 234 567"
                         className="h-14 pl-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
                         required
                       />
                     </div>
