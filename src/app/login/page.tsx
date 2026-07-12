@@ -16,10 +16,13 @@ import {
   ChevronRight,
   Plus,
   Eye,
-  EyeOff
+  EyeOff,
+  Heart,
+  Award
 } from "lucide-react";
 import api from "@/lib/api";
 import Header from "@/components/layout/Header";
+import { ALL_COUNTRIES, getFlagEmoji } from "@/components/ui/phone-number-input";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,6 +35,31 @@ export default function LoginPage() {
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [userIdForMfa, setUserIdForMfa] = useState("");
+  
+  // Country Selector and Multi-Profile selection states
+  const [countryCode, setCountryCode] = useState("ET");
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [isMultiProfile, setIsMultiProfile] = useState(false);
+  const showCountrySelector = /^[+0-9]/.test(identifier);
+
+  const handleLoginSuccess = (data: any) => {
+    const { access_token, role, ercs_id } = data;
+    localStorage.setItem("token", access_token);
+    localStorage.setItem("access_token", access_token);
+    localStorage.setItem("user_role", role); 
+    if (ercs_id) localStorage.setItem("ercs_id", ercs_id);
+    
+    const isAdmin = role === "SUPER_ADMIN" || role === "REGIONAL_ADMIN" || role === 1 || role === 2;
+    const isOrg = role === "ORGANIZATION" || role === 8;
+    
+    if (isAdmin) {
+      router.push("/admin");
+    } else if (isOrg) {
+      router.push("/organization/portal");
+    } else {
+      router.push("/dashboard");
+    }
+  };
 
   const handleMfaLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,23 +68,7 @@ export default function LoginPage() {
 
     try {
       const res = await api.post("/auth/login-mfa", { user_id: userIdForMfa, code: mfaCode });
-      
-      const { access_token, role, ercs_id } = res.data;
-      localStorage.setItem("token", access_token);
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("user_role", role); 
-      if (ercs_id) localStorage.setItem("ercs_id", ercs_id);
-      
-      const isAdmin = role === "SUPER_ADMIN" || role === "REGIONAL_ADMIN" || role === 1 || role === 2;
-      const isOrg = role === "ORGANIZATION" || role === 8;
-      
-      if (isAdmin) {
-        router.push("/admin");
-      } else if (isOrg) {
-        router.push("/organization/portal");
-      } else {
-        router.push("/dashboard");
-      }
+      handleLoginSuccess(res.data);
     } catch (err: any) {
       setError("Invalid 2FA code. Please try again.");
     } finally {
@@ -70,8 +82,30 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await api.post("/auth/login", { identifier: identifier.trim(), password });
+      let finalIdentifier = identifier.trim();
+      if (showCountrySelector) {
+        const selectedCountry = ALL_COUNTRIES.find(c => c.code === countryCode);
+        const dialCode = selectedCountry?.dialCode ?? "";
+        const cleanDigits = identifier.replace(/\D/g, "");
+        const dialDigits = dialCode.replace(/\D/g, "");
+        if (!cleanDigits.startsWith(dialDigits)) {
+          const localPart = cleanDigits.startsWith("0") ? cleanDigits.slice(1) : cleanDigits;
+          finalIdentifier = dialCode + localPart;
+        } else {
+          finalIdentifier = "+" + cleanDigits;
+        }
+      }
+
+      const res = await api.post("/auth/login", { identifier: finalIdentifier, password });
       
+      // Check for multi-profile response
+      if (res.data.multi_profile) {
+        setProfiles(res.data.profiles || []);
+        setIsMultiProfile(true);
+        setLoading(false);
+        return;
+      }
+
       if (res.data.mfa_required) {
         setMfaRequired(true);
         setUserIdForMfa(res.data.user_id);
@@ -79,23 +113,7 @@ export default function LoginPage() {
         return;
       }
 
-      const { access_token, role, ercs_id } = res.data;
-      localStorage.setItem("token", access_token);
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("user_role", role); 
-      if (ercs_id) localStorage.setItem("ercs_id", ercs_id);
-      
-      // Handle both string and numeric enum values from the API
-      const isAdmin = role === "SUPER_ADMIN" || role === "REGIONAL_ADMIN" || role === 1 || role === 2;
-      const isOrg = role === "ORGANIZATION" || role === 8;
-      
-      if (isAdmin) {
-        router.push("/admin");
-      } else if (isOrg) {
-        router.push("/organization/portal");
-      } else {
-        router.push("/dashboard");
-      }
+      handleLoginSuccess(res.data);
     } catch (err: any) {
       console.error("Login detail err:", err);
       
@@ -123,6 +141,27 @@ export default function LoginPage() {
       }
         
       setError(friendlyMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectProfile = async (userId: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.post("/auth/login", { identifier: userId, password });
+      
+      if (res.data.mfa_required) {
+        setMfaRequired(true);
+        setUserIdForMfa(res.data.user_id);
+        setLoading(false);
+        return;
+      }
+
+      handleLoginSuccess(res.data);
+    } catch (err: any) {
+      setError("Failed to sign in to the selected profile. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -203,26 +242,45 @@ export default function LoginPage() {
               <p className="text-black/60 font-black text-[10px] uppercase tracking-widest">Sign in to your account</p>
             </div>
 
-            {!mfaRequired ? (
-              <form onSubmit={handleLogin} className="space-y-8">
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="identifier" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">Phone number, email, or member ID</Label>
-                    <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
-                      <Input
-                        id="identifier"
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="username"
-                        placeholder="e.g. 0911 234 567"
-                        className="h-14 pl-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
-                        value={identifier}
-                        onChange={(e) => setIdentifier(e.target.value)}
-                        required
-                      />
+            {!isMultiProfile ? (
+              !mfaRequired ? (
+                <form onSubmit={handleLogin} className="space-y-8">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="identifier" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">Phone number, email, or member ID</Label>
+                      <div className="relative">
+                        {showCountrySelector ? (
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-gray-100/80 hover:bg-gray-100 rounded-lg p-1.5 border border-gray-200/50 z-20 transition-all shrink-0">
+                            <select
+                              value={countryCode}
+                              onChange={(e) => setCountryCode(e.target.value)}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
+                            >
+                              {ALL_COUNTRIES.map((c) => (
+                                <option key={c.code} value={c.code}>
+                                  {getFlagEmoji(c.code)} {c.dialCode} ({c.name})
+                                </option>
+                              ))}
+                            </select>
+                            <span className="text-lg leading-none">{getFlagEmoji(countryCode)}</span>
+                            <span className="text-xs font-black text-black/60">{ALL_COUNTRIES.find(c => c.code === countryCode)?.dialCode}</span>
+                          </div>
+                        ) : (
+                          <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
+                        )}
+                        <Input
+                          id="identifier"
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="username"
+                          placeholder="e.g. 0911 234 567"
+                          className={`h-14 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black ${showCountrySelector ? 'pl-24' : 'pl-12'}`}
+                          value={identifier}
+                          onChange={(e) => setIdentifier(e.target.value)}
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
 
                   <div className="flex items-center gap-2 ml-1">
                     <input
@@ -351,6 +409,70 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </form>
+            ) : (
+              <div className="space-y-6">
+                <div className="space-y-2 text-center lg:text-left">
+                  <h3 className="text-2xl font-black text-black tracking-tight">CHOOSE PROFILE</h3>
+                  <p className="text-sm text-black/60 font-bold">Select the account profile you want to sign in with.</p>
+                </div>
+                
+                <div className="space-y-3 pt-2">
+                  {profiles.map((profile) => {
+                    const isVolunteer = profile.role === "VOLUNTEER" || profile.role === "5";
+                    const roleTitle = isVolunteer ? "Volunteer Portal" : "Member Portal";
+                    const roleDesc = isVolunteer 
+                      ? "Access volunteer missions, hours, and training logs." 
+                      : "Manage your membership details, dues, and digital ID card.";
+                    
+                    return (
+                      <button
+                        key={profile.user_id}
+                        type="button"
+                        onClick={() => handleSelectProfile(profile.user_id)}
+                        disabled={loading}
+                        className="w-full text-left p-5 rounded-2xl border-2 border-gray-100 hover:border-[#ED1C24] hover:bg-red-50/5 active:scale-[0.98] transition-all flex items-center gap-4 group"
+                      >
+                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                          isVolunteer 
+                            ? 'bg-red-50 text-[#ED1C24] group-hover:bg-[#ED1C24] group-hover:text-white' 
+                            : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                        }`}>
+                          {isVolunteer ? <Heart className="h-6 w-6" /> : <Award className="h-6 w-6" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-black text-base text-black flex items-center gap-1.5">
+                            {roleTitle}
+                          </h4>
+                          <p className="text-xs text-black/50 font-bold line-clamp-1 mt-0.5">{roleDesc}</p>
+                          {profile.ercs_id && (
+                            <p className="text-[10px] text-[#ED1C24] font-black uppercase tracking-wider mt-1">ID: {profile.ercs_id}</p>
+                          )}
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-black/30 group-hover:text-[#ED1C24] group-hover:translate-x-1 transition-all" />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 text-[#ED1C24] p-4 rounded-xl text-sm font-bold text-center border border-red-100">
+                    {error}
+                  </div>
+                )}
+
+                <Button 
+                  type="button" 
+                  variant="ghost"
+                  onClick={() => {
+                    setIsMultiProfile(false);
+                    setProfiles([]);
+                    setError("");
+                  }}
+                  className="w-full h-12 rounded-xl text-xs font-black uppercase tracking-widest text-black/40 hover:text-black transition-colors"
+                >
+                  Back to login
+                </Button>
+              </div>
             )}
 
             <div className="mt-8 pt-6 border-t border-gray-100 text-center">
