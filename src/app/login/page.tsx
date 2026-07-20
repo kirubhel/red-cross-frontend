@@ -35,7 +35,6 @@ export default function LoginPage() {
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [userIdForMfa, setUserIdForMfa] = useState("");
-  
   // Country Selector and Multi-Profile selection states
   const [countryCode, setCountryCode] = useState("ET");
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -409,7 +408,7 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </form>
-            ) : (
+            )) : (
               <div className="space-y-6">
                 <div className="space-y-2 text-center lg:text-left">
                   <h3 className="text-2xl font-black text-black tracking-tight">CHOOSE PROFILE</h3>
