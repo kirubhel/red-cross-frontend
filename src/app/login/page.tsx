@@ -300,7 +300,7 @@ export default function LoginPage() {
                   <div className={`space-y-2 transition-opacity duration-300 ${noPassword ? 'opacity-30 pointer-events-none' : ''}`}>
                     <div className="flex justify-between items-center ml-1">
                       <Label htmlFor="password" className="text-[9px] font-black uppercase tracking-widest text-black/60">Password</Label>
-                      <Link href="#" className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">Forgot?</Link>
+                      <Link href="/forgot-password" className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">Forgot?</Link>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />

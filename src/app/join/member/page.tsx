@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -50,10 +51,13 @@ const REGION_ABBR: Record<string, string> = {
 
 import Header from "@/components/layout/Header";
 
-export default function MemberRegistrationPage() {
+function MemberRegistrationContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1); // 1: Details, 2: Category Selection, 3: Plans, 4: Success
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showLoginCTA, setShowLoginCTA] = useState(false);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [formConfig, setFormConfig] = useState<any[]>([]);
   const [membershipPlans, setMembershipPlans] = useState<any[]>([]);
@@ -71,8 +75,48 @@ export default function MemberRegistrationPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(false);
+  const [phoneExists, setPhoneExists] = useState(false);
   const [zones, setZones] = useState<any[]>([]);
   const [woredas, setWoredas] = useState<any[]>([]);
+
+  const handlePhoneBlur = async () => {
+    if (!formData.phoneNumber || formData.phoneNumber.length < 8) {
+      setPhoneExists(false);
+      return;
+    }
+    const fullPhone = buildFullPhoneNumber(formData.country || "ET", formData.phoneNumber);
+    setCheckingPhone(true);
+    try {
+      const res = await api.get(`/public/check-phone?phone=${encodeURIComponent(fullPhone)}`);
+      if (res.data?.exists) {
+        setPhoneExists(true);
+        setError("This phone number is already registered. If you already have an account, please log in.");
+        setShowLoginCTA(true);
+      } else {
+        setPhoneExists(false);
+        if (error && error.includes("already registered")) {
+          setError("");
+          setShowLoginCTA(false);
+        }
+      }
+    } catch (err) {
+      console.error("Error checking phone number:", err);
+    } finally {
+      setCheckingPhone(false);
+    }
+  };
+
+  // Check if returning from successful payment
+  useEffect(() => {
+    const paymentSuccess = searchParams.get("payment_success") === "true" || searchParams.get("status") === "SUCCESS";
+    const ercsIdParam = searchParams.get("ercs_id");
+    if (ercsIdParam) setMemberId(ercsIdParam);
+
+    if (paymentSuccess || ercsIdParam) {
+      setStep(4);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchConfigs = async () => {
@@ -198,27 +242,49 @@ export default function MemberRegistrationPage() {
         return;
     }
 
-        setLoading(true);
+    if (step === 1) {
+      setStep(2);
+      return;
+    }
+
+    if (step === 2) {
+      setStep(3);
+      return;
+    }
+
+    // Step 3: Pay & Join -> Must initiate ArifPay payment first!
+    setLoading(true);
+    setError("");
+    setShowLoginCTA(false);
+
+    try {
+        const getVal = (keyword: string) => {
+            const f = formConfig.find(f => f.label.toLowerCase().includes(keyword.toLowerCase()));
+            return f ? (formData[f.id] || "") : "";
+        };
+
+        const extractedName = getVal("name");
+        const extractedEmail = getVal("email");
+        const extractedNationalId = getVal("national");
+        const extractedDOB = getVal("date") || getVal("birth");
+        const extractedGender = getVal("gender");
+        
+        const regionId = formData.country === "ET" ? (REGION_MAP_VALUE_TO_ID[formData.region] || 1) : 14;
+        const finalAddress = formData.country === "ET" ? "" : formData.internationalAddress;
+
+        const fullPhone = buildFullPhoneNumber(
+            formData.country || "ET",
+            formData.phoneNumber
+        );
+
+        const selectedPlan = membershipPlans.find(p => p.short_code === formData.membershipType);
+        const planAmount = selectedPlan ? parseFloat(selectedPlan.amount) : 50;
+
+        let tokenVal = "";
+        let generatedId = "";
+
         try {
-            const getVal = (keyword: string) => {
-                const f = formConfig.find(f => f.label.toLowerCase().includes(keyword.toLowerCase()));
-                return f ? (formData[f.id] || "") : "";
-            };
-
-            const extractedName = getVal("name");
-            const extractedEmail = getVal("email");
-            const extractedNationalId = getVal("national");
-            const extractedDOB = getVal("date") || getVal("birth");
-            const extractedGender = getVal("gender");
-            
-            // If Ethiopia, use Region ID, otherwise use Address field
-            const regionId = formData.country === "ET" ? (REGION_MAP_VALUE_TO_ID[formData.region] || 1) : 14; // 14 is South Ethiopia / Other
-            const finalAddress = formData.country === "ET" ? "" : formData.internationalAddress;
-
-            const fullPhone = buildFullPhoneNumber(
-                formData.country || "ET",
-                formData.phoneNumber
-            );
+            // Attempt Registration
             const res = await api.post("/join/member", {
                 first_name: extractedName,
                 father_name: getVal("father"),
@@ -239,16 +305,83 @@ export default function MemberRegistrationPage() {
                     woreda_id: formData.woreda
                 })
             });
-            
-            const generatedId = res.data?.ercsId || res.data?.ercs_id;
-            if (generatedId) setMemberId(generatedId);
-            setStep(4);
-        } catch (err: any) {
-             console.error(err);
-             setError(err.response?.data?.message || "Something went wrong. Please try again.");
-        } finally {
-            setLoading(false);
+
+            generatedId = res.data?.ercsId || res.data?.ercs_id || "";
+            tokenVal = res.data?.access_token || res.data?.accessToken || "";
+        } catch (regErr: any) {
+            const errMsg = regErr.response?.data?.message || regErr.response?.data?.error || regErr.message || "";
+            const isDuplicate = /already|exist|duplicate|used|registered/i.test(errMsg) || regErr.response?.status === 409 || regErr.response?.status === 400;
+
+            if (isDuplicate) {
+                // Try logging in with the phone and password provided to check membership/payment status
+                try {
+                    const loginRes = await api.post("/auth/login", { identifier: fullPhone, password: formData.password });
+                    tokenVal = loginRes.data?.access_token || loginRes.data?.accessToken || "";
+                    generatedId = loginRes.data?.ercs_id || loginRes.data?.ercsId || "";
+
+                    if (tokenVal) {
+                        localStorage.setItem("token", tokenVal);
+                        localStorage.setItem("access_token", tokenVal);
+                        localStorage.setItem("user_role", "MEMBER");
+                        if (generatedId) localStorage.setItem("ercs_id", generatedId);
+
+                        // Check profile status
+                        const profileRes = await api.get("/person/profile");
+                        const person = profileRes.data?.person || profileRes.data || {};
+                        const status = (person.membership_status || person.status || "").toUpperCase();
+
+                        if (status === "APPROVED" || status === "ACTIVE" || status === "PAID") {
+                            setError("This phone number is already registered and your membership is active! Please log in to your portal.");
+                            setShowLoginCTA(true);
+                            setLoading(false);
+                            return;
+                        }
+                    }
+                } catch (loginErr: any) {
+                    setError("This phone number is already registered. If you need to complete payment or access your account, please log in with your password.");
+                    setShowLoginCTA(true);
+                    setLoading(false);
+                    return;
+                }
+            } else {
+                throw regErr;
+            }
         }
+
+        if (tokenVal) {
+            localStorage.setItem("token", tokenVal);
+            localStorage.setItem("access_token", tokenVal);
+            localStorage.setItem("user_role", "MEMBER");
+            if (generatedId) {
+                setMemberId(generatedId);
+                localStorage.setItem("ercs_id", generatedId);
+            }
+        }
+
+        // Must initiate ArifPay checkout session before joining!
+        const cleanPhone = fullPhone.replace(/\D/g, "");
+        const payRes = await api.post("/payment/initiate", {
+            amount: planAmount,
+            currency: "ETB",
+            provider: "ARIFPAY",
+            payer_phone: cleanPhone,
+            email: extractedEmail || "member@redcrosseth.org",
+            first_name: extractedName || "Member",
+            last_name: getVal("father") || "Member"
+        });
+
+        if (payRes.data?.payment_url) {
+            window.location.href = payRes.data.payment_url;
+            return;
+        } else {
+            throw new Error("No checkout URL returned from payment gateway.");
+        }
+    } catch (err: any) {
+         console.error("Payment initiation error:", err);
+         setError(err.response?.data?.message || err.message || "Failed to start ArifPay payment. Please try again.");
+    } finally {
+        setLoading(false);
+    }
   };
 
   const stepVariants = {
@@ -357,17 +490,39 @@ export default function MemberRegistrationPage() {
                                               return (
                                                   <div key={field.id} className="space-y-1 group">
                                                       <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
-                                                      <PhoneNumberInput
-                                                          countryCode={formData.country || "ET"}
-                                                          onCountryChange={(code) =>
-                                                              setFormData((prev: any) => ({ ...prev, country: code, phoneNumber: "" }))
-                                                          }
-                                                          localNumber={formData.phoneNumber}
-                                                          onLocalNumberChange={(val) =>
-                                                              setFormData((prev: any) => ({ ...prev, phoneNumber: val }))
-                                                          }
-                                                          required={field.required}
-                                                      />
+                                                      <div className="relative">
+                                                          <PhoneNumberInput
+                                                              countryCode={formData.country || "ET"}
+                                                              onCountryChange={(code) =>
+                                                                  setFormData((prev: any) => ({ ...prev, country: code, phoneNumber: "" }))
+                                                              }
+                                                              localNumber={formData.phoneNumber}
+                                                              onLocalNumberChange={(val) => {
+                                                                  setFormData((prev: any) => ({ ...prev, phoneNumber: val }));
+                                                                  if (phoneExists) setPhoneExists(false);
+                                                              }}
+                                                              onBlur={handlePhoneBlur}
+                                                              required={field.required}
+                                                          />
+                                                          {checkingPhone && (
+                                                              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                                                  <span className="text-[9px] font-bold text-black/40">Checking...</span>
+                                                                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-[#ED1C24] border-t-transparent" />
+                                                              </div>
+                                                          )}
+                                                      </div>
+                                                      {phoneExists && (
+                                                          <div className="mt-1 flex flex-col gap-1.5 p-2.5 bg-red-50 rounded-lg border border-red-100 text-left">
+                                                              <span className="text-[10px] font-bold text-[#ED1C24]">This phone number is already registered.</span>
+                                                              <button
+                                                                  type="button"
+                                                                  onClick={() => router.push("/login")}
+                                                                  className="text-left text-[9px] font-black text-black hover:text-[#ED1C24] uppercase tracking-wider underline transition-colors"
+                                                              >
+                                                                  Log In to Portal Now
+                                                              </button>
+                                                          </div>
+                                                      )}
                                                   </div>
                                               );
                                           }
@@ -608,8 +763,19 @@ export default function MemberRegistrationPage() {
                                 </div>
 
                                 {error && (
-                                    <div className="bg-red-50 text-[#ED1C24] p-3 rounded-xl text-xs font-bold text-center border border-red-100 italic">
-                                        {error}
+                                    <div className="space-y-3">
+                                        <div className="bg-red-50 text-[#ED1C24] p-3 rounded-xl text-xs font-bold text-center border border-red-100 italic">
+                                            {error}
+                                        </div>
+                                        {showLoginCTA && (
+                                            <Button
+                                                type="button"
+                                                onClick={() => router.push("/login")}
+                                                className="w-full h-12 bg-black hover:bg-[#ED1C24] text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg"
+                                            >
+                                                Log In to Portal Now
+                                            </Button>
+                                        )}
                                     </div>
                                 )}
 
@@ -666,7 +832,18 @@ export default function MemberRegistrationPage() {
                                     </div>
                                 </div>
                             )}
-                            <Link href="/"><Button className="h-14 bg-black hover:bg-[#ED1C24] text-white rounded-2xl px-12 text-lg font-black shadow-xl transition-all">Back to Home</Button></Link>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
+                              <Link href="/dashboard">
+                                <Button className="h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl px-8 text-base font-black shadow-xl shadow-red-500/20 transition-all flex items-center justify-center gap-2">
+                                  Go to Portal Dashboard <ChevronRight className="h-5 w-5" />
+                                </Button>
+                              </Link>
+                              <Link href="/">
+                                <Button variant="outline" className="h-14 border-gray-200 hover:bg-gray-50 text-black rounded-2xl px-8 text-base font-black transition-all">
+                                  Back to Home
+                                </Button>
+                              </Link>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -678,5 +855,17 @@ export default function MemberRegistrationPage() {
             <p className="text-[10px] font-black text-black/20 uppercase tracking-[0.4em]"> Ethiopian Red Cross Society · Alleviating Human Suffering Since 1935 </p>
        </footer>
     </div>
+  );
+}
+
+export default function MemberRegistrationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#ED1C24] border-t-transparent" />
+      </div>
+    }>
+      <MemberRegistrationContent />
+    </Suspense>
   );
 }

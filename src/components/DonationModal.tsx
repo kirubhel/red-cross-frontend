@@ -36,9 +36,10 @@ const PAYMENT_METHODS = [
 interface DonationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialAmount?: string;
 }
 
-export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
+export default function DonationModal({ isOpen, onClose, initialAmount = "100" }: DonationModalProps) {
   const [amount, setAmount] = useState("100");
   const [customAmount, setCustomAmount] = useState("");
   const [provider, setProvider] = useState("ARIFPAY");
@@ -48,6 +49,26 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const finalAmount = customAmount || amount;
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setSuccess(false);
+      setPaymentError("");
+      if (initialAmount && initialAmount !== "custom") {
+        const presets = ["50", "100", "500", "1000", "2000"];
+        if (presets.includes(initialAmount.toString())) {
+          setAmount(initialAmount.toString());
+          setCustomAmount("");
+        } else {
+          setAmount("");
+          setCustomAmount(initialAmount.toString());
+        }
+      } else if (initialAmount === "custom") {
+        setAmount("");
+        setCustomAmount("");
+      }
+    }
+  }, [isOpen, initialAmount]);
 
   const maxPhoneLength = getLocalPhoneLength(countryCode);
   const isPhoneInvalid = localNumber.trim() !== "" && localNumber.length !== maxPhoneLength;
@@ -159,8 +180,8 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
                     {/* Amount Selection */}
                     <div className="space-y-3">
                         <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-black/30 ml-1">Choose Amount</Label>
-                        <div className="grid grid-cols-4 gap-2">
-                            {["50", "100", "500", "1000"].map((val) => (
+                        <div className="grid grid-cols-5 gap-1.5">
+                            {["50", "100", "500", "1000", "2000"].map((val) => (
                                 <button
                                     key={val}
                                     onClick={() => { setAmount(val); setCustomAmount(""); }}

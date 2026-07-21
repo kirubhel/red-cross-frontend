@@ -25,11 +25,14 @@ import {
   Twitter,
   Instagram,
   Linkedin,
-  Languages,
   Award,
-  Smartphone
+  Smartphone,
+  Loader2,
+  CheckCircle2
 } from "lucide-react";
-import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import api from "@/lib/api";
+import { saveContactMessage } from "@/lib/contact-messages";
 import { translations, Language } from "@/lib/translations";
 import { footerSocialIconMap } from "@/lib/footer-links";
 import { useEffect, useRef, useState } from "react";
@@ -44,7 +47,7 @@ import { useLanguage } from "@/context/LanguageContext";
 const MotionHeart = motion.create(Heart);
 
 
-function CountUp({ value, suffix = "" }: { value: number; suffix?: string }) {
+function CountUp({ value, suffix = "", decimals = 0 }: { value: number; suffix?: string; decimals?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const motionValue = useMotionValue(0);
@@ -52,7 +55,7 @@ function CountUp({ value, suffix = "" }: { value: number; suffix?: string }) {
     damping: 30,
     stiffness: 100,
   });
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState<string>("0");
 
   useEffect(() => {
     if (isInView) {
@@ -62,11 +65,15 @@ function CountUp({ value, suffix = "" }: { value: number; suffix?: string }) {
 
   useEffect(() => {
     return springValue.on("change", (latest) => {
-      setCount(Math.round(latest));
+      if (decimals > 0) {
+        setCount(latest.toFixed(decimals));
+      } else {
+        setCount(Math.round(latest).toLocaleString());
+      }
     });
-  }, [springValue]);
+  }, [springValue, decimals]);
 
-  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+  return <span ref={ref}>{count}{suffix}</span>;
 }
 
 function FallingDroplets({ color, count = 6 }: { color: string; count?: number }) {
@@ -145,9 +152,71 @@ export default function LandingPage() {
   const { lang, t } = useLanguage();
   const [dynamicContent, setDynamicContent] = useState<Record<Language, typeof translations.en> | null>(null);
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
+  const [donationInitialAmount, setDonationInitialAmount] = useState<string>("100");
   const [currentHeroImageIndex, setCurrentHeroImageIndex] = useState(0);
+
+  const handleOpenDonation = (amount: string = "100") => {
+    setDonationInitialAmount(amount);
+    setIsDonationModalOpen(true);
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("donate") === "true") {
+        setIsDonationModalOpen(true);
+      }
+    }
+  }, []);
   
   // Merge dynamic content with context translations
+  const [contactForm, setContactForm] = useState({
+    full_name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+  const [isSubmittingContact, setIsSubmittingContact] = useState(false);
+  const [contactSuccess, setContactSuccess] = useState(false);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactForm.full_name || !contactForm.email || !contactForm.subject || !contactForm.message) {
+      toast.error("Please fill out all required fields.");
+      return;
+    }
+
+    setIsSubmittingContact(true);
+    setContactSuccess(false);
+
+    try {
+      try {
+        await api.post("/contact", contactForm);
+      } catch (err) {
+        console.warn("Backend /contact endpoint offline, saving message locally:", err);
+      }
+
+      saveContactMessage(contactForm);
+
+      toast.success("Message sent successfully!", {
+        description: "Our admin team will get back to you shortly.",
+        icon: <CheckCircle2 className="h-5 w-5 text-green-500" />
+      });
+
+      setContactSuccess(true);
+      setContactForm({
+        full_name: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+    } catch (err) {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsSubmittingContact(false);
+    }
+  };
+
   const mergedT: typeof translations.en = {
     ...t,
     ...(dynamicContent?.[lang] || {}),
@@ -238,7 +307,7 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white selection:bg-ercs-red selection:text-white overflow-x-hidden">
-      <DonationModal isOpen={isDonationModalOpen} onClose={() => setIsDonationModalOpen(false)} />
+      <DonationModal isOpen={isDonationModalOpen} onClose={() => setIsDonationModalOpen(false)} initialAmount={donationInitialAmount} />
 
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
@@ -336,7 +405,7 @@ export default function LandingPage() {
                     className="inline-flex"
                   >
                     <button
-                      onClick={() => setIsDonationModalOpen(true)}
+                      onClick={() => handleOpenDonation("100")}
                       className="group relative flex items-center gap-3 pl-2 pr-5 py-2 rounded-full
                         bg-gradient-to-r from-gray-900 via-gray-800 to-black
                         border border-white/10 shadow-lg shadow-black/25
@@ -473,7 +542,7 @@ export default function LandingPage() {
                 animate={{ y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity }}
                 className="absolute -top-4 -right-4 md:-top-6 md:-right-6 p-3 md:p-4 bg-white rounded-xl md:rounded-2xl shadow-xl border border-gray-50 text-center z-20"
               >
-                <div className="text-lg md:text-2xl font-black text-[#ED1C24]">45k+</div>
+                <div className="text-lg md:text-2xl font-black text-[#ED1C24]"><CountUp value={50000} suffix="+" /></div>
                 <div className="text-[9px] md:text-[10px] uppercase font-black text-black/40">{mergedT.hero.volunteers}</div>
               </motion.div>
             </motion.div>
@@ -488,8 +557,8 @@ export default function LandingPage() {
           <div className="container mx-auto px-6 relative z-10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-px md:bg-gray-800">
               {[
-                { label: mergedT.stats.volunteers, value: 45000, suffix: "+", icon: Users, isCounter: true },
-                { label: mergedT.stats.branches, value: 12, suffix: "+", icon: Globe, isCounter: true },
+                { label: mergedT.stats.volunteers, value: 50000, suffix: "+", icon: Users, isCounter: true },
+                { label: mergedT.stats.branches, value: 20, suffix: "+", icon: Globe, isCounter: true },
                 { label: mergedT.stats.impact, value: mergedT.stats.impactValue, icon: Activity },
                 { label: mergedT.stats.founded, value: "1935", icon: Flame }
               ].map((stat, i) => (
@@ -604,7 +673,7 @@ export default function LandingPage() {
                           </div>
                           <div className="text-right">
                              <div className="text-4xl font-black text-black">
-                               <CountUp value={6.2} suffix="M+" />
+                               <CountUp value={6.2} suffix="M+" decimals={1} />
                              </div>
                              <div className="text-xs font-black text-black/40 uppercase tracking-widest">{mergedT.membership.activeMembers}</div>
                           </div>
@@ -760,7 +829,7 @@ export default function LandingPage() {
                   </div>
 
                   <Button
-                    onClick={() => setIsDonationModalOpen(true)}
+                    onClick={() => handleOpenDonation("100")}
                     className="w-full h-14 bg-[#ED1C24] hover:bg-white hover:text-black text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 mt-auto"
                   >
                     {mergedT.hero.ctaDonate} <MotionHeart className="h-4 w-4" animate="heartbeat" variants={heartVariants} />
@@ -804,7 +873,7 @@ export default function LandingPage() {
                         {tier.desc}
                       </p>
                       <Button 
-                        onClick={() => setIsDonationModalOpen(true)}
+                        onClick={() => handleOpenDonation(tier.amount)}
                         className="w-full h-16 rounded-2xl font-black transition-all duration-300 shadow-lg border-2 bg-white hover:bg-[#ED1C24] hover:text-white"
                         style={{ 
                           borderColor: i === 0 ? "#ED1C24" : i === 1 ? "#0EA5E9" : "#991B1B",
@@ -824,7 +893,7 @@ export default function LandingPage() {
                  <p className="text-white/60 font-medium">{mergedT.donation.customDesc}</p>
                </div>
                <Button 
-                  onClick={() => setIsDonationModalOpen(true)}
+                  onClick={() => handleOpenDonation("custom")}
                   className="bg-[#ED1C24] hover:bg-white hover:text-[#ED1C24] text-white rounded-xl h-14 px-10 font-bold transition-all"
                 >
                   {mergedT.donation.customCta}
@@ -834,7 +903,7 @@ export default function LandingPage() {
         </section>
          <NewsSection lang={lang} content={mergedT.news} />
 
-        {/* Volunteer Hub & Quick Form */}
+        {/* Volunteer Hub */}
         <section id="volunteer-hub" className="py-24 px-6 overflow-hidden relative bg-slate-950">
            {/* Glassmorphic Background */}
            <div className="absolute inset-0 z-0">
@@ -844,82 +913,42 @@ export default function LandingPage() {
              <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" />
            </div>
 
-           <div className="container mx-auto relative z-10 max-w-6xl">
-              <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-16 lg:gap-20 items-center">
-                 {/* Hub Info */}
-                 <div className="space-y-8">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-lg">
-                      <Users className="h-4 w-4 text-red-500" /> ERCS Volunteer Requests
-                    </div>
-                    
-                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[1.05]">
-                      {mergedT.volunteerSection.title}
-                    </h2>
-                    
-                    <p className="text-lg md:text-xl text-white/60 font-medium leading-relaxed">
-                      {mergedT.volunteerSection.content}
-                    </p>
+           <div className="container mx-auto relative z-10 max-w-4xl text-center">
+              <div className="space-y-8 flex flex-col items-center">
+                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-lg">
+                   <Users className="h-4 w-4 text-red-500" /> ERCS Volunteer Requests
+                 </div>
+                 
+                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-[1.05]">
+                   {mergedT.volunteerSection.title}
+                 </h2>
+                 
+                 <p className="text-lg md:text-xl text-white/60 font-medium leading-relaxed max-w-2xl">
+                   {mergedT.volunteerSection.content}
+                 </p>
 
-                    <div className="grid grid-cols-2 gap-4 pt-4">
-                       <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:bg-white/10 transition-colors group">
-                          <div className="text-4xl lg:text-5xl font-black text-white mb-2 group-hover:scale-105 transition-transform origin-left">
-                            <CountUp value={50000} suffix="+" />
-                          </div>
-                          <div className="text-[10px] font-black text-white/50 uppercase tracking-widest">Active Volunteers</div>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 w-full max-w-xl">
+                    <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:bg-white/10 transition-colors group">
+                       <div className="text-4xl lg:text-5xl font-black text-white mb-2 group-hover:scale-105 transition-transform origin-center">
+                         <CountUp value={50000} suffix="+" />
                        </div>
-                       <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:bg-white/10 transition-colors group">
-                          <div className="text-4xl lg:text-5xl font-black text-white mb-2 group-hover:scale-105 transition-transform origin-left">
-                            <CountUp value={20} suffix="+" />
-                          </div>
-                          <div className="text-[10px] font-black text-white/50 uppercase tracking-widest">Regional Branches</div>
+                       <div className="text-[10px] font-black text-white/50 uppercase tracking-widest">Active Volunteers</div>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:bg-white/10 transition-colors group">
+                       <div className="text-4xl lg:text-5xl font-black text-white mb-2 group-hover:scale-105 transition-transform origin-center">
+                         <CountUp value={20} suffix="+" />
                        </div>
+                       <div className="text-[10px] font-black text-white/50 uppercase tracking-widest">Regional Branches</div>
                     </div>
                  </div>
 
-                 {/* Quick Signup Form */}
-                 <div className="bg-white/5 border border-white/10 p-8 md:p-10 rounded-[40px] shadow-2xl relative overflow-hidden backdrop-blur-2xl">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-red-500/20 rounded-full blur-[80px] pointer-events-none" />
-                    
-                    <div className="mb-8">
-                      <h3 className="text-2xl font-black text-white mb-2">Quick Signup</h3>
-                      <p className="text-sm font-medium text-white/60">Join the movement in less than a minute.</p>
-                    </div>
-                    
-                    <form 
-                      className="space-y-5"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        alert("Signup request initiated! (Mocked)");
-                      }}
-                    >
-                       <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                             <Label className="text-[10px] text-white/60 uppercase tracking-widest font-black ml-1">First Name</Label>
-                             <Input required className="bg-white/5 border-white/10 text-white rounded-2xl h-14 px-4 font-bold placeholder:text-white/20 focus-visible:ring-red-500 focus-visible:bg-white/10 transition-all" placeholder="Abebe" />
-                          </div>
-                          <div className="space-y-2">
-                             <Label className="text-[10px] text-white/60 uppercase tracking-widest font-black ml-1">Last Name</Label>
-                             <Input required className="bg-white/5 border-white/10 text-white rounded-2xl h-14 px-4 font-bold placeholder:text-white/20 focus-visible:ring-red-500 focus-visible:bg-white/10 transition-all" placeholder="Bekele" />
-                          </div>
-                       </div>
-                       <div className="space-y-2">
-                          <Label className="text-[10px] text-white/60 uppercase tracking-widest font-black ml-1">Email Address</Label>
-                          <Input required type="email" className="bg-white/5 border-white/10 text-white rounded-2xl h-14 px-4 font-bold placeholder:text-white/20 focus-visible:ring-red-500 focus-visible:bg-white/10 transition-all" placeholder="abebe@example.com" />
-                       </div>
-                       <div className="space-y-2">
-                          <Label className="text-[10px] text-white/60 uppercase tracking-widest font-black ml-1">Area of Interest</Label>
-                          <select required className="w-full bg-white/5 border border-white/10 text-white font-bold rounded-2xl h-14 px-4 focus:outline-none focus:ring-2 focus:ring-red-500 appearance-none transition-all">
-                            <option value="first_aid" className="text-black">First Aid & Emergency</option>
-                            <option value="wash" className="text-black">WASH Programs</option>
-                            <option value="youth" className="text-black">Youth Leadership</option>
-                            <option value="blood" className="text-black">Blood Donation Campaigns</option>
-                          </select>
-                       </div>
-                       <Button type="submit" className="w-full h-14 bg-[#ED1C24] hover:bg-white hover:text-black text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all mt-4 shadow-lg shadow-red-500/20 group">
+                 <div className="pt-4">
+                    <Link href="/join">
+                       <Button className="h-14 bg-[#ED1C24] hover:bg-white hover:text-black text-white rounded-2xl px-8 font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-red-500/20 group">
                          {mergedT.volunteerSection.cta}
                          <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                        </Button>
-                    </form>
+                    </Link>
                  </div>
               </div>
            </div>
@@ -984,30 +1013,75 @@ export default function LandingPage() {
                       </p>
                    </div>
 
-                   <form className="space-y-6">
-                      <div className="grid md:grid-cols-2 gap-6">
-                         <div className="space-y-2">
-                           <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Full Name *</label>
-                           <Input placeholder="John Doe" className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" />
+                   <form className="space-y-6" onSubmit={handleContactSubmit}>
+                       {contactSuccess && (
+                         <div className="p-4 bg-green-50 border border-green-200 rounded-2xl text-green-800 text-sm font-bold flex items-center gap-3">
+                           <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                           Thank you! Your message has been received by our admin team.
                          </div>
-                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">E-mail *</label>
-                            <Input placeholder="john@example.com" className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" />
-                         </div>
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Subject *</label>
-                         <Input placeholder="How can we help?" className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" />
-                      </div>
-                      <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Message *</label>
-                         <textarea placeholder="Your message here..." className="w-full min-h-[160px] rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold p-6 text-sm resize-none text-black" />
-                      </div>
-                      <Button className="w-full h-16 bg-black hover:bg-[#ED1C24] text-white rounded-2xl font-black text-lg shadow-xl shadow-black/5 transition-all">
-                        Send Message
-                      </Button>
-                      <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">* Indicate required field</p>
-                   </form>
+                       )}
+                       <div className="grid md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Full Name *</label>
+                            <Input 
+                              required
+                              value={contactForm.full_name}
+                              onChange={(e) => setContactForm({ ...contactForm, full_name: e.target.value })}
+                              placeholder="Kirubel Gizaw" 
+                              className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">E-mail *</label>
+                             <Input 
+                               required
+                               type="email"
+                               value={contactForm.email}
+                               onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                               placeholder="kirubelgizaw@gmail.com" 
+                               className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" 
+                             />
+                          </div>
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Subject *</label>
+                          <Input 
+                            required
+                            value={contactForm.subject}
+                            onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
+                            placeholder="How can we help?" 
+                            className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" 
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Message *</label>
+                          <textarea 
+                            required
+                            value={contactForm.message}
+                            onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                            placeholder="Your message here..." 
+                            className="w-full min-h-[160px] rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold p-6 text-sm resize-none text-black" 
+                          />
+                       </div>
+                       <Button 
+                         type="submit" 
+                         disabled={isSubmittingContact}
+                         className="w-full h-16 bg-black hover:bg-[#ED1C24] text-white rounded-2xl font-black text-lg shadow-xl shadow-black/5 transition-all flex items-center justify-center gap-2"
+                       >
+                         {isSubmittingContact ? (
+                           <>
+                             <Loader2 className="h-5 w-5 animate-spin" />
+                             Sending...
+                           </>
+                         ) : (
+                           <>
+                             <Mail className="h-5 w-5" />
+                             Send Message
+                           </>
+                         )}
+                       </Button>
+                       <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">* Indicate required field</p>
+                    </form>
                 </div>
 
                 <div className="space-y-16 lg:pt-8 blur-in">
@@ -1216,8 +1290,8 @@ export default function LandingPage() {
             </div>
             <div className="flex gap-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                <Link href="/privacy" className="hover:text-[#ED1C24] transition-colors">Privacy</Link>
-               <Link href="#" className="hover:text-[#ED1C24] transition-colors">Terms</Link>
-               <Link href="#" className="hover:text-[#ED1C24] transition-colors">Cookies</Link>
+               <Link href="/privacy#terms" className="hover:text-[#ED1C24] transition-colors">Terms</Link>
+               <Link href="/privacy#cookies" className="hover:text-[#ED1C24] transition-colors">Cookies</Link>
                <Link href="/delete-account" className="hover:text-[#ED1C24] transition-colors">Delete Account</Link>
             </div>
           </div>

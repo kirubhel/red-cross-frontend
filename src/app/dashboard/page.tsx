@@ -572,6 +572,37 @@ export default function DashboardPage() {
   // --- VOLUNTEER DASHBOARD VIEW (Original) ---
   return (
     <div className="p-6 md:p-10 space-y-10">
+      {!user?.photo && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[#ED1C24]/10 border border-[#ED1C24]/20 p-4 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3 text-[#ED1C24]">
+            <div className="h-10 w-10 bg-[#ED1C24] rounded-2xl flex items-center justify-center text-white shrink-0">
+              <AlertCircle className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-black uppercase tracking-tight">Profile Photo Missing</p>
+              <p className="text-xs font-medium opacity-80">Please upload your photo to complete your Digital ID card and verify your volunteer status.</p>
+            </div>
+          </div>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handlePhotoUpload} 
+            accept="image/*" 
+            className="hidden" 
+          />
+          <Button 
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-[#ED1C24] hover:bg-black text-white px-6 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-red-500/20"
+          >
+             {uploading ? "Uploading..." : "Upload Photo Now"}
+          </Button>
+        </motion.div>
+      )}
       
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">

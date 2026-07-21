@@ -21,7 +21,8 @@ import {
   ShieldCheck,
   Building2,
   BarChart3,
-  Sparkles
+  Sparkles,
+  Mail
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ const navigationSections = [
       { href: "/admin/ai-features", label: "AI Capabilities", icon: Sparkles },
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
       { href: "/admin/notifications", label: "Notifications", icon: Bell },
+      { href: "/admin/messages", label: "Contact Messages", icon: Mail },
       { href: "/admin/news", label: "News & Media", icon: Newspaper },
       { href: "/admin/cms", label: "Landing Page CMS", icon: LayoutDashboard },
     ]

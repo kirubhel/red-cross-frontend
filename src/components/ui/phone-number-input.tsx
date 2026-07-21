@@ -93,6 +93,7 @@ type PhoneNumberInputProps = {
   className?: string;
   /** Additional class for the number input */
   inputClassName?: string;
+  onBlur?: () => void;
 };
 
 /**
@@ -111,6 +112,7 @@ export default function PhoneNumberInput({
   disabled = false,
   className = "",
   inputClassName = "",
+  onBlur,
 }: PhoneNumberInputProps) {
   const maxLength = getLocalPhoneLength(countryCode);
   const selectedCountry = ALL_COUNTRIES.find((c) => c.code === countryCode);
@@ -179,6 +181,7 @@ export default function PhoneNumberInput({
         disabled={disabled}
         value={localNumber}
         onChange={handleNumberChange}
+        onBlur={onBlur}
         maxLength={maxLength}
         placeholder={"X".repeat(maxLength)}
         aria-label="Phone number (local)"

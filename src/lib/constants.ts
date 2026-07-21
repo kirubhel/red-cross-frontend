@@ -35,7 +35,6 @@ export const REGION_MAP_VALUE_TO_ID: Record<string, number> = {
 export const GENDER_OPTIONS = [
   { label: "Male", value: "MALE" },
   { label: "Female", value: "FEMALE" },
-  { label: "Other", value: "OTHER" },
 ];
 
 export const ETHIOPIA_LOCATION_DATA: Record<string, { zones: { id: string, name: string }[] }> = {

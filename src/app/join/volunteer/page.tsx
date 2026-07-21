@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,6 +53,7 @@ const ENGAGEMENT_AREAS = [
 import Header from "@/components/layout/Header";
 
 export default function VolunteerJoinPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1); // 1: Personal, 2: Engagement/Skills, 3: Success
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -71,8 +73,35 @@ export default function VolunteerJoinPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(false);
+  const [phoneExists, setPhoneExists] = useState(false);
   const [zones, setZones] = useState<any[]>([]);
   const [woredas, setWoredas] = useState<any[]>([]);
+
+  const handlePhoneBlur = async () => {
+    if (!formData.phoneNumber || formData.phoneNumber.length < 8) {
+      setPhoneExists(false);
+      return;
+    }
+    const fullPhone = buildFullPhoneNumber(formData.country || "ET", formData.phoneNumber);
+    setCheckingPhone(true);
+    try {
+      const res = await api.get(`/public/check-phone?phone=${encodeURIComponent(fullPhone)}`);
+      if (res.data?.exists) {
+        setPhoneExists(true);
+        setError("This phone number is already registered. If you already have an account, please log in.");
+      } else {
+        setPhoneExists(false);
+        if (error && error.includes("already registered")) {
+          setError("");
+        }
+      }
+    } catch (err) {
+      console.error("Error checking phone number:", err);
+    } finally {
+      setCheckingPhone(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -257,9 +286,12 @@ export default function VolunteerJoinPage() {
 
             // Save session
             if (res.data.access_token || res.data.accessToken) {
-                localStorage.setItem("access_token", res.data.access_token || res.data.accessToken);
+                const tokenVal = res.data.access_token || res.data.accessToken;
+                localStorage.setItem("token", tokenVal);
+                localStorage.setItem("access_token", tokenVal);
                 localStorage.setItem("user_role", "VOLUNTEER");
-                localStorage.setItem("ercs_id", res.data.ercs_id || res.data.ercsId);
+                const ercsIdVal = res.data.ercs_id || res.data.ercsId;
+                if (ercsIdVal) localStorage.setItem("ercs_id", ercsIdVal);
             }
 
             setStep(3);
@@ -345,17 +377,39 @@ export default function VolunteerJoinPage() {
                                               return (
                                                   <div key={field.id} className="space-y-1 group md:col-span-1">
                                                       <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
-                                                      <PhoneNumberInput
-                                                          countryCode={formData.country || "ET"}
-                                                          onCountryChange={(code) =>
-                                                              setFormData((prev: any) => ({ ...prev, country: code, phoneNumber: "" }))
-                                                          }
-                                                          localNumber={formData.phoneNumber}
-                                                          onLocalNumberChange={(val) =>
-                                                              setFormData((prev: any) => ({ ...prev, phoneNumber: val }))
-                                                          }
-                                                          required={field.required}
-                                                      />
+                                                      <div className="relative">
+                                                          <PhoneNumberInput
+                                                              countryCode={formData.country || "ET"}
+                                                              onCountryChange={(code) =>
+                                                                  setFormData((prev: any) => ({ ...prev, country: code, phoneNumber: "" }))
+                                                              }
+                                                              localNumber={formData.phoneNumber}
+                                                              onLocalNumberChange={(val) => {
+                                                                  setFormData((prev: any) => ({ ...prev, phoneNumber: val }));
+                                                                  if (phoneExists) setPhoneExists(false);
+                                                              }}
+                                                              onBlur={handlePhoneBlur}
+                                                              required={field.required}
+                                                          />
+                                                          {checkingPhone && (
+                                                              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                                                  <span className="text-[9px] font-bold text-black/40">Checking...</span>
+                                                                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-[#ED1C24] border-t-transparent" />
+                                                              </div>
+                                                          )}
+                                                      </div>
+                                                      {phoneExists && (
+                                                          <div className="mt-1 flex flex-col gap-1.5 p-2.5 bg-red-50 rounded-lg border border-red-100 text-left">
+                                                              <span className="text-[10px] font-bold text-[#ED1C24]">This phone number is already registered.</span>
+                                                              <button
+                                                                  type="button"
+                                                                  onClick={() => router.push("/login")}
+                                                                  className="text-left text-[9px] font-black text-black hover:text-[#ED1C24] uppercase tracking-wider underline transition-colors"
+                                                              >
+                                                                  Log In to Portal Now
+                                                              </button>
+                                                          </div>
+                                                      )}
                                                   </div>
                                               );
                                           }
@@ -561,8 +615,19 @@ export default function VolunteerJoinPage() {
                     {step === 3 && (
                         <motion.div key="step3" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 space-y-6">
                             <div className="mx-auto h-20 w-20 bg-green-50 rounded-[32px] flex items-center justify-center shadow-inner relative"><CheckCircle className="h-10 w-10 text-green-500" strokeWidth={3} /><div className="absolute -inset-2 rounded-[36px] border-2 border-green-100 animate-ping opacity-20" /></div>
-                            <div className="space-y-3"><h2 className="text-3xl font-black text-black tracking-tighter">Welcome home.</h2><p className="text-black/60 font-medium text-base leading-relaxed max-w-xs mx-auto">Your humanitarian journey has officially begun! We&apos;ll review your details and contact you shortly.</p></div>
-                            <Link href="/"><Button className="h-14 bg-black hover:bg-[#ED1C24] text-white rounded-2xl px-12 text-lg font-black shadow-xl transition-all">Back to Home</Button></Link>
+                            <div className="space-y-3"><h2 className="text-3xl font-black text-black tracking-tighter">Welcome home.</h2><p className="text-black/60 font-medium text-base leading-relaxed max-w-sm mx-auto">Your humanitarian journey has officially begun! You can now log into your portal dashboard to upload your profile photo and view your digital ID.</p></div>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
+                              <Link href="/dashboard">
+                                <Button className="h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl px-8 text-base font-black shadow-xl shadow-red-500/20 transition-all flex items-center justify-center gap-2">
+                                  Go to Portal Dashboard <ChevronRight className="h-5 w-5" />
+                                </Button>
+                              </Link>
+                              <Link href="/">
+                                <Button variant="outline" className="h-14 border-gray-200 hover:bg-gray-50 text-black rounded-2xl px-8 text-base font-black transition-all">
+                                  Back to Home
+                                </Button>
+                              </Link>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
