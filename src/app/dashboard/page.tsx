@@ -32,9 +32,11 @@ import { QRCodeCanvas } from "qrcode.react";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import html2canvas from "html2canvas";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -372,7 +374,10 @@ export default function DashboardPage() {
           {/* Telegram Connection */}
           <div className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm flex flex-col gap-4 min-h-[160px]">
              <p className="text-xs font-bold text-gray-500">Become a Telegram member to receive notifications.</p>
-             <button className="w-full bg-[#0088CC] hover:bg-[#0077B5] text-white py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-500/10">
+             <button 
+               onClick={() => window.open("https://t.me/ethiopianredcross", "_blank")}
+               className="w-full bg-[#0088CC] hover:bg-[#0077B5] text-white py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-500/10 cursor-pointer"
+             >
                 <MessageCircle className="h-4 w-4" /> Connect with Telegram
              </button>
           </div>
@@ -561,7 +566,10 @@ export default function DashboardPage() {
                  <p className="text-sm font-medium opacity-60">Keep your information up to date to ensure seamless access to ERCS benefits.</p>
               </div>
            </div>
-           <button className="whitespace-nowrap px-8 py-4 bg-white text-[#ED1C24] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all shadow-xl shadow-black/20">
+           <button 
+             onClick={() => router.push("/dashboard/profile")}
+             className="whitespace-nowrap px-8 py-4 bg-white text-[#ED1C24] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all shadow-xl shadow-black/20 cursor-pointer"
+           >
               Update Profile Information
            </button>
         </div>
@@ -622,12 +630,18 @@ export default function DashboardPage() {
 
         <div className="flex items-center gap-4">
           <div className="relative">
-            <button className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-gray-400 hover:text-black transition-colors">
+            <button 
+              onClick={() => router.push("/dashboard/notifications")}
+              className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-gray-400 hover:text-black transition-colors cursor-pointer"
+            >
               <Bell className="h-5 w-5" />
               <span className="absolute top-3 right-3 h-2 w-2 bg-[#ED1C24] rounded-full border-2 border-white" />
             </button>
           </div>
-          <button className="bg-[#ED1C24] text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+          <button 
+            onClick={() => router.push(isVolunteer ? "/dashboard/events" : "/join/member")}
+            className="bg-[#ED1C24] text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+          >
             {isVolunteer ? (
               <><Plus className="h-4 w-4" /> Log Service Hours</>
             ) : (
@@ -819,7 +833,11 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full h-14 rounded-2xl border-2 border-gray-100 font-black text-xs uppercase tracking-widest hover:bg-gray-50 hover:text-black">
+            <Button 
+              onClick={() => router.push("/news")}
+              variant="outline" 
+              className="w-full h-14 rounded-2xl border-2 border-gray-100 font-black text-xs uppercase tracking-widest hover:bg-gray-50 hover:text-black cursor-pointer"
+            >
               Explore All News
             </Button>
           </div>
@@ -834,7 +852,10 @@ export default function DashboardPage() {
                 <h3 className="text-2xl font-black tracking-tighter leading-tight">Every Birr <br />Saves a Life.</h3>
                 <p className="text-sm font-medium opacity-80">Support our emergency response funds to reach people in need faster.</p>
              </div>
-             <Button className="w-full h-14 bg-white text-[#ED1C24] hover:bg-black hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all">
+             <Button 
+                onClick={() => router.push("/donate")}
+                className="w-full h-14 bg-white text-[#ED1C24] hover:bg-black hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all cursor-pointer"
+             >
                 Donate Now
              </Button>
           </div>
