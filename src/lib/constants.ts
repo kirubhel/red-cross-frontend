@@ -207,95 +207,60 @@ export const ETHIOPIA_LOCATION_DATA: Record<string, { zones: { id: string, name:
   }
 };
 
+const makeStandardWoredas = (prefix: string, count = 7) => 
+  Array.from({ length: count }, (_, i) => {
+    const num = (i + 1).toString().padStart(2, "0");
+    return { id: `WOREDA_${prefix}_${num}`, name: `Woreda ${num}` };
+  });
+
 export const ZONE_WOREDA_DATA: Record<string, { id: string, name: string }[]> = {
-    "ZONE_aa_arada": [
-        { id: "WOREDA_aa_arada_01", name: "Woreda 01" },
-        { id: "WOREDA_aa_arada_02", name: "Woreda 02" },
-        { id: "WOREDA_aa_arada_03", name: "Woreda 03" },
-        { id: "WOREDA_aa_arada_04", name: "Woreda 04" },
-        { id: "WOREDA_aa_arada_05", name: "Woreda 05" },
-        { id: "WOREDA_aa_arada_06", name: "Woreda 06" },
-        { id: "WOREDA_aa_arada_07", name: "Woreda 07" },
-        { id: "WOREDA_aa_arada_08", name: "Woreda 08" },
-        { id: "WOREDA_aa_arada_09", name: "Woreda 09" },
-        { id: "WOREDA_aa_arada_10", name: "Woreda 10" },
-    ],
-    "ZONE_aa_kirkos": [
-        { id: "WOREDA_aa_kirkos_01", name: "Woreda 01" },
-        { id: "WOREDA_aa_kirkos_02", name: "Woreda 02" },
-        { id: "WOREDA_aa_kirkos_03", name: "Woreda 03" },
-        { id: "WOREDA_aa_kirkos_04", name: "Woreda 04" },
-        { id: "WOREDA_aa_kirkos_05", name: "Woreda 05" },
-        { id: "WOREDA_aa_kirkos_06", name: "Woreda 06" },
-        { id: "WOREDA_aa_kirkos_07", name: "Woreda 07" },
-        { id: "WOREDA_aa_kirkos_08", name: "Woreda 08" },
-        { id: "WOREDA_aa_kirkos_09", name: "Woreda 09" },
-        { id: "WOREDA_aa_kirkos_10", name: "Woreda 10" },
-    ],
-    "ZONE_aa_bole": [
-        { id: "WOREDA_aa_bole_01", name: "Woreda 01" },
-        { id: "WOREDA_aa_bole_02", name: "Woreda 02" },
-        { id: "WOREDA_aa_bole_03", name: "Woreda 03" },
-        { id: "WOREDA_aa_bole_04", name: "Woreda 04" },
-        { id: "WOREDA_aa_bole_05", name: "Woreda 05" },
-        { id: "WOREDA_aa_bole_06", name: "Woreda 06" },
-        { id: "WOREDA_aa_bole_07", name: "Woreda 07" },
-        { id: "WOREDA_aa_bole_08", name: "Woreda 08" },
-        { id: "WOREDA_aa_bole_09", name: "Woreda 09" },
-        { id: "WOREDA_aa_bole_10", name: "Woreda 10" },
-        { id: "WOREDA_aa_bole_11", name: "Woreda 11" },
-        { id: "WOREDA_aa_bole_12", name: "Woreda 12" },
-        { id: "WOREDA_aa_bole_13", name: "Woreda 13" },
-        { id: "WOREDA_aa_bole_14", name: "Woreda 14" },
-    ],
-    "ZONE_aa_yeka": [
-        { id: "WOREDA_aa_yeka_01", name: "Woreda 01" },
-        { id: "WOREDA_aa_yeka_02", name: "Woreda 02" },
-        { id: "WOREDA_aa_yeka_03", name: "Woreda 03" },
-        { id: "WOREDA_aa_yeka_04", name: "Woreda 04" },
-        { id: "WOREDA_aa_yeka_05", name: "Woreda 05" },
-        { id: "WOREDA_aa_yeka_06", name: "Woreda 06" },
-        { id: "WOREDA_aa_yeka_07", name: "Woreda 07" },
-        { id: "WOREDA_aa_yeka_08", name: "Woreda 08" },
-        { id: "WOREDA_aa_yeka_09", name: "Woreda 09" },
-        { id: "WOREDA_aa_yeka_10", name: "Woreda 10" },
-        { id: "WOREDA_aa_yeka_11", name: "Woreda 11" },
-        { id: "WOREDA_aa_yeka_12", name: "Woreda 12" },
-        { id: "WOREDA_aa_yeka_13", name: "Woreda 13" },
-    ],
-    "ZONE_aa_nifas_silk": [
-        { id: "WOREDA_aa_ns_01", name: "Woreda 01" },
-        { id: "WOREDA_aa_ns_02", name: "Woreda 02" },
-        { id: "WOREDA_aa_ns_03", name: "Woreda 03" },
-        { id: "WOREDA_aa_ns_04", name: "Woreda 04" },
-        { id: "WOREDA_aa_ns_05", name: "Woreda 05" },
-        { id: "WOREDA_aa_ns_06", name: "Woreda 06" },
-        { id: "WOREDA_aa_ns_07", name: "Woreda 07" },
-        { id: "WOREDA_aa_ns_08", name: "Woreda 08" },
-        { id: "WOREDA_aa_ns_09", name: "Woreda 09" },
-        { id: "WOREDA_aa_ns_10", name: "Woreda 10" },
-        { id: "WOREDA_aa_ns_11", name: "Woreda 11" },
-        { id: "WOREDA_aa_ns_12", name: "Woreda 12" },
-        { id: "WOREDA_aa_ns_13", name: "Woreda 13" },
-        { id: "WOREDA_aa_ns_14", name: "Woreda 14" },
-        { id: "WOREDA_aa_ns_15", name: "Woreda 15" },
-    ],
+    // Addis Ababa Sub-Cities
+    "ZONE_aa_arada": makeStandardWoredas("aa_arada", 10),
+    "ZONE_aa_kirkos": makeStandardWoredas("aa_kirkos", 11),
+    "ZONE_aa_bole": makeStandardWoredas("aa_bole", 14),
+    "ZONE_aa_yeka": makeStandardWoredas("aa_yeka", 13),
+    "ZONE_aa_nifas_silk": makeStandardWoredas("aa_ns", 15),
+    "ZONE_aa_lideta": makeStandardWoredas("aa_lideta", 10),
+    "ZONE_aa_gullele": makeStandardWoredas("aa_gullele", 10),
+    "ZONE_aa_akaki_kality": makeStandardWoredas("aa_akaki", 13),
+    "ZONE_aa_kolfe_keranio": makeStandardWoredas("aa_kolfe", 15),
+    "ZONE_aa_addis_ketema": makeStandardWoredas("aa_addis_ketema", 10),
+    "ZONE_aa_lemi_kura": makeStandardWoredas("aa_lemi_kura", 10),
+
+    // Regional Zones with specific woredas
     "ZONE_am_north_gondar": [
         { id: "WOREDA_am_ng_gondar", name: "Gondar Zuria" },
         { id: "WOREDA_am_ng_debarq", name: "Debarq" },
         { id: "WOREDA_am_ng_dabat", name: "Dabat" },
         { id: "WOREDA_am_ng_sanja", name: "Sanja" },
+        { id: "WOREDA_am_ng_05", name: "Woreda 05" },
+        { id: "WOREDA_am_ng_06", name: "Woreda 06" },
+        { id: "WOREDA_am_ng_07", name: "Woreda 07" },
     ],
     "ZONE_or_east_shewa": [
         { id: "WOREDA_or_es_adama", name: "Adama Zuria" },
         { id: "WOREDA_or_es_bishoftu", name: "Bishoftu" },
         { id: "WOREDA_or_es_mojo", name: "Mojo" },
         { id: "WOREDA_or_es_batu", name: "Batu (Ziway)" },
+        { id: "WOREDA_or_es_05", name: "Woreda 05" },
+        { id: "WOREDA_or_es_06", name: "Woreda 06" },
+        { id: "WOREDA_or_es_07", name: "Woreda 07" },
     ],
     "ZONE_tg_mekelle": [
         { id: "WOREDA_tg_mk_kedamay", name: "Kedamay Weyane" },
         { id: "WOREDA_tg_mk_hadnet", name: "Hadnet" },
         { id: "WOREDA_tg_mk_hawelti", name: "Hawelti" },
         { id: "WOREDA_tg_mk_ayder", name: "Ayder" },
+        { id: "WOREDA_tg_mk_05", name: "Woreda 05" },
+        { id: "WOREDA_tg_mk_06", name: "Woreda 06" },
+        { id: "WOREDA_tg_mk_07", name: "Woreda 07" },
     ]
+};
+
+export const getWoredasForZone = (zoneId: string) => {
+  if (ZONE_WOREDA_DATA[zoneId] && ZONE_WOREDA_DATA[zoneId].length > 0) {
+    return ZONE_WOREDA_DATA[zoneId];
+  }
+  // Default dynamic fallback: Woreda 01 through Woreda 07
+  return makeStandardWoredas(zoneId.replace("ZONE_", "").toLowerCase(), 7);
 };

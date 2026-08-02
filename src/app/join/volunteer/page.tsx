@@ -27,7 +27,7 @@ import {
 import PhoneNumberInput, { buildFullPhoneNumber, ALL_COUNTRIES } from "@/components/ui/phone-number-input";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
-import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS, ETHIOPIA_LOCATION_DATA, ZONE_WOREDA_DATA } from "@/lib/constants";
+import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS, ETHIOPIA_LOCATION_DATA, ZONE_WOREDA_DATA, getWoredasForZone } from "@/lib/constants";
 
 const ENGAGEMENT_AREAS = [
   "First Aid Service",
@@ -150,11 +150,11 @@ export default function VolunteerJoinPage() {
         if (res.data?.woredas && res.data.woredas.length > 0) {
           setWoredas(res.data.woredas);
         } else {
-          setWoredas(ZONE_WOREDA_DATA[formData.zone] || []);
+          setWoredas(getWoredasForZone(formData.zone));
         }
       }).catch(err => {
         console.error("Failed to fetch woredas:", err);
-        setWoredas(ZONE_WOREDA_DATA[formData.zone] || []);
+        setWoredas(getWoredasForZone(formData.zone));
       });
     } else {
       setWoredas([]);
