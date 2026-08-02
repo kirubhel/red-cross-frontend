@@ -1007,66 +1007,66 @@ export default function LandingPage() {
              <div className="grid lg:grid-cols-2 gap-20 items-start">
                 <div className="space-y-12">
                    <div className="space-y-6">
-                      <h2 className="text-5xl md:text-6xl font-black text-black tracking-tighter">{mergedT.contactSection.title}</h2>
-                      <p className="text-gray-500 text-lg font-medium max-w-md">
+                      <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">{mergedT.contactSection.title}</h2>
+                      <p className="text-gray-600 text-lg font-normal max-w-md leading-relaxed">
                         Have questions or want to collaborate? Reach out to our team using the form or contact details below.
                       </p>
                    </div>
 
                    <form className="space-y-6" onSubmit={handleContactSubmit}>
                        {contactSuccess && (
-                         <div className="p-4 bg-green-50 border border-green-200 rounded-2xl text-green-800 text-sm font-bold flex items-center gap-3">
+                         <div className="p-4 bg-green-50 border border-green-200 rounded-2xl text-green-800 text-sm font-semibold flex items-center gap-3">
                            <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
                            Thank you! Your message has been received by our admin team.
                          </div>
                        )}
                        <div className="grid md:grid-cols-2 gap-6">
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Full Name *</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24] ml-1">Full Name *</label>
                             <Input 
                               required
                               value={contactForm.full_name}
                               onChange={(e) => setContactForm({ ...contactForm, full_name: e.target.value })}
                               placeholder="Kirubel Gizaw" 
-                              className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" 
+                              className="h-14 rounded-2xl border-gray-200 bg-gray-50/50 focus:bg-white transition-all font-medium px-5 text-gray-900 placeholder:text-gray-400 placeholder:font-normal" 
                             />
                           </div>
                           <div className="space-y-2">
-                             <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">E-mail *</label>
+                             <label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24] ml-1">E-mail *</label>
                              <Input 
                                required
                                type="email"
                                value={contactForm.email}
                                onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
                                placeholder="kirubelgizaw@gmail.com" 
-                               className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" 
+                               className="h-14 rounded-2xl border-gray-200 bg-gray-50/50 focus:bg-white transition-all font-medium px-5 text-gray-900 placeholder:text-gray-400 placeholder:font-normal" 
                              />
                           </div>
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Subject *</label>
+                          <label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24] ml-1">Subject *</label>
                           <Input 
                             required
                             value={contactForm.subject}
                             onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
                             placeholder="How can we help?" 
-                            className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold px-6 text-black" 
+                            className="h-14 rounded-2xl border-gray-200 bg-gray-50/50 focus:bg-white transition-all font-medium px-5 text-gray-900 placeholder:text-gray-400 placeholder:font-normal" 
                           />
                        </div>
                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-2">Message *</label>
+                          <label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24] ml-1">Message *</label>
                           <textarea 
                             required
                             value={contactForm.message}
                             onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                             placeholder="Your message here..." 
-                            className="w-full min-h-[160px] rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold p-6 text-sm resize-none text-black" 
+                            className="w-full min-h-[160px] rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white transition-all font-medium p-5 text-sm resize-none text-gray-900 placeholder:text-gray-400 placeholder:font-normal" 
                           />
                        </div>
                        <Button 
                          type="submit" 
                          disabled={isSubmittingContact}
-                         className="w-full h-16 bg-black hover:bg-[#ED1C24] text-white rounded-2xl font-black text-lg shadow-xl shadow-black/5 transition-all flex items-center justify-center gap-2"
+                         className="w-full h-14 bg-black hover:bg-[#ED1C24] text-white rounded-2xl font-bold text-base shadow-lg shadow-black/5 transition-all flex items-center justify-center gap-2"
                        >
                          {isSubmittingContact ? (
                            <>
@@ -1080,62 +1080,62 @@ export default function LandingPage() {
                            </>
                          )}
                        </Button>
-                       <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">* Indicate required field</p>
+                       <p className="text-center text-xs font-medium text-gray-400 uppercase tracking-wider">* Indicate required field</p>
                     </form>
                 </div>
 
-                <div className="space-y-16 lg:pt-8 blur-in">
+                <div className="space-y-12 lg:pt-4">
                    <div>
-                      <h4 className="text-xs font-black uppercase tracking-[0.3em] text-[#ED1C24] mb-8">Find Us</h4>
-                      <div className="grid gap-10">
-                         <div className="flex gap-6 group">
-                            <div className="h-14 w-14 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-500">
-                               <MapPin className="h-6 w-6" />
+                      <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-[#ED1C24] mb-8">Find Us</h3>
+                      <div className="grid gap-8">
+                         <div className="flex gap-5 group items-start">
+                            <div className="h-12 w-12 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-300">
+                               <MapPin className="h-5 w-5" />
                             </div>
-                            <div className="space-y-1.5">
-                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Location Address</p>
-                               <p className="text-lg font-black text-black leading-tight underline decoration-[#ED1C24]/20 underline-offset-4">{mergedT.contactSection.address}</p>
-                            </div>
-                         </div>
-
-                         <div className="flex gap-6 group">
-                            <div className="h-14 w-14 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-500">
-                               <Mail className="h-6 w-6" />
-                            </div>
-                            <div className="space-y-1.5">
-                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</p>
-                               <p className="text-lg font-black text-black break-all leading-tight">{mergedT.contactSection.email}</p>
+                            <div className="space-y-1">
+                               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Location Address</p>
+                               <p className="text-base font-bold text-gray-900 leading-snug">{mergedT.contactSection.address}</p>
                             </div>
                          </div>
 
-                         <div className="grid md:grid-cols-2 gap-10">
-                            <div className="flex gap-6 group">
-                               <div className="h-14 w-14 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-500">
-                                  <Phone className="h-6 w-6" />
+                         <div className="flex gap-5 group items-start">
+                            <div className="h-12 w-12 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-300">
+                               <Mail className="h-5 w-5" />
+                            </div>
+                            <div className="space-y-1">
+                               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</p>
+                               <p className="text-sm sm:text-base font-medium text-gray-900 break-words leading-relaxed">{mergedT.contactSection.email}</p>
+                            </div>
+                         </div>
+
+                         <div className="grid md:grid-cols-2 gap-8">
+                            <div className="flex gap-5 group items-start">
+                               <div className="h-12 w-12 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-300">
+                                  <Phone className="h-5 w-5" />
                                </div>
-                               <div className="space-y-1.5">
-                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tel</p>
-                                  <p className="text-lg font-black text-black leading-tight whitespace-pre-line">{mergedT.contactSection.tel}</p>
+                               <div className="space-y-1">
+                                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tel</p>
+                                  <p className="text-sm sm:text-base font-medium text-gray-900 leading-relaxed whitespace-pre-line">{mergedT.contactSection.tel}</p>
                                </div>
                             </div>
-                            <div className="flex gap-6 group">
-                               <div className="h-14 w-14 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-500">
-                                  <Phone className="h-6 w-6" />
+                            <div className="flex gap-5 group items-start">
+                               <div className="h-12 w-12 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-300">
+                                  <Phone className="h-5 w-5" />
                                </div>
-                               <div className="space-y-1.5">
-                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mobile</p>
-                                  <p className="text-lg font-black text-black leading-tight whitespace-pre-line">{mergedT.contactSection.mobile}</p>
+                               <div className="space-y-1">
+                                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Mobile</p>
+                                  <p className="text-sm sm:text-base font-medium text-gray-900 leading-relaxed whitespace-pre-line">{mergedT.contactSection.mobile}</p>
                                </div>
                             </div>
                          </div>
 
-                         <div className="flex gap-6 group">
-                            <div className="h-14 w-14 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-500">
-                               <Plus className="h-6 w-6" />
+                         <div className="flex gap-5 group items-start">
+                            <div className="h-12 w-12 rounded-2xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 group-hover:bg-[#ED1C24] group-hover:text-white transition-all duration-300">
+                               <Plus className="h-5 w-5" />
                             </div>
-                            <div className="space-y-1.5">
-                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fax</p>
-                               <p className="text-lg font-black text-black leading-tight">{mergedT.contactSection.fax}</p>
+                            <div className="space-y-1">
+                               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Fax</p>
+                               <p className="text-sm sm:text-base font-medium text-gray-900 leading-relaxed">{mergedT.contactSection.fax}</p>
                             </div>
                          </div>
                       </div>

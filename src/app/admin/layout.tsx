@@ -22,22 +22,30 @@ export default function AdminLayout({
 }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingOrgs, setPendingOrgs] = useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchPendingOrgs = async () => {
+    const fetchPendingItems = async () => {
       try {
-        const res = await api.get('/organizations');
-        const list = res.data.organizations || [];
-        setPendingOrgs(list.filter((org: any) => org.status === 'PENDING'));
+        const [orgRes, reqRes] = await Promise.all([
+          api.get('/organizations').catch(() => ({ data: { organizations: [] } })),
+          api.get('/admin/volunteer-requests').catch(() => ({ data: { requests: [] } }))
+        ]);
+        
+        const orgList = orgRes.data.organizations || [];
+        setPendingOrgs(orgList.filter((org: any) => org.status === 'PENDING'));
+
+        const reqList = reqRes.data.requests || [];
+        setPendingRequests(reqList.filter((req: any) => req.status === 'PENDING'));
       } catch (err) {
-        console.error("Failed to fetch pending organizations", err);
+        console.error("Failed to fetch pending notifications", err);
       }
     };
-    fetchPendingOrgs();
+    fetchPendingItems();
 
-    const interval = setInterval(fetchPendingOrgs, 10000);
+    const interval = setInterval(fetchPendingItems, 8000);
     return () => clearInterval(interval);
   }, []);
 
@@ -84,7 +92,6 @@ export default function AdminLayout({
       eventSource.onerror = (error) => {
         console.error("EventSource failed:", error);
         eventSource.close();
-        // Try to reconnect
         setTimeout(connect, 5000);
       };
     };
@@ -97,6 +104,8 @@ export default function AdminLayout({
       }
     };
   }, []);
+
+  const totalNotifs = unreadCount + pendingOrgs.length + pendingRequests.length;
 
   return (
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden font-sans">
@@ -138,18 +147,18 @@ export default function AdminLayout({
                   cursor-pointer"
               >
                 <Bell className="h-5 w-5" />
-                {(unreadCount > 0 || pendingOrgs.length > 0) && (
+                {totalNotifs > 0 && (
                   <span className="absolute top-1 right-1 h-4 w-4 rounded-full
                     bg-[#ED1C24] border-2 border-white text-[8px] font-bold
-                    text-white flex items-center justify-center"
+                    text-white flex items-center justify-center animate-pulse"
                   >
-                    {unreadCount || pendingOrgs.length}
+                    {totalNotifs}
                   </span>
                 )}
               </button>
 
               {showNotifDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white
+                <div className="absolute right-0 top-full mt-2 w-88 bg-white
                   rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)]
                   border border-gray-100 p-4 z-50 animate-in fade-in
                   slide-in-from-top-2 duration-200"
@@ -162,53 +171,91 @@ export default function AdminLayout({
                     >
                       Notifications
                     </span>
-                    {pendingOrgs.length > 0 && (
+                    {totalNotifs > 0 && (
                       <span className="bg-red-50 text-[#ED1C24] text-[9px]
                         font-black px-2 py-0.5 rounded-full uppercase
                         tracking-wider"
                       >
-                        {pendingOrgs.length} pending
+                        {totalNotifs} new
                       </span>
                     )}
                   </div>
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {pendingOrgs.length > 0 ? (
-                      pendingOrgs.map((org: any) => (
-                        <div 
-                          key={org.id} 
-                          onClick={() => {
-                            setShowNotifDropdown(false);
-                            window.location.href = "/admin/organizations";
-                          }}
-                          className="p-3 rounded-xl bg-red-50/50 hover:bg-red-50
-                            border border-transparent hover:border-red-100/50
-                            transition-all cursor-pointer flex gap-3
-                            items-start"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-white flex
-                            items-center justify-center border border-red-50
-                            text-[#ED1C24] shrink-0 font-black text-xs"
+                  
+                  <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar-small">
+                    {/* Pending Volunteer Requests Section */}
+                    {pendingRequests.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#ED1C24]">
+                          Volunteer Requests ({pendingRequests.length})
+                        </span>
+                        {pendingRequests.map((req: any) => (
+                          <div 
+                            key={req.id} 
+                            onClick={() => {
+                              setShowNotifDropdown(false);
+                              window.location.href = "/admin/volunteer-requests";
+                            }}
+                            className="p-3 rounded-xl bg-blue-50/50 hover:bg-blue-50
+                              border border-blue-100/50 transition-all cursor-pointer flex gap-3
+                              items-start"
                           >
-                            ORG
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-black text-black
-                              leading-snug truncate"
+                            <div className="w-8 h-8 rounded-lg bg-blue-500 flex
+                              items-center justify-center text-white shrink-0 font-black text-[10px]"
                             >
-                              Approval Required
-                            </p>
-                            <p className="text-[10px] text-gray-500 font-bold
-                              leading-normal truncate"
-                            >
-                              Organization &ldquo;{org.name}&rdquo; is waiting for approval
-                            </p>
+                              REQ
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-black text-black leading-snug truncate">
+                                {req.title || req.activities_skills || "New Volunteer Request"}
+                              </p>
+                              <p className="text-[10px] text-gray-500 font-bold leading-normal truncate">
+                                {req.headcount} volunteers needed • Pending Approval
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))
-                    ) : (
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Pending Organizations Section */}
+                    {pendingOrgs.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#ED1C24]">
+                          Organization Registrations ({pendingOrgs.length})
+                        </span>
+                        {pendingOrgs.map((org: any) => (
+                          <div 
+                            key={org.id} 
+                            onClick={() => {
+                              setShowNotifDropdown(false);
+                              window.location.href = "/admin/organizations";
+                            }}
+                            className="p-3 rounded-xl bg-red-50/50 hover:bg-red-50
+                              border border-red-100/50 transition-all cursor-pointer flex gap-3
+                              items-start"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-[#ED1C24] flex
+                              items-center justify-center text-white shrink-0 font-black text-[10px]"
+                            >
+                              ORG
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-black text-black leading-snug truncate">
+                                Approval Required
+                              </p>
+                              <p className="text-[10px] text-gray-500 font-bold leading-normal truncate">
+                                &ldquo;{org.name}&rdquo; is waiting for approval
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {pendingRequests.length === 0 && pendingOrgs.length === 0 && (
                       <div className="py-6 text-center">
                         <p className="text-xs font-bold text-gray-400">
-                          No notifications present
+                          No pending notifications
                         </p>
                       </div>
                     )}

@@ -589,82 +589,82 @@ export default function OrganizationPortal() {
           )}
 
           {activeTab === 'profile' && profile && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-3xl mx-auto space-y-12">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-3xl mx-auto space-y-8">
                <div>
-                  <h1 className="text-4xl font-black tracking-tighter mb-2 text-slate-900">Profile <span className="text-[#ED1C24]">Settings</span></h1>
-                  <p className="text-slate-400 font-bold">Update your organization's public information.</p>
+                  <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-slate-900">Profile <span className="text-[#ED1C24]">Settings</span></h1>
+                  <p className="text-slate-500 font-medium text-xs">Update your organization's public information.</p>
                </div>
 
-               <form onSubmit={handleUpdateProfile} className="space-y-8 bg-white p-10 rounded-[40px] border border-slate-200 shadow-sm">
-                  <div className="grid md:grid-cols-2 gap-8">
-                     <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Organization Name</Label>
+               <form onSubmit={handleUpdateProfile} className="space-y-6 bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="grid md:grid-cols-2 gap-5">
+                     <div className="space-y-1.5">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Organization Name</Label>
                         <Input 
                           value={profile.name}
                           onChange={(e) => setProfile({...profile, name: e.target.value})}
-                          className="h-14 bg-slate-50 border-slate-200 rounded-xl font-bold"
+                          className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
                         />
                      </div>
-                     <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Type</Label>
+                     <div className="space-y-1.5">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Type</Label>
                         <Input 
                           value={profile.type}
                           onChange={(e) => setProfile({...profile, type: e.target.value})}
-                          className="h-14 bg-slate-50 border-slate-200 rounded-xl font-bold"
+                          className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
                         />
                      </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-8">
-                     <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Contact Person</Label>
+                  <div className="grid md:grid-cols-2 gap-5">
+                     <div className="space-y-1.5">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Contact Person</Label>
                         <Input 
                           value={profile.contact_person}
                           onChange={(e) => setProfile({...profile, contact_person: e.target.value})}
-                          className="h-14 bg-slate-50 border-slate-200 rounded-xl font-bold"
+                          className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
                         />
                      </div>
-                     <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Phone Number</Label>
+                     <div className="space-y-1.5">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Phone Number</Label>
                         <Input 
                           value={profile.phone}
                           onChange={(e) => setProfile({...profile, phone: e.target.value})}
-                          className="h-14 bg-slate-50 border-slate-200 rounded-xl font-bold"
+                          className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
                         />
                      </div>
                   </div>
 
-                  <div className="space-y-3">
-                     <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Email Address</Label>
+                  <div className="space-y-1.5">
+                     <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Email Address</Label>
                      <Input 
                         value={profile.email}
                         onChange={(e) => setProfile({...profile, email: e.target.value})}
-                        className="h-14 bg-slate-50 border-slate-200 rounded-xl font-bold"
+                        className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
                      />
                   </div>
 
-                  <div className="space-y-3">
-                     <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Website</Label>
+                  <div className="space-y-1.5">
+                     <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Website</Label>
                      <Input 
                         value={profile.website}
                         onChange={(e) => setProfile({...profile, website: e.target.value})}
-                        className="h-14 bg-slate-50 border-slate-200 rounded-xl font-bold"
+                        className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
                      />
                   </div>
 
-                  <div className="space-y-3">
-                     <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Description</Label>
+                  <div className="space-y-1.5">
+                     <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Description</Label>
                      <textarea 
                         value={profile.description}
                         onChange={(e) => setProfile({...profile, description: e.target.value})}
-                        className="w-full p-6 bg-slate-50 border border-slate-200 rounded-2xl font-medium text-sm min-h-[150px] outline-none focus:ring-2 focus:ring-[#ED1C24]/10"
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-sm min-h-[90px] outline-none focus:ring-2 focus:ring-[#ED1C24]/10 text-slate-900 resize-none"
                      />
                   </div>
 
                   <Button 
                     type="submit" 
                     disabled={updatingProfile}
-                    className="w-full h-16 bg-[#ED1C24] text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-[#ED1C24]/20 hover:bg-slate-900 transition-all"
+                    className="w-full h-11 bg-[#ED1C24] text-white rounded-xl font-bold uppercase tracking-wider text-xs shadow-md shadow-[#ED1C24]/20 hover:bg-slate-900 transition-all"
                   >
                     {updatingProfile ? "Updating..." : "Save Changes"}
                   </Button>
@@ -696,192 +696,191 @@ export default function OrganizationPortal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setShowForm(false)} />
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowForm(false)} />
             
             <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="w-full max-w-5xl bg-white border border-slate-200 rounded-[40px] p-8 md:p-12 shadow-2xl relative z-10 overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
+              exit={{ scale: 0.95, y: 15 }}
+              className="w-full max-w-3xl bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-2xl relative z-10 overflow-hidden max-h-[88vh] overflow-y-auto custom-scrollbar"
             >
-              <div className="absolute top-0 left-0 w-full h-2 bg-[#ED1C24]" />
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-[#ED1C24]" />
               
-              <div className="mb-10 flex items-center justify-between">
+              <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
-                  <h2 className="text-3xl font-black tracking-tighter mb-2 text-slate-900">New <span className="text-[#ED1C24]">Volunteer Request</span></h2>
-                  <p className="text-slate-400 font-bold">Specify your mission needs to find the right volunteers.</p>
+                  <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">New <span className="text-[#ED1C24]">Volunteer Request</span></h2>
+                  <p className="text-slate-500 font-medium text-xs mt-0.5">Specify your mission needs to find the right volunteers.</p>
                 </div>
-                <Button variant="ghost" onClick={() => setShowForm(false)} className="h-12 w-12 rounded-full hover:bg-slate-50">
-                  <Plus className="h-6 w-6 rotate-45 text-slate-400" />
+                <Button variant="ghost" onClick={() => setShowForm(false)} className="h-8 w-8 rounded-full p-0 hover:bg-slate-100">
+                  <Plus className="h-5 w-5 rotate-45 text-slate-400" />
                 </Button>
               </div>
 
-              <form onSubmit={handleCreateRequest} className="space-y-12">
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Mission Title *</Label>
+              <form onSubmit={handleCreateRequest} className="space-y-6">
+                {/* Title & Description */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Mission Title *</Label>
                     <Input 
                       placeholder="e.g. Emergency First Aid Support at Meskel Square"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="h-16 bg-slate-50 border-slate-200 rounded-2xl font-black text-lg text-slate-900"
+                      className="h-10 bg-slate-50 border-slate-200 rounded-xl font-semibold text-sm text-slate-900"
                       required
                     />
                   </div>
-                  <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Mission Description *</Label>
-                    <textarea 
-                      placeholder="Describe the mission details, expectations, and impact..."
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="w-full p-6 bg-slate-50 border border-slate-200 rounded-2xl font-medium text-sm min-h-[120px] outline-none focus:ring-2 focus:ring-[#ED1C24]/10"
-                      required
-                    />
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Volunteer Type</Label>
+                    <div className="flex gap-2">
+                      {["General Volunteer", "Professional Volunteer"].map(type => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setVolunteerType(type)}
+                          className={`flex-1 h-10 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${volunteerType === type ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:border-[#ED1C24]/30'}`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-12">
-                  <div className="space-y-8">
-                    <div className="space-y-4">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Voluntary Service Engagement Areas *</Label>
-                      <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar-small">
-                        {ENGAGEMENT_AREAS.map(area => (
-                          <label key={area} className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${selectedAreas.includes(area) ? 'bg-[#ED1C24]/5 border-[#ED1C24] text-[#ED1C24]' : 'bg-slate-50 border-slate-100 text-slate-500 hover:border-[#ED1C24]/30'}`}>
-                            <input 
-                              type="checkbox"
-                              className="hidden"
-                              checked={selectedAreas.includes(area)}
-                              onChange={() => {
-                                if (selectedAreas.includes(area)) {
-                                  setSelectedAreas(selectedAreas.filter(a => a !== area));
-                                } else {
-                                  setSelectedAreas([...selectedAreas, area]);
-                                }
-                              }}
-                            />
-                            <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center transition-colors ${selectedAreas.includes(area) ? 'bg-[#ED1C24] border-[#ED1C24]' : 'bg-white border-slate-200'}`}>
-                              {selectedAreas.includes(area) && <CheckCircle2 className="h-3 w-3 text-white" />}
-                            </div>
-                            <span className="text-xs font-black leading-tight">{area}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Mission Description *</Label>
+                  <textarea 
+                    placeholder="Describe the mission details, expectations, and impact..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-xs min-h-[70px] outline-none focus:ring-2 focus:ring-[#ED1C24]/10 text-slate-900 resize-none"
+                    required
+                  />
+                </div>
 
-                    <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Volunteer Type</Label>
-                        <div className="flex gap-4">
-                          {["General Volunteer", "Professional Volunteer"].map(type => (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() => setVolunteerType(type)}
-                              className={`flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border ${volunteerType === type ? 'bg-slate-900 text-white border-slate-900 shadow-lg' : 'bg-white text-slate-400 border-slate-200 hover:border-[#ED1C24]/30'}`}
-                            >
-                              {type}
-                            </button>
-                          ))}
-                        </div>
+                {/* Numbers Grid: Men, Women, Total, Experience */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Headcount & Personnel Breakdown</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100">
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-500">Men Count *</span>
+                      <Input 
+                        type="number"
+                        placeholder="0"
+                        value={menCount}
+                        onChange={(e) => setMenCount(e.target.value)}
+                        className="h-9 bg-white border-slate-200 rounded-xl font-bold text-sm text-slate-900"
+                        required
+                      />
                     </div>
-                  </div>
-
-                  <div className="space-y-8">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Total Headcount</Label>
-                        <Input 
-                          type="number"
-                          placeholder="Calculated automatically"
-                          value={headcount}
-                          readOnly
-                          className="h-16 bg-slate-100 border-slate-200 rounded-2xl font-black text-lg text-slate-900 cursor-not-allowed"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Min Experience (Yrs)</Label>
-                        <Input 
-                          type="number"
-                          placeholder="e.g. 2"
-                          value={minExperience}
-                          onChange={(e) => setMinExperience(e.target.value)}
-                          className="h-16 bg-slate-50 border-slate-200 rounded-2xl font-bold text-lg text-slate-900"
-                        />
-                      </div>
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-500">Women Count *</span>
+                      <Input 
+                        type="number"
+                        placeholder="0"
+                        value={womenCount}
+                        onChange={(e) => setWomenCount(e.target.value)}
+                        className="h-9 bg-white border-slate-200 rounded-xl font-bold text-sm text-slate-900"
+                        required
+                      />
                     </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                       <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Men Count</Label>
-                        <Input 
-                          type="number"
-                          placeholder="0"
-                          value={menCount}
-                          onChange={(e) => setMenCount(e.target.value)}
-                          className="h-16 bg-slate-50 border-slate-200 rounded-2xl font-bold text-lg text-slate-900"
-                        />
-                      </div>
-                       <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Women Count</Label>
-                        <Input 
-                          type="number"
-                          placeholder="0"
-                          value={womenCount}
-                          onChange={(e) => setWomenCount(e.target.value)}
-                          className="h-16 bg-slate-50 border-slate-200 rounded-2xl font-bold text-lg text-slate-900"
-                        />
-                      </div>
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-500">Total Headcount</span>
+                      <Input 
+                        type="number"
+                        placeholder="Auto"
+                        value={headcount}
+                        readOnly
+                        className="h-9 bg-slate-100 border-slate-200 rounded-xl font-bold text-sm text-slate-900 cursor-not-allowed"
+                      />
                     </div>
-
-                    <div className="space-y-3">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Specific Qualifications & Skills</Label>
-                      <textarea 
-                        placeholder="e.g. Medical background, First Aid certified, Fluency in Amharic..."
-                        value={qualifications}
-                        onChange={(e) => setQualifications(e.target.value)}
-                        className="w-full h-32 p-6 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#ED1C24]/20 font-bold text-sm text-slate-900 outline-none transition-all"
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-500">Min Experience (Yrs)</span>
+                      <Input 
+                        type="number"
+                        placeholder="e.g. 2"
+                        value={minExperience}
+                        onChange={(e) => setMinExperience(e.target.value)}
+                        className="h-9 bg-white border-slate-200 rounded-xl font-semibold text-sm text-slate-900"
                       />
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-6 pt-10 border-t border-slate-100">
+                {/* Engagement Areas & Qualifications */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Engagement Areas *</Label>
+                    <div className="grid grid-cols-1 gap-1.5 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar-small border border-slate-100 p-2 rounded-xl bg-slate-50/50">
+                      {ENGAGEMENT_AREAS.map(area => (
+                        <label key={area} className={`flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer ${selectedAreas.includes(area) ? 'bg-[#ED1C24]/5 border-[#ED1C24] text-[#ED1C24]' : 'bg-white border-slate-100 text-slate-600 hover:border-[#ED1C24]/30'}`}>
+                          <input 
+                            type="checkbox"
+                            className="hidden"
+                            checked={selectedAreas.includes(area)}
+                            onChange={() => {
+                              if (selectedAreas.includes(area)) {
+                                setSelectedAreas(selectedAreas.filter(a => a !== area));
+                              } else {
+                                setSelectedAreas([...selectedAreas, area]);
+                              }
+                            }}
+                          />
+                          <div className={`h-4 w-4 rounded border flex items-center justify-center transition-colors shrink-0 ${selectedAreas.includes(area) ? 'bg-[#ED1C24] border-[#ED1C24]' : 'bg-white border-slate-300'}`}>
+                            {selectedAreas.includes(area) && <CheckCircle2 className="h-3 w-3 text-white" />}
+                          </div>
+                          <span className="text-xs font-semibold leading-tight">{area}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Specific Qualifications & Skills *</Label>
+                    <textarea 
+                      placeholder="e.g. Medical background, First Aid certified, Fluency in Amharic..."
+                      value={qualifications}
+                      onChange={(e) => setQualifications(e.target.value)}
+                      className="w-full h-[140px] p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#ED1C24]/10 font-medium text-xs text-slate-900 outline-none transition-all resize-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Specific Activities Breakdown */}
+                <div className="space-y-3 pt-2 border-t border-slate-100">
                    <div className="flex items-center justify-between">
-                     <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Specific Activities Breakdown (Optional)</Label>
-                     <Button type="button" onClick={addActivity} variant="ghost" className="h-10 px-4 text-[10px] font-black uppercase tracking-widest text-[#ED1C24] hover:bg-[#ED1C24]/10 bg-[#ED1C24]/5 rounded-xl">
+                     <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Specific Activities Breakdown (Optional)</Label>
+                     <Button type="button" onClick={addActivity} variant="ghost" className="h-8 px-3 text-[10px] font-bold uppercase tracking-wider text-[#ED1C24] hover:bg-[#ED1C24]/10 bg-[#ED1C24]/5 rounded-lg">
                        <Plus className="h-3 w-3 mr-1" /> Add Activity
                      </Button>
                    </div>
                    
-                   <div className="grid md:grid-cols-2 gap-4">
+                   <div className="grid md:grid-cols-2 gap-3">
                      {activities.map((activity, index) => (
-                       <div key={index} className="flex gap-4 items-end bg-slate-50 p-4 rounded-3xl border border-slate-100 group">
-                         <div className="flex-1 space-y-2">
-                           <Input 
-                             placeholder="Activity name..."
-                             value={activity.name}
-                             onChange={(e) => updateActivity(index, "name", e.target.value)}
-                             className="h-12 bg-white border-slate-200 rounded-xl font-medium text-xs text-slate-900"
-                           />
-                         </div>
-                         <div className="w-20 space-y-2">
-                           <Input 
-                             type="number"
-                             placeholder="Qty"
-                             value={activity.count}
-                             onChange={(e) => updateActivity(index, "count", Number(e.target.value))}
-                             className="h-12 bg-white border-slate-200 rounded-xl font-black text-xs text-center text-slate-900"
-                           />
-                         </div>
+                       <div key={index} className="flex gap-2 items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                         <Input 
+                           placeholder="Activity name..."
+                           value={activity.name}
+                           onChange={(e) => updateActivity(index, "name", e.target.value)}
+                           className="h-9 bg-white border-slate-200 rounded-lg font-medium text-xs text-slate-900 flex-1"
+                         />
+                         <Input 
+                           type="number"
+                           placeholder="Qty"
+                           value={activity.count}
+                           onChange={(e) => updateActivity(index, "count", Number(e.target.value))}
+                           className="h-9 w-16 bg-white border-slate-200 rounded-lg font-bold text-xs text-center text-slate-900"
+                         />
                          {activities.length > 1 && (
                            <Button 
                              type="button" 
                              onClick={() => removeActivity(index)}
                              variant="ghost" 
-                             className="h-12 w-12 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100"
+                             className="h-9 w-9 p-0 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 shrink-0"
                            >
-                             <Trash2 className="h-4 w-4" />
+                             <Trash2 className="h-3.5 w-3.5" />
                            </Button>
                          )}
                        </div>
@@ -889,21 +888,22 @@ export default function OrganizationPortal() {
                    </div>
                 </div>
 
-                <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row gap-4">
+                {/* Action Footer */}
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowForm(false)}
+                    className="h-11 px-6 text-slate-600 font-bold uppercase tracking-wider text-xs border-slate-200 rounded-xl hover:bg-slate-100"
+                  >
+                    Cancel
+                  </Button>
                   <Button 
                     type="submit" 
                     disabled={submitting || selectedAreas.length === 0}
-                    className="flex-1 h-20 bg-[#ED1C24] hover:bg-slate-900 text-white rounded-3xl text-xl font-black uppercase tracking-widest transition-all shadow-2xl shadow-[#ED1C24]/20 disabled:opacity-50"
+                    className="h-11 px-8 bg-[#ED1C24] hover:bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-[#ED1C24]/20 disabled:opacity-50 flex items-center gap-2"
                   >
-                    {submitting ? "Processing..." : <span className="flex items-center gap-2">Publish Mission <Send className="h-5 w-5" /></span>}
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setShowForm(false)}
-                    className="h-20 px-10 text-slate-400 hover:text-slate-900 font-black uppercase tracking-widest text-xs"
-                  >
-                    Cancel
+                    {submitting ? "Processing..." : <>Publish Mission <Send className="h-4 w-4" /></>}
                   </Button>
                 </div>
               </form>
@@ -917,55 +917,55 @@ export default function OrganizationPortal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={() => setSelectedRequest(null)} />
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedRequest(null)} />
             
             <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="w-full max-w-4xl bg-white border border-slate-200 rounded-[40px] p-8 md:p-12 shadow-2xl relative z-10 overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
+              exit={{ scale: 0.95, y: 15 }}
+              className="w-full max-w-3xl bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-2xl relative z-10 overflow-hidden max-h-[88vh] overflow-y-auto custom-scrollbar"
             >
-              <div className="absolute top-0 left-0 w-full h-2 bg-slate-900" />
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-900" />
               
-              <div className="mb-8 flex items-center justify-between">
+              <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
-                  <h2 className="text-3xl font-black tracking-tighter mb-2 text-slate-900">Request <span className="text-[#ED1C24]">Details</span></h2>
-                  <p className="text-slate-400 font-bold">{selectedRequest.activities_skills}</p>
+                  <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Request <span className="text-[#ED1C24]">Details</span></h2>
+                  <p className="text-slate-500 font-medium text-xs mt-0.5">{selectedRequest.activities_skills}</p>
                 </div>
-                <Button variant="ghost" onClick={() => setSelectedRequest(null)} className="h-12 w-12 rounded-full hover:bg-slate-50">
-                  <Plus className="h-6 w-6 rotate-45 text-slate-400" />
+                <Button variant="ghost" onClick={() => setSelectedRequest(null)} className="h-8 w-8 rounded-full p-0 hover:bg-slate-100">
+                  <Plus className="h-5 w-5 rotate-45 text-slate-400" />
                 </Button>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="grid md:grid-cols-2 gap-6">
                 {/* Financial/Payment Section */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-black uppercase tracking-widest text-slate-900">Payment Status</h3>
-                  <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4">
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Payment Status</h3>
+                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-500">Total Amount</span>
-                      <span className="text-xl font-black text-slate-900">{selectedRequest.payment_amount || 0} ETB</span>
+                      <span className="text-xs font-semibold text-slate-500">Total Amount</span>
+                      <span className="text-lg font-bold text-slate-900">{selectedRequest.payment_amount || 0} ETB</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-500">Status</span>
+                      <span className="text-xs font-semibold text-slate-500">Status</span>
                       <StatusBadge status={selectedRequest.payment_status || "PENDING"} />
                     </div>
                     
                     {(!selectedRequest.payment_status || selectedRequest.payment_status === 'PENDING') && selectedRequest.status === 'APPROVED' && (
-                      <div className="pt-4 border-t border-slate-200 space-y-4 mt-4">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Submit Proof of Payment (Tx ID / Receipt URL)</Label>
+                      <div className="pt-3 border-t border-slate-200 space-y-3 mt-3">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Submit Proof of Payment (Tx ID / Receipt URL)</Label>
                         <Input 
                           placeholder="https://..."
                           value={paymentProofUrl}
                           onChange={(e) => setPaymentProofUrl(e.target.value)}
-                          className="h-12 bg-white border-slate-200 rounded-xl font-medium text-xs text-slate-900"
+                          className="h-10 bg-white border-slate-200 rounded-xl font-medium text-xs text-slate-900"
                         />
                         <Button 
                           onClick={handleSubmitPayment}
                           disabled={submittingPayment || !paymentProofUrl}
-                          className="w-full h-12 bg-[#ED1C24] hover:bg-black text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                          className="w-full h-10 bg-[#ED1C24] hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
                         >
                           {submittingPayment ? "Submitting..." : "Submit Payment"}
                         </Button>
@@ -975,28 +975,28 @@ export default function OrganizationPortal() {
                 </div>
 
                 {/* Volunteers/Assignments Section */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-black uppercase tracking-widest text-slate-900">Assigned Volunteers</h3>
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Assigned Volunteers</h3>
                   {loadingAssignments ? (
-                    <div className="p-8 text-center text-slate-400 font-black uppercase tracking-widest text-[10px] animate-pulse">Loading...</div>
+                    <div className="p-6 text-center text-slate-400 font-semibold text-xs animate-pulse">Loading...</div>
                   ) : assignments.length === 0 ? (
-                    <div className="bg-slate-50 p-8 rounded-3xl text-center border border-slate-100">
-                      <p className="text-slate-400 font-bold text-sm">No volunteers assigned yet. {selectedRequest.status !== 'APPROVED' ? "Wait for approval." : "Wait for matching."}</p>
+                    <div className="bg-slate-50 p-6 rounded-2xl text-center border border-slate-100">
+                      <p className="text-slate-400 font-medium text-xs">No volunteers assigned yet. {selectedRequest.status !== 'APPROVED' ? "Wait for approval." : "Wait for matching."}</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       {assignments.map(a => (
-                        <div key={a.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center justify-between">
+                        <div key={a.id} className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center justify-between">
                           <div>
-                            <p className="font-black text-slate-900 text-sm">{a.volunteer_name || "Unknown Volunteer"}</p>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">ID: {a.volunteer_id.substring(0,8)}</p>
+                            <p className="font-bold text-slate-900 text-sm">{a.volunteer_name || "Unknown Volunteer"}</p>
+                            <p className="text-[10px] font-semibold text-slate-400">ID: {a.volunteer_id.substring(0,8)}</p>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <span className={`text-[9px] font-black uppercase tracking-widest ${a.status === 'ONBOARDED' ? 'text-emerald-500' : 'text-blue-500'}`}>{a.status}</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${a.status === 'ONBOARDED' ? 'text-emerald-500' : 'text-blue-500'}`}>{a.status}</span>
                             {a.status === 'ASSIGNED' && (
                               <Button 
                                 onClick={() => handleOnboard(a.id)}
-                                className="h-8 px-4 bg-slate-900 hover:bg-[#ED1C24] text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                                className="h-7 px-3 bg-slate-900 hover:bg-[#ED1C24] text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all"
                               >
                                 Onboard
                               </Button>
@@ -1016,48 +1016,48 @@ export default function OrganizationPortal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-6"
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           >
-            <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setShowConfirmModal(false)} />
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowConfirmModal(false)} />
             <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
-              className="w-full max-w-lg bg-white rounded-[40px] p-10 shadow-2xl relative z-10 text-center"
+              className="w-full max-w-md bg-white rounded-3xl p-6 md:p-8 shadow-2xl relative z-10 text-center"
             >
-              <div className="h-20 w-20 bg-[#ED1C24]/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
-                <AlertCircle className="h-10 w-10 text-[#ED1C24]" />
+              <div className="h-14 w-14 bg-[#ED1C24]/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                <AlertCircle className="h-7 w-7 text-[#ED1C24]" />
               </div>
-              <h2 className="text-3xl font-black tracking-tighter mb-4 text-slate-900">Confirm <span className="text-[#ED1C24]">Mission Request</span></h2>
-              <p className="text-slate-400 font-bold mb-8">You are requesting {tempPayload.headcount} volunteers. Please review the estimated costs below.</p>
+              <h2 className="text-2xl font-extrabold tracking-tight mb-2 text-slate-900">Confirm <span className="text-[#ED1C24]">Mission Request</span></h2>
+              <p className="text-slate-500 font-medium text-xs mb-6">You are requesting {tempPayload.headcount} volunteers. Please review the estimated costs below.</p>
               
-              <div className="bg-slate-50 rounded-3xl p-6 mb-8 space-y-4 border border-slate-100">
-                <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-slate-500">
+              <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3 border border-slate-100">
+                <div className="flex justify-between items-center text-xs font-semibold text-slate-500">
                   <span>Volunteers</span>
-                  <span className="text-slate-900">{tempPayload.headcount}</span>
+                  <span className="text-slate-900 font-bold">{tempPayload.headcount}</span>
                 </div>
-                <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-slate-500">
+                <div className="flex justify-between items-center text-xs font-semibold text-slate-500">
                   <span>Rate per Volunteer</span>
-                  <span className="text-slate-900">{profile?.rate_per_volunteer || 0} ETB</span>
+                  <span className="text-slate-900 font-bold">{profile?.rate_per_volunteer || 0} ETB</span>
                 </div>
                 <div className="h-px bg-slate-200" />
-                <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest text-[#ED1C24]">
+                <div className="flex justify-between items-center text-xs font-bold text-[#ED1C24]">
                   <span>Total Estimated Cost</span>
-                  <span className="text-xl font-black text-slate-900">{(tempPayload.headcount * (profile?.rate_per_volunteer || 0)).toLocaleString()} ETB</span>
+                  <span className="text-lg font-extrabold text-slate-900">{(tempPayload.headcount * (profile?.rate_per_volunteer || 0)).toLocaleString()} ETB</span>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <Button 
                   variant="outline" 
                   onClick={() => setShowConfirmModal(false)}
-                  className="h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] border-slate-200"
+                  className="h-11 rounded-xl font-bold uppercase tracking-wider text-xs border-slate-200"
                 >
                   Cancel
                 </Button>
                 <Button 
                   onClick={confirmSubmitRequest}
                   disabled={submitting}
-                  className="h-14 bg-[#ED1C24] hover:bg-black text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-[#ED1C24]/20"
+                  className="h-11 bg-[#ED1C24] hover:bg-black text-white rounded-xl font-bold uppercase tracking-wider text-xs shadow-md shadow-[#ED1C24]/20"
                 >
                   {submitting ? "Submitting..." : "Confirm & Send"}
                 </Button>

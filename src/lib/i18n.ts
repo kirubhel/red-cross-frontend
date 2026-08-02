@@ -87,7 +87,7 @@ const dictionaries: Record<Language, TranslationDictionary> = {
     volunteers: {
       title: 'Bulchiinsa Tajaajiltootaa',
       emergencyReadiness: 'Karta Ariifachiisaa',
-      incentivePoints: 'Qabxii Kakka''umsaa',
+      incentivePoints: 'Qabxii Kakka\'umsaa',
       rankTier: 'Sadarkaa',
       verifySkill: 'Ragaa Mirkaneessuu',
     },
