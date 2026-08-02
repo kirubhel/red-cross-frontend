@@ -24,7 +24,33 @@ export default function AdminLayout({
   const [pendingOrgs, setPendingOrgs] = useState<any[]>([]);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const [adminInfo, setAdminInfo] = useState({ title: "Admin User", scope: "SUPER ADMIN — ALL REGIONS" });
   const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem("user_role") || "SUPER_ADMIN";
+    const regId = localStorage.getItem("user_region") || "0";
+    const zoneId = localStorage.getItem("user_zone") || "";
+    const woredaId = localStorage.getItem("user_woreda") || "";
+
+    const REGIONS: Record<string, string> = {
+      "1": "Addis Ababa", "2": "Dire Dawa", "3": "Tigray", "4": "Afar",
+      "5": "Amhara", "6": "Oromia", "7": "Somali", "8": "Benishangul Gumz",
+      "9": "Central Ethiopia", "10": "Gambela", "11": "Harari", "12": "Sidama",
+      "13": "South West Ethiopia", "14": "South Ethiopia"
+    };
+    const regName = REGIONS[regId] || (regId !== "0" ? `REGION ${regId}` : "ALL REGIONS");
+
+    if (role === "SUPER_ADMIN" || role === "1") {
+      setAdminInfo({ title: "Super Admin", scope: "SUPER ADMIN — ALL REGIONS" });
+    } else if (role === "REGIONAL_ADMIN" || role === "2") {
+      setAdminInfo({ title: "Regional Admin", scope: `REGIONAL ADMIN — ${regName.toUpperCase()}` });
+    } else if (role === "ZONE_ADMIN" || role === "3") {
+      setAdminInfo({ title: "Zone Admin", scope: `ZONE ADMIN — ${regName.toUpperCase()} / ZONE ${zoneId || '1'}` });
+    } else if (role === "BRANCH_OFFICER" || role === "4") {
+      setAdminInfo({ title: "Woreda Admin", scope: `WOREDA ADMIN — ${regName.toUpperCase()} / WOREDA ${woredaId || '1'}` });
+    }
+  }, []);
 
   useEffect(() => {
     const fetchPendingItems = async () => {
@@ -271,10 +297,10 @@ export default function AdminLayout({
                   <User className="h-4 w-4" />
                 </div>
                 <div className="hidden items-center gap-2.5 sm:flex">
-                  <span className="text-xs font-black text-black leading-none">Admin User</span>
+                  <span className="text-xs font-black text-black leading-none">{adminInfo.title}</span>
                   <div className="h-3 w-px bg-gray-200" />
-                  <span className="text-[9px] font-bold text-gray-400 tracking-widest uppercase flex items-center gap-1 leading-none mt-px">
-                    System Admin <ChevronRight className="h-3 w-3 text-gray-300 group-hover:text-[#ED1C24] transition-colors ml-0.5" />
+                  <span className="text-[9px] font-extrabold text-[#ED1C24] tracking-widest uppercase flex items-center gap-1 leading-none mt-px">
+                    {adminInfo.scope} <ChevronRight className="h-3 w-3 text-gray-300 group-hover:text-[#ED1C24] transition-colors ml-0.5" />
                   </span>
                 </div>
               </div>

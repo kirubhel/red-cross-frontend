@@ -141,11 +141,49 @@ export default function DashboardPage() {
         const regionId = userData?.region_id || userData?.region || 0;
         const regionName = REGIONS[regionId] || userData?.region_name || "South Ethiopia";
 
+        const firstName = userData?.first_name || userData?.firstName || "";
+        const fatherName = userData?.father_name || userData?.fatherName || "";
+        const grandfatherName = userData?.grandfather_name || userData?.grandfatherName || "";
+        const constructedName = [firstName, fatherName, grandfatherName].filter(Boolean).join(" ");
+        const fullName = constructedName || "Valued Member";
+        const personId = userData?.id || userData?.person_id || userData?.personId || "";
+
+        // 4. Fetch Payments / Total Donations
+        let totalDonations = 0;
+        let fetchedActivities: any[] = [];
+        try {
+          if (personId) {
+            const payRes = await api.get(`/payments?person_id=${personId}`);
+            const invoices = payRes.data.invoices || payRes.data || [];
+            if (Array.isArray(invoices)) {
+              invoices.forEach((inv: any) => {
+                const amt = parseFloat(inv.amount || inv.total_amount || 0);
+                if (inv.status === "PAID" || inv.status === "COMPLETED" || inv.status === "VERIFIED") {
+                  totalDonations += amt;
+                }
+                fetchedActivities.push({
+                  title: inv.description || inv.invoice_type || "Contribution",
+                  date: inv.created_at ? new Date(inv.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "Recent",
+                  amount: `${amt} ETB`,
+                  status: inv.status || "COMPLETED",
+                  icon: CreditCard,
+                  bg: "bg-green-50",
+                  color: "text-green-500"
+                });
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load user payments:", e);
+        }
+
         setUser({
-          firstName: userData?.first_name || "",
-          fatherName: userData?.father_name || "",
-          grandfatherName: userData?.grandfather_name || "",
-          fullName: `${userData?.first_name || ""} ${userData?.father_name || ""} ${userData?.grandfather_name || ""}`.trim(),
+          id: personId,
+          personId: personId,
+          firstName: firstName || "Valued",
+          fatherName: fatherName,
+          grandfatherName: grandfatherName,
+          fullName: fullName,
           memberId: userData?.ercs_id || storedErcsId || "NOT_ASSIGNED",
           status: status,
           isApproved: isApproved,
@@ -160,15 +198,15 @@ export default function DashboardPage() {
           email: userData?.email || "N/A",
           photo: userData?.photo_url || null,
           totalHours: totalHours,
+          donations: `${totalDonations} ETB`,
+          totalDonations: totalDonations,
           idAssets: idAssets,
           raw: userData
         });
 
-        // Mock activities for members
-        setActivities([
-          { title: "Monthly Membership Fee", date: "Today", amount: "10.00 ETB", status: "COMPLETED", icon: CreditCard, bg: "bg-green-50", color: "text-green-500" },
-          { title: "Quarterly Donation", date: "24 Mar 2024", amount: "250.00 ETB", status: "VERIFIED", icon: Heart, bg: "bg-red-50", color: "text-red-500" },
-        ]);
+        if (fetchedActivities.length > 0) {
+          setActivities(fetchedActivities);
+        }
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
       } finally {
@@ -719,7 +757,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col md:flex-row justify-between items-end gap-8">
                    <div className="space-y-1">
                      <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Full Name</p>
-                     <p className="text-2xl font-black tracking-tight">{user?.fullName || `${user?.firstName} ${user?.lastName}`}</p>
+                     <p className="text-2xl font-black tracking-tight">{user?.fullName && user.fullName !== "undefined undefined" ? user.fullName : (user?.firstName || "Valued Member")}</p>
                    </div>
                   <div className="space-y-1 text-right">
                     <p className="text-[10px] font-black uppercase tracking-widest opacity-40">System ID</p>

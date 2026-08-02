@@ -41,9 +41,26 @@ type Region = {
     code: string;
 };
 
+const DEFAULT_REGIONS: Region[] = [
+  { id: 1, name: "Addis Ababa", code: "AA" },
+  { id: 2, name: "Dire Dawa", code: "DD" },
+  { id: 3, name: "Tigray", code: "TG" },
+  { id: 4, name: "Afar", code: "AF" },
+  { id: 5, name: "Amhara", code: "AM" },
+  { id: 6, name: "Oromia", code: "OR" },
+  { id: 7, name: "Somali", code: "SM" },
+  { id: 8, name: "Benishangul Gumz", code: "BG" },
+  { id: 9, name: "Central Ethiopia", code: "CE" },
+  { id: 10, name: "Gambela", code: "GM" },
+  { id: 11, name: "Harari", code: "HR" },
+  { id: 12, name: "Sidama", code: "SD" },
+  { id: 13, name: "South West Ethiopia", code: "SW" },
+  { id: 14, name: "South Ethiopia", code: "SE" }
+];
+
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
-  const [regions, setRegions] = useState<Region[]>([]);
+  const [regions, setRegions] = useState<Region[]>(DEFAULT_REGIONS);
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -86,8 +103,11 @@ export default function MembersPage() {
   const fetchRegions = async () => {
     try {
         const res = await api.get("/system-settings");
-        if (res.data.settings && res.data.settings.all_regions) {
-            setRegions(JSON.parse(res.data.settings.all_regions));
+        if (res.data && res.data.settings && res.data.settings.all_regions) {
+            const parsed = JSON.parse(res.data.settings.all_regions);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setRegions(parsed);
+            }
         }
     } catch (err) {
         console.error("Failed to fetch regions:", err);
@@ -121,7 +141,7 @@ export default function MembersPage() {
         m.ercs_id,
         m.first_name,
         m.father_name,
-        regions.find(r => String(r.id) === String(m.region))?.name || String(m.region),
+        (regions || DEFAULT_REGIONS).find(r => String(r.id) === String(m.region))?.name || String(m.region),
         m.membership_type || "N/A",
         m.status || "Active"
     ]);
@@ -630,7 +650,7 @@ export default function MembersPage() {
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-4 font-black text-[9px] uppercase tracking-wider text-gray-400">
-                    {regions.find(r => String(r.id) === String(member.region))?.name || String(member.region)}
+                    {(regions || DEFAULT_REGIONS).find(r => String(r.id) === String(member.region))?.name || String(member.region)}
                   </TableCell>
                   <TableCell className="px-6 py-4 font-bold text-[11px] text-gray-500">
                     {(member as any).membership_type || (member as any).membershipType || "REGULAR"}
@@ -745,7 +765,7 @@ export default function MembersPage() {
                                         <div>
                                             <p className="text-[10px] font-black text-gray-400 uppercase">Location Hierarchy</p>
                                             <p className="text-xs font-bold text-black">
-                                                {regions.find(r => String(r.id) === String(selectedMember.region))?.name || "Unknown Region"}
+                                                {(regions || DEFAULT_REGIONS).find(r => String(r.id) === String(selectedMember.region))?.name || "Unknown Region"}
                                                 {((selectedMember as any).zone_id || (selectedMember as any).zoneId) && ` • ${(selectedMember as any).zone_id || (selectedMember as any).zoneId}`}
                                                 {((selectedMember as any).woreda_id || (selectedMember as any).woredaId) && ` • ${(selectedMember as any).woreda_id || (selectedMember as any).woredaId}`}
                                             </p>
@@ -813,7 +833,7 @@ export default function MembersPage() {
                 <h1 className="text-3xl font-black">Member Registry Report</h1>
                 <p className="text-gray-500 font-bold">Ethiopian Red Cross Society</p>
                 <div className="mt-4 grid grid-cols-2 gap-x-12 gap-y-2 text-xs">
-                    <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Region:</span> {regions.find(r => String(r.id) === regionFilter)?.name || "All"}</div>
+                    <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Region:</span> {(regions || DEFAULT_REGIONS).find(r => String(r.id) === regionFilter)?.name || "All"}</div>
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Status:</span> {statusFilter || "All"}</div>
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Generated:</span> {isMounted ? new Date().toLocaleString() : ""}</div>
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Total Count:</span> {totalItems}</div>
