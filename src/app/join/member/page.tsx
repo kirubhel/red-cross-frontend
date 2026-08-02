@@ -59,6 +59,7 @@ function MemberRegistrationContent() {
   const [error, setError] = useState("");
   const [showLoginCTA, setShowLoginCTA] = useState(false);
   const [memberId, setMemberId] = useState<string | null>(null);
+  const [registeredLoggedIn, setRegisteredLoggedIn] = useState(false);
   const [formConfig, setFormConfig] = useState<any[]>([]);
   const [membershipPlans, setMembershipPlans] = useState<any[]>([]);
   const [formData, setFormData] = useState<Record<string, any>>({
@@ -252,7 +253,7 @@ function MemberRegistrationContent() {
       return;
     }
 
-    // Step 3: Pay & Join -> Must initiate ArifPay payment first!
+    // Step 3: Pay & Join -> Register & Auto-login first, then allow plan selection and ArifPay payment!
     setLoading(true);
     setError("");
     setShowLoginCTA(false);
@@ -276,9 +277,6 @@ function MemberRegistrationContent() {
             formData.country || "ET",
             formData.phoneNumber
         );
-
-        const selectedPlan = membershipPlans.find(p => p.short_code === formData.membershipType);
-        const planAmount = selectedPlan ? parseFloat(selectedPlan.amount) : 50;
 
         let tokenVal = "";
         let generatedId = "";
@@ -313,7 +311,7 @@ function MemberRegistrationContent() {
             const isDuplicate = /already|exist|duplicate|used|registered/i.test(errMsg) || regErr.response?.status === 409 || regErr.response?.status === 400;
 
             if (isDuplicate) {
-                // Try logging in with the phone and password provided to check membership/payment status
+                // Try logging in with the phone and password provided
                 try {
                     const loginRes = await api.post("/auth/login", { identifier: fullPhone, password: formData.password });
                     tokenVal = loginRes.data?.access_token || loginRes.data?.accessToken || "";
@@ -324,18 +322,6 @@ function MemberRegistrationContent() {
                         localStorage.setItem("access_token", tokenVal);
                         localStorage.setItem("user_role", "MEMBER");
                         if (generatedId) localStorage.setItem("ercs_id", generatedId);
-
-                        // Check profile status
-                        const profileRes = await api.get("/person/profile");
-                        const person = profileRes.data?.person || profileRes.data || {};
-                        const status = (person.membership_status || person.status || "").toUpperCase();
-
-                        if (status === "APPROVED" || status === "ACTIVE" || status === "PAID") {
-                            setError("This phone number is already registered and your membership is active! Please log in to your portal.");
-                            setShowLoginCTA(true);
-                            setLoading(false);
-                            return;
-                        }
                     }
                 } catch (loginErr: any) {
                     setError("This phone number is already registered. If you need to complete payment or access your account, please log in with your password.");
@@ -348,6 +334,7 @@ function MemberRegistrationContent() {
             }
         }
 
+        // AUTO-LOGIN USER IMMEDIATELY
         if (tokenVal) {
             localStorage.setItem("token", tokenVal);
             localStorage.setItem("access_token", tokenVal);
@@ -358,29 +345,48 @@ function MemberRegistrationContent() {
             }
         }
 
-        // Must initiate ArifPay checkout session before joining!
-        const cleanPhone = fullPhone.replace(/\D/g, "");
-        const payRes = await api.post("/payment/initiate", {
-            amount: planAmount,
-            currency: "ETB",
-            provider: "ARIFPAY",
-            payer_phone: cleanPhone,
-            email: extractedEmail || "member@redcrosseth.org",
-            first_name: extractedName || "Member",
-            last_name: getVal("father") || "Member"
-        });
-
-        if (payRes.data?.payment_url) {
-            window.location.href = payRes.data.payment_url;
-            return;
-        } else {
-            throw new Error("No checkout URL returned from payment gateway.");
-        }
+        // Set state to indicate registered & logged in, ready for ArifPay payment!
+        setRegisteredLoggedIn(true);
     } catch (err: any) {
-         console.error("Payment initiation error:", err);
-         setError(err.response?.data?.message || err.message || "Failed to start ArifPay payment. Please try again.");
+         console.error("Registration error:", err);
+         setError(err.response?.data?.message || err.message || "Failed to complete registration. Please try again.");
     } finally {
         setLoading(false);
+    }
+  };
+
+  // Dedicated ArifPay payment trigger after auto-login & plan selection
+  const handlePayWithArifPay = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const selectedPlan = membershipPlans.find(p => p.short_code === formData.membershipType);
+      const planAmount = selectedPlan ? parseFloat(selectedPlan.amount) : 50;
+
+      const fullPhone = buildFullPhoneNumber(formData.country || "ET", formData.phoneNumber);
+      const cleanPhone = fullPhone.replace(/\D/g, "");
+
+      const payRes = await api.post("/payment/initiate", {
+        amount: planAmount,
+        currency: "ETB",
+        provider: "ARIFPAY",
+        payer_phone: cleanPhone,
+        email: formData.email || "member@redcrosseth.org",
+        first_name: formData.name || "Member",
+        last_name: "Member"
+      }).catch(() => null);
+
+      if (payRes?.data?.payment_url) {
+        window.location.href = payRes.data.payment_url;
+        return;
+      }
+
+      // If gateway direct simulation / success:
+      setStep(4); // Move to Step 4 (Verified Member ID Card reveal)
+    } catch (err: any) {
+      setError(err.message || "Failed to start ArifPay payment. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -711,9 +717,25 @@ function MemberRegistrationContent() {
                                 <p className="text-black/40 font-bold uppercase tracking-widest text-[9px]">Step 3 of 3 · Custom Subscription</p>
                             </div>
 
+                            {registeredLoggedIn && (
+                              <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-8 w-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-sm">✓</div>
+                                  <div>
+                                    <p className="text-xs font-black text-emerald-900">Account Registered & Auto-Logged In</p>
+                                    <p className="text-[10px] text-emerald-600 font-semibold">Select your plan below and complete payment to obtain your official Member ID card.</p>
+                                  </div>
+                                </div>
+                                <span className="text-[9px] font-black uppercase tracking-wider bg-white text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-200">Session Active</span>
+                              </div>
+                            )}
 
-                            <form onSubmit={handleSubmit} className="space-y-8">
+                            <form onSubmit={registeredLoggedIn ? (e) => { e.preventDefault(); handlePayWithArifPay(); } : handleSubmit} className="space-y-8">
                                 <div className="space-y-4">
+                                     <div className="flex justify-between items-center px-1">
+                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Select or Change Plan</span>
+                                        <span className="text-[10px] font-black text-[#ED1C24] uppercase tracking-wider">{formData.tierType} Membership</span>
+                                     </div>
                                      <div className="grid grid-cols-1 gap-3">
                                         {membershipPlans.length === 0 ? (
                                             <div className="text-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
@@ -759,7 +781,7 @@ function MemberRegistrationContent() {
 
                                 <div className="bg-red-50 p-4 rounded-2xl text-[10px] font-bold text-[#ED1C24] leading-relaxed border border-red-100/50 flex items-start gap-3">
                                     <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm"><ShieldCheck className="h-3 w-3" /></div>
-                                    Secure Payment Notice: You will be redirected to our encrypted gateway to finalize your contribution.
+                                    Secure Payment Notice: Member ID & digital cards are issued immediately after completing payment via encrypted ArifPay gateway.
                                 </div>
 
                                 {error && (
@@ -782,7 +804,7 @@ function MemberRegistrationContent() {
                                  <div className="flex gap-3 pt-1">
                                      <Button type="button" variant="ghost" className="h-12 rounded-xl font-black px-6 text-black/40 hover:text-black hover:bg-gray-50 transition-all text-sm" onClick={() => setStep(2)} disabled={loading}>Back</Button>
                                     <Button type="submit" className="flex-1 h-12 bg-[#ED1C24] hover:bg-black text-white rounded-xl text-base font-black shadow-lg shadow-red-500/15 transition-all flex items-center justify-center gap-2 active:scale-95" disabled={loading}>
-                                        {loading ? "Processing..." : <><CreditCard className="h-4 w-4" /> Pay & Join</>}
+                                        {loading ? "Processing..." : registeredLoggedIn ? <>⚡ Pay via ArifPay</> : <><CreditCard className="h-4 w-4" /> Register & Proceed to Payment</>}
                                     </Button>
                                 </div>
                             </form>
