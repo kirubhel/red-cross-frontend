@@ -27,10 +27,7 @@ import {
 import PhoneNumberInput, { buildFullPhoneNumber, ALL_COUNTRIES } from "@/components/ui/phone-number-input";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
-import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS } from "@/lib/constants";
-
-
-
+import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS, ETHIOPIA_LOCATION_DATA, ZONE_WOREDA_DATA } from "@/lib/constants";
 
 const ENGAGEMENT_AREAS = [
   "First Aid Service",
@@ -132,8 +129,15 @@ export default function VolunteerJoinPage() {
     if (formData.region && formData.country === "ET") {
       const regionId = REGION_MAP_VALUE_TO_ID[formData.region];
       api.get(`/location/zones?region_id=${regionId}`).then(res => {
-        setZones(res.data.zones || []);
-      }).catch(err => console.error("Failed to fetch zones:", err));
+        if (res.data?.zones && res.data.zones.length > 0) {
+          setZones(res.data.zones);
+        } else {
+          setZones(ETHIOPIA_LOCATION_DATA[formData.region]?.zones || []);
+        }
+      }).catch(err => {
+        console.error("Failed to fetch zones:", err);
+        setZones(ETHIOPIA_LOCATION_DATA[formData.region]?.zones || []);
+      });
     } else {
       setZones([]);
     }
@@ -143,8 +147,15 @@ export default function VolunteerJoinPage() {
   useEffect(() => {
     if (formData.zone && formData.country === "ET") {
       api.get(`/location/woredas?zone_id=${formData.zone}`).then(res => {
-        setWoredas(res.data.woredas || []);
-      }).catch(err => console.error("Failed to fetch woredas:", err));
+        if (res.data?.woredas && res.data.woredas.length > 0) {
+          setWoredas(res.data.woredas);
+        } else {
+          setWoredas(ZONE_WOREDA_DATA[formData.zone] || []);
+        }
+      }).catch(err => {
+        console.error("Failed to fetch woredas:", err);
+        setWoredas(ZONE_WOREDA_DATA[formData.zone] || []);
+      });
     } else {
       setWoredas([]);
     }
@@ -371,7 +382,14 @@ export default function VolunteerJoinPage() {
                              <form onSubmit={handleSubmit} className="space-y-6 text-left">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                                       {formConfig.map((field: any) => {
-                                          if (field.id === 'password' || field.id === 'confirmPassword') return null;
+                                          if (
+                                              field.id === 'password' || 
+                                              field.id === 'confirmPassword' || 
+                                              field.id === 'country' || 
+                                              field.id === 'zone' || 
+                                              field.id === 'woreda' || 
+                                              field.dataSource === 'COUNTRIES'
+                                          ) return null;
 
                                           if (field.type === 'tel') {
                                               return (

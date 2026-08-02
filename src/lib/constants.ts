@@ -30,7 +30,7 @@ export const REGION_MAP_VALUE_TO_ID: Record<string, number> = {
     "REGION_sidama": 12,
     "REGION_south_west_ethiopia": 13,
     "REGION_south_ethiopia": 14,
-}
+};
 
 export const GENDER_OPTIONS = [
   { label: "Male", value: "MALE" },
@@ -44,29 +44,165 @@ export const ETHIOPIA_LOCATION_DATA: Record<string, { zones: { id: string, name:
       { id: "ZONE_aa_kirkos", name: "Kirkos" },
       { id: "ZONE_aa_bole", name: "Bole" },
       { id: "ZONE_aa_yeka", name: "Yeka" },
-      { id: "ZONE_aa_nifas_silk", name: "Nifas Silk" },
+      { id: "ZONE_aa_nifas_silk", name: "Nifas Silk Lafto" },
+      { id: "ZONE_aa_lideta", name: "Lideta" },
+      { id: "ZONE_aa_gullele", name: "Gullele" },
+      { id: "ZONE_aa_akaki_kality", name: "Akaki Kality" },
+      { id: "ZONE_aa_kolfe_keranio", name: "Kolfe Keranio" },
+      { id: "ZONE_aa_addis_ketema", name: "Addis Ketema" },
+      { id: "ZONE_aa_lemi_kura", name: "Lemi Kura" },
+    ]
+  },
+  "REGION_dire_dawa": {
+    zones: [
+      { id: "ZONE_dd_city", name: "Dire Dawa City" },
+      { id: "ZONE_dd_gurgura", name: "Gurgura" },
+    ]
+  },
+  "REGION_tigray": {
+    zones: [
+      { id: "ZONE_tg_mekelle", name: "Mekelle City" },
+      { id: "ZONE_tg_central", name: "Central Tigray" },
+      { id: "ZONE_tg_eastern", name: "Eastern Tigray" },
+      { id: "ZONE_tg_north_western", name: "North Western Tigray" },
+      { id: "ZONE_tg_southern", name: "Southern Tigray" },
+      { id: "ZONE_tg_western", name: "Western Tigray" },
+      { id: "ZONE_tg_south_eastern", name: "South Eastern Tigray" },
+    ]
+  },
+  "REGION_afar": {
+    zones: [
+      { id: "ZONE_af_zone1", name: "Awsi Rasu (Zone 1)" },
+      { id: "ZONE_af_zone2", name: "Kilbet Rasu (Zone 2)" },
+      { id: "ZONE_af_zone3", name: "Gabi Rasu (Zone 3)" },
+      { id: "ZONE_af_zone4", name: "Fantena Rasu (Zone 4)" },
+      { id: "ZONE_af_zone5", name: "Hari Rasu (Zone 5)" },
     ]
   },
   "REGION_amhara": {
     zones: [
       { id: "ZONE_am_north_gondar", name: "North Gondar" },
       { id: "ZONE_am_south_gondar", name: "South Gondar" },
+      { id: "ZONE_am_central_gondar", name: "Central Gondar" },
+      { id: "ZONE_am_west_gondar", name: "West Gondar" },
       { id: "ZONE_am_east_gojjam", name: "East Gojjam" },
       { id: "ZONE_am_west_gojjam", name: "West Gojjam" },
+      { id: "ZONE_am_awi", name: "Awi Zone" },
+      { id: "ZONE_am_south_wollo", name: "South Wollo" },
+      { id: "ZONE_am_north_wollo", name: "North Wollo" },
+      { id: "ZONE_am_wag_hemra", name: "Wag Hemra" },
+      { id: "ZONE_am_north_shewa", name: "North Shewa" },
+      { id: "ZONE_am_oromia_special", name: "Oromia Special Zone" },
+      { id: "ZONE_am_bahir_dar", name: "Bahir Dar City" },
     ]
   },
   "REGION_oromia": {
     zones: [
       { id: "ZONE_or_east_shewa", name: "East Shewa" },
       { id: "ZONE_or_west_shewa", name: "West Shewa" },
-      { id: "ZONE_or_arssi", name: "Arssi" },
+      { id: "ZONE_or_north_shewa", name: "North Shewa" },
+      { id: "ZONE_or_arsi", name: "Arsi" },
+      { id: "ZONE_or_west_arsi", name: "West Arsi" },
       { id: "ZONE_or_bale", name: "Bale" },
+      { id: "ZONE_or_east_bale", name: "East Bale" },
+      { id: "ZONE_or_guji", name: "Guji" },
+      { id: "ZONE_or_west_guji", name: "West Guji" },
+      { id: "ZONE_or_borena", name: "Borena" },
+      { id: "ZONE_or_jimma", name: "Jimma" },
+      { id: "ZONE_or_ilu_ababor", name: "Ilu Ababor" },
+      { id: "ZONE_or_buno_bedele", name: "Buno Bedele" },
+      { id: "ZONE_or_east_hararghe", name: "East Hararghe" },
+      { id: "ZONE_or_west_hararghe", name: "West Hararghe" },
+      { id: "ZONE_or_east_wollega", name: "East Wollega" },
+      { id: "ZONE_or_west_wollega", name: "West Wollega" },
+      { id: "ZONE_or_horo_guduru", name: "Horo Guduru Wollega" },
+      { id: "ZONE_or_kelem_wollega", name: "Kelem Wollega" },
+      { id: "ZONE_or_finfinne_special", name: "Finfinne Special Zone" },
+      { id: "ZONE_or_adama", name: "Adama City" },
     ]
   },
-  "REGION_tigray": {
+  "REGION_somali": {
     zones: [
-      { id: "ZONE_tg_mekelle", name: "Mekelle" },
-      { id: "ZONE_tg_central", name: "Central Tigray" },
+      { id: "ZONE_sm_sitti", name: "Sitti" },
+      { id: "ZONE_sm_fafan", name: "Fafan" },
+      { id: "ZONE_sm_jarar", name: "Jarar" },
+      { id: "ZONE_sm_nogob", name: "Nogob" },
+      { id: "ZONE_sm_erer", name: "Erer" },
+      { id: "ZONE_sm_shabelle", name: "Shabelle" },
+      { id: "ZONE_sm_korahe", name: "Korahe" },
+      { id: "ZONE_sm_doollo", name: "Doollo" },
+      { id: "ZONE_sm_liben", name: "Liben" },
+      { id: "ZONE_sm_afder", name: "Afder" },
+      { id: "ZONE_sm_daawa", name: "Daawa" },
+      { id: "ZONE_sm_jijiga", name: "Jijiga City" },
+    ]
+  },
+  "REGION_benishangul_gumz": {
+    zones: [
+      { id: "ZONE_bg_metekel", name: "Metekel" },
+      { id: "ZONE_bg_asosa", name: "Asosa" },
+      { id: "ZONE_bg_kamashi", name: "Kamashi" },
+    ]
+  },
+  "REGION_central_ethiopia": {
+    zones: [
+      { id: "ZONE_ce_gurage", name: "Gurage" },
+      { id: "ZONE_ce_silte", name: "Silte" },
+      { id: "ZONE_ce_halaba", name: "Halaba" },
+      { id: "ZONE_ce_hadiya", name: "Hadiya" },
+      { id: "ZONE_ce_kembata", name: "Kembata Tembaro" },
+      { id: "ZONE_ce_yem", name: "Yem" },
+    ]
+  },
+  "REGION_gambela": {
+    zones: [
+      { id: "ZONE_gm_anywaa", name: "Anywaa" },
+      { id: "ZONE_gm_nuer", name: "Nuer" },
+      { id: "ZONE_gm_majang", name: "Majang" },
+      { id: "ZONE_gm_city", name: "Gambela City" },
+    ]
+  },
+  "REGION_harari": {
+    zones: [
+      { id: "ZONE_hr_city", name: "Harar City" },
+      { id: "ZONE_hr_amir_nur", name: "Amir Nur" },
+      { id: "ZONE_hr_abadir", name: "Abadir" },
+      { id: "ZONE_hr_shenkor", name: "Shenkor" },
+      { id: "ZONE_hr_sofi", name: "Sofi" },
+      { id: "ZONE_hr_erer", name: "Erer" },
+    ]
+  },
+  "REGION_sidama": {
+    zones: [
+      { id: "ZONE_sd_hawassa", name: "Hawassa City" },
+      { id: "ZONE_sd_central", name: "Central Sidama" },
+      { id: "ZONE_sd_eastern", name: "Eastern Sidama" },
+      { id: "ZONE_sd_northern", name: "Northern Sidama" },
+      { id: "ZONE_sd_southern", name: "Southern Sidama" },
+    ]
+  },
+  "REGION_south_west_ethiopia": {
+    zones: [
+      { id: "ZONE_sw_keffa", name: "Keffa" },
+      { id: "ZONE_sw_sheka", name: "Sheka" },
+      { id: "ZONE_sw_bench_sheko", name: "Bench Sheko" },
+      { id: "ZONE_sw_dawro", name: "Dawro" },
+      { id: "ZONE_sw_west_omo", name: "West Omo" },
+      { id: "ZONE_sw_konta", name: "Konta" },
+    ]
+  },
+  "REGION_south_ethiopia": {
+    zones: [
+      { id: "ZONE_se_wolayita", name: "Wolayita" },
+      { id: "ZONE_se_gamo", name: "Gamo" },
+      { id: "ZONE_se_gofa", name: "Gofa" },
+      { id: "ZONE_se_south_omo", name: "South Omo" },
+      { id: "ZONE_se_gedeo", name: "Gedeo" },
+      { id: "ZONE_se_konso", name: "Konso" },
+      { id: "ZONE_se_derashe", name: "Derashe" },
+      { id: "ZONE_se_burji", name: "Burji" },
+      { id: "ZONE_se_basketo", name: "Basketo" },
+      { id: "ZONE_se_amaro", name: "Amaro" },
     ]
   }
 };
@@ -75,13 +211,91 @@ export const ZONE_WOREDA_DATA: Record<string, { id: string, name: string }[]> = 
     "ZONE_aa_arada": [
         { id: "WOREDA_aa_arada_01", name: "Woreda 01" },
         { id: "WOREDA_aa_arada_02", name: "Woreda 02" },
+        { id: "WOREDA_aa_arada_03", name: "Woreda 03" },
+        { id: "WOREDA_aa_arada_04", name: "Woreda 04" },
+        { id: "WOREDA_aa_arada_05", name: "Woreda 05" },
+        { id: "WOREDA_aa_arada_06", name: "Woreda 06" },
+        { id: "WOREDA_aa_arada_07", name: "Woreda 07" },
+        { id: "WOREDA_aa_arada_08", name: "Woreda 08" },
+        { id: "WOREDA_aa_arada_09", name: "Woreda 09" },
+        { id: "WOREDA_aa_arada_10", name: "Woreda 10" },
+    ],
+    "ZONE_aa_kirkos": [
+        { id: "WOREDA_aa_kirkos_01", name: "Woreda 01" },
+        { id: "WOREDA_aa_kirkos_02", name: "Woreda 02" },
+        { id: "WOREDA_aa_kirkos_03", name: "Woreda 03" },
+        { id: "WOREDA_aa_kirkos_04", name: "Woreda 04" },
+        { id: "WOREDA_aa_kirkos_05", name: "Woreda 05" },
+        { id: "WOREDA_aa_kirkos_06", name: "Woreda 06" },
+        { id: "WOREDA_aa_kirkos_07", name: "Woreda 07" },
+        { id: "WOREDA_aa_kirkos_08", name: "Woreda 08" },
+        { id: "WOREDA_aa_kirkos_09", name: "Woreda 09" },
+        { id: "WOREDA_aa_kirkos_10", name: "Woreda 10" },
     ],
     "ZONE_aa_bole": [
         { id: "WOREDA_aa_bole_01", name: "Woreda 01" },
         { id: "WOREDA_aa_bole_02", name: "Woreda 02" },
+        { id: "WOREDA_aa_bole_03", name: "Woreda 03" },
+        { id: "WOREDA_aa_bole_04", name: "Woreda 04" },
+        { id: "WOREDA_aa_bole_05", name: "Woreda 05" },
+        { id: "WOREDA_aa_bole_06", name: "Woreda 06" },
+        { id: "WOREDA_aa_bole_07", name: "Woreda 07" },
+        { id: "WOREDA_aa_bole_08", name: "Woreda 08" },
+        { id: "WOREDA_aa_bole_09", name: "Woreda 09" },
+        { id: "WOREDA_aa_bole_10", name: "Woreda 10" },
+        { id: "WOREDA_aa_bole_11", name: "Woreda 11" },
+        { id: "WOREDA_aa_bole_12", name: "Woreda 12" },
+        { id: "WOREDA_aa_bole_13", name: "Woreda 13" },
+        { id: "WOREDA_aa_bole_14", name: "Woreda 14" },
+    ],
+    "ZONE_aa_yeka": [
+        { id: "WOREDA_aa_yeka_01", name: "Woreda 01" },
+        { id: "WOREDA_aa_yeka_02", name: "Woreda 02" },
+        { id: "WOREDA_aa_yeka_03", name: "Woreda 03" },
+        { id: "WOREDA_aa_yeka_04", name: "Woreda 04" },
+        { id: "WOREDA_aa_yeka_05", name: "Woreda 05" },
+        { id: "WOREDA_aa_yeka_06", name: "Woreda 06" },
+        { id: "WOREDA_aa_yeka_07", name: "Woreda 07" },
+        { id: "WOREDA_aa_yeka_08", name: "Woreda 08" },
+        { id: "WOREDA_aa_yeka_09", name: "Woreda 09" },
+        { id: "WOREDA_aa_yeka_10", name: "Woreda 10" },
+        { id: "WOREDA_aa_yeka_11", name: "Woreda 11" },
+        { id: "WOREDA_aa_yeka_12", name: "Woreda 12" },
+        { id: "WOREDA_aa_yeka_13", name: "Woreda 13" },
+    ],
+    "ZONE_aa_nifas_silk": [
+        { id: "WOREDA_aa_ns_01", name: "Woreda 01" },
+        { id: "WOREDA_aa_ns_02", name: "Woreda 02" },
+        { id: "WOREDA_aa_ns_03", name: "Woreda 03" },
+        { id: "WOREDA_aa_ns_04", name: "Woreda 04" },
+        { id: "WOREDA_aa_ns_05", name: "Woreda 05" },
+        { id: "WOREDA_aa_ns_06", name: "Woreda 06" },
+        { id: "WOREDA_aa_ns_07", name: "Woreda 07" },
+        { id: "WOREDA_aa_ns_08", name: "Woreda 08" },
+        { id: "WOREDA_aa_ns_09", name: "Woreda 09" },
+        { id: "WOREDA_aa_ns_10", name: "Woreda 10" },
+        { id: "WOREDA_aa_ns_11", name: "Woreda 11" },
+        { id: "WOREDA_aa_ns_12", name: "Woreda 12" },
+        { id: "WOREDA_aa_ns_13", name: "Woreda 13" },
+        { id: "WOREDA_aa_ns_14", name: "Woreda 14" },
+        { id: "WOREDA_aa_ns_15", name: "Woreda 15" },
     ],
     "ZONE_am_north_gondar": [
         { id: "WOREDA_am_ng_gondar", name: "Gondar Zuria" },
         { id: "WOREDA_am_ng_debarq", name: "Debarq" },
+        { id: "WOREDA_am_ng_dabat", name: "Dabat" },
+        { id: "WOREDA_am_ng_sanja", name: "Sanja" },
+    ],
+    "ZONE_or_east_shewa": [
+        { id: "WOREDA_or_es_adama", name: "Adama Zuria" },
+        { id: "WOREDA_or_es_bishoftu", name: "Bishoftu" },
+        { id: "WOREDA_or_es_mojo", name: "Mojo" },
+        { id: "WOREDA_or_es_batu", name: "Batu (Ziway)" },
+    ],
+    "ZONE_tg_mekelle": [
+        { id: "WOREDA_tg_mk_kedamay", name: "Kedamay Weyane" },
+        { id: "WOREDA_tg_mk_hadnet", name: "Hadnet" },
+        { id: "WOREDA_tg_mk_hawelti", name: "Hawelti" },
+        { id: "WOREDA_tg_mk_ayder", name: "Ayder" },
     ]
-}
+};

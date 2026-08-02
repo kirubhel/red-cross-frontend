@@ -68,6 +68,23 @@ type Region = {
     code: string;
 };
 
+const DEFAULT_REGIONS: Region[] = [
+  { id: 1, name: "Addis Ababa", code: "AA" },
+  { id: 2, name: "Dire Dawa", code: "DD" },
+  { id: 3, name: "Tigray", code: "TG" },
+  { id: 4, name: "Afar", code: "AF" },
+  { id: 5, name: "Amhara", code: "AM" },
+  { id: 6, name: "Oromia", code: "OR" },
+  { id: 7, name: "Somali", code: "SM" },
+  { id: 8, name: "Benishangul Gumz", code: "BG" },
+  { id: 9, name: "Central Ethiopia", code: "CE" },
+  { id: 10, name: "Gambela", code: "GM" },
+  { id: 11, name: "Harari", code: "HR" },
+  { id: 12, name: "Sidama", code: "SD" },
+  { id: 13, name: "South West Ethiopia", code: "SW" },
+  { id: 14, name: "South Ethiopia", code: "SE" }
+];
+
 type ImportedCellValue = string | number | boolean | null;
 
 type ImportedRow = {
@@ -177,8 +194,11 @@ export default function VolunteersPage() {
   const fetchRegions = async () => {
     try {
         const res = await api.get("/system-settings");
-        if (res.data.settings && res.data.settings.all_regions) {
-            setRegions(JSON.parse(res.data.settings.all_regions));
+        if (res.data && res.data.settings && res.data.settings.all_regions) {
+            const parsed = JSON.parse(res.data.settings.all_regions);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setRegions(parsed);
+            }
         }
     } catch (err) {
         console.error("Failed to fetch regions:", err);
@@ -684,7 +704,7 @@ export default function VolunteersPage() {
   const getOrgName = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgName:"))?.replace("OrgName:", "") || "N/A";
   const getOrgType = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgType:"))?.replace("OrgType:", "") || "N/A";
 
-  const filteredVolunteers = volunteers;
+  const filteredVolunteers = volunteers || [];
 
   return (
     <div className="space-y-10 print:p-0 text-black">
@@ -873,7 +893,7 @@ export default function VolunteersPage() {
                     onChange={(e) => setImportRegion(e.target.value)}
                     className="h-10 min-w-[180px] rounded-xl border border-gray-200 bg-white px-3 text-xs font-black outline-none"
                 >
-                    {(regions.length > 0 ? regions : [{ id: 1, name: "Addis Ababa", code: "AA" }]).map(region => (
+                    {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map(region => (
                         <option key={region.id} value={region.id}>{region.name}</option>
                     ))}
                 </select>
@@ -1284,7 +1304,7 @@ export default function VolunteersPage() {
                                             {area}
                                         </span>
                                     ))}
-                                    {(!selectedVolunteer.engagement_areas || selectedVolunteer.engagement_areas.length === 0) && <p className="text-xs text-gray-400 font-bold italic">No areas selected</p>}
+                                    {(!selectedVolunteer?.engagement_areas || selectedVolunteer.engagement_areas.length === 0) && <p className="text-xs text-gray-400 font-bold italic">No areas selected</p>}
                                 </div>
                             </div>
 
@@ -1430,7 +1450,7 @@ export default function VolunteersPage() {
                 <h1 className="text-3xl font-black">Volunteer Registry Report</h1>
                 <p className="text-gray-500 font-bold text-lg">Ethiopian Red Cross Society</p>
                 <div className="mt-6 grid grid-cols-2 gap-x-12 gap-y-3 text-sm">
-                    <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Region Scope:</span> {regions.find(r => String(r.id) === regionFilter)?.name || "All National Branches"}</div>
+                    <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Region Scope:</span> {(regions || DEFAULT_REGIONS).find(r => String(r.id) === regionFilter)?.name || "All National Branches"}</div>
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Status Filter:</span> {statusFilter || "All Volunteers"}</div>
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Generated On:</span> {new Date().toLocaleString()}</div>
                     <div><span className="text-gray-400 font-black uppercase tracking-widest mr-2">Record Count:</span> {filteredVolunteers.length}</div>
