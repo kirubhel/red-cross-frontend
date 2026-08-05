@@ -1,7 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { translations, Language } from '@/lib/translations';
+import { useLocale } from 'next-intl';
+import { useRouter, usePathname } from '@/i18n/routing';
 
 type LanguageContextType = {
   lang: Language;
@@ -12,24 +14,24 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Language>('en');
+  const locale = useLocale() as Language;
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('language') as Language;
-    if (savedLang && (savedLang === 'en' || savedLang === 'am' || savedLang === 'om')) {
-      setLangState(savedLang);
-    }
-  }, []);
+    // Optionally sync with localStorage if needed
+    localStorage.setItem('language', locale);
+  }, [locale]);
 
   const setLang = (newLang: Language) => {
-    setLangState(newLang);
     localStorage.setItem('language', newLang);
+    router.replace(pathname, { locale: newLang });
   };
 
-  const t = translations[lang];
+  const t = translations[locale] || translations.en;
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang, t }}>
+    <LanguageContext.Provider value={{ lang: locale, setLang, t }}>
       {children}
     </LanguageContext.Provider>
   );

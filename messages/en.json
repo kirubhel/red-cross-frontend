@@ -1,0 +1,11 @@
+{
+  "Navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "Index": {
+    "title": "Welcome to ERCS VMBS"
+  }
+}

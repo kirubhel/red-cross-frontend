@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineSyncListener } from "@/components/OfflineSyncListener";
 
@@ -24,23 +24,31 @@ export const metadata: Metadata = {
 };
 
 import { LanguageProvider } from "@/context/LanguageContext";
+import {NextIntlClientProvider} from 'next-intl';
+import {getMessages} from 'next-intl/server';
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
+  params
 }: Readonly<{
   children: React.ReactNode;
+  params: Promise<{locale: string}>;
 }>) {
+  const { locale } = await params;
+  const messages = await getMessages();
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body
         className={`${inter.variable} ${outfit.variable} antialiased font-sans`}
         suppressHydrationWarning={true}
       >
-        <LanguageProvider>
-          <OfflineSyncListener />
-          <Toaster position="top-right" />
-          {children}
-        </LanguageProvider>
+        <NextIntlClientProvider messages={messages}>
+          <LanguageProvider>
+            <OfflineSyncListener />
+            <Toaster position="top-right" />
+            {children}
+          </LanguageProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

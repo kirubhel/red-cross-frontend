@@ -1,0 +1,11 @@
+{
+  "Navigation": {
+    "home": "መነሻ",
+    "dashboard": "ዳሽቦርድ",
+    "login": "ግባ",
+    "logout": "ውጣ"
+  },
+  "Index": {
+    "title": "እንኳን ወደ ERCS VMBS በደህና መጡ"
+  }
+}
