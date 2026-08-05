@@ -22,19 +22,21 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
-
-const menuItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/profile", label: "My Profile", icon: User },
-  { href: "/dashboard/volunteer", label: "Volunteering", icon: HandHeart },
-  { href: "/dashboard/donations", label: "My Donations", icon: Heart },
-  { href: "/dashboard/history", label: "Impact History", icon: History },
-];
+import { useLanguage } from "@/context/LanguageContext";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [user, setUser] = useState<any>(null);
+
+  const menuItems = [
+    { href: "/dashboard", label: t.dashboard.dashboard, icon: LayoutDashboard },
+    { href: "/dashboard/profile", label: t.dashboard.myProfile, icon: User },
+    { href: "/dashboard/volunteer", label: t.dashboard.volunteering, icon: HandHeart },
+    { href: "/dashboard/donations", label: t.dashboard.myDonations, icon: Heart },
+    { href: "/dashboard/history", label: t.dashboard.impactHistory, icon: History },
+  ];
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -104,7 +106,7 @@ export function DashboardSidebar() {
          <div className={cn("flex flex-col whitespace-nowrap overflow-hidden transition-all duration-300", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
           <span className="text-xl font-black text-gray-900 tracking-tighter uppercase leading-none">ERCS</span>
           <span className="text-[9px] font-black text-[#ED1C24] uppercase tracking-[0.2em]">
-            {user?.role === "Volunteer" ? "Volunteer Portal" : "Member Portal"}
+            {user?.role === "Volunteer" ? t.dashboard.volunteerPortal : t.dashboard.memberPortal}
           </span>
          </div>
          
@@ -122,7 +124,7 @@ export function DashboardSidebar() {
       {/* Navigation Space */}
       <nav className={cn("flex-1 space-y-1.5 py-6 overflow-y-auto overflow-x-hidden custom-scrollbar transition-all duration-300", isCollapsed ? "px-3" : "px-4")}>
         <h4 className={cn("text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-4 px-2 whitespace-nowrap overflow-hidden transition-all duration-300", isCollapsed ? "h-0 opacity-0 mb-0" : "h-auto opacity-100")}>
-          Main Menu
+          {t.dashboard.mainMenu}
         </h4>
         
         {filteredMenuItems.map((item) => {
@@ -183,7 +185,7 @@ export function DashboardSidebar() {
           )}
         >
           <LogOut className="h-5 w-5 group-hover:rotate-12 transition-transform" />
-          {!isCollapsed && <span className="text-sm">Sign Out</span>}
+          {!isCollapsed && <span className="text-sm">{t.dashboard.signOut}</span>}
         </button>
       </div>
 

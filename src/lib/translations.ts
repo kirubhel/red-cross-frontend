@@ -219,6 +219,17 @@ export const translations = {
       tel: "+251-115-18-01-80, +251-115-18-01-82",
       mobile: "+251-911-90-79-78, +251-913-79-88-80",
       fax: "+251-115-15-00-99"
+    },
+    dashboard: {
+      mainMenu: "Main Menu",
+      dashboard: "Dashboard",
+      myProfile: "My Profile",
+      volunteering: "Volunteering",
+      myDonations: "My Donations",
+      impactHistory: "Impact History",
+      signOut: "Sign Out",
+      volunteerPortal: "Volunteer Portal",
+      memberPortal: "Member Portal"
     }
   },
   am: {
@@ -437,6 +448,17 @@ export const translations = {
       linkedin: "https://linkedin.com",
       phone: "+251-115-18-01-80",
       email: "geremew.ashenafi@redcrosseth.org"
+    },
+    dashboard: {
+      mainMenu: "ዋና ማውጫ",
+      dashboard: "ዳሽቦርድ",
+      myProfile: "የእኔ መገለጫ",
+      volunteering: "በጎ ፈቃደኝነት",
+      myDonations: "የእኔ ልገሳዎች",
+      impactHistory: "የተጽዕኖ ታሪክ",
+      signOut: "ውጣ",
+      volunteerPortal: "የበጎ ፈቃደኛ መግቢያ",
+      memberPortal: "የአባል መግቢያ"
     }
   },
   om: {
@@ -655,6 +677,17 @@ export const translations = {
       linkedin: "https://linkedin.com",
       phone: "+251-115-18-01-80",
       email: "geremew.ashenafi@redcrosseth.org"
+    },
+    dashboard: {
+      mainMenu: "Baafata Guddaa",
+      dashboard: "Daashboordii",
+      myProfile: "Pirofaayilii Koo",
+      volunteering: "Tajaajila Fedhii",
+      myDonations: "Arjooma Koo",
+      impactHistory: "Seenaa Dhiibbaa",
+      signOut: "Ba'i",
+      volunteerPortal: "Poortaalii Fedhaan Hojjetaa",
+      memberPortal: "Poortaalii Miseensaa"
     }
   }
 };

@@ -1,0 +1,21 @@
+{
+  "name": "ERCS Volunteer & Member Management",
+  "short_name": "ERCS VMMS",
+  "description": "Ethiopian Red Cross Society Volunteer & Member Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

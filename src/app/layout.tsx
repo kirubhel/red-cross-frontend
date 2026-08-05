@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { OfflineSyncListener } from "@/components/OfflineSyncListener";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -16,6 +17,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Ethiopian Red Cross Society | ERCS VMMS",
   description: "Official Volunteer & Member Management System for the Ethiopian Red Cross Society (ERCS). Saving Lives, Changing Minds.",
+  manifest: "/manifest.json",
   icons: {
     icon: "/logo.png",
   },
@@ -35,6 +37,7 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <LanguageProvider>
+          <OfflineSyncListener />
           <Toaster position="top-right" />
           {children}
         </LanguageProvider>
