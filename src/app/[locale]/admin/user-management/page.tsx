@@ -23,9 +23,9 @@ type SystemUser = {
   phone_number: string;
   role: string;
   region_id: number;
-  zone_id: number;
-  woreda_id: number;
-  branch_id: number;
+  zone_id: string;
+  woreda_id: string;
+  branch_id: string;
   status: string;
   created_at: string;
 };
@@ -36,9 +36,9 @@ type NewUserForm = {
   password: string;
   role: number;
   region: number;
-  zone: number;
-  woreda: number;
-  branch: number;
+  zone: string;
+  woreda: string;
+  branch: string;
 };
 
 const ROLES = [
@@ -97,9 +97,9 @@ const DEFAULT_FORM: NewUserForm = {
   password: "",
   role: 5,
   region: 14,
-  zone: 0,
-  woreda: 0,
-  branch: 0,
+  zone: "",
+  woreda: "",
+  branch: "",
 };
 
 const MODULE_PERMISSIONS = [
@@ -157,8 +157,8 @@ export default function UserManagementPage() {
   const [woredas, setWoredas] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [filterRegion, setFilterRegion] = useState<number>(0);
-  const [filterZone, setFilterZone] = useState<number>(0);
-  const [filterWoreda, setFilterWoreda] = useState<number>(0);
+  const [filterZone, setFilterZone] = useState<string>("");
+  const [filterWoreda, setFilterWoreda] = useState<string>("");
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -168,8 +168,8 @@ export default function UserManagementPage() {
         setForm(f => ({
           ...f,
           region: res.data.person.region_id || 14,
-          zone: res.data.person.zone_id || 0,
-          woreda: res.data.person.woreda_id || 0,
+          zone: res.data.person.zone_id || "",
+          woreda: res.data.person.woreda_id || "",
         }));
       }
     } catch (err) {
@@ -214,8 +214,8 @@ export default function UserManagementPage() {
           if (currentUser?.branch_id) url += `&branch_id=${currentUser.branch_id}`;
       } else {
           if (filterRegion > 0) url += `&region_id=${filterRegion}`;
-          if (filterZone > 0) url += `&zone_id=${filterZone}`;
-          if (filterWoreda > 0) url += `&woreda_id=${filterWoreda}`;
+          if (filterZone !== "") url += `&zone_id=${filterZone}`;
+          if (filterWoreda !== "") url += `&woreda_id=${filterWoreda}`;
       }
       const res = await api.get(url);
       if (res.data?.users) {
@@ -397,9 +397,9 @@ export default function UserManagementPage() {
           <div className="bg-gray-50/50 p-2.5 rounded-2xl border border-gray-100 space-y-2">
             <div className="flex items-center justify-between px-1">
               <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Filters</span>
-              {(filterRegion > 0 || filterZone > 0 || filterWoreda > 0) && (
+              {(filterRegion > 0 || filterZone !== "" || filterWoreda !== "") && (
                 <button 
-                  onClick={() => { setFilterRegion(0); setFilterZone(0); setFilterWoreda(0); }}
+                  onClick={() => { setFilterRegion(0); setFilterZone(""); setFilterWoreda(""); }}
                   className="text-[9px] font-black text-red-500 uppercase tracking-widest hover:underline"
                 >
                   Reset
@@ -409,7 +409,7 @@ export default function UserManagementPage() {
             <div className="grid grid-cols-3 gap-2">
               <select
                 value={filterRegion}
-                onChange={e => { setFilterRegion(Number(e.target.value)); setFilterZone(0); setFilterWoreda(0); }}
+                onChange={e => { setFilterRegion(Number(e.target.value)); setFilterZone(""); setFilterWoreda(""); }}
                 className="h-8 rounded-lg bg-white border border-gray-100 px-2 text-[10px] font-bold text-gray-600 focus:ring-1 focus:ring-red-500/20 appearance-none"
               >
                 <option value={0}>Region</option>
@@ -418,10 +418,10 @@ export default function UserManagementPage() {
 
               <select
                 value={filterZone}
-                onChange={e => { setFilterZone(Number(e.target.value)); setFilterWoreda(0); }}
+                onChange={e => { setFilterZone(e.target.value); setFilterWoreda(""); }}
                 className="h-8 rounded-lg bg-white border border-gray-100 px-2 text-[10px] font-bold text-gray-600 focus:ring-1 focus:ring-red-500/20 appearance-none"
               >
-                <option value={0}>Zone</option>
+                <option value="">Zone</option>
                 {zones.filter(z => filterRegion === 0 || z.region_id === filterRegion).map(z => (
                   <option key={z.id} value={z.id}>{z.name}</option>
                 ))}
@@ -429,11 +429,11 @@ export default function UserManagementPage() {
 
               <select
                 value={filterWoreda}
-                onChange={e => setFilterWoreda(Number(e.target.value))}
+                onChange={e => setFilterWoreda(e.target.value)}
                 className="h-8 rounded-lg bg-white border border-gray-100 px-2 text-[10px] font-bold text-gray-600 focus:ring-1 focus:ring-red-500/20 appearance-none"
               >
-                <option value={0}>Woreda</option>
-                {woredas.filter(w => filterZone === 0 || w.zone_id === filterZone).map(w => (
+                <option value="">Woreda</option>
+                {woredas.filter(w => filterZone === "" || w.zone_id === filterZone).map(w => (
                   <option key={w.id} value={w.id}>{w.name}</option>
                 ))}
               </select>
@@ -595,7 +595,7 @@ export default function UserManagementPage() {
                       <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Region</Label>
                       <select
                         value={form.region}
-                        onChange={e => setForm(f => ({ ...f, region: Number(e.target.value), zone: 0, woreda: 0 }))}
+                        onChange={e => setForm(f => ({ ...f, region: Number(e.target.value), zone: "", woreda: "" }))}
                         className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
                         {REGIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
@@ -605,10 +605,10 @@ export default function UserManagementPage() {
                       <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Zone</Label>
                       <select
                         value={form.zone}
-                        onChange={e => setForm(f => ({ ...f, zone: Number(e.target.value), woreda: 0 }))}
+                        onChange={e => setForm(f => ({ ...f, zone: e.target.value, woreda: "" }))}
                         className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
-                        <option value={0}>All Zones</option>
+                        <option value="">All Zones</option>
                         {zones.filter(z => z.region_id === form.region).map(z => (
                           <option key={z.id} value={z.id}>{z.name}</option>
                         ))}
@@ -618,10 +618,10 @@ export default function UserManagementPage() {
                       <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Woreda</Label>
                       <select
                         value={form.woreda}
-                        onChange={e => setForm(f => ({ ...f, woreda: Number(e.target.value) }))}
+                        onChange={e => setForm(f => ({ ...f, woreda: e.target.value }))}
                         className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
-                        <option value={0}>All Woredas</option>
+                        <option value="">All Woredas</option>
                         {woredas.filter(w => w.zone_id === form.zone).map(w => (
                           <option key={w.id} value={w.id}>{w.name}</option>
                         ))}
@@ -630,9 +630,9 @@ export default function UserManagementPage() {
                     <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Branch (If applicable)</Label>
                       <Input
-                        type="number"
+                        type="text"
                         value={form.branch || ""}
-                        onChange={e => setForm(f => ({ ...f, branch: Number(e.target.value) }))}
+                        onChange={e => setForm(f => ({ ...f, branch: e.target.value }))}
                         placeholder="Branch ID"
                         className="h-10 rounded-xl bg-gray-50 text-black border-gray-100 font-bold text-sm"
                       />
@@ -727,7 +727,7 @@ export default function UserManagementPage() {
                         disabled
                         className="flex h-10 w-full rounded-xl bg-gray-200 text-gray-500 border border-gray-100 px-3 font-bold text-sm appearance-none"
                       >
-                        <option value={0}>All Zones</option>
+                        <option value="">All Zones</option>
                         {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
                       </select>
                     </div>
