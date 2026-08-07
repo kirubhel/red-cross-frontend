@@ -274,7 +274,7 @@ export default function VolunteersPage() {
     try {
       const ExcelJS = await import("exceljs");
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet("Volunteers Template");
+      const worksheet = workbook.addWorksheet("ERCS volunteers Regist");
 
       // Set up headers matching North Addis Ababa volunteers.xlsx template
       const headers = [
@@ -308,42 +308,63 @@ export default function VolunteersPage() {
         };
       });
 
-      // Add sample rows (2-100) with data validation
+      // Add Formula helper sheet matching official template
+      const formulaSheet = workbook.addWorksheet("Formula");
+      
+      const occupations = ["Farmer", "Business Person", "Civil Servant", "House Wife", "Military", "NGO", "Self Employed", "Student", "Police", "Diplomat", "Others"];
+      occupations.forEach((val, i) => { formulaSheet.getCell(`A${i+1}`).value = val; });
+
+      const genders = ["Male", "Female"];
+      genders.forEach((val, i) => { formulaSheet.getCell(`B${i+1}`).value = val; });
+
+      const orgTypes = ["Government", "Ngo", "Private", "Association"];
+      orgTypes.forEach((val, i) => { formulaSheet.getCell(`C${i+1}`).value = val; });
+
+      const areas = ["URBAN", "RURAL"];
+      areas.forEach((val, i) => { formulaSheet.getCell(`D${i+1}`).value = val; });
+
+      const eduLevels = ["Below Primary School", "Primary School Completed", "High School Completed", "Degree", "Masters", "PHD"];
+      eduLevels.forEach((val, i) => { formulaSheet.getCell(`E${i+1}`).value = val; });
+
+      const classChoices = ["YES", "NO"];
+      classChoices.forEach((val, i) => { formulaSheet.getCell(`F${i+1}`).value = val; });
+
+      // Add sample rows (2-100) with data validation referencing Formula sheet
       const totalRows = 100;
       for (let i = 2; i <= totalRows; i++) {
         // Gender column (F)
         worksheet.getCell(`F${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
-          formulae: ['"Male,Female"']
+          formulae: ["'Formula'!$B$1:$B$2"]
         };
 
         // Occupation column (I)
         worksheet.getCell(`I${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
-          formulae: ['"Farmer,Business Person,Civil Servant,House Wife,Military,NGO,Self Employed,Student,Police,Diplomat,Others"']
+          formulae: ["'Formula'!$A$1:$A$11"]
         };
 
         // Organization Type column (K)
         worksheet.getCell(`K${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
-          formulae: ['"Government,Ngo,Private,Association"']
+          formulae: ["'Formula'!$C$1:$C$4"]
         };
 
         // Education Level column (L)
         worksheet.getCell(`L${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
-          formulae: ['"Below Primary School,Primary School Completed,High School Completed,Degree,Masters,PHD"']
+          formulae: ["'Formula'!$E$1:$E$6"]
         };
 
         // Area column (M)
         worksheet.getCell(`M${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
-          formulae: ['"URBAN,RURAL"']
+          formulae: ["'Formula'!$D$1:$D$2"]
         };
 
         // Classifications: General (Q), Youth (R), Professional (S), Leadership (T)
@@ -352,16 +373,16 @@ export default function VolunteersPage() {
           worksheet.getCell(`${col}${i}`).dataValidation = {
             type: "list",
             allowBlank: true,
-            formulae: ['"YES,NO"']
+            formulae: ["'Formula'!$F$1:$F$2"]
           };
         });
       }
 
       // Add dummy data for first row as help
       worksheet.addRow([
-        1, "+251911223344", "Sara", "Belay", "Tadesse", "Female", 
-        "12/04/1995", "05/07/2026", "NGO", "ERCS", "Ngo", 
-        "Degree", "URBAN", "Amharic, English", "Kebele 03, House 405", "sara@example.com", 
+        1, "0939296961", "mengesha", "werkneh", "yrga", "Male", 
+        "02/01/1990", "16/10/2024", "House Wife", "ERCS", "Government", 
+        "Degree", "URBAN", "Amharic, English", "Kebele 20", "mengesha@example.com", 
         "YES", "NO", "YES", "NO"
       ]);
 
@@ -380,7 +401,7 @@ export default function VolunteersPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "volunteer_registration_template.xlsx";
+      link.download = "North Addis Ababa volunteers.xlsx";
       link.click();
       toast.success("Excel Template downloaded successfully!");
     } catch (err) {

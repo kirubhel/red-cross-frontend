@@ -36,8 +36,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const getAvatarStyles = (firstName: string, lastName: string) => {
-  const char = (firstName?.[0] || "") + (lastName?.[0] || "");
+const getAvatarStyles = (firstName?: string, lastName?: string) => {
+  const fName = firstName || "";
+  const lName = lastName || "";
+  const char = (fName[0] || "") + (lName[0] || "");
   const chars = char.toUpperCase() || "?";
   const gradients = [
     "from-blue-500 to-indigo-600",
@@ -46,7 +48,9 @@ const getAvatarStyles = (firstName: string, lastName: string) => {
     "from-amber-400 to-orange-600",
     "from-rose-500 to-pink-600",
   ];
-  const index = (firstName.charCodeAt(0) + (lastName.charCodeAt(0) || 0)) % gradients.length;
+  const charCode1 = fName.length > 0 ? fName.charCodeAt(0) : 0;
+  const charCode2 = lName.length > 0 ? lName.charCodeAt(0) : 0;
+  const index = (charCode1 + charCode2) % gradients.length;
   return { chars, gradient: gradients[index] };
 };
 
@@ -289,7 +293,7 @@ export default function DashboardPage() {
       const merged = [
         ...people.map((p: any) => ({
           id: p.id || p.ercs_id || `mem-${Math.random()}`,
-          first_name: p.first_name,
+          first_name: p.first_name || p.name || "",
           father_name: p.father_name || p.last_name || "",
           email: p.email || "member@ercs.org",
           phone_number: p.phone_number || "N/A",
@@ -301,7 +305,7 @@ export default function DashboardPage() {
         })),
         ...volunteers.map((v: any) => ({
           id: v.id || v.person_id || `vol-${Math.random()}`,
-          first_name: v.first_name,
+          first_name: v.first_name || v.name || "",
           father_name: v.last_name || v.father_name || "",
           email: v.email || "volunteer@ercs.org",
           phone_number: v.phone_number || "N/A",

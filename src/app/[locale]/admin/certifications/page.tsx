@@ -7,11 +7,11 @@ import { Download, Upload, Type, Image as ImageIcon, Plus, Trash2, ChevronDown, 
 import { Button } from "@/components/ui/button";
 
 const CERTIFICATES = [
-  { id: "corporate", name: "Corporate Membership", file: "/certificates/Corporate Membership  Certificate1.png" },
-  { id: "family", name: "Family Membership", file: "/certificates/Family Membership Certificate.png" },
-  { id: "family-id", name: "Family ID Inside", file: "/certificates/Membership Family ID inside 10 x 15 cm.png" },
-  { id: "regular-front-back", name: "Regular ID Front & Back", file: "/certificates/Membership Regular ID Front & Back 10 x 15 cm.png" },
-  { id: "regular-inside", name: "Regular ID Inside", file: "/certificates/Membership Regular ID inside 10 x 15 cm.png" }
+  { id: "corporate", name: "Corporate Membership", file: "/certificates/corporate-membership-certificate1.png" },
+  { id: "family", name: "Family Membership", file: "/certificates/family-membership-certificate.png" },
+  { id: "family-id", name: "Family ID Inside", file: "/certificates/membership-family-id-inside.png" },
+  { id: "regular-front-back", name: "Regular ID Front & Back", file: "/certificates/membership-regular-id-front-back.png" },
+  { id: "regular-inside", name: "Regular ID Inside", file: "/certificates/membership-regular-id-inside.png" }
 ];
 
 interface Label {
