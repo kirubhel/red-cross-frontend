@@ -453,7 +453,8 @@ export default function LandingPage() {
                     >
                       <a
                         href={mergedT.hero.appDownloadUrl}
-                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="group relative flex items-center gap-3 pl-2 pr-5 py-2 rounded-full
                           bg-[#ED1C24] hover:bg-black border border-white/10 shadow-lg shadow-red-500/10
                           hover:shadow-red-500/35 hover:border-red-400/30
@@ -463,10 +464,12 @@ export default function LandingPage() {
                         <div className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full
                           bg-white/10 blur-md group-hover:bg-white/25 transition-all duration-500" />
 
-                        {/* Icon pill */}
+                        {/* Google Play Icon pill */}
                         <div className="relative h-8 w-8 rounded-full bg-white/20 flex items-center
                           justify-center group-hover:bg-white/30 transition-colors duration-300 flex-shrink-0">
-                          <Smartphone className="h-4 w-4 text-white" />
+                          <svg className="h-4 w-4 fill-white" viewBox="0 0 24 24">
+                            <path d="M3.609 1.814L13.792 12 3.61 22.186a2.37 2.37 0 0 1-.49-.775 2.36 2.36 0 0 1-.12-.767V3.356c0-.27.04-.526.12-.767a2.37 2.37 0 0 1 .49-.775zm1.536-1.536l11.08 6.395-3.32 3.32-7.76-9.715zm0 23.444l7.76-9.715 3.32 3.32-11.08 6.395zm12.385-11.722l3.415 1.972a1.86 1.86 0 0 1 0 3.227l-3.415 1.972-3.21-3.21 3.21-3.21z"/>
+                          </svg>
                         </div>
 
                         {/* Label */}
