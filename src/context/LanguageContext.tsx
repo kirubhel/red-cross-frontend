@@ -1,9 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import { translations, Language } from '@/lib/translations';
-import { useLocale } from 'next-intl';
-import { useRouter, usePathname } from '@/i18n/routing';
 
 type LanguageContextType = {
   lang: Language;
@@ -13,20 +12,33 @@ type LanguageContextType = {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+const SUPPORTED_LOCALES: Language[] = ['en', 'am'];
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const locale = useLocale() as Language;
-  const router = useRouter();
-  const pathname = usePathname();
+  // Read locale from URL params — safe during SSR, requires no provider context
+  const params = useParams();
+  const rawLocale = params?.locale as string | undefined;
+  const locale: Language = SUPPORTED_LOCALES.includes(rawLocale as Language)
+    ? (rawLocale as Language)
+    : 'en';
 
   useEffect(() => {
-    // Optionally sync with localStorage if needed
-    localStorage.setItem('language', locale);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', locale);
+    }
   }, [locale]);
 
-  const setLang = (newLang: Language) => {
+  // Locale switching: always a full page navigation — no router hook needed.
+  // Avoids next-intl's useRouter/usePathname which throw during prerender.
+  const setLang = useCallback((newLang: Language) => {
+    if (typeof window === 'undefined') return;
     localStorage.setItem('language', newLang);
-    router.replace(pathname, { locale: newLang });
-  };
+    const segments = window.location.pathname.split('/');
+    if (segments.length > 1 && SUPPORTED_LOCALES.includes(segments[1] as Language)) {
+      segments[1] = newLang;
+      window.location.pathname = segments.join('/');
+    }
+  }, []);
 
   const t = translations[locale] || translations.en;
 
