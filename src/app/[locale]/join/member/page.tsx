@@ -139,6 +139,9 @@ function MemberRegistrationContent() {
         fields.forEach((f: any) => {
            if (initialData[f.id] === undefined) initialData[f.id] = "";
         });
+        if (!initialData.registrationDate) {
+           initialData.registrationDate = new Date().toISOString().split('T')[0];
+        }
         setFormData(initialData);
       } catch (err) {
         console.error("Failed to load configs:", err);
@@ -481,7 +484,8 @@ function MemberRegistrationContent() {
                                               field.id === 'country' || 
                                               field.id === 'zone' || 
                                               field.id === 'woreda' || 
-                                              field.dataSource === 'COUNTRIES'
+                                              field.dataSource === 'COUNTRIES' ||
+                                              (!field.required && field.id !== 'password' && field.id !== 'confirmPassword')
                                           ) return null;
 
                                           if (field.id === 'password') {

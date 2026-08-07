@@ -54,6 +54,14 @@ export default function ProfilePage() {
     grandfatherName: "",
     email: "",
     phone: "",
+    gender: "",
+    dateOfBirth: "",
+    occupation: "",
+    organizationName: "",
+    educationLevel: "",
+    area: "",
+    languages: "",
+    kebele: "",
     region: 0,
     zone: "",
     woreda: "",
@@ -87,15 +95,13 @@ export default function ProfilePage() {
         
         setUser(data);
         
-        let bio = "";
+        let meta: any = {};
         try {
-          let meta: any = {};
           if (typeof data.metadata === 'string' && data.metadata) {
             meta = JSON.parse(data.metadata);
           } else if (typeof data.metadata === 'object' && data.metadata) {
             meta = data.metadata;
           }
-          bio = meta.bio || "";
         } catch (e) {
           console.warn("Failed to parse metadata", e);
         }
@@ -111,10 +117,18 @@ export default function ProfilePage() {
           grandfatherName: data.grandfather_name || "",
           email: data.email || "",
           phone: localPhone,
+          gender: data.gender || meta.gender || "",
+          dateOfBirth: data.date_of_birth || meta.date_of_birth || meta.dateOfBirth || "",
+          occupation: data.profession || meta.occupation || "",
+          organizationName: meta.organization_name || meta.organizationName || "",
+          educationLevel: meta.education_level || meta.educationLevel || "",
+          area: meta.area || "",
+          languages: meta.languages || "",
+          kebele: data.kebele_id || meta.kebele || "",
           region: data.region_id || data.region || 0,
           zone: data.zone_id || data.zone || "",
           woreda: data.woreda_id || data.woreda || "",
-          bio: bio
+          bio: meta.bio || ""
         });
       } catch (err) {
         console.error("Failed to fetch profile:", err);
@@ -219,6 +233,14 @@ export default function ProfilePage() {
         console.warn("Failed to parse existing metadata", e);
       }
       meta.bio = formData.bio;
+      meta.date_of_birth = formData.dateOfBirth;
+      meta.gender = formData.gender;
+      meta.occupation = formData.occupation;
+      meta.organization_name = formData.organizationName;
+      meta.education_level = formData.educationLevel;
+      meta.area = formData.area;
+      meta.languages = formData.languages;
+      meta.kebele = formData.kebele;
       const metaString = JSON.stringify(meta);
 
       const fullPhone = buildFullPhoneNumber(countryIso, formData.phone);
@@ -230,6 +252,9 @@ export default function ProfilePage() {
         grandfather_name: formData.grandfatherName,
         email: formData.email,
         phone_number: fullPhone,
+        gender: formData.gender,
+        date_of_birth: formData.dateOfBirth,
+        profession: formData.occupation,
         region: formData.region,
         metadata: metaString,
         photo_url: user?.photo_url
@@ -440,6 +465,116 @@ export default function ProfilePage() {
                     />
                  </div>
               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Gender</label>
+                     <select
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleInputChange}
+                        className="w-full bg-gray-50 border-none rounded-2xl h-14 px-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all appearance-none"
+                     >
+                        <option value="">Select Gender</option>
+                        <option value="MALE">MALE</option>
+                        <option value="FEMALE">FEMALE</option>
+                     </select>
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Date of Birth (Eth)</label>
+                     <input
+                        type="text"
+                        name="dateOfBirth"
+                        value={formData.dateOfBirth}
+                        onChange={handleInputChange}
+                        className="w-full bg-gray-50 border-none rounded-2xl h-14 px-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all"
+                        placeholder="DD/MM/YYYY"
+                     />
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Occupation</label>
+                     <input
+                        type="text"
+                        name="occupation"
+                        value={formData.occupation}
+                        onChange={handleInputChange}
+                        className="w-full bg-gray-50 border-none rounded-2xl h-14 px-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all"
+                        placeholder="e.g. Civil Servant, Farmer..."
+                     />
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Organization Name</label>
+                     <input
+                        type="text"
+                        name="organizationName"
+                        value={formData.organizationName}
+                        onChange={handleInputChange}
+                        className="w-full bg-gray-50 border-none rounded-2xl h-14 px-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all"
+                        placeholder="Organization / Company Name"
+                     />
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Education Level</label>
+                     <select
+                        name="educationLevel"
+                        value={formData.educationLevel}
+                        onChange={handleInputChange}
+                        className="w-full bg-gray-50 border-none rounded-2xl h-14 px-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all appearance-none"
+                     >
+                        <option value="">Select Education Level</option>
+                        <option value="Below Primary School">Below Primary School</option>
+                        <option value="Primary School Completed">Primary School Completed</option>
+                        <option value="High School Completed">High School Completed</option>
+                        <option value="Degree">Degree</option>
+                        <option value="Masters">Masters</option>
+                        <option value="PHD">PHD</option>
+                     </select>
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Area</label>
+                     <select
+                        name="area"
+                        value={formData.area}
+                        onChange={handleInputChange}
+                        className="w-full bg-gray-50 border-none rounded-2xl h-14 px-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all appearance-none"
+                     >
+                        <option value="">Select Area</option>
+                        <option value="URBAN">URBAN</option>
+                        <option value="RURAL">RURAL</option>
+                     </select>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Languages</label>
+                     <input
+                        type="text"
+                        name="languages"
+                        value={formData.languages}
+                        onChange={handleInputChange}
+                        className="w-full bg-gray-50 border-none rounded-2xl h-14 px-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all"
+                        placeholder="e.g. Amharic, English, Oromiffa..."
+                     />
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">Kebele / House No.</label>
+                     <input
+                        type="text"
+                        name="kebele"
+                        value={formData.kebele}
+                        onChange={handleInputChange}
+                        className="w-full bg-gray-50 border-none rounded-2xl h-14 px-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all"
+                        placeholder="Kebele or House Number"
+                     />
+                  </div>
+               </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                      <div className="space-y-2">

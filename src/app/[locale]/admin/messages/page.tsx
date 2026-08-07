@@ -47,9 +47,21 @@ export default function AdminMessagesPage() {
   const [replyText, setReplyText] = useState("");
   const [isSendingReply, setIsSendingReply] = useState(false);
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     fetchMessages();
   }, []);
+
+  if (!mounted) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-20 bg-gray-100 rounded-2xl w-full"></div>
+        <div className="h-64 bg-gray-100 rounded-2xl w-full"></div>
+      </div>
+    );
+  }
 
   const fetchMessages = async () => {
     setLoading(true);
