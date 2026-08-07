@@ -276,9 +276,9 @@ export default function VolunteersPage() {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Volunteers Template");
 
-      // Set up headers
+      // Set up headers matching North Addis Ababa volunteers.xlsx template
       const headers = [
-        "Mobile", "Name", "Father Name", "Last Name", "Gender", 
+        "No.", "Mobile", "Name", "Father Name", "Last Name", "Gender", 
         "Date of Birth (Eth)", "Registration Date", "Occupation", 
         "Organization Name", "Organization Type", "Education Level", 
         "Area", "Languages", "Kebele", "Email", 
@@ -311,43 +311,43 @@ export default function VolunteersPage() {
       // Add sample rows (2-100) with data validation
       const totalRows = 100;
       for (let i = 2; i <= totalRows; i++) {
-        // Gender column (E)
-        worksheet.getCell(`E${i}`).dataValidation = {
+        // Gender column (F)
+        worksheet.getCell(`F${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
           formulae: ['"Male,Female"']
         };
 
-        // Occupation column (H)
-        worksheet.getCell(`H${i}`).dataValidation = {
+        // Occupation column (I)
+        worksheet.getCell(`I${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
           formulae: ['"Farmer,Business Person,Civil Servant,House Wife,Military,NGO,Self Employed,Student,Police,Diplomat,Others"']
         };
 
-        // Organization Type column (J)
-        worksheet.getCell(`J${i}`).dataValidation = {
+        // Organization Type column (K)
+        worksheet.getCell(`K${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
           formulae: ['"Government,Ngo,Private,Association"']
         };
 
-        // Education Level column (K)
-        worksheet.getCell(`K${i}`).dataValidation = {
+        // Education Level column (L)
+        worksheet.getCell(`L${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
           formulae: ['"Below Primary School,Primary School Completed,High School Completed,Degree,Masters,PHD"']
         };
 
-        // Area column (L)
-        worksheet.getCell(`L${i}`).dataValidation = {
+        // Area column (M)
+        worksheet.getCell(`M${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
           formulae: ['"URBAN,RURAL"']
         };
 
-        // Classifications: General (P), Youth (Q), Professional (R), Leadership (S)
-        const classCols = ["P", "Q", "R", "S"];
+        // Classifications: General (Q), Youth (R), Professional (S), Leadership (T)
+        const classCols = ["Q", "R", "S", "T"];
         classCols.forEach((col) => {
           worksheet.getCell(`${col}${i}`).dataValidation = {
             type: "list",
@@ -359,7 +359,7 @@ export default function VolunteersPage() {
 
       // Add dummy data for first row as help
       worksheet.addRow([
-        "+251911223344", "Sara", "Belay", "Tadesse", "Female", 
+        1, "+251911223344", "Sara", "Belay", "Tadesse", "Female", 
         "12/04/1995", "05/07/2026", "NGO", "ERCS", "Ngo", 
         "Degree", "URBAN", "Amharic, English", "Kebele 03, House 405", "sara@example.com", 
         "YES", "NO", "YES", "NO"

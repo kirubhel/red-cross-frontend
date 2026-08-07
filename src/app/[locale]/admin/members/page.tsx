@@ -161,20 +161,25 @@ export default function MembersPage() {
     try {
         const ExcelJS = (await import("exceljs")).default;
         const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("Member Import");
+        const worksheet = workbook.addWorksheet("ERCS Personal Membership Regist");
 
-        // Add headers
+        // Add headers matching official template
         const headers = [
-            "First Name", 
+            "No.",
+            "Mobile", 
+            "Name", 
             "Father Name", 
-            "Grandfather Name", 
-            "Email", 
-            "Phone Number", 
-            "National ID", 
-            "Date of Birth (YYYY-MM-DD)", 
+            "Last Name", 
             "Gender", 
-            "Region (Select from list)", 
-            "Membership Type"
+            "Date of Birth (Eth)", 
+            "Registration Date", 
+            "Occupation", 
+            "Organization Name",
+            "Education Level", 
+            "Area", 
+            "Languages", 
+            "Kebele", 
+            "Email"
         ];
         
         const headerRow = worksheet.addRow(headers);
@@ -187,95 +192,62 @@ export default function MembersPage() {
         headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
         headerRow.height = 25;
 
-        // Add a helper sheet for data validation source
-        const helperSheet = workbook.addWorksheet("HelperLists");
-        // Hide helper sheet using state instead of option to ensure compatibility
-        helperSheet.state = 'hidden';
-        
-        // Regions: Format as "ID - Name" so parseInt works automatically on import
-        const regionOptions = regions.map(r => `${r.id} - ${r.name}`);
-        if (regionOptions.length === 0) {
-            // Fallback if regions not loaded
-            [
-                "1 - Addis Ababa", "2 - Dire Dawa", "3 - Tigray", "4 - Afar", 
-                "5 - Amhara", "6 - Oromia", "7 - Somali", "8 - Benishangul Gumz", 
-                "9 - Central Ethiopia", "10 - Gambela", "11 - Harari", "12 - Sidama", 
-                "13 - South West Ethiopia", "14 - South Ethiopia"
-            ].forEach((opt, i) => helperSheet.getCell(`A${i+1}`).value = opt);
-        } else {
-            regionOptions.forEach((opt, i) => helperSheet.getCell(`A${i+1}`).value = opt);
-        }
-
-        const membershipOptions = [
-            "REGULAR", "INDIVIDUAL_LIFETIME", "FAMILY_LIFETIME", 
-            "CORP_REGULAR", "CORP_HIGH", "CORP_SPECIAL", "YOUTH"
-        ];
-        membershipOptions.forEach((opt, i) => helperSheet.getCell(`B${i+1}`).value = opt);
-
-        const genderOptions = ["MALE", "FEMALE"];
-        genderOptions.forEach((opt, i) => helperSheet.getCell(`C${i+1}`).value = opt);
-
-        // Apply column widths and formats
-        worksheet.columns = [
-            { width: 20 }, { width: 20 }, { width: 20 }, { width: 25 }, 
-            { width: 20 }, { width: 15 }, { width: 25 }, { width: 12 }, 
-            { width: 30 }, { width: 25 }
-        ];
-
-        // Ensure Date of Birth column (G) is treated as text to avoid Excel date auto-formatting issues
-        worksheet.getColumn(7).numFmt = '@'; 
-
         // Apply Data Validation
         const rowCount = 500; // Apply to first 500 rows
-        const regionCount = Math.max(regionOptions.length, 14);
-        const membershipCount = membershipOptions.length;
-        const genderCount = genderOptions.length;
-
         for (let i = 2; i <= rowCount; i++) {
-            // Gender (Column H)
-            worksheet.getCell(`H${i}`).dataValidation = {
+            // Gender (Column F)
+            worksheet.getCell(`F${i}`).dataValidation = {
                 type: 'list',
                 allowBlank: true,
-                formulae: [`'HelperLists'!$C$1:$C$${genderCount}`],
+                formulae: ['"Male,Female"'],
                 showErrorMessage: true,
                 errorTitle: 'Invalid Selection',
-                error: 'Please select from the list.'
+                error: 'Please select Male or Female.'
             };
-            // Region (Column I)
+            // Occupation (Column I)
             worksheet.getCell(`I${i}`).dataValidation = {
                 type: 'list',
                 allowBlank: true,
-                formulae: [`'HelperLists'!$A$1:$A$${regionCount}`],
-                showErrorMessage: true,
-                errorTitle: 'Invalid Selection',
-                error: 'Please select from the list.'
+                formulae: ['"Farmer,Business Person,Civil Servant,House Wife,Military,NGO,Self Employed,Student,Police,Diplomat,Others"']
             };
-            // Membership Type (Column J)
-            worksheet.getCell(`J${i}`).dataValidation = {
+            // Education Level (Column K)
+            worksheet.getCell(`K${i}`).dataValidation = {
                 type: 'list',
                 allowBlank: true,
-                formulae: [`'HelperLists'!$B$1:$B$${membershipCount}`],
-                showErrorMessage: true,
-                errorTitle: 'Invalid Selection',
-                error: 'Please select from the list.'
+                formulae: ['"Below Primary School,Primary School Completed,High School Completed,Degree,Masters,PHD"']
+            };
+            // Area (Column L)
+            worksheet.getCell(`L${i}`).dataValidation = {
+                type: 'list',
+                allowBlank: true,
+                formulae: ['"URBAN,RURAL"']
             };
         }
 
         // Add example row
         worksheet.addRow([
-            "John", "Doe", "Smith", "john.doe@example.com", "251912345678", 
-            "ID123456", "1990-01-01", "MALE", "1 - Addis Ababa", "REGULAR"
+            1, "0912345678", "Abebe", "Kebede", "Tadesse", "Male", 
+            "01/01/1990", "16/10/2024", "Civil Servant", "ERCS", "Degree", "URBAN", "Amharic, English", "Kebele 03", "abebe@example.com"
         ]);
+
+        worksheet.columns.forEach((column) => {
+            let maxLen = 0;
+            column.eachCell!({ includeEmpty: true }, (cell) => {
+                const val = cell.value ? String(cell.value) : "";
+                if (val.length > maxLen) maxLen = val.length;
+            });
+            column.width = Math.max(maxLen + 4, 15);
+        });
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "ercs_member_import_template.xlsx";
+        link.download = "Membership Registration Template.xlsx";
         link.click();
         
-        toast.success("Excel Import Template Downloaded");
+        toast.success("Membership Registration Template Downloaded");
     } catch (err) {
         console.error("Template generation failed:", err);
         toast.error("Failed to generate Excel template.");
@@ -314,23 +286,69 @@ export default function MembersPage() {
                     const worksheet = workbook.getWorksheet(1);
                     
                     const people: any[] = [];
+                    let headers: string[] = [];
                     worksheet?.eachRow((row, rowNumber) => {
-                        if (rowNumber === 1) return;
-                        const firstName = row.getCell(1).text;
+                        if (rowNumber === 1) {
+                            headers = (row.values as any[]).slice(1).map(v => String(v || '').trim());
+                            return;
+                        }
+
+                        const rowData: Record<string, any> = {};
+                        headers.forEach((h, idx) => {
+                            const val = row.getCell(idx + 1).value;
+                            let strVal = "";
+                            if (val instanceof Date) strVal = val.toISOString().split('T')[0];
+                            else if (typeof val === 'object' && val !== null) {
+                                if ('text' in val) strVal = String((val as any).text || '');
+                                else if ('result' in val) strVal = String((val as any).result || '');
+                            } else if (val !== undefined && val !== null) {
+                                strVal = String(val).trim();
+                            }
+                            rowData[h] = strVal;
+                        });
+
+                        const getVal = (keys: string[], defaultIdx: number) => {
+                            for (const k of keys) {
+                                for (const h of headers) {
+                                    if (h.toLowerCase() === k.toLowerCase()) {
+                                        return rowData[h];
+                                    }
+                                }
+                            }
+                            return row.getCell(defaultIdx).text || "";
+                        };
+
+                        const firstName = getVal(["Name", "First Name", "FirstName"], 3) || row.getCell(1).text;
                         if (!firstName || firstName.trim() === "") return;
+
+                        const fatherName = getVal(["Father Name", "FatherName", "Middle Name"], 4) || row.getCell(2).text;
+                        const grandfatherName = getVal(["Last Name", "Grandfather Name", "GrandfatherName"], 5) || row.getCell(3).text;
+                        const email = getVal(["Email", "Email Address"], 15) || row.getCell(4).text;
+                        const phone = getVal(["Mobile", "Phone Number", "Phone"], 2) || row.getCell(5).text;
+                        const gender = getVal(["Gender"], 6) || row.getCell(8).text;
+                        const dob = getVal(["Date of Birth (Eth)", "Date of Birth (YYYY-MM-DD)", "Date of Birth", "DOB"], 7);
+                        const regionVal = parseInt(getVal(["Region", "Region (Select from list)"], 9)) || 1;
+                        const membershipType = getVal(["Membership Type"], 10) || "REGULAR";
 
                         people.push({
                             first_name: firstName,
-                            father_name: row.getCell(2).text,
-                            grandfather_name: row.getCell(3).text,
-                            email: row.getCell(4).text,
-                            phone_number: String(row.getCell(5).text || ""),
-                            national_id: String(row.getCell(6).text || ""),
-                            date_of_birth: normalizeDate(row.getCell(7).value),
-                            gender: row.getCell(8).text,
-                            region: parseInt(row.getCell(9).text) || 1,
-                            membership_type: row.getCell(10).text,
-                            metadata: "{}" // Important: Prevents JSONB DB error
+                            father_name: fatherName,
+                            grandfather_name: grandfatherName,
+                            email: email,
+                            phone_number: String(phone || ""),
+                            national_id: getVal(["National ID"], 6),
+                            date_of_birth: normalizeDate(dob),
+                            gender: gender,
+                            region: regionVal,
+                            membership_type: membershipType,
+                            metadata: JSON.stringify({
+                                occupation: getVal(["Occupation"], 9),
+                                organizationName: getVal(["Organization Name"], 10),
+                                educationLevel: getVal(["Education Level"], 11),
+                                area: getVal(["Area"], 12),
+                                languages: getVal(["Languages"], 13),
+                                kebele: getVal(["Kebele"], 14)
+                            })
                         });
                     });
 

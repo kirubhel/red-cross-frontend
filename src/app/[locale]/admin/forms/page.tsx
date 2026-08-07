@@ -295,15 +295,19 @@ const FieldItem = ({ field, updateField, removeField, isCoreField }: { field: Fo
 };
 
 const DEFAULT_VOLUNTEER_FIELDS: FormField[] = [
+  { id: "phone", label: "Phone Number", type: "tel", required: true, unique: true, placeholder: "Enter phone number" },
+  { id: "firstName", label: "First Name", type: "text", required: true, unique: false, placeholder: "e.g. Sara" },
+  { id: "fatherName", label: "Father Name", type: "text", required: true, unique: false, placeholder: "e.g. Belay" },
+  { id: "grandfatherName", label: "Grandfather Name", type: "text", required: true, unique: false, placeholder: "e.g. Tadesse" },
+  { id: "gender", label: "Gender", type: "select", required: true, unique: false, placeholder: "Select Gender", dataSource: "GENDER" },
   { id: "country", label: "Country", type: "select", required: true, unique: false, placeholder: "Select Country", dataSource: "COUNTRIES" },
   { id: "region", label: "Region", type: "select", required: true, unique: false, placeholder: "Select Region", dataSource: "REGIONS" },
   { id: "zone", label: "Zone", type: "text", required: true, unique: false, placeholder: "Enter Zone" },
-  { id: "woreda", label: "Woreda", type: "text", required: true, unique: false, placeholder: "Enter Woreda" },
-  { id: "kebele", label: "Kebele/House No.", type: "text", required: true, unique: false, placeholder: "Enter Kebele/House No." },
-  { id: "gender", label: "Gender", type: "select", required: true, unique: false, placeholder: "Select Gender", dataSource: "GENDER" },
-  { id: "dateOfBirth", label: "Date of Birth (Eth)", type: "date", required: true, unique: false, placeholder: "DD/MM/YYYY (Ethiopian Calendar)" },
-  { id: "email", label: "Email Address", type: "email", required: true, unique: false, placeholder: "sara@example.com" },
-  { id: "occupation", label: "Occupation", type: "select", required: true, unique: false, placeholder: "Select Occupation", dataSource: "MANUAL", options: [
+  { id: "woreda", label: "Woreda", type: "text", required: false, unique: false, placeholder: "Enter Woreda" },
+  { id: "kebele", label: "Kebele/House No.", type: "text", required: false, unique: false, placeholder: "Enter Kebele/House No." },
+  { id: "dateOfBirth", label: "Date of Birth (Eth)", type: "date", required: false, unique: false, placeholder: "DD/MM/YYYY (Ethiopian Calendar)" },
+  { id: "email", label: "Email Address", type: "email", required: false, unique: false, placeholder: "sara@example.com" },
+  { id: "occupation", label: "Occupation", type: "select", required: false, unique: false, placeholder: "Select Occupation", dataSource: "MANUAL", options: [
     { label: "Farmer", value: "Farmer" },
     { label: "Business Person", value: "Business Person" },
     { label: "Civil Servant", value: "Civil Servant" },
@@ -323,7 +327,7 @@ const DEFAULT_VOLUNTEER_FIELDS: FormField[] = [
     { label: "Private", value: "Private" },
     { label: "Association", value: "Association" }
   ]},
-  { id: "educationLevel", label: "Education Level", type: "select", required: true, unique: false, placeholder: "Select Education Level", dataSource: "MANUAL", options: [
+  { id: "educationLevel", label: "Education Level", type: "select", required: false, unique: false, placeholder: "Select Education Level", dataSource: "MANUAL", options: [
     { label: "Below Primary School", value: "Below Primary School" },
     { label: "Primary School Completed", value: "Primary School Completed" },
     { label: "High School Completed", value: "High School Completed" },
@@ -331,46 +335,69 @@ const DEFAULT_VOLUNTEER_FIELDS: FormField[] = [
     { label: "Masters", value: "Masters" },
     { label: "PHD", value: "PHD" }
   ]},
-  { id: "area", label: "Area", type: "select", required: true, unique: false, placeholder: "Select Area", dataSource: "MANUAL", options: [
+  { id: "area", label: "Area", type: "select", required: false, unique: false, placeholder: "Select Area", dataSource: "MANUAL", options: [
     { label: "URBAN", value: "URBAN" },
     { label: "RURAL", value: "RURAL" }
   ]},
   { id: "languages", label: "Languages", type: "text", required: false, unique: false, placeholder: "e.g. Amharic, English" },
-  { id: "general", label: "General Classification", type: "select", required: true, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
+  { id: "general", label: "General Classification", type: "select", required: false, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
     { label: "YES", value: "YES" },
     { label: "NO", value: "NO" }
   ]},
-  { id: "youth", label: "Youth Classification", type: "select", required: true, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
+  { id: "youth", label: "Youth Classification", type: "select", required: false, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
     { label: "YES", value: "YES" },
     { label: "NO", value: "NO" }
   ]},
-  { id: "professional", label: "Professional Classification", type: "select", required: true, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
+  { id: "professional", label: "Professional Classification", type: "select", required: false, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
     { label: "YES", value: "YES" },
     { label: "NO", value: "NO" }
   ]},
-  { id: "leadership", label: "Leadership Classification", type: "select", required: true, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
+  { id: "leadership", label: "Leadership Classification", type: "select", required: false, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
     { label: "YES", value: "YES" },
     { label: "NO", value: "NO" }
-  ]},
-  { id: "firstName", label: "First Name", type: "text", required: true, unique: false, placeholder: "e.g. Sara" },
-  { id: "fatherName", label: "Father Name", type: "text", required: true, unique: false, placeholder: "e.g. Belay" },
-  { id: "grandfatherName", label: "Grandfather Name", type: "text", required: true, unique: false, placeholder: "e.g. Tadesse" },
-  { id: "phone", label: "Phone Number", type: "tel", required: true, unique: true, placeholder: "Enter phone number" }
+  ]}
 ];
 
 const DEFAULT_MEMBER_FIELDS: FormField[] = [
-  { id: "country", label: "Country", type: "select", required: true, unique: false, placeholder: "Select Country", dataSource: "COUNTRIES" },
-  { id: "region", label: "Region", type: "select", required: true, unique: false, placeholder: "Select Region", dataSource: "REGIONS" },
-  { id: "zone", label: "Zone", type: "text", required: true, unique: false, placeholder: "Enter Zone" },
-  { id: "woreda", label: "Woreda", type: "text", required: true, unique: false, placeholder: "Enter Woreda" },
-  { id: "kebele", label: "Kebele/House No.", type: "text", required: true, unique: false, placeholder: "Enter Kebele/House No." },
-  { id: "gender", label: "Gender", type: "select", required: true, unique: false, placeholder: "Select Gender", dataSource: "GENDER" },
-  { id: "dateOfBirth", label: "Date of Birth (Eth)", type: "date", required: true, unique: false, placeholder: "DD/MM/YYYY (Ethiopian Calendar)" },
-  { id: "email", label: "Email Address", type: "email", required: true, unique: false, placeholder: "abebe@example.com" },
+  { id: "phone", label: "Phone Number", type: "tel", required: true, unique: true, placeholder: "Enter phone number" },
   { id: "firstName", label: "First Name", type: "text", required: true, unique: false, placeholder: "e.g. Abebe" },
   { id: "fatherName", label: "Father Name", type: "text", required: true, unique: false, placeholder: "e.g. Kebede" },
   { id: "grandfatherName", label: "Grandfather Name", type: "text", required: true, unique: false, placeholder: "e.g. Tadesse" },
-  { id: "phone", label: "Phone Number", type: "tel", required: true, unique: true, placeholder: "Enter phone number" }
+  { id: "gender", label: "Gender", type: "select", required: true, unique: false, placeholder: "Select Gender", dataSource: "GENDER" },
+  { id: "country", label: "Country", type: "select", required: true, unique: false, placeholder: "Select Country", dataSource: "COUNTRIES" },
+  { id: "region", label: "Region", type: "select", required: true, unique: false, placeholder: "Select Region", dataSource: "REGIONS" },
+  { id: "zone", label: "Zone", type: "text", required: true, unique: false, placeholder: "Enter Zone" },
+  { id: "woreda", label: "Woreda", type: "text", required: false, unique: false, placeholder: "Enter Woreda" },
+  { id: "kebele", label: "Kebele/House No.", type: "text", required: false, unique: false, placeholder: "Enter Kebele/House No." },
+  { id: "dateOfBirth", label: "Date of Birth (Eth)", type: "date", required: false, unique: false, placeholder: "DD/MM/YYYY (Ethiopian Calendar)" },
+  { id: "email", label: "Email Address", type: "email", required: false, unique: false, placeholder: "abebe@example.com" },
+  { id: "occupation", label: "Occupation", type: "select", required: false, unique: false, placeholder: "Select Occupation", dataSource: "MANUAL", options: [
+    { label: "Farmer", value: "Farmer" },
+    { label: "Business Person", value: "Business Person" },
+    { label: "Civil Servant", value: "Civil Servant" },
+    { label: "House Wife", value: "House Wife" },
+    { label: "Military", value: "Military" },
+    { label: "NGO", value: "NGO" },
+    { label: "Self Employed", value: "Self Employed" },
+    { label: "Student", value: "Student" },
+    { label: "Police", value: "Police" },
+    { label: "Diplomat", value: "Diplomat" },
+    { label: "Others", value: "Others" }
+  ]},
+  { id: "organizationName", label: "Organization Name", type: "text", required: false, unique: false, placeholder: "Enter Organization Name" },
+  { id: "educationLevel", label: "Education Level", type: "select", required: false, unique: false, placeholder: "Select Education Level", dataSource: "MANUAL", options: [
+    { label: "Below Primary School", value: "Below Primary School" },
+    { label: "Primary School Completed", value: "Primary School Completed" },
+    { label: "High School Completed", value: "High School Completed" },
+    { label: "Degree", value: "Degree" },
+    { label: "Masters", value: "Masters" },
+    { label: "PHD", value: "PHD" }
+  ]},
+  { id: "area", label: "Area", type: "select", required: false, unique: false, placeholder: "Select Area", dataSource: "MANUAL", options: [
+    { label: "URBAN", value: "URBAN" },
+    { label: "RURAL", value: "RURAL" }
+  ]},
+  { id: "languages", label: "Languages", type: "text", required: false, unique: false, placeholder: "e.g. Amharic, English" }
 ];
 
 export default function FormConfigurationPage() {
