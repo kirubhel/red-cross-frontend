@@ -11,6 +11,7 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  transpilePackages: ['lucide-react', 'framer-motion'],
   eslint: {
     ignoreDuringBuilds: true,
   },
