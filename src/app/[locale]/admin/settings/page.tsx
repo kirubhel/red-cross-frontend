@@ -1026,7 +1026,7 @@ export default function SystemSettingsPage() {
 
                         <div className="flex flex-col items-center gap-6">
                             <div className="p-6 bg-white rounded-[32px] shadow-2xl shadow-black/5 border border-gray-100 flex items-center justify-center">
-                                <QRCodeSVG value={mfaSetup?.qrCodeUrl || ""} size={200} />
+                                <QRCodeSVG value={mfaSetup?.qrCodeUrl || "https://ercs.org/mfa-setup"} size={200} />
                             </div>
                             <div className="w-full max-w-xs space-y-2 text-center">
                                 <Label className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Manual Setup Key</Label>

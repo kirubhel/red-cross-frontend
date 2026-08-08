@@ -546,7 +546,7 @@ export default function DashboardPage() {
                          <div style={{ width: '33.333%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                             <div style={{ padding: '8px', backgroundColor: 'white', border: '2px solid #F3F4F6', borderRadius: '12px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
                                <QRCodeCanvas 
-                                 value={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${user?.memberId}`}
+                                 value={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${user?.memberId || 'NOT_ASSIGNED'}`}
                                  size={64}
                                  level={"H"}
                                  includeMargin={false}

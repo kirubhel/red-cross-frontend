@@ -37,8 +37,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const getAvatarStyles = (firstName?: string, lastName?: string) => {
-  const fName = firstName || "";
-  const lName = lastName || "";
+  const fName = typeof firstName === "string" ? firstName : "";
+  const lName = typeof lastName === "string" ? lastName : "";
   const char = (fName[0] || "") + (lName[0] || "");
   const chars = char.toUpperCase() || "?";
   const gradients = [
@@ -48,8 +48,8 @@ const getAvatarStyles = (firstName?: string, lastName?: string) => {
     "from-amber-400 to-orange-600",
     "from-rose-500 to-pink-600",
   ];
-  const charCode1 = fName.length > 0 ? fName.charCodeAt(0) : 0;
-  const charCode2 = lName.length > 0 ? lName.charCodeAt(0) : 0;
+  const charCode1 = fName.length > 0 && typeof fName.charCodeAt === "function" ? fName.charCodeAt(0) : 0;
+  const charCode2 = lName.length > 0 && typeof lName.charCodeAt === "function" ? lName.charCodeAt(0) : 0;
   const index = (charCode1 + charCode2) % gradients.length;
   return { chars, gradient: gradients[index] };
 };
@@ -618,7 +618,7 @@ export default function DashboardPage() {
             </Button>
           </div>
           <div className="flex-1 min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <AreaChart data={getGrowthChartData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -703,7 +703,7 @@ export default function DashboardPage() {
             Branch Distribution
           </h3>
           <div className="flex-1 min-h-[250px] relative">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie 
                   data={getGeographicChartData()} 
@@ -753,7 +753,7 @@ export default function DashboardPage() {
             </Button>
           </div>
           <div className="flex-1 min-h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={campaignPerformance} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis 

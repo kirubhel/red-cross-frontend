@@ -194,7 +194,7 @@ export default function AnalyticsDashboardPage() {
             </Button>
           </div>
           <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <LineChart data={volunteerGrowthData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 'bold' }} dy={10} />
@@ -215,7 +215,7 @@ export default function AnalyticsDashboardPage() {
             </Button>
           </div>
           <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={monthlyRegistrationsData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 'bold' }} dy={10} />
@@ -236,7 +236,7 @@ export default function AnalyticsDashboardPage() {
           <h3 className="text-sm font-black text-black uppercase tracking-widest mb-6">Volunteers by Region</h3>
           <div className="flex-1 flex items-center justify-between">
             <div className="w-1/2 relative h-[180px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <PieChart>
                   <Pie data={regionalData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={2} dataKey="value" stroke="none">
                     {regionalData.map((entry, index) => (
@@ -275,7 +275,7 @@ export default function AnalyticsDashboardPage() {
           <h3 className="text-sm font-black text-black uppercase tracking-widest mb-6">Active Campaigns by Status</h3>
           <div className="flex-1 flex items-center justify-between">
             <div className="w-1/2 relative h-[180px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <PieChart>
                   <Pie data={campaignStatusData} cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={2} dataKey="value" stroke="none">
                     {campaignStatusData.map((entry, index) => (
@@ -318,7 +318,7 @@ export default function AnalyticsDashboardPage() {
             </Button>
           </div>
           <div className="flex-1 h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <LineChart data={userActivityTrendData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 'bold' }} dy={5} />
