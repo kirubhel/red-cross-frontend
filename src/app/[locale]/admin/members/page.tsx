@@ -17,6 +17,7 @@ import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X,
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
+import { resolveRegionId } from "@/lib/constants";
 
 type Member = {
   id: string;
@@ -73,12 +74,21 @@ export default function MembersPage() {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+
+  // Import Modal & Branch/Region selection states
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [parsedMembers, setParsedMembers] = useState<any[]>([]);
+  const [importFileName, setImportFileName] = useState("");
+  const [selectedImportRegion, setSelectedImportRegion] = useState<string>("from_file");
+  const [submittingImport, setSubmittingImport] = useState(false);
+
   const [isMounted, setIsMounted] = useState(false);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const pageSize = 10;
+
 
   useEffect(() => {
     setIsMounted(true);
@@ -327,7 +337,8 @@ export default function MembersPage() {
                         const phone = getVal(["Mobile", "Phone Number", "Phone"], 2) || row.getCell(5).text;
                         const gender = getVal(["Gender"], 6) || row.getCell(8).text;
                         const dob = getVal(["Date of Birth (Eth)", "Date of Birth (YYYY-MM-DD)", "Date of Birth", "DOB"], 7);
-                        const regionVal = parseInt(getVal(["Region", "Region (Select from list)"], 9)) || 1;
+                        const rawRegion = getVal(["Region", "Region (Select from list)"], 9);
+                        const regionVal = resolveRegionId(rawRegion, regions);
                         const membershipType = getVal(["Membership Type"], 10) || "REGULAR";
 
                         people.push({
@@ -358,13 +369,12 @@ export default function MembersPage() {
                         return;
                     }
 
-                    const res = await api.post("/person/bulk", people);
                     toast.dismiss();
-                    const successCount = res.data.filter((r: any) => r.success).length;
-                    const failCount = res.data.length - successCount;
-                    if (failCount === 0) toast.success(`Imported all ${successCount} members.`);
-                    else toast.warning(`Imported ${successCount}. ${failCount} failed.`);
-                    fetchMembers();
+                    setParsedMembers(people);
+                    setImportFileName(file.name);
+                    setSelectedImportRegion("from_file");
+                    setShowImportModal(true);
+                    toast.success(`Parsed ${people.length} member rows`);
                 } catch (err) {
                     toast.dismiss();
                     toast.error("Failed to process Excel data.");
@@ -393,26 +403,71 @@ export default function MembersPage() {
                         national_id: ni,
                         date_of_birth: dob,
                         gender: gen,
-                        region: parseInt(reg) || 1,
-                        membership_type: typ,
+                        region: resolveRegionId(reg, regions),
+                        membership_type: typ || "REGULAR",
                         metadata: "{}"
                     };
                 });
-                const res = await api.post("/person/bulk", people);
+                
+                if (people.length === 0) {
+                    toast.dismiss();
+                    toast.error("No valid CSV rows found.");
+                    return;
+                }
+
                 toast.dismiss();
-                const successCount = res.data.filter((r: any) => r.success).length;
-                if (successCount === res.data.length) toast.success(`Imported all ${successCount} members.`);
-                else toast.warning(`Partial success: ${successCount}/${res.data.length}`);
-                fetchMembers();
+                setParsedMembers(people);
+                setImportFileName(file.name);
+                setSelectedImportRegion("from_file");
+                setShowImportModal(true);
+                toast.success(`Parsed ${people.length} CSV rows`);
             } catch (err) {
                 toast.dismiss();
-                toast.error("Bulk import failed.");
+                toast.error("Bulk import parsing failed.");
             }
         };
         reader.readAsText(file);
     }
     e.target.value = "";
   };
+
+  const executeMemberImport = async () => {
+    if (parsedMembers.length === 0) {
+      toast.error("No valid member data to import");
+      return;
+    }
+    setSubmittingImport(true);
+    try {
+      const peopleWithRegion = parsedMembers.map((person) => {
+        const targetRegion = selectedImportRegion === "from_file"
+          ? resolveRegionId(person.region, regions)
+          : parseInt(selectedImportRegion, 10);
+        return {
+          ...person,
+          region: targetRegion
+        };
+      });
+
+
+      const res = await api.post("/person/bulk", peopleWithRegion);
+      const successCount = res.data.filter((r: any) => r.success).length;
+      const failCount = res.data.length - successCount;
+      if (failCount === 0) {
+        toast.success(`Successfully imported all ${successCount} members.`);
+      } else {
+        toast.warning(`Imported ${successCount} members. ${failCount} failed.`);
+      }
+      setShowImportModal(false);
+      setParsedMembers([]);
+      fetchMembers();
+    } catch (err) {
+      console.error("Failed member import:", err);
+      toast.error("Failed to process member import.");
+    } finally {
+      setSubmittingImport(false);
+    }
+  };
+
 
   const exportToPDF = () => {
     // For a clean PDF without external heavy libs, we use the browser's print capability
@@ -872,6 +927,119 @@ export default function MembersPage() {
             regions={regions}
         />
       )}
+
+      {/* Import Members - Branch / Region Prompt Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-[32px] shadow-2xl w-full max-w-xl overflow-hidden border border-gray-100"
+          >
+            <div className="p-6 border-b border-gray-100 flex justify-between items-start">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
+                  <Upload className="h-3 w-3" /> Member Import Prompt
+                </div>
+                <h2 className="text-xl font-black tracking-tight text-black">Select Target Regional Branch</h2>
+                <p className="text-xs font-bold text-gray-400">
+                  File: <span className="text-black font-extrabold">{importFileName}</span> ({parsedMembers.length} records parsed)
+                </p>
+              </div>
+              <button 
+                onClick={() => { setShowImportModal(false); setParsedMembers([]); }}
+                className="h-9 w-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-black/60 block">
+                  Target Regional Branch
+                </label>
+                <select
+                  value={selectedImportRegion}
+                  onChange={(e) => setSelectedImportRegion(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs focus:ring-2 focus:ring-[#ED1C24]/20 focus:border-[#ED1C24] outline-none transition-all cursor-pointer"
+                >
+                  <option value="from_file">📁 Use Region specified in File Data (Auto-mapped)</option>
+                  {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map((r) => (
+                    <option key={r.id} value={r.id}>
+                      🏛️ {r.name} (Region ID: {r.id})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] font-semibold text-gray-400">
+                  Selecting a specific branch will assign all {parsedMembers.length} imported members to that Regional Branch.
+                </p>
+              </div>
+
+              {/* Data Preview */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  Sample Batch Preview ({Math.min(5, parsedMembers.length)} of {parsedMembers.length})
+                </p>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-100/60 border-b border-gray-100 text-[9px] font-black uppercase text-gray-400">
+                      <tr>
+                        <th className="px-4 py-2">Name</th>
+                        <th className="px-4 py-2">Phone</th>
+                        <th className="px-4 py-2">Target Branch</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
+                      {parsedMembers.slice(0, 5).map((pm, idx) => {
+                        const effectiveRegionId = selectedImportRegion === "from_file" 
+                          ? resolveRegionId(pm.region, regions) 
+                          : parseInt(selectedImportRegion, 10);
+                        const regionObj = (regions || DEFAULT_REGIONS).find(r => r.id === effectiveRegionId);
+
+                        return (
+                          <tr key={idx}>
+                            <td className="px-4 py-2 font-bold text-black">{pm.first_name} {pm.father_name}</td>
+                            <td className="px-4 py-2 text-gray-500">{pm.phone_number || "—"}</td>
+                            <td className="px-4 py-2 font-bold text-[#ED1C24]">
+                              {regionObj ? regionObj.name : `Region ${effectiveRegionId}`}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+              <Button
+                variant="outline"
+                disabled={submittingImport}
+                onClick={() => { setShowImportModal(false); setParsedMembers([]); }}
+                className="rounded-xl h-10 px-5 font-black text-xs border-gray-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={executeMemberImport}
+                disabled={submittingImport || parsedMembers.length === 0}
+                className="rounded-xl h-10 px-6 font-black text-xs bg-[#ED1C24] hover:bg-red-700 text-white shadow-lg shadow-red-500/20"
+              >
+                {submittingImport ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Importing...
+                  </span>
+                ) : (
+                  `Confirm & Import ${parsedMembers.length} Members`
+                )}
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
@@ -880,3 +1048,4 @@ export default function MembersPage() {
 function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
 }
+

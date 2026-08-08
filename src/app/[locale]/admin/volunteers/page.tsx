@@ -40,7 +40,9 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { resolveRegionId } from "@/lib/constants";
 import type { Cell, CellValue } from "exceljs";
+
 
 type Volunteer = {
   id: string;
@@ -147,11 +149,13 @@ export default function VolunteersPage() {
   const [importColumns, setImportColumns] = useState<string[]>([]);
   const [importRows, setImportRows] = useState<ImportedRow[]>([]);
   const [importFileName, setImportFileName] = useState("");
-  const [importRegion, setImportRegion] = useState("1");
+  const [importRegion, setImportRegion] = useState("from_file");
+  const [showImportPromptModal, setShowImportPromptModal] = useState(false);
   const [parsingImport, setParsingImport] = useState(false);
   const [submittingImport, setSubmittingImport] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importPage, setImportPage] = useState(1);
+
 
   // New Upgrade States
   const [occupationFilter, setOccupationFilter] = useState("");
@@ -503,6 +507,7 @@ export default function VolunteersPage() {
       setImportRows(rows);
       setImportFileName(file.name);
       setImportPage(1);
+      setShowImportPromptModal(true);
       toast.success(`Parsed ${rows.length} volunteer rows`);
     } catch (err) {
       console.error("Failed to parse volunteer import:", err);
@@ -511,6 +516,7 @@ export default function VolunteersPage() {
       setParsingImport(false);
     }
   };
+
 
   const downloadDefectiveWorkbook = async (failedRows: ImportedRow[]) => {
     if (failedRows.length === 0) return;
@@ -651,6 +657,12 @@ export default function VolunteersPage() {
       languages: languages || null,
     };
 
+    const rawRegionInRow = getImportValue(row, ["Region", "Region (Select from list)", "Branch"]);
+    const targetRegionId = importRegion === "from_file"
+      ? resolveRegionId(rawRegionInRow, regions)
+      : (Number(importRegion) || 1);
+
+
     return {
       first_name: firstName,
       father_name: fatherName,
@@ -658,7 +670,7 @@ export default function VolunteersPage() {
       phone_number: phoneNumber,
       email,
       password: `ERCS@${phoneNumber.slice(-4) || String(index + 1).padStart(4, "0")}`,
-      region: Number(importRegion) || 1,
+      region: targetRegionId,
       role: 5,
       gender,
       date_of_birth: formatDOBForBackend(dateOfBirth),
@@ -671,6 +683,7 @@ export default function VolunteersPage() {
       metadata: JSON.stringify(metadataObj),
     };
   };
+
 
   const submitImportedVolunteers = async () => {
     if (importRows.length === 0) {
@@ -914,12 +927,14 @@ export default function VolunteersPage() {
                 <select
                     value={importRegion}
                     onChange={(e) => setImportRegion(e.target.value)}
-                    className="h-10 min-w-[180px] rounded-xl border border-gray-200 bg-white px-3 text-xs font-black outline-none"
+                    className="h-10 min-w-[200px] rounded-xl border border-gray-200 bg-white px-3 text-xs font-black outline-none cursor-pointer"
                 >
+                    <option value="from_file">📁 From File Data (Auto)</option>
                     {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map(region => (
-                        <option key={region.id} value={region.id}>{region.name}</option>
+                        <option key={region.id} value={region.id}>🏛️ {region.name}</option>
                     ))}
                 </select>
+
                 <label className="h-10 px-5 rounded-xl border border-gray-200 bg-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors">
                     {parsingImport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                     Choose Excel
@@ -1466,7 +1481,131 @@ export default function VolunteersPage() {
         </div>
       )}
 
+      {/* Volunteer Import - Branch / Region Prompt Modal */}
+
+      {showImportPromptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-[32px] shadow-2xl w-full max-w-xl overflow-hidden border border-gray-100"
+          >
+            <div className="p-6 border-b border-gray-100 flex justify-between items-start">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
+                  <Upload className="h-3 w-3" /> Volunteer Import Prompt
+                </div>
+                <h2 className="text-xl font-black tracking-tight text-black">Select Target Regional Branch</h2>
+                <p className="text-xs font-bold text-gray-400">
+                  File: <span className="text-black font-extrabold">{importFileName}</span> ({importRows.length} rows parsed)
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowImportPromptModal(false)}
+                className="h-9 w-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-black/60 block">
+                  Target Regional Branch
+                </label>
+                <select
+                  value={importRegion}
+                  onChange={(e) => setImportRegion(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs focus:ring-2 focus:ring-[#ED1C24]/20 focus:border-[#ED1C24] outline-none transition-all cursor-pointer"
+                >
+                  <option value="from_file">📁 Use Region specified in File Data (Auto-mapped)</option>
+                  {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map((r) => (
+                    <option key={r.id} value={r.id}>
+                      🏛️ {r.name} (Region ID: {r.id})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] font-semibold text-gray-400">
+                  Selecting a specific branch will assign all {importRows.length} imported volunteers to that Regional Branch.
+                </p>
+              </div>
+
+              {/* Data Preview */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                  Sample Batch Preview ({Math.min(5, importRows.length)} of {importRows.length})
+                </p>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-100/60 border-b border-gray-100 text-[9px] font-black uppercase text-gray-400">
+                      <tr>
+                        <th className="px-4 py-2">Row</th>
+                        <th className="px-4 py-2">Name</th>
+                        <th className="px-4 py-2">Phone</th>
+                        <th className="px-4 py-2">Target Branch</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
+                      {importRows.slice(0, 5).map((row, idx) => {
+                        const rawRegionInRow = getImportValue(row, ["Region", "Region (Select from list)", "Branch"]);
+                        const effectiveRegionId = importRegion === "from_file" 
+                          ? resolveRegionId(rawRegionInRow, regions) 
+                          : (Number(importRegion) || 1);
+
+                        const regionObj = (regions || DEFAULT_REGIONS).find(r => r.id === effectiveRegionId);
+                        const firstName = getImportValue(row, ["Name", "First Name", "FirstName"]);
+                        const fatherName = getImportValue(row, ["Father Name", "FatherName", "Middle Name", "Last Name"]);
+                        const phone = getImportValue(row, ["Mobile", "Phone", "Phone Number"]);
+                        return (
+                          <tr key={idx}>
+                            <td className="px-4 py-2 text-gray-400 font-mono">#{row.rowNumber}</td>
+                            <td className="px-4 py-2 font-bold text-black">{firstName || "Unnamed"} {fatherName}</td>
+                            <td className="px-4 py-2 text-gray-500">{phone || "—"}</td>
+                            <td className="px-4 py-2 font-bold text-[#ED1C24]">
+                              {regionObj ? regionObj.name : `Region ${effectiveRegionId}`}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+              <Button
+                variant="outline"
+                disabled={submittingImport}
+                onClick={() => setShowImportPromptModal(false)}
+                className="rounded-xl h-10 px-5 font-black text-xs border-gray-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowImportPromptModal(false);
+                  submitImportedVolunteers();
+                }}
+                disabled={submittingImport || importRows.length === 0}
+                className="rounded-xl h-10 px-6 font-black text-xs bg-[#ED1C24] hover:bg-red-700 text-white shadow-lg shadow-red-500/20"
+              >
+                {submittingImport ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Uploading...
+                  </span>
+                ) : (
+                  `Confirm & Upload ${importRows.length} Volunteers`
+                )}
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Print-only Report Header */}
+
       <div className="hidden print:block mb-8">
           <div className="flex items-start justify-between">
               <div>

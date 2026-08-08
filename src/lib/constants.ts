@@ -264,3 +264,60 @@ export const getWoredasForZone = (zoneId: string) => {
   // Default dynamic fallback: Woreda 01 through Woreda 07
   return makeStandardWoredas(zoneId.replace("ZONE_", "").toLowerCase(), 7);
 };
+
+export const REGION_NAME_TO_ID: Record<string, number> = {
+  "addis ababa": 1, "aa": 1, "addis ababa branch": 1, "region_addis_ababa": 1,
+  "dire dawa": 2, "dd": 2, "dire dawa branch": 2, "region_dire_dawa": 2,
+  "tigray": 3, "tg": 3, "tigray branch": 3, "region_tigray": 3,
+  "afar": 4, "af": 4, "afar branch": 4, "region_afar": 4,
+  "amhara": 5, "am": 5, "amhara branch": 5, "region_amhara": 5,
+  "oromia": 6, "or": 6, "oromia branch": 6, "region_oromia": 6,
+  "somali": 7, "sm": 7, "somali branch": 7, "region_somali": 7,
+  "benishangul gumz": 8, "benishangul": 8, "bg": 8, "benishangul gumz branch": 8, "region_benishangul_gumz": 8,
+  "central ethiopia": 9, "ce": 9, "central ethiopia branch": 9, "region_central_ethiopia": 9,
+  "gambela": 10, "gm": 10, "gambela branch": 10, "region_gambela": 10,
+  "harari": 11, "hr": 11, "harari branch": 11, "region_harari": 11,
+  "sidama": 12, "sd": 12, "sidama branch": 12, "region_sidama": 12,
+  "south west ethiopia": 13, "sw": 13, "south west ethiopia branch": 13, "region_south_west_ethiopia": 13,
+  "south ethiopia": 14, "se": 14, "south ethiopia branch": 14, "region_south_ethiopia": 14, "southern ethiopia": 14
+};
+
+export function resolveRegionId(
+  val: any,
+  dbRegions: { id: number; name: string; code?: string }[] = []
+): number {
+  if (val === undefined || val === null || val === "") {
+    return dbRegions.length > 0 ? dbRegions[0].id : 1;
+  }
+
+  const num = parseInt(String(val).trim(), 10);
+  if (!isNaN(num) && num > 0) {
+    if (dbRegions.length === 0 || dbRegions.some(r => r.id === num)) {
+      return num;
+    }
+  }
+
+  const str = String(val).trim().toLowerCase();
+
+  // Dynamically match against region records loaded from database
+  if (dbRegions && dbRegions.length > 0) {
+    const matched = dbRegions.find(r => {
+      const nameLower = r.name.toLowerCase();
+      const codeLower = (r.code || "").toLowerCase();
+      return (
+        nameLower === str ||
+        (codeLower && codeLower === str) ||
+        nameLower.includes(str) ||
+        str.includes(nameLower)
+      );
+    });
+    if (matched) return matched.id;
+  }
+
+  // Common alias mapping fallback
+  if (REGION_NAME_TO_ID[str]) return REGION_NAME_TO_ID[str];
+
+  return dbRegions && dbRegions.length > 0 ? dbRegions[0].id : 1;
+}
+
+
