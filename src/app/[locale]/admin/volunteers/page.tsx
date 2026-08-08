@@ -33,10 +33,12 @@ import {
     Briefcase,
     Home,
     Upload,
+    Download,
     Loader2,
     CheckCircle2,
     AlertCircle
 } from "lucide-react";
+
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -754,42 +756,55 @@ export default function VolunteersPage() {
           <p className="text-gray-500 font-medium text-sm">Manage all field volunteers, track hours, and coordinate field activities.</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
             <Button 
                 onClick={downloadTemplate}
                 variant="outline" 
-                className="rounded-xl h-10 px-6 font-black border-gray-200 flex items-center gap-2"
+                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest text-black"
             >
-                <Upload className="h-4 w-4 rotate-180" /> Download Template
-            </Button>
-            <Button 
-                onClick={() => setShowClearConfirm(true)}
-                variant="destructive" 
-                className="rounded-xl h-10 px-6 font-black bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
-            >
-                <X className="h-4 w-4" /> Clear Registry
+                <Download className="h-4 w-4" /> Template
             </Button>
             <Button 
                 onClick={exportToCSV}
                 variant="outline" 
-                className="rounded-xl h-10 px-6 font-black border-gray-200"
+                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest text-black"
             >
-                <TableIcon className="h-4 w-4 mr-2" /> Export CSV
+                <TableIcon className="h-4 w-4" /> CSV
             </Button>
+            <div className="relative">
+                <input 
+                    type="file" 
+                    accept=".xlsx,.csv" 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImportFile(file);
+                      e.target.value = "";
+                    }} 
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                    disabled={parsingImport || submittingImport}
+                />
+                <Button 
+                    variant="outline" 
+                    className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest text-black"
+                >
+                    {parsingImport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Import
+                </Button>
+            </div>
             <Button 
                 onClick={exportToPDF}
                 variant="outline" 
-                className="rounded-xl h-10 px-6 font-black border-gray-200"
+                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest text-black"
             >
-                <FileText className="h-4 w-4 mr-2" /> Export PDF
+                <FileText className="h-4 w-4" /> PDF
             </Button>
             <Link href="/admin/user-management?create=true">
-              <Button className="rounded-xl h-10 px-6 font-black shadow-lg shadow-red-500/10 flex items-center gap-2">
+              <Button className="rounded-xl h-10 px-6 font-black shadow-xl shadow-red-500/10 flex items-center gap-2 bg-[#ED1C24] hover:bg-red-700 text-white text-[10px] uppercase tracking-widest">
                   <Plus className="h-4 w-4" /> Add Volunteer
               </Button>
             </Link>
         </div>
       </div>
+
 
       <div className="flex flex-col gap-4 print:hidden">
         <div className="flex w-full items-center justify-between gap-4">
@@ -893,7 +908,14 @@ export default function VolunteersPage() {
                     </select>
                 </div>
 
-                <div className="flex items-end pb-0.5 md:col-span-3 justify-end">
+                <div className="flex items-center gap-2 pb-0.5 md:col-span-3 justify-end">
+                    <Button 
+                        onClick={() => setShowClearConfirm(true)}
+                        variant="ghost" 
+                        className="h-10 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-red-600 hover:text-red-700 hover:bg-red-50 transition-all"
+                    >
+                        <X className="h-3.5 w-3.5 mr-1" /> Clear Registry
+                    </Button>
                     <Button 
                         onClick={() => { 
                             setRegionFilter(""); 
@@ -904,61 +926,18 @@ export default function VolunteersPage() {
                             setOccupationFilter(""); 
                         }}
                         variant="ghost" 
-                        className="h-10 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-gray-400"
+                        className="h-10 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-gray-400 hover:text-[#ED1C24] hover:bg-white transition-all"
                     >
-                        <X className="h-3 w-3 mr-2" /> Reset Filters
+                        <X className="h-3.5 w-3.5 mr-1" /> Reset Filters
                     </Button>
                 </div>
             </div>
         )}
       </div>
 
-      <div className="print:hidden rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-gray-50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Excel Import</p>
-                <h2 className="text-lg font-black text-black tracking-tight">Import Volunteers</h2>
-                <p className="text-xs font-bold text-gray-400 mt-1">
-                    Successful rows are removed after upload; defective rows stay red with the issue attached.
-                </p>
-            </div>
+      {(importRows.length > 0 || importResult) && (
+        <div className="print:hidden rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden p-5 space-y-4">
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <select
-                    value={importRegion}
-                    onChange={(e) => setImportRegion(e.target.value)}
-                    className="h-10 min-w-[200px] rounded-xl border border-gray-200 bg-white px-3 text-xs font-black outline-none cursor-pointer"
-                >
-                    <option value="from_file">📁 From File Data (Auto)</option>
-                    {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map(region => (
-                        <option key={region.id} value={region.id}>🏛️ {region.name}</option>
-                    ))}
-                </select>
-
-                <label className="h-10 px-5 rounded-xl border border-gray-200 bg-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors">
-                    {parsingImport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                    Choose Excel
-                    <input
-                        type="file"
-                        accept=".xlsx"
-                        className="hidden"
-                        disabled={parsingImport || submittingImport}
-                        onChange={(e) => handleImportFile(e.target.files?.[0])}
-                    />
-                </label>
-                <Button
-                    onClick={submitImportedVolunteers}
-                    disabled={importRows.length === 0 || parsingImport || submittingImport}
-                    className="h-10 px-5 rounded-xl font-black text-xs"
-                >
-                    {submittingImport ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                    Upload {importRows.length > 0 ? importRows.length : ""}
-                </Button>
-            </div>
-        </div>
-
-        {(importRows.length > 0 || importResult) && (
-            <div className="p-5 space-y-4">
                 {importRows.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
                         <span className="px-2 py-1 rounded-md bg-gray-50 text-gray-500">{importFileName}</span>
@@ -1050,9 +1029,10 @@ export default function VolunteersPage() {
                 )}
             </div>
         )}
-      </div>
+
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none print:border-none">
+
         <Table>
           <TableHeader className="bg-gray-50/50 print:bg-transparent">
             <TableRow className="hover:bg-transparent border-gray-50">
