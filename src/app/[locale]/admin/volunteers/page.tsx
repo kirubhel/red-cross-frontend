@@ -152,6 +152,10 @@ export default function VolunteersPage() {
   const [importRows, setImportRows] = useState<ImportedRow[]>([]);
   const [importFileName, setImportFileName] = useState("");
   const [importRegion, setImportRegion] = useState("from_file");
+  const [importZone, setImportZone] = useState("from_file");
+  const [importWoreda, setImportWoreda] = useState("from_file");
+  const [importZones, setImportZones] = useState<{ id: string; region_id: number; name: string }[]>([]);
+  const [importWoredas, setImportWoredas] = useState<{ id: string; zone_id: string; name: string }[]>([]);
   const [showImportPromptModal, setShowImportPromptModal] = useState(false);
   const [parsingImport, setParsingImport] = useState(false);
   const [submittingImport, setSubmittingImport] = useState(false);
@@ -207,6 +211,11 @@ export default function VolunteersPage() {
             if (Array.isArray(parsed) && parsed.length > 0) {
               setRegions(parsed);
             }
+        }
+        if (res.data?.settings?.locations_hierarchy) {
+          const hierarchy = JSON.parse(res.data.settings.locations_hierarchy);
+          setImportZones(hierarchy.zones || []);
+          setImportWoredas(hierarchy.woredas || []);
         }
     } catch (err) {
         console.error("Failed to fetch regions:", err);
@@ -507,6 +516,9 @@ export default function VolunteersPage() {
 
       setImportColumns(uniqueHeaders);
       setImportRows(rows);
+      setImportRegion("from_file");
+      setImportZone("from_file");
+      setImportWoreda("from_file");
       setImportFileName(file.name);
       setImportPage(1);
       setShowImportPromptModal(true);
@@ -673,6 +685,8 @@ export default function VolunteersPage() {
       email,
       password: `ERCS@${phoneNumber.slice(-4) || String(index + 1).padStart(4, "0")}`,
       region: targetRegionId,
+      zone_id: importZone === "from_file" ? getImportValue(row, ["Zone", "Zone ID", "zone_id"]) : importZone,
+      woreda_id: importWoreda === "from_file" ? getImportValue(row, ["Woreda", "Woreda ID", "Branch", "woreda_id"]) : importWoreda,
       role: 5,
       gender,
       date_of_birth: formatDOBForBackend(dateOfBirth),
@@ -696,11 +710,30 @@ export default function VolunteersPage() {
     setSubmittingImport(true);
     const result: ImportResult = { success: 0, failed: 0, errors: [] };
     const failedRows: ImportedRow[] = [];
+    const seenPhones = new Set<string>();
+    const seenEmails = new Set<string>();
 
     for (const [index, row] of importRows.entries()) {
       const payload = buildVolunteerPayload(row, index);
-      if (!payload.first_name && !payload.phone_number) {
-        const issue = "Missing name and phone";
+      const rowIssues: string[] = [];
+      const phone = payload.phone_number.replace(/[^0-9+]/g, "");
+      const email = payload.email.trim().toLowerCase();
+      if (!payload.first_name) rowIssues.push("first name is required");
+      if (!phone) rowIssues.push("phone number is required");
+      else if (!/^\+?\d{7,15}$/.test(phone)) rowIssues.push("invalid phone number");
+      else if (seenPhones.has(phone)) rowIssues.push("duplicate phone number in file");
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) rowIssues.push("invalid email");
+      else if (email && seenEmails.has(email)) rowIssues.push("duplicate email in file");
+      if (phone) seenPhones.add(phone);
+      if (email) seenEmails.add(email);
+      if (!regions.some(region => region.id === Number(payload.region))) rowIssues.push("invalid region");
+      if (payload.zone_id && !importZones.some(zone => zone.id === payload.zone_id && zone.region_id === Number(payload.region))) rowIssues.push("zone does not belong to region");
+      if (payload.woreda_id && !importWoredas.some(woreda => woreda.id === payload.woreda_id && woreda.zone_id === payload.zone_id)) rowIssues.push("woreda/branch does not belong to zone");
+      if (payload.date_of_birth && !/^\d{4}-\d{2}-\d{2}$/.test(payload.date_of_birth)) rowIssues.push("date must be YYYY-MM-DD");
+      if (payload.gender && !["Male", "Female"].includes(payload.gender)) rowIssues.push("gender must be Male or Female");
+
+      if (rowIssues.length > 0) {
+        const issue = rowIssues.join(", ");
         result.failed += 1;
         result.errors.push(`Row ${row.rowNumber}: ${issue}`);
         failedRows.push({ ...row, importIssue: issue });
@@ -1475,7 +1508,7 @@ export default function VolunteersPage() {
                 <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
                   <Upload className="h-3 w-3" /> Volunteer Import Prompt
                 </div>
-                <h2 className="text-xl font-black tracking-tight text-black">Select Target Regional Branch</h2>
+                <h2 className="text-xl font-black tracking-tight text-black">Assign Import Location</h2>
                 <p className="text-xs font-bold text-gray-400">
                   File: <span className="text-black font-extrabold">{importFileName}</span> ({importRows.length} rows parsed)
                 </p>
@@ -1495,7 +1528,7 @@ export default function VolunteersPage() {
                 </label>
                 <select
                   value={importRegion}
-                  onChange={(e) => setImportRegion(e.target.value)}
+                  onChange={(e) => { setImportRegion(e.target.value); setImportZone("from_file"); setImportWoreda("from_file"); }}
                   className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs focus:ring-2 focus:ring-[#ED1C24]/20 focus:border-[#ED1C24] outline-none transition-all cursor-pointer"
                 >
                   <option value="from_file">📁 Use Region specified in File Data (Auto-mapped)</option>
@@ -1505,8 +1538,18 @@ export default function VolunteersPage() {
                     </option>
                   ))}
                 </select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <select value={importZone} disabled={importRegion === "from_file"} onChange={(e) => { setImportZone(e.target.value); setImportWoreda("from_file"); }} className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs disabled:opacity-50">
+                    <option value="from_file">Use Zone from file</option>
+                    {importZones.filter(z => String(z.region_id) === importRegion).map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                  </select>
+                  <select value={importWoreda} disabled={importZone === "from_file"} onChange={(e) => setImportWoreda(e.target.value)} className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs disabled:opacity-50">
+                    <option value="from_file">Use Woreda / branch from file</option>
+                    {importWoredas.filter(w => w.zone_id === importZone).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                </div>
                 <p className="text-[10px] font-semibold text-gray-400">
-                  Selecting a specific branch will assign all {importRows.length} imported volunteers to that Regional Branch.
+                  Choose a region, then its zone and woreda/branch to assign all {importRows.length} imported volunteers.
                 </p>
               </div>
 
