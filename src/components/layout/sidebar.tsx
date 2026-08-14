@@ -22,7 +22,8 @@ import {
   Building2,
   BarChart3,
   Sparkles,
-  Mail
+  Mail,
+  MapPin
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,7 @@ const navigationSections = [
     title: "Administration",
     items: [
       { href: "/admin/user-management", label: "User Management", icon: ShieldCheck },
+      { href: "/admin/branches", label: "Branch Management", icon: MapPin },
       { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList },
       { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard },
       { href: "/admin/settings", label: "Settings", icon: Settings },

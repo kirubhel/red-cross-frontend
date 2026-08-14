@@ -154,8 +154,10 @@ export default function VolunteersPage() {
   const [importRegion, setImportRegion] = useState("from_file");
   const [importZone, setImportZone] = useState("from_file");
   const [importWoreda, setImportWoreda] = useState("from_file");
+  const [importBranch, setImportBranch] = useState("from_file");
   const [importZones, setImportZones] = useState<{ id: string; region_id: number; name: string }[]>([]);
   const [importWoredas, setImportWoredas] = useState<{ id: string; zone_id: string; name: string }[]>([]);
+  const [importBranches, setImportBranches] = useState<any[]>([]);
   const [showImportPromptModal, setShowImportPromptModal] = useState(false);
   const [parsingImport, setParsingImport] = useState(false);
   const [submittingImport, setSubmittingImport] = useState(false);
@@ -205,7 +207,10 @@ export default function VolunteersPage() {
 
   const fetchRegions = async () => {
     try {
-        const res = await api.get("/system-settings");
+        const [res, branchRes] = await Promise.all([
+          api.get("/system-settings"),
+          api.get("/location/branches").catch(() => ({ data: { branches: [] } }))
+        ]);
         if (res.data && res.data.settings && res.data.settings.all_regions) {
             const parsed = JSON.parse(res.data.settings.all_regions);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -216,6 +221,9 @@ export default function VolunteersPage() {
           const hierarchy = JSON.parse(res.data.settings.locations_hierarchy);
           setImportZones(hierarchy.zones || []);
           setImportWoredas(hierarchy.woredas || []);
+        }
+        if (branchRes.data?.branches) {
+          setImportBranches(branchRes.data.branches);
         }
     } catch (err) {
         console.error("Failed to fetch regions:", err);
@@ -229,6 +237,12 @@ export default function VolunteersPage() {
       if (occupationFilter) finalSearch += ` occupation:${occupationFilter.replace(/\s+/g, '_')}`;
       if (areaFilter) finalSearch += ` area:${areaFilter}`;
       if (classificationFilter) finalSearch += ` class:${classificationFilter}`;
+
+      const userRole = typeof window !== 'undefined' ? localStorage.getItem("user_role") : null;
+      const userBranch = typeof window !== 'undefined' ? (localStorage.getItem("user_branch") || localStorage.getItem("user_branch_id")) : null;
+      if (userRole === "BRANCH_OFFICER" && userBranch) {
+        finalSearch += ` ${userBranch}`;
+      }
 
       const url = `/volunteers?search=${encodeURIComponent(finalSearch)}&region=${regionFilter}&status=${statusFilter}&page=${currentPage}&page_size=${pageSize}`;
       const res = await api.get(url);
@@ -686,7 +700,8 @@ export default function VolunteersPage() {
       password: `ERCS@${phoneNumber.slice(-4) || String(index + 1).padStart(4, "0")}`,
       region: targetRegionId,
       zone_id: importZone === "from_file" ? getImportValue(row, ["Zone", "Zone ID", "zone_id"]) : importZone,
-      woreda_id: importWoreda === "from_file" ? getImportValue(row, ["Woreda", "Woreda ID", "Branch", "woreda_id"]) : importWoreda,
+      woreda_id: importWoreda === "from_file" ? getImportValue(row, ["Woreda", "Woreda ID", "woreda_id"]) : importWoreda,
+      branch_id: importBranch === "from_file" ? getImportValue(row, ["Branch ID", "Branch", "branch_id", "Branch Office", "Branch Name"]) : importBranch,
       role: 5,
       gender,
       date_of_birth: formatDOBForBackend(dateOfBirth),
@@ -1497,20 +1512,20 @@ export default function VolunteersPage() {
       {/* Volunteer Import - Branch / Region Prompt Modal */}
 
       {showImportPromptModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white rounded-[32px] shadow-2xl w-full max-w-xl overflow-hidden border border-gray-100"
+            className="bg-white rounded-[32px] shadow-2xl w-full max-w-6xl xl:max-w-7xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100"
           >
-            <div className="p-6 border-b border-gray-100 flex justify-between items-start">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-start shrink-0">
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
                   <Upload className="h-3 w-3" /> Volunteer Import Prompt
                 </div>
                 <h2 className="text-xl font-black tracking-tight text-black">Assign Import Location</h2>
                 <p className="text-xs font-bold text-gray-400">
-                  File: <span className="text-black font-extrabold">{importFileName}</span> ({importRows.length} rows parsed)
+                  File: <span className="text-black font-extrabold">{importFileName}</span> ({importRows.length} rows parsed, {importColumns.length} columns)
                 </p>
               </div>
               <button 
@@ -1521,82 +1536,141 @@ export default function VolunteersPage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-black/60 block">
-                  Target Regional Branch
-                </label>
-                <select
-                  value={importRegion}
-                  onChange={(e) => { setImportRegion(e.target.value); setImportZone("from_file"); setImportWoreda("from_file"); }}
-                  className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs focus:ring-2 focus:ring-[#ED1C24]/20 focus:border-[#ED1C24] outline-none transition-all cursor-pointer"
-                >
-                  <option value="from_file">📁 Use Region specified in File Data (Auto-mapped)</option>
-                  {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map((r) => (
-                    <option key={r.id} value={r.id}>
-                      🏛️ {r.name} (Region ID: {r.id})
-                    </option>
-                  ))}
-                </select>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <select value={importZone} disabled={importRegion === "from_file"} onChange={(e) => { setImportZone(e.target.value); setImportWoreda("from_file"); }} className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs disabled:opacity-50">
-                    <option value="from_file">Use Zone from file</option>
-                    {importZones.filter(z => String(z.region_id) === importRegion).map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-                  </select>
-                  <select value={importWoreda} disabled={importZone === "from_file"} onChange={(e) => setImportWoreda(e.target.value)} className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs disabled:opacity-50">
-                    <option value="from_file">Use Woreda / branch from file</option>
-                    {importWoredas.filter(w => w.zone_id === importZone).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                  </select>
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              <div className="space-y-3 bg-gray-50/80 p-4 sm:p-5 rounded-2xl border border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-black/80 block">
+                    Target Branch & Location Assignment
+                  </label>
+                  <span className="text-[10px] font-semibold text-gray-500">
+                    Applies to all {importRows.length} imported volunteers
+                  </span>
                 </div>
-                <p className="text-[10px] font-semibold text-gray-400">
-                  Choose a region, then its zone and woreda/branch to assign all {importRows.length} imported volunteers.
-                </p>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
+                      Target Regional Branch
+                    </label>
+                    <select
+                      value={importRegion}
+                      onChange={(e) => { setImportRegion(e.target.value); setImportZone("from_file"); setImportWoreda("from_file"); setImportBranch("from_file"); }}
+                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs focus:ring-2 focus:ring-[#ED1C24]/20 focus:border-[#ED1C24] outline-none transition-all cursor-pointer shadow-sm"
+                    >
+                      <option value="from_file">📁 Use Region from File (Auto-mapped)</option>
+                      {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map((r) => (
+                        <option key={r.id} value={r.id}>
+                          🏛️ {r.name} (Region ID: {r.id})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
+                      Zone
+                    </label>
+                    <select 
+                      value={importZone} 
+                      disabled={importRegion === "from_file"} 
+                      onChange={(e) => { setImportZone(e.target.value); setImportWoreda("from_file"); }} 
+                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs disabled:opacity-50 disabled:bg-gray-100 shadow-sm"
+                    >
+                      <option value="from_file">Use Zone from file</option>
+                      {importZones.filter(z => String(z.region_id) === importRegion).map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
+                      Woreda
+                    </label>
+                    <select 
+                      value={importWoreda} 
+                      disabled={importZone === "from_file"} 
+                      onChange={(e) => setImportWoreda(e.target.value)} 
+                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs disabled:opacity-50 disabled:bg-gray-100 shadow-sm"
+                    >
+                      <option value="from_file">Use Woreda from file</option>
+                      {importWoredas.filter(w => w.zone_id === importZone).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
+                      Branch / Coordination Office
+                    </label>
+                    <select 
+                      value={importBranch} 
+                      onChange={(e) => setImportBranch(e.target.value)} 
+                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs shadow-sm"
+                    >
+                      <option value="from_file">Use Branch from file</option>
+                      {importBranches
+                        .filter(b => importRegion === "from_file" || String(b.region_id) === importRegion)
+                        .map(b => (
+                          <option key={b.id} value={b.id}>
+                            🏢 {b.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {/* Data Preview */}
               <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                  Sample Batch Preview ({Math.min(5, importRows.length)} of {importRows.length})
-                </p>
-                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 overflow-hidden">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-gray-100/60 border-b border-gray-100 text-[9px] font-black uppercase text-gray-400">
-                      <tr>
-                        <th className="px-4 py-2">Row</th>
-                        <th className="px-4 py-2">Name</th>
-                        <th className="px-4 py-2">Phone</th>
-                        <th className="px-4 py-2">Target Branch</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
-                      {importRows.slice(0, 5).map((row, idx) => {
-                        const rawRegionInRow = getImportValue(row, ["Region", "Region (Select from list)", "Branch"]);
-                        const effectiveRegionId = importRegion === "from_file" 
-                          ? resolveRegionId(rawRegionInRow, regions) 
-                          : (Number(importRegion) || 1);
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    File Data Preview ({Math.min(50, importRows.length)} of {importRows.length} rows &bull; {importColumns.length} columns)
+                  </p>
+                  <span className="text-[10px] font-semibold text-gray-400">Scroll horizontally to view all columns &rarr;</span>
+                </div>
+                <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto overflow-y-auto max-h-[360px]">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-gray-100/90 backdrop-blur-sm border-b border-gray-200 text-[9px] font-black uppercase text-gray-500 sticky top-0 z-10">
+                        <tr>
+                          <th className="px-4 py-3 sticky left-0 bg-gray-100 z-20 whitespace-nowrap border-r border-gray-200"># Row</th>
+                          <th className="px-4 py-3 whitespace-nowrap bg-red-50/60 text-[#ED1C24] border-r border-gray-200">Target Branch (Assigned)</th>
+                          {importColumns.map((col) => (
+                            <th key={col} className="px-4 py-3 whitespace-nowrap border-r border-gray-200 last:border-r-0">{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
+                        {importRows.slice(0, 50).map((row, idx) => {
+                          const rawRegionInRow = getImportValue(row, ["Region", "Region (Select from list)", "Branch"]);
+                          const effectiveRegionId = importRegion === "from_file" 
+                            ? resolveRegionId(rawRegionInRow, regions) 
+                            : (Number(importRegion) || 1);
 
-                        const regionObj = (regions || DEFAULT_REGIONS).find(r => r.id === effectiveRegionId);
-                        const firstName = getImportValue(row, ["Name", "First Name", "FirstName"]);
-                        const fatherName = getImportValue(row, ["Father Name", "FatherName", "Middle Name", "Last Name"]);
-                        const phone = getImportValue(row, ["Mobile", "Phone", "Phone Number"]);
-                        return (
-                          <tr key={idx}>
-                            <td className="px-4 py-2 text-gray-400 font-mono">#{row.rowNumber}</td>
-                            <td className="px-4 py-2 font-bold text-black">{firstName || "Unnamed"} {fatherName}</td>
-                            <td className="px-4 py-2 text-gray-500">{phone || "—"}</td>
-                            <td className="px-4 py-2 font-bold text-[#ED1C24]">
-                              {regionObj ? regionObj.name : `Region ${effectiveRegionId}`}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                          const regionObj = (regions || DEFAULT_REGIONS).find(r => r.id === effectiveRegionId);
+                          return (
+                            <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
+                              <td className="px-4 py-2.5 text-gray-400 font-mono whitespace-nowrap sticky left-0 bg-white shadow-[1px_0_0_0_#f3f4f6] z-1 border-r border-gray-100">
+                                #{row.rowNumber}
+                              </td>
+                              <td className="px-4 py-2.5 font-bold text-[#ED1C24] whitespace-nowrap bg-red-50/20 border-r border-gray-100">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100 text-[10px] font-bold">
+                                  {regionObj ? regionObj.name : `Region ${effectiveRegionId}`}
+                                </span>
+                              </td>
+                              {importColumns.map((col) => {
+                                const val = cellValueToText(row.data[col]);
+                                return (
+                                  <td key={col} className="px-4 py-2.5 text-gray-700 whitespace-nowrap border-r border-gray-100 last:border-r-0">
+                                    {val || <span className="text-gray-300">—</span>}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
               <Button
                 variant="outline"
                 disabled={submittingImport}

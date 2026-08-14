@@ -86,9 +86,11 @@ export default function MembersPage() {
   const [selectedImportRegion, setSelectedImportRegion] = useState<string>("from_file");
   const [selectedImportZone, setSelectedImportZone] = useState<string>("from_file");
   const [selectedImportWoreda, setSelectedImportWoreda] = useState<string>("from_file");
+  const [selectedImportBranch, setSelectedImportBranch] = useState<string>("from_file");
   const [selectedImportPlan, setSelectedImportPlan] = useState<string>("from_file");
   const [importZones, setImportZones] = useState<Zone[]>([]);
   const [importWoredas, setImportWoredas] = useState<Woreda[]>([]);
+  const [importBranches, setImportBranches] = useState<any[]>([]);
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
   const [memberImportErrors, setMemberImportErrors] = useState<string[]>([]);
   const [submittingImport, setSubmittingImport] = useState(false);
@@ -125,7 +127,10 @@ export default function MembersPage() {
 
   const fetchRegions = async () => {
     try {
-        const res = await api.get("/system-settings");
+        const [res, branchRes] = await Promise.all([
+          api.get("/system-settings"),
+          api.get("/location/branches").catch(() => ({ data: { branches: [] } }))
+        ]);
         if (res.data && res.data.settings && res.data.settings.all_regions) {
             const parsed = JSON.parse(res.data.settings.all_regions);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -136,6 +141,9 @@ export default function MembersPage() {
           const hierarchy = JSON.parse(res.data.settings.locations_hierarchy);
           setImportZones(hierarchy.zones || []);
           setImportWoredas(hierarchy.woredas || []);
+        }
+        if (branchRes.data?.branches) {
+          setImportBranches(branchRes.data.branches);
         }
     } catch (err) {
         console.error("Failed to fetch regions:", err);
@@ -155,6 +163,7 @@ export default function MembersPage() {
     setSelectedImportRegion("from_file");
     setSelectedImportZone("from_file");
     setSelectedImportWoreda("from_file");
+    setSelectedImportBranch("from_file");
     setSelectedImportPlan("from_file");
     setMemberImportErrors([]);
   };
@@ -162,7 +171,12 @@ export default function MembersPage() {
   const fetchMembers = async () => {
     setLoading(true);
     try {
-      const url = `/person?page=${page}&page_size=${pageSize}&search=${search}&region=${regionFilter}&status=${statusFilter}&type=${typeFilter}&zone=${zoneFilter}&woreda=${woredaFilter}&category=${mainCategory}`;
+      const userRole = typeof window !== 'undefined' ? localStorage.getItem("user_role") : null;
+      const userBranch = typeof window !== 'undefined' ? (localStorage.getItem("user_branch") || localStorage.getItem("user_branch_id")) : null;
+      let url = `/person?page=${page}&page_size=${pageSize}&search=${search}&region=${regionFilter}&status=${statusFilter}&type=${typeFilter}&zone=${zoneFilter}&woreda=${woredaFilter}&category=${mainCategory}`;
+      if (userRole === "BRANCH_OFFICER" && userBranch) {
+        url += `&branch_id=${userBranch}`;
+      }
       const res = await api.get(url);
       setMembers(res.data.people || []);
       setTotalItems(res.data.pagination?.total_items || 0);
@@ -386,7 +400,8 @@ export default function MembersPage() {
                             gender: gender,
                             region: regionVal,
                             zone_id: getVal(["Zone ID", "Zone", "zone_id"], 0),
-                            woreda_id: getVal(["Woreda ID", "Woreda", "Branch", "woreda_id"], 0),
+                            woreda_id: getVal(["Woreda ID", "Woreda", "woreda_id"], 0),
+                            branch_id: getVal(["Branch ID", "Branch", "Branch Office", "branch_id", "Branch Name"], 0),
                             membership_type: membershipType,
                             metadata: JSON.stringify({
                                 occupation: getVal(["Occupation"], 9),
@@ -481,6 +496,7 @@ export default function MembersPage() {
           region: targetRegion,
           zone_id: selectedImportZone === "from_file" ? (person.zone_id || "") : selectedImportZone,
           woreda_id: selectedImportWoreda === "from_file" ? (person.woreda_id || "") : selectedImportWoreda,
+          branch_id: selectedImportBranch === "from_file" ? (person.branch_id || "") : selectedImportBranch,
           membership_type: selectedImportPlan === "from_file" ? person.membership_type : selectedImportPlan
         };
       });
@@ -1000,13 +1016,13 @@ export default function MembersPage() {
 
       {/* Import Members - Branch / Region Prompt Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white rounded-[32px] shadow-2xl w-full max-w-xl overflow-hidden border border-gray-100"
+            className="bg-white rounded-[32px] shadow-2xl w-full max-w-6xl xl:max-w-7xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100"
           >
-            <div className="p-6 border-b border-gray-100 flex justify-between items-start">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-start shrink-0">
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
                   <Upload className="h-3 w-3" /> Member Import Prompt
@@ -1024,43 +1040,99 @@ export default function MembersPage() {
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-black/60 block">
-                  Target Regional Branch
-                </label>
-                <select
-                  value={selectedImportRegion}
-                  onChange={(e) => { setSelectedImportRegion(e.target.value); setSelectedImportZone("from_file"); setSelectedImportWoreda("from_file"); }}
-                  className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs focus:ring-2 focus:ring-[#ED1C24]/20 focus:border-[#ED1C24] outline-none transition-all cursor-pointer"
-                >
-                  <option value="from_file">📁 Use Region specified in File Data (Auto-mapped)</option>
-                  {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map((r) => (
-                    <option key={r.id} value={r.id}>
-                      🏛️ {r.name} (Region ID: {r.id})
-                    </option>
-                  ))}
-                </select>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <select value={selectedImportZone} disabled={selectedImportRegion === "from_file"} onChange={(e) => { setSelectedImportZone(e.target.value); setSelectedImportWoreda("from_file"); }} className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs disabled:opacity-50">
-                    <option value="from_file">Use Zone from file</option>
-                    {importZones.filter(z => String(z.region_id) === selectedImportRegion).map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-                  </select>
-                  <select value={selectedImportWoreda} disabled={selectedImportZone === "from_file"} onChange={(e) => setSelectedImportWoreda(e.target.value)} className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs disabled:opacity-50">
-                    <option value="from_file">Use Woreda / branch from file</option>
-                    {importWoredas.filter(w => w.zone_id === selectedImportZone).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                  </select>
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              <div className="space-y-3 bg-gray-50/80 p-4 sm:p-5 rounded-2xl border border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-black/80 block">
+                    Target Branch & Membership Plan Assignment
+                  </label>
+                  <span className="text-[10px] font-semibold text-gray-500">
+                    Applies to all {parsedMembers.length} imported members
+                  </span>
                 </div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-black/60 block pt-2">Membership Plan (mass assignment)</label>
-                <select value={selectedImportPlan} onChange={(e) => {
-                  const plan = e.target.value;
-                  setSelectedImportPlan(plan);
-                  if (plan !== "from_file") setParsedMembers(current => current.map(person => ({ ...person, membership_type: plan })));
-                }} className="w-full h-11 px-4 rounded-xl bg-gray-50 text-black border border-gray-200 font-bold text-xs">
-                  <option value="from_file">Use each member's plan from file</option>
-                  {membershipPlans.map(plan => <option key={plan.id} value={plan.short_code}>{plan.name}</option>)}
-                </select>
-                <p className="text-[10px] font-semibold text-gray-400">Selections apply to all {parsedMembers.length} members. You can override the plan for each person below.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
+                      Target Regional Branch
+                    </label>
+                    <select
+                      value={selectedImportRegion}
+                      onChange={(e) => { setSelectedImportRegion(e.target.value); setSelectedImportZone("from_file"); setSelectedImportWoreda("from_file"); setSelectedImportBranch("from_file"); }}
+                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs focus:ring-2 focus:ring-[#ED1C24]/20 focus:border-[#ED1C24] outline-none transition-all cursor-pointer shadow-sm"
+                    >
+                      <option value="from_file">📁 Use Region from File (Auto-mapped)</option>
+                      {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map((r) => (
+                        <option key={r.id} value={r.id}>
+                          🏛️ {r.name} (Region ID: {r.id})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
+                      Zone
+                    </label>
+                    <select 
+                      value={selectedImportZone} 
+                      disabled={selectedImportRegion === "from_file"} 
+                      onChange={(e) => { setSelectedImportZone(e.target.value); setSelectedImportWoreda("from_file"); }} 
+                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs disabled:opacity-50 disabled:bg-gray-100 shadow-sm"
+                    >
+                      <option value="from_file">Use Zone from file</option>
+                      {importZones.filter(z => String(z.region_id) === selectedImportRegion).map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
+                      Woreda
+                    </label>
+                    <select 
+                      value={selectedImportWoreda} 
+                      disabled={selectedImportZone === "from_file"} 
+                      onChange={(e) => setSelectedImportWoreda(e.target.value)} 
+                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs disabled:opacity-50 disabled:bg-gray-100 shadow-sm"
+                    >
+                      <option value="from_file">Use Woreda from file</option>
+                      {importWoredas.filter(w => w.zone_id === selectedImportZone).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
+                      Branch / Coordination Office
+                    </label>
+                    <select 
+                      value={selectedImportBranch} 
+                      onChange={(e) => setSelectedImportBranch(e.target.value)} 
+                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs shadow-sm"
+                    >
+                      <option value="from_file">Use Branch from file</option>
+                      {importBranches
+                        .filter(b => selectedImportRegion === "from_file" || String(b.region_id) === selectedImportRegion)
+                        .map(b => (
+                          <option key={b.id} value={b.id}>
+                            🏢 {b.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
+                      Membership Plan (Mass Assign)
+                    </label>
+                    <select 
+                      value={selectedImportPlan} 
+                      onChange={(e) => {
+                        const plan = e.target.value;
+                        setSelectedImportPlan(plan);
+                        if (plan !== "from_file") setParsedMembers(current => current.map(person => ({ ...person, membership_type: plan })));
+                      }} 
+                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs shadow-sm"
+                    >
+                      <option value="from_file">Use each member's plan from file</option>
+                      {membershipPlans.map(plan => <option key={plan.id} value={plan.short_code}>{plan.name}</option>)}
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {memberImportErrors.length > 0 && (
@@ -1072,49 +1144,111 @@ export default function MembersPage() {
 
               {/* Data Preview */}
               <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                  Members ({parsedMembers.length})
-                </p>
-                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 overflow-auto max-h-64">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-gray-100/60 border-b border-gray-100 text-[9px] font-black uppercase text-gray-400">
-                      <tr>
-                        <th className="px-4 py-2">Name</th>
-                        <th className="px-4 py-2">Phone</th>
-                        <th className="px-4 py-2">Target Branch</th>
-                        <th className="px-4 py-2">Membership Plan</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
-                      {parsedMembers.map((pm, idx) => {
-                        const effectiveRegionId = selectedImportRegion === "from_file" 
-                          ? resolveRegionId(pm.region, regions) 
-                          : parseInt(selectedImportRegion, 10);
-                        const regionObj = (regions || DEFAULT_REGIONS).find(r => r.id === effectiveRegionId);
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    Members File Preview ({Math.min(50, parsedMembers.length)} of {parsedMembers.length} records)
+                  </p>
+                  <span className="text-[10px] font-semibold text-gray-400">Scroll horizontally to view all columns &rarr;</span>
+                </div>
+                <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto overflow-y-auto max-h-[360px]">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-gray-100/90 backdrop-blur-sm border-b border-gray-200 text-[9px] font-black uppercase text-gray-500 sticky top-0 z-10">
+                        <tr>
+                          <th className="px-4 py-3 sticky left-0 bg-gray-100 z-20 whitespace-nowrap border-r border-gray-200"># Row</th>
+                          <th className="px-4 py-3 whitespace-nowrap bg-red-50/60 text-[#ED1C24] border-r border-gray-200">Target Branch (Assigned)</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">Membership Plan</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">Full Name</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">Phone</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">Email</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">Gender</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">Date of Birth</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">National ID</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">Occupation</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">Organization</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">Education Level</th>
+                          <th className="px-4 py-3 whitespace-nowrap border-r border-gray-200">Area / Kebele</th>
+                          <th className="px-4 py-3 whitespace-nowrap">Languages</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
+                        {parsedMembers.slice(0, 50).map((pm, idx) => {
+                          const effectiveRegionId = selectedImportRegion === "from_file" 
+                            ? resolveRegionId(pm.region, regions) 
+                            : parseInt(selectedImportRegion, 10);
+                          const regionObj = (regions || DEFAULT_REGIONS).find(r => r.id === effectiveRegionId);
 
-                        return (
-                          <tr key={idx}>
-                            <td className="px-4 py-2 font-bold text-black">{pm.first_name} {pm.father_name}</td>
-                            <td className="px-4 py-2 text-gray-500">{pm.phone_number || "—"}</td>
-                            <td className="px-4 py-2 font-bold text-[#ED1C24]">
-                              {regionObj ? regionObj.name : `Region ${effectiveRegionId}`}
-                            </td>
-                            <td className="px-4 py-2">
-                              <select value={pm.membership_type || ""} onChange={(e) => setParsedMembers(current => current.map((person, personIndex) => personIndex === idx ? { ...person, membership_type: e.target.value } : person))} className="h-8 min-w-32 px-2 rounded-lg border border-gray-200 bg-white font-bold text-[10px]">
-                                <option value="">Select plan</option>
-                                {membershipPlans.map(plan => <option key={plan.id} value={plan.short_code}>{plan.name}</option>)}
-                              </select>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                          let meta: Record<string, any> = {};
+                          try {
+                            meta = typeof pm.metadata === "string" ? JSON.parse(pm.metadata || "{}") : (pm.metadata || {});
+                          } catch {
+                            meta = {};
+                          }
+
+                          return (
+                            <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
+                              <td className="px-4 py-2.5 text-gray-400 font-mono whitespace-nowrap sticky left-0 bg-white shadow-[1px_0_0_0_#f3f4f6] z-1 border-r border-gray-100">
+                                #{idx + 1}
+                              </td>
+                              <td className="px-4 py-2.5 font-bold text-[#ED1C24] whitespace-nowrap bg-red-50/20 border-r border-gray-100">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100 text-[10px] font-bold">
+                                  {regionObj ? regionObj.name : `Region ${effectiveRegionId}`}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2.5 whitespace-nowrap border-r border-gray-100">
+                                <select 
+                                  value={pm.membership_type || ""} 
+                                  onChange={(e) => setParsedMembers(current => current.map((person, personIndex) => personIndex === idx ? { ...person, membership_type: e.target.value } : person))} 
+                                  className="h-8 min-w-32 px-2.5 rounded-lg border border-gray-200 bg-white font-bold text-[10px] focus:ring-1 focus:ring-[#ED1C24] outline-none shadow-sm cursor-pointer"
+                                >
+                                  <option value="">Select plan</option>
+                                  {membershipPlans.map(plan => <option key={plan.id} value={plan.short_code}>{plan.name}</option>)}
+                                </select>
+                              </td>
+                              <td className="px-4 py-2.5 font-bold text-black whitespace-nowrap border-r border-gray-100">
+                                {pm.first_name} {pm.father_name} {pm.grandfather_name || ""}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap border-r border-gray-100">
+                                {pm.phone_number || "—"}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap border-r border-gray-100">
+                                {pm.email || "—"}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap border-r border-gray-100">
+                                {pm.gender || "—"}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap border-r border-gray-100">
+                                {pm.date_of_birth || "—"}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap border-r border-gray-100">
+                                {pm.national_id || "—"}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap border-r border-gray-100">
+                                {meta.occupation || "—"}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap border-r border-gray-100">
+                                {meta.organizationName || "—"}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap border-r border-gray-100">
+                                {meta.educationLevel || "—"}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap border-r border-gray-100">
+                                {[meta.kebele, meta.area].filter(Boolean).join(" / ") || "—"}
+                              </td>
+                              <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">
+                                {meta.languages || "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
               <Button
                 variant="outline"
                 disabled={submittingImport}

@@ -154,9 +154,11 @@ export default function UserManagementPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [editRole, setEditRole] = useState<number>(5);
   const [editStatus, setEditStatus] = useState<string>("ACTIVE");
+  const [editBranch, setEditBranch] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"ADMIN" | "MEMBER">("ADMIN");
   const [zones, setZones] = useState<any[]>([]);
   const [woredas, setWoredas] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [filterRegion, setFilterRegion] = useState<number>(0);
   const [filterZone, setFilterZone] = useState<string>("");
@@ -172,6 +174,7 @@ export default function UserManagementPage() {
           region: res.data.person.region_id || 14,
           zone: res.data.person.zone_id || "",
           woreda: res.data.person.woreda_id || "",
+          branch: res.data.person.branch_id || "",
         }));
       }
     } catch (err) {
@@ -181,12 +184,14 @@ export default function UserManagementPage() {
 
   const fetchLocations = useCallback(async () => {
     try {
-      const [zRes, wRes] = await Promise.all([
+      const [zRes, wRes, bRes] = await Promise.all([
         api.get("/location/zones"),
-        api.get("/location/woredas")
+        api.get("/location/woredas"),
+        api.get("/location/branches")
       ]);
       setZones(zRes.data?.zones || []);
       setWoredas(wRes.data?.woredas || []);
+      setBranches(bRes.data?.branches || []);
     } catch (err) {
       console.error("Failed to fetch locations", err);
     }
@@ -277,6 +282,7 @@ export default function UserManagementPage() {
       setEditRole(ROLES.find(r => r.label === label)?.value ?? 5);
     }
     setEditStatus(user.status || "ACTIVE");
+    setEditBranch(user.branch_id || "");
     setShowCreate(false);
   };
 
@@ -291,7 +297,7 @@ export default function UserManagementPage() {
         region_id: selectedUser.region_id,
         zone_id: selectedUser.zone_id,
         woreda_id: selectedUser.woreda_id,
-        branch_id: selectedUser.branch_id,
+        branch_id: editBranch,
         status: editStatus,
       });
       toast.success("User updated successfully.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> });
@@ -631,13 +637,20 @@ export default function UserManagementPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Branch (If applicable)</Label>
-                      <Input
-                        type="text"
+                      <select
                         value={form.branch || ""}
                         onChange={e => setForm(f => ({ ...f, branch: e.target.value }))}
-                        placeholder="Branch ID"
-                        className="h-10 rounded-xl bg-gray-50 text-black border-gray-100 font-bold text-sm"
-                      />
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
+                      >
+                        <option value="">No Branch (All / Unassigned)</option>
+                        {branches
+                          .filter(b => !form.region || b.region_id === form.region)
+                          .map(b => (
+                            <option key={b.id} value={b.id}>
+                              {b.name} ({b.branch_type?.replace(/_/g, ' ')})
+                            </option>
+                          ))}
+                      </select>
                     </div>
                   </div>
 
@@ -667,41 +680,39 @@ export default function UserManagementPage() {
               </motion.div>
             ) : selectedUser ? (
               <motion.div
-                key={`edit-${selectedUser.id}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                exit={{ opacity: 0, y: 10 }}
+                className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm sticky top-6"
               >
-                <div className="p-6 space-y-6">
-                  <div className="flex items-center justify-between pb-4 border-b border-gray-50">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-gray-100 rounded-xl flex items-center justify-center">
-                        <User className="h-5 w-5 text-gray-500" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-black text-black tracking-tighter">{selectedUser.email || selectedUser.phone_number}</h3>
-                        <p className="text-gray-400 font-medium text-[10px]">User ID: {selectedUser.id.slice(0, 8)}...</p>
-                      </div>
+                <div className="space-y-6">
+                  {/* User info header */}
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 font-black text-sm">
+                      {selectedUser.email ? selectedUser.email[0].toUpperCase() : "U"}
                     </div>
-                    <button onClick={() => setSelectedUser(null)} className="p-2 rounded-xl hover:bg-gray-50">
-                      <X className="h-4 w-4 text-gray-400" />
-                    </button>
+                    <div className="min-w-0">
+                      <h3 className="font-black text-black tracking-tight truncate">{selectedUser.email || "No Email"}</h3>
+                      <p className="text-[10px] font-bold text-gray-400 font-mono">{selectedUser.phone_number || "No Phone"}</p>
+                    </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
+                  {/* Edit fields */}
+                  <div className="space-y-4">
                     <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Role</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">System Role</Label>
                       <select
                         value={editRole}
                         onChange={e => setEditRole(Number(e.target.value))}
                         className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
-                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                        {ROLES.map(r => (
+                          <option key={r.value} value={r.value}>{r.label}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Status</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Account Status</Label>
                       <select
                         value={editStatus}
                         onChange={e => setEditStatus(e.target.value)}
@@ -731,6 +742,23 @@ export default function UserManagementPage() {
                       >
                         <option value="">All Zones</option>
                         {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Assigned Branch</Label>
+                      <select
+                        value={editBranch}
+                        onChange={e => setEditBranch(e.target.value)}
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm appearance-none focus:ring-1 focus:ring-red-500/20"
+                      >
+                        <option value="">No Branch (All / Unassigned)</option>
+                        {branches
+                          .filter(b => !selectedUser.region_id || b.region_id === selectedUser.region_id)
+                          .map(b => (
+                            <option key={b.id} value={b.id}>
+                              {b.name} ({b.branch_type?.replace(/_/g, ' ')})
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </div>

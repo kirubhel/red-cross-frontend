@@ -32,6 +32,7 @@ export default function AdminLayoutClient({
     const regId = localStorage.getItem("user_region") || "0";
     const zoneId = localStorage.getItem("user_zone") || "";
     const woredaId = localStorage.getItem("user_woreda") || "";
+    const branchId = localStorage.getItem("user_branch") || localStorage.getItem("user_branch_id") || "";
 
     const REGIONS: Record<string, string> = {
       "1": "Addis Ababa", "2": "Dire Dawa", "3": "Tigray", "4": "Afar",
@@ -47,7 +48,10 @@ export default function AdminLayoutClient({
       setAdminInfo({ title: "Regional Admin", scope: `REGIONAL ADMIN — ${regName.toUpperCase()}` });
     } else if (role === "ZONE_ADMIN" || role === "3") {
       setAdminInfo({ title: "Zone Admin", scope: `ZONE ADMIN — ${regName.toUpperCase()} / ZONE ${zoneId || '1'}` });
-    } else if (role === "BRANCH_OFFICER" || role === "4") {
+    } else if (role === "BRANCH_OFFICER" || role === "7") {
+      const cleanBranch = branchId ? branchId.replace(/^BRANCH_/, '').replace(/_/g, ' ').toUpperCase() : 'BRANCH';
+      setAdminInfo({ title: "Branch Officer", scope: `BRANCH OFFICER — ${cleanBranch}` });
+    } else if (role === "WOREDA_ADMIN" || role === "4") {
       setAdminInfo({ title: "Woreda Admin", scope: `WOREDA ADMIN — ${regName.toUpperCase()} / WOREDA ${woredaId || '1'}` });
     }
   }, []);
