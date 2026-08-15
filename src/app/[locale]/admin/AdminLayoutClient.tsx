@@ -14,6 +14,7 @@ import {
   ChevronRight,
   LogOut
 } from "lucide-react";
+import { DesktopPushToggle } from "@/components/notifications/DesktopPushToggle";
 
 export default function AdminLayoutClient({
   children,
@@ -210,6 +211,9 @@ export default function AdminLayoutClient({
                       </span>
                     )}
                   </div>
+
+                  {/* Desktop / PWA Push Notification Toggle */}
+                  <DesktopPushToggle />
                   
                   <div className="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scrollbar-small">
                     {/* Pending Volunteer Requests Section */}

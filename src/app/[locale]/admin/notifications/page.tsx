@@ -33,6 +33,7 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { DesktopPushToggle } from "@/components/notifications/DesktopPushToggle";
 
 type Notification = {
   id: string;
@@ -200,14 +201,17 @@ export default function NotificationsPage() {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-black text-white rounded-3xl p-6 shadow-xl relative overflow-hidden group border border-gray-800">
             <div className="absolute top-0 right-0 p-4 opacity-5 font-black text-7xl select-none">FCM</div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="h-8 w-8 rounded-lg bg-red-500/20 text-[#ED1C24] flex items-center justify-center font-bold">
-                <Smartphone className="h-4 w-4" />
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-red-500/20 text-[#ED1C24] flex items-center justify-center font-bold">
+                  <Smartphone className="h-4 w-4" />
+                </div>
+                <h3 className="text-lg font-black tracking-tight">Push Broadcast</h3>
               </div>
-              <h3 className="text-lg font-black tracking-tight">Push Broadcast</h3>
+              <DesktopPushToggle compact />
             </div>
             <p className="text-gray-400 font-bold text-xs mb-4 leading-relaxed">
-              Reach all mobile app subscribers instantaneously using Firebase Cloud Messaging.
+              Reach all mobile app & desktop PWA subscribers instantaneously using Firebase Cloud Messaging.
             </p>
             <div className="flex flex-col gap-2">
               <Button
