@@ -36,13 +36,15 @@ import {
     Download,
     Loader2,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    Map as MapIcon
 } from "lucide-react";
 
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { resolveRegionId } from "@/lib/constants";
+import { GeographicMapReport } from "@/components/admin/GeographicMapReport";
 import type { Cell, CellValue } from "exceljs";
 
 
@@ -141,6 +143,7 @@ const hasRichText = (value: CellValue): value is CellValue & { richText: { text?
 export default function VolunteersPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
+  const [viewMode, setViewMode] = useState<"table" | "map">("table");
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -856,14 +859,31 @@ export default function VolunteersPage() {
 
       <div className="flex flex-col gap-4 print:hidden">
         <div className="flex w-full items-center justify-between gap-4">
-            <div className="relative w-full max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                placeholder="Search volunteers..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-10 pl-10 bg-white border border-gray-200 shadow-sm text-black rounded-xl font-bold text-sm"
-                />
+            <div className="flex items-center gap-3 flex-1">
+                <div className="relative w-full max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                    placeholder="Search volunteers..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="h-10 pl-10 bg-white border border-gray-200 shadow-sm text-black rounded-xl font-bold text-sm"
+                    />
+                </div>
+
+                <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-xs">
+                    <button
+                        onClick={() => setViewMode("table")}
+                        className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-all ${viewMode === 'table' ? 'bg-white text-black shadow-xs' : 'text-gray-500 hover:text-black'}`}
+                    >
+                        <TableIcon className="h-3.5 w-3.5" /> Table
+                    </button>
+                    <button
+                        onClick={() => setViewMode("map")}
+                        className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-all ${viewMode === 'map' ? 'bg-[#ED1C24] text-white shadow-xs' : 'text-gray-500 hover:text-black'}`}
+                    >
+                        <MapIcon className="h-3.5 w-3.5" /> Map View
+                    </button>
+                </div>
             </div>
 
             <Button 
@@ -1079,9 +1099,20 @@ export default function VolunteersPage() {
         )}
 
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none print:border-none">
-
-        <Table>
+      {viewMode === "map" ? (
+        <GeographicMapReport
+          items={volunteers}
+          title="Volunteers Geographic Distribution"
+          type="volunteers"
+          onSelectRegion={(regId) => {
+            setRegionFilter(regId);
+            setViewMode("table");
+          }}
+        />
+      ) : (
+        <>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none print:border-none">
+            <Table>
           <TableHeader className="bg-gray-50/50 print:bg-transparent">
             <TableRow className="hover:bg-transparent border-gray-50">
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Volunteer Identity</TableHead>
@@ -1246,6 +1277,8 @@ export default function VolunteersPage() {
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Volunteer Detail Modal */}
       {showModal && selectedVolunteer && (

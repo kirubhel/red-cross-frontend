@@ -13,11 +13,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin } from "lucide-react";
+import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin, Map as MapIcon } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
 import { resolveRegionId } from "@/lib/constants";
+import { GeographicMapReport } from "@/components/admin/GeographicMapReport";
 
 type Member = {
   id: string;
@@ -96,6 +97,7 @@ export default function MembersPage() {
   const [submittingImport, setSubmittingImport] = useState(false);
 
   const [isMounted, setIsMounted] = useState(false);
+  const [viewMode, setViewMode] = useState<"table" | "map">("table");
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -633,14 +635,31 @@ export default function MembersPage() {
 
       <div className="flex flex-col gap-3 print:hidden">
         <div className="flex w-full items-center justify-between gap-3">
-            <div className="relative w-full max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#ED1C24]" />
-                <Input
-                placeholder="Search Identity..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-10 pl-10 bg-white text-black border border-gray-200 rounded-xl font-black text-xs focus:ring-4 focus:ring-[#ED1C24]/10 transition-all shadow-sm"
-                />
+            <div className="flex items-center gap-2 flex-1">
+                <div className="relative w-full max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#ED1C24]" />
+                    <Input
+                    placeholder="Search Identity..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="h-10 pl-10 bg-white text-black border border-gray-200 rounded-xl font-black text-xs focus:ring-4 focus:ring-[#ED1C24]/10 transition-all shadow-sm"
+                    />
+                </div>
+
+                <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-xs">
+                    <button
+                        onClick={() => setViewMode("table")}
+                        className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-all ${viewMode === 'table' ? 'bg-white text-black shadow-xs' : 'text-gray-500 hover:text-black'}`}
+                    >
+                        <TableIcon className="h-3.5 w-3.5" /> Table
+                    </button>
+                    <button
+                        onClick={() => setViewMode("map")}
+                        className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-all ${viewMode === 'map' ? 'bg-[#ED1C24] text-white shadow-xs' : 'text-gray-500 hover:text-black'}`}
+                    >
+                        <MapIcon className="h-3.5 w-3.5" /> Map View
+                    </button>
+                </div>
             </div>
 
             <Button 
@@ -772,8 +791,19 @@ export default function MembersPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-[32px] border border-gray-100 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.03)] overflow-hidden print:shadow-none print:border-none print:rounded-none">
-        <Table>
+      {viewMode === "map" ? (
+        <GeographicMapReport
+          items={members}
+          title="Members Geographic Distribution"
+          type="members"
+          onSelectRegion={(regId) => {
+            setRegionFilter(regId);
+            setViewMode("table");
+          }}
+        />
+      ) : (
+        <div className="bg-white rounded-[32px] border border-gray-100 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.03)] overflow-hidden print:shadow-none print:border-none print:rounded-none">
+          <Table>
           <TableHeader className="bg-gray-50/50 print:bg-transparent">
             <TableRow className="hover:bg-transparent border-gray-50">
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">ID</TableHead>
@@ -985,6 +1015,7 @@ export default function MembersPage() {
            </div>
         </div>
       </div>
+      )}
 
       {/* Print-only Report Header */}
       <div className="hidden print:block mb-8">
