@@ -44,6 +44,20 @@ export default function DashboardPage() {
   const [news, setNews] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [cmsContact, setCmsContact] = useState<{
+    address: string;
+    email: string;
+    tel: string;
+    mobile: string;
+    web: string;
+  }>({
+    address: "Ras Desta Damtew Avenue, Addis Ababa, Ethiopia",
+    email: "info@redcrosseth.org",
+    tel: "+251 11 551 91 00",
+    mobile: "+251 11 551 91 00",
+    web: "www.redcrosseth.org"
+  });
+
   const [history, setHistory] = useState<any[]>([]);
   const [openRequests, setOpenRequests] = useState<any[]>([]);
   const idCardRef = useRef<HTMLDivElement>(null);
@@ -72,8 +86,49 @@ export default function DashboardPage() {
           console.error("Failed to fetch ID assets:", err);
         }
 
+        // 4. Fetch Contact Us CMS configuration
+        try {
+          const cmsRes = await api.get("/config/landing-page?lang=en");
+          if (cmsRes.data?.content_json) {
+            const parsed = typeof cmsRes.data.content_json === 'string'
+              ? JSON.parse(cmsRes.data.content_json)
+              : cmsRes.data.content_json;
+            if (parsed?.contactSection) {
+              setCmsContact({
+                address: parsed.contactSection.address || "Ras Desta Damtew Avenue, Addis Ababa, Ethiopia",
+                email: parsed.contactSection.email || "info@redcrosseth.org",
+                tel: parsed.contactSection.tel || parsed.contactSection.mobile || "+251 11 551 91 00",
+                mobile: parsed.contactSection.mobile || "+251 11 551 91 00",
+                web: "www.redcrosseth.org"
+              });
+            }
+          }
+        } catch (err) {
+          console.warn("Failed to fetch CMS contact info:", err);
+        }
+
         const role = localStorage.getItem("user_role");
         const storedErcsId = localStorage.getItem("ercs_id");
+        
+        // Parse metadata for address & emergency details
+        let userMeta: any = {};
+        try {
+          if (typeof userData?.metadata === 'string' && userData.metadata) {
+            userMeta = JSON.parse(userData.metadata);
+          } else if (typeof userData?.metadata === 'object' && userData.metadata) {
+            userMeta = userData.metadata;
+          }
+        } catch (e) {
+          console.warn("Failed to parse user metadata", e);
+        }
+
+        const zone = userData?.zone_id || userData?.zone || userMeta?.zone || userMeta?.zone_name || "";
+        const woreda = userData?.woreda_id || userData?.woreda || userMeta?.woreda || userMeta?.woreda_name || "";
+        const kebele = userData?.kebele_id || userMeta?.kebele || userMeta?.kebele_id || "";
+        const houseNo = userMeta?.house_number || userMeta?.house_no || userMeta?.houseNo || "";
+        const area = userMeta?.area || "";
+        const emergencyContactName = userMeta?.emergency_contact_name || userMeta?.emergencyContactName || userMeta?.emergency_contact || "";
+        const emergencyContactPhone = userMeta?.emergency_contact_phone || userMeta?.emergencyContactPhone || userMeta?.emergencyPhone || "";
         
         // ROLE_volunteer = 5, ROLE_member = 6
         const isMemberUser = role === "MEMBER" || role === "6";
@@ -148,7 +203,7 @@ export default function DashboardPage() {
         const fullName = constructedName || "Valued Member";
         const personId = userData?.id || userData?.person_id || userData?.personId || "";
 
-        // 4. Fetch Payments / Total Donations
+        // 5. Fetch Payments / Total Donations
         let totalDonations = 0;
         let fetchedActivities: any[] = [];
         try {
@@ -201,6 +256,16 @@ export default function DashboardPage() {
           donations: `${totalDonations} ETB`,
           totalDonations: totalDonations,
           idAssets: idAssets,
+          address: {
+            region: regionName,
+            zone: zone,
+            woreda: woreda,
+            kebele: kebele,
+            houseNo: houseNo,
+            area: area,
+            emergencyName: emergencyContactName,
+            emergencyPhone: emergencyContactPhone
+          },
           raw: userData
         });
 
@@ -511,43 +576,67 @@ export default function DashboardPage() {
                    </div>
                 </div>
               </div>
-  
+
               {/* Back View */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
                 <p style={{ textAlign: 'center', fontSize: '10px', fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.3em', margin: 0 }}>Card Back</p>
                 <div 
                    style={{ backgroundColor: 'white', borderRadius: '24px', border: '2px solid rgba(153, 27, 27, 0.15)', overflow: 'hidden', position: 'relative', width: '500px', height: '312px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)', flexShrink: 0 }}
                 >
-                   <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ backgroundColor: '#ED1C24', color: 'white', padding: '12px', textAlign: 'center', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                   <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                      <div style={{ backgroundColor: '#ED1C24', color: 'white', padding: '10px 12px', textAlign: 'center', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                          Emergency Contact & Authentication
                       </div>
                       
-                      <div style={{ flex: 1, padding: '24px', display: 'flex', gap: '32px' }}>
-                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                               <p style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Office Address</p>
-                               <p style={{ fontSize: '9px', fontWeight: '700', color: '#1F2937', lineHeight: '1.25', margin: 0 }}>
-                                  Ethiopian Red Cross Society HQ<br />
-                                  Bisrate Gebriel, In front of Zambia Embassy<br />
-                                  Addis Ababa, Ethiopia
+                      <div style={{ flex: 1, padding: '14px 20px 6px', display: 'flex', gap: '20px' }}>
+                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {/* Member Address */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                               <p style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Member Address</p>
+                               <p style={{ fontSize: '8.5px', fontWeight: '800', color: '#111827', lineHeight: '1.3', margin: 0 }}>
+                                  Region: {user?.region || "Ethiopia"}<br />
+                                  {[
+                                    user?.address?.zone && `Zone: ${user.address.zone}`,
+                                    user?.address?.woreda && `Woreda: ${user.address.woreda}`,
+                                    user?.address?.kebele && `Kebele: ${user.address.kebele}`
+                                  ].filter(Boolean).join(" • ") || (user?.address?.area ? `Area: ${user.address.area}` : "National Registry")}
+                                  {user?.address?.houseNo ? <><br />House No: {user.address.houseNo}</> : null}
                                </p>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                               <p style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Contact Information</p>
-                               <p style={{ fontSize: '9px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
-                                  Tel: +251 11 551 91 00<br />
-                                  Email: info@redcrosseth.org<br />
-                                  Web: www.redcrosseth.org
+
+                            {/* Emergency Contact or Member Contact */}
+                            {user?.address?.emergencyName || user?.address?.emergencyPhone ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                 <p style={{ fontSize: '6.5px', fontWeight: '900', color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Emergency Contact</p>
+                                 <p style={{ fontSize: '8px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
+                                    {user.address.emergencyName || "Contact"} {user.address.emergencyPhone && `• ${user.address.emergencyPhone}`}
+                                 </p>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                 <p style={{ fontSize: '6.5px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Member Contact</p>
+                                 <p style={{ fontSize: '8px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
+                                    Tel: {user?.phone || "+251..."} • Email: {user?.email || "N/A"}
+                                 </p>
+                              </div>
+                            )}
+
+                            {/* Contact Details from CMS */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                               <p style={{ fontSize: '6.5px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>ERCS Headquarters Contact</p>
+                               <p style={{ fontSize: '7.5px', fontWeight: '600', color: '#374151', margin: 0, lineHeight: '1.2' }}>
+                                  Tel: {cmsContact.tel || cmsContact.mobile}<br />
+                                  Email: {cmsContact.email}<br />
+                                  Web: {cmsContact.web || "www.redcrosseth.org"}
                                </p>
                             </div>
                          </div>
                          
-                         <div style={{ width: '33.333%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                            <div style={{ padding: '8px', backgroundColor: 'white', border: '2px solid #F3F4F6', borderRadius: '12px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
+                         <div style={{ width: '32%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                            <div style={{ padding: '6px', backgroundColor: 'white', border: '2px solid #F3F4F6', borderRadius: '12px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
                                <QRCodeCanvas 
                                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${user?.memberId || 'NOT_ASSIGNED'}`}
-                                 size={64}
+                                 size={60}
                                  level={"H"}
                                  includeMargin={false}
                                  imageSettings={{
@@ -559,38 +648,44 @@ export default function DashboardPage() {
                                    excavate: true,
                                  }}
                                />
-  
                             </div>
-                            <p style={{ fontSize: '5px', fontWeight: '900', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.2em', textAlign: 'center', margin: 0 }}>Scan to Verify<br />{user?.memberId}</p>
+                            <p style={{ fontSize: '5px', fontWeight: '900', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.15em', textAlign: 'center', margin: 0 }}>Scan to Verify<br />{user?.memberId}</p>
                          </div>
                       </div>
   
-                      <div style={{ padding: '0 24px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '40px' }}>
-                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center', flex: 1 }}>
-                            <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ padding: '0 20px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '30px' }}>
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'center', flex: 1 }}>
+                            <div style={{ height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                {user?.idAssets?.signature1Url ? (
                                  <img src={user.idAssets.signature1Url} alt="Signature 1" style={{ height: '100%', objectFit: 'contain', filter: 'grayscale(100%)', opacity: 0.7 }} crossOrigin="anonymous" />
                                ) : (
-                                 <span style={{ fontStyle: 'italic', fontFamily: 'serif', color: '#D1D5DB', fontSize: '12px' }}>Signature</span>
+                                 <span style={{ fontStyle: 'italic', fontFamily: 'serif', color: '#D1D5DB', fontSize: '11px' }}>Signature</span>
                                )}
                             </div>
-                            <p style={{ fontSize: '6px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', borderTop: '1px solid #F3F4F6', paddingTop: '4px', margin: 0 }}>General Secretary</p>
+                            <p style={{ fontSize: '6px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', borderTop: '1px solid #F3F4F6', paddingTop: '3px', margin: 0 }}>General Secretary</p>
                          </div>
-                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center', flex: 1 }}>
-                            <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'center', flex: 1 }}>
+                            <div style={{ height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                {user?.idAssets?.signature2Url ? (
                                  <img src={user.idAssets.signature2Url} alt="Signature 2" style={{ height: '100%', objectFit: 'contain', filter: 'grayscale(100%)', opacity: 0.7 }} crossOrigin="anonymous" />
                                ) : (
-                                 <span style={{ fontStyle: 'italic', fontFamily: 'serif', color: '#D1D5DB', fontSize: '12px' }}>Signature</span>
+                                 <span style={{ fontStyle: 'italic', fontFamily: 'serif', color: '#D1D5DB', fontSize: '11px' }}>Signature</span>
                                )}
                             </div>
-                            <p style={{ fontSize: '6px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', borderTop: '1px solid #F3F4F6', paddingTop: '4px', margin: 0 }}>Branch Manager</p>
+                            <p style={{ fontSize: '6px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', borderTop: '1px solid #F3F4F6', paddingTop: '3px', margin: 0 }}>Branch Manager</p>
                          </div>
+                      </div>
+
+                      {/* Bottom Location from CMS Contact Us section */}
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', backgroundColor: '#ED1C24', padding: '5px 16px', textAlign: 'center' }}>
+                         <p style={{ fontSize: '7.5px', fontWeight: '700', color: 'white', textTransform: 'uppercase', letterSpacing: '-0.01em', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {cmsContact.address} • Tel: {cmsContact.tel || cmsContact.mobile}
+                         </p>
                       </div>
                    </div>
                 </div>
               </div>
-            </div>
+          </div>
         </div>
 
         {/* Footer Support */}
