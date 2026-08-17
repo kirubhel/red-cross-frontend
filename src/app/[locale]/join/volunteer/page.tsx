@@ -291,6 +291,8 @@ export default function VolunteerJoinPage() {
                 profession: formData.occupation || "",
                 address: formData.kebele || "",
                 country: formData.country === "ET" ? "Ethiopia" : (formData.country || ""),
+                zone_id: formData.zone,
+                woreda_id: formData.woreda,
                 metadata: JSON.stringify(metadataObj)
             });
 

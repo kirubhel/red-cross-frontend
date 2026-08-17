@@ -330,6 +330,8 @@ function MemberRegistrationContent() {
                 region: regionId,
                 role: 6,
                 membershipType: formData.membershipType,
+                zone_id: formData.zone,
+                woreda_id: formData.woreda,
                 metadata: JSON.stringify({
                     tier_type: formData.tierType,
                     is_corporate: isCorp,

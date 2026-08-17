@@ -45,11 +45,37 @@ export default function LoginPage() {
     const { access_token, role, ercs_id } = data;
     localStorage.setItem("token", access_token);
     localStorage.setItem("access_token", access_token);
-    localStorage.setItem("user_role", role); 
+
+    const rawRole = role;
+    let roleStr = typeof rawRole === "string" ? rawRole : "";
+    if (rawRole === 1 || rawRole === "ROLE_super_admin") roleStr = "SUPER_ADMIN";
+    else if (rawRole === 2 || rawRole === "ROLE_regional_admin") roleStr = "REGIONAL_ADMIN";
+    else if (rawRole === 3 || rawRole === "ROLE_zonal_admin" || rawRole === "ZONE_ADMIN") roleStr = "ZONE_ADMIN";
+    else if (rawRole === 4 || rawRole === "ROLE_woreda_admin") roleStr = "WOREDA_ADMIN";
+    else if (rawRole === 7 || rawRole === "ROLE_branch_officer") roleStr = "BRANCH_OFFICER";
+    else if (rawRole === 6 || rawRole === "ROLE_member") roleStr = "MEMBER";
+    else if (rawRole === 5 || rawRole === "ROLE_volunteer") roleStr = "VOLUNTEER";
+    else if (rawRole === 8 || rawRole === "ROLE_organization") roleStr = "ORGANIZATION";
+    else if (!roleStr) roleStr = String(rawRole || "");
+
+    localStorage.setItem("user_role", roleStr); 
     if (ercs_id) localStorage.setItem("ercs_id", ercs_id);
+
+    const regId = data.region_id !== undefined && data.region_id !== null ? String(data.region_id) : (data.regionId !== undefined ? String(data.regionId) : "");
+    const zoneId = data.zone_id || data.zoneId || "";
+    const woredaId = data.woreda_id || data.woredaId || "";
+    const branchId = data.branch_id || data.branchId || "";
+
+    if (regId !== "") localStorage.setItem("user_region", regId);
+    if (zoneId) localStorage.setItem("user_zone", zoneId);
+    if (woredaId) localStorage.setItem("user_woreda", woredaId);
+    if (branchId) {
+      localStorage.setItem("user_branch", branchId);
+      localStorage.setItem("user_branch_id", branchId);
+    }
     
-    const isAdmin = role === "SUPER_ADMIN" || role === "REGIONAL_ADMIN" || role === 1 || role === 2;
-    const isOrg = role === "ORGANIZATION" || role === 8;
+    const isAdmin = ["SUPER_ADMIN", "REGIONAL_ADMIN", "ZONE_ADMIN", "ZONAL_ADMIN", "WOREDA_ADMIN", "BRANCH_OFFICER", "1", "2", "3", "4", "7"].includes(roleStr) || [1, 2, 3, 4, 7].includes(rawRole);
+    const isOrg = roleStr === "ORGANIZATION" || roleStr === "8" || rawRole === 8;
     
     if (isAdmin) {
       router.push("/admin");

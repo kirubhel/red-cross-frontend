@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -26,8 +26,21 @@ import {
   MapPin
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getUserScope } from "@/lib/auth-scope";
 
-const navigationSections = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: any;
+  superAdminOnly?: boolean;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const navigationSections: NavSection[] = [
   {
     title: "Core Registry",
     items: [
@@ -48,7 +61,7 @@ const navigationSections = [
       { href: "/admin/notifications", label: "Notifications", icon: Bell },
       { href: "/admin/messages", label: "Contact Messages", icon: Mail },
       { href: "/admin/news", label: "News & Media", icon: Newspaper },
-      { href: "/admin/cms", label: "Landing Page CMS", icon: LayoutDashboard },
+      { href: "/admin/cms", label: "Landing Page CMS", icon: LayoutDashboard, superAdminOnly: true },
     ]
   },
   {
@@ -56,9 +69,9 @@ const navigationSections = [
     items: [
       { href: "/admin/user-management", label: "User Management", icon: ShieldCheck },
       { href: "/admin/branches", label: "Branch Management", icon: MapPin },
-      { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList },
-      { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard },
-      { href: "/admin/settings", label: "Settings", icon: Settings },
+      { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList, superAdminOnly: true },
+      { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard, superAdminOnly: true },
+      { href: "/admin/settings", label: "Settings", icon: Settings, superAdminOnly: true },
     ]
   }
 ];
@@ -66,6 +79,21 @@ const navigationSections = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(true);
+
+  useEffect(() => {
+    const scope = getUserScope();
+    setIsSuperAdmin(scope.isSuperAdmin);
+  }, []);
+
+  const visibleSections = useMemo(() => {
+    return navigationSections
+      .map(section => ({
+        ...section,
+        items: section.items.filter(item => !item.superAdminOnly || isSuperAdmin)
+      }))
+      .filter(section => section.items.length > 0);
+  }, [isSuperAdmin]);
 
   return (
     <div className={cn(
