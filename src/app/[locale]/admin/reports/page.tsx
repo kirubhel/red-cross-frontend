@@ -112,6 +112,8 @@ const itemVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };
 
+import { getUserScope } from "@/lib/auth-scope";
+
 export default function AnalyticsDashboard() {
   const [totalVolunteers, setTotalVolunteers] = useState(12450);
   const [activeVolunteers, setActiveVolunteers] = useState(8745);
@@ -120,9 +122,17 @@ export default function AnalyticsDashboard() {
   useEffect(() => {
     const fetchTotals = async () => {
       try {
+        const scope = getUserScope();
+        let mUrl = `/person?page=1&page_size=1`;
+        let vUrl = `/volunteers?page=1&page_size=1`;
+        if (!scope.isSuperAdmin && scope.regionId) {
+          mUrl += `&region=${scope.regionId}`;
+          vUrl += `&region=${scope.regionId}`;
+        }
+
         const [membersRes, volunteersRes] = await Promise.all([
-          api.get("/person?page=1&page_size=1"),
-          api.get("/volunteers?page=1&page_size=1"),
+          api.get(mUrl),
+          api.get(vUrl),
         ]);
         
         const mCount = membersRes.data.pagination?.total_items || 0;

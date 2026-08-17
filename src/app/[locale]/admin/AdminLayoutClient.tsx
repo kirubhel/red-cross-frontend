@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { DesktopPushToggle } from "@/components/notifications/DesktopPushToggle";
 
+import { getUserScope } from "@/lib/auth-scope";
+
 export default function AdminLayoutClient({
   children,
 }: {
@@ -29,32 +31,11 @@ export default function AdminLayoutClient({
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const role = localStorage.getItem("user_role") || "SUPER_ADMIN";
-    const regId = localStorage.getItem("user_region") || "0";
-    const zoneId = localStorage.getItem("user_zone") || "";
-    const woredaId = localStorage.getItem("user_woreda") || "";
-    const branchId = localStorage.getItem("user_branch") || localStorage.getItem("user_branch_id") || "";
-
-    const REGIONS: Record<string, string> = {
-      "1": "Addis Ababa", "2": "Dire Dawa", "3": "Tigray", "4": "Afar",
-      "5": "Amhara", "6": "Oromia", "7": "Somali", "8": "Benishangul Gumz",
-      "9": "Central Ethiopia", "10": "Gambela", "11": "Harari", "12": "Sidama",
-      "13": "South West Ethiopia", "14": "South Ethiopia"
-    };
-    const regName = REGIONS[regId] || (regId !== "0" ? `REGION ${regId}` : "ALL REGIONS");
-
-    if (role === "SUPER_ADMIN" || role === "1") {
-      setAdminInfo({ title: "Super Admin", scope: "SUPER ADMIN — ALL REGIONS" });
-    } else if (role === "REGIONAL_ADMIN" || role === "2") {
-      setAdminInfo({ title: "Regional Admin", scope: `REGIONAL ADMIN — ${regName.toUpperCase()}` });
-    } else if (role === "ZONE_ADMIN" || role === "3") {
-      setAdminInfo({ title: "Zone Admin", scope: `ZONE ADMIN — ${regName.toUpperCase()} / ZONE ${zoneId || '1'}` });
-    } else if (role === "BRANCH_OFFICER" || role === "7") {
-      const cleanBranch = branchId ? branchId.replace(/^BRANCH_/, '').replace(/_/g, ' ').toUpperCase() : 'BRANCH';
-      setAdminInfo({ title: "Branch Officer", scope: `BRANCH OFFICER — ${cleanBranch}` });
-    } else if (role === "WOREDA_ADMIN" || role === "4") {
-      setAdminInfo({ title: "Woreda Admin", scope: `WOREDA ADMIN — ${regName.toUpperCase()} / WOREDA ${woredaId || '1'}` });
-    }
+    const scope = getUserScope();
+    setAdminInfo({
+      title: scope.scopeBadgeTitle,
+      scope: scope.scopeBadgeScope,
+    });
   }, []);
 
   useEffect(() => {

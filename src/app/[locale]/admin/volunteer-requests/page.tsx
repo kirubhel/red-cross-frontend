@@ -27,11 +27,13 @@ import {
   Briefcase,
   ShieldCheck,
   ExternalLink,
-  MapPin
+  MapPin,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { getUserScope } from "@/lib/auth-scope";
 
 type VolunteerRequest = {
   id: string;
@@ -55,10 +57,26 @@ type VolunteerRequest = {
   region_name?: string;
   zone_name?: string;
   duration_days?: number;
+  start_date?: string;
+  end_date?: string;
+  breakdown?: {
+    dailyBase?: number;
+    accommodation?: number;
+    meals?: number;
+    transport?: number;
+    customPerk?: number;
+    insurance?: number;
+    adminFee?: number;
+    total?: number;
+  };
   benefits?: {
     accommodation?: string;
+    custom_accommodation?: string;
     meals?: string;
+    custom_meals?: string;
     transport?: string;
+    custom_transport?: string;
+    custom_perk_amount?: number;
     safety_gear?: boolean;
     certificate?: boolean;
     notes?: string;
@@ -93,7 +111,82 @@ export default function AdminVolunteerRequestsPage() {
     setLoading(true);
     try {
       const res = await api.get("/admin/volunteer-requests");
-      setRequests(res.data.requests || []);
+      const list = (res.data.requests || []).map((req: any) => {
+        let regionName = req.region_name || "";
+        let zoneName = req.zone_name || "";
+        let durationDays = req.duration_days || 1;
+        let benefits = req.benefits || null;
+        let activitiesList = req.activities || [];
+        let paymentAmount = req.payment_amount || 0;
+        let breakdown = req.breakdown || null;
+        let cleanDescription = req.description || "";
+
+        // Check if metadata is encoded in description or qualifications JSON
+        if (req.description) {
+          try {
+            if (req.description.startsWith("{") && req.description.endsWith("}")) {
+              const parsed = JSON.parse(req.description);
+              if (parsed.region_name) regionName = parsed.region_name;
+              if (parsed.zone_name) zoneName = parsed.zone_name;
+              if (parsed.duration_days) durationDays = parsed.duration_days;
+              if (parsed.benefits) benefits = parsed.benefits;
+              if (parsed.payment_amount && !paymentAmount) paymentAmount = parsed.payment_amount;
+              if (parsed.breakdown) breakdown = parsed.breakdown;
+              if (parsed.description) cleanDescription = parsed.description;
+            }
+          } catch {}
+        }
+        
+        if (typeof req.activities === 'string') {
+          try {
+            activitiesList = JSON.parse(req.activities);
+          } catch {}
+        }
+
+        // Calculate baseline if payment amount is 0
+        const vCount = Number(req.headcount) || 1;
+        const dCount = Number(durationDays) || 1;
+        if (!paymentAmount || paymentAmount === 0) {
+          paymentAmount = (vCount * dCount * 500) + (vCount * 50);
+        }
+
+        if (!breakdown) {
+          const dailyBase = 500 * vCount * dCount;
+          const insurance = 50 * vCount;
+          const subtotal = dailyBase + insurance;
+          const adminFee = Math.round(subtotal * 0.05);
+          breakdown = {
+            dailyBase,
+            accommodation: 0,
+            meals: 0,
+            transport: 0,
+            customPerk: 0,
+            insurance,
+            adminFee,
+            total: subtotal + adminFee
+          };
+        }
+
+        return {
+          ...req,
+          description: cleanDescription,
+          payment_amount: paymentAmount,
+          breakdown,
+          region_name: regionName || "Addis Ababa",
+          zone_name: zoneName || "Central Sub-City",
+          duration_days: durationDays || 1,
+          benefits: benefits || {
+            accommodation: "Standard Provided",
+            meals: "Daily Allowance / Provided",
+            transport: "Field Transport Provided",
+            safety_gear: true,
+            certificate: true,
+            notes: "Full operational and field support included"
+          },
+          activities: Array.isArray(activitiesList) ? activitiesList : []
+        };
+      });
+      setRequests(list);
     } catch (err) {
       console.error("Failed to fetch requests:", err);
       toast.error("Failed to load volunteer requests");
@@ -119,21 +212,33 @@ export default function AdminVolunteerRequestsPage() {
         await api.put(`/admin/volunteer-requests/verify-payment`, { request_id: selectedReq.id });
         toast.success("Payment verified — volunteers are being matched!");
       }
-      fetchData();
       setSelectedReq(null);
       setActionType(null);
+      fetchData();
     } catch (err) {
-      toast.error("Failed to process request");
+      console.error("Action failed:", err);
+      toast.error("Failed to process request action");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const filteredRequests = requests.filter(req => 
-    (req.org_name || "").toLowerCase().includes(search.toLowerCase()) ||
-    (req.title || "").toLowerCase().includes(search.toLowerCase()) ||
-    (req.activities_skills || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const scope = getUserScope();
+
+  const filteredRequests = requests.filter(req => {
+    const isMatch = (req.org_name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (req.activities_skills || "").toLowerCase().includes(search.toLowerCase()) ||
+      (req.title || "").toLowerCase().includes(search.toLowerCase()) ||
+      (req.region_name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (req.zone_name || "").toLowerCase().includes(search.toLowerCase());
+
+    if (!scope.isSuperAdmin && scope.regionName && req.region_name) {
+      if (!req.region_name.toLowerCase().includes(scope.regionName.toLowerCase())) {
+        return false;
+      }
+    }
+    return isMatch;
+  });
 
   return (
     <div className="space-y-6 w-full">
@@ -141,10 +246,10 @@ export default function AdminVolunteerRequestsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-[9px] font-black uppercase tracking-widest leading-none border border-blue-100">
-            <Users className="h-3 w-3" /> Procurement
+            <Users className="h-3 w-3" /> Procurement & Fulfillment
           </div>
           <h1 className="text-3xl font-black text-black tracking-tighter leading-none">Volunteer <span className="text-blue-600">Requests</span></h1>
-          <p className="text-gray-500 font-medium text-sm max-w-2xl">Manage organization requests for volunteers, oversee payments, and approve auto-matching.</p>
+          <p className="text-gray-500 font-medium text-sm max-w-2xl">Manage organization requests for volunteers, oversee payments, and approve auto-matching across all regions and zones.</p>
         </div>
       </div>
 
@@ -153,7 +258,7 @@ export default function AdminVolunteerRequestsPage() {
         <div className="relative w-full max-w-md">
              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search organizations or skills..."
+              placeholder="Search organizations, skills, regions or zones..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-10 pl-10 bg-white text-black border border-gray-200 rounded-xl font-bold text-sm focus:border-blue-600/20 focus:ring-0 transition-all shadow-sm shadow-black/5"
@@ -170,6 +275,7 @@ export default function AdminVolunteerRequestsPage() {
           <TableHeader className="bg-gray-50/50">
             <TableRow className="hover:bg-transparent border-gray-100">
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Organization & Mission</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Target Location</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Headcount & Skills</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Payment Status</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Status</TableHead>
@@ -179,7 +285,7 @@ export default function AdminVolunteerRequestsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-64 text-center">
+                <TableCell colSpan={6} className="h-64 text-center">
                   <div className="flex flex-col items-center gap-4">
                     <div className="h-8 w-8 border-4 border-blue-50 border-t-blue-600 rounded-full animate-spin" />
                     <p className="font-black uppercase tracking-[0.3em] text-[8px] text-gray-400">Loading Requests...</p>
@@ -188,7 +294,7 @@ export default function AdminVolunteerRequestsPage() {
               </TableRow>
             ) : filteredRequests.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-[300px] text-center">
+                <TableCell colSpan={6} className="h-[300px] text-center">
                   <div className="flex flex-col items-center gap-4">
                     <div className="h-16 w-16 bg-gray-50 rounded-2xl flex items-center justify-center">
                         <Building2 className="h-8 w-8 text-gray-300" />
@@ -207,6 +313,17 @@ export default function AdminVolunteerRequestsPage() {
                       <span className="font-black text-black text-sm uppercase">{req.org_name || "Unknown Org"}</span>
                       <span className="text-blue-600 text-xs font-extrabold">{req.title || "Untitled Mission"}</span>
                       <span className="text-gray-400 text-[10px] font-bold">ID: {req.id.substring(0,8)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                        <MapPin className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                        <span>{req.region_name || "Addis Ababa"}</span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-gray-500 pl-5">
+                        {req.zone_name || "Central Sub-City"} • <span className="text-blue-600 font-bold">{req.duration_days || 1} Day(s)</span>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-4">
@@ -276,7 +393,7 @@ export default function AdminVolunteerRequestsPage() {
       {/* View Details Modal */}
       {selectedReq && actionType === "VIEW_DETAILS" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden border border-gray-100 max-h-[85vh]">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden border border-gray-100 max-h-[90vh]">
             {/* Header */}
             <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div>
@@ -324,38 +441,37 @@ export default function AdminVolunteerRequestsPage() {
                 </div>
               </div>
 
-              {/* Deployment Location & Duration */}
-              {(selectedReq.region_name || selectedReq.duration_days) && (
+              {/* Deployment Location & Duration (PROMINENT JURISDICTION SECTION) */}
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Target Location & Deployment Schedule</h4>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Target Location</h4>
-                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-blue-600" />
-                      {selectedReq.region_name || "Regional Branch"} {selectedReq.zone_name ? `· ${selectedReq.zone_name}` : ""}
+                  <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 space-y-2">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Deployment Territory</span>
+                    <div className="space-y-1">
+                      <div className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-[#ED1C24] shrink-0" />
+                        <span>{selectedReq.region_name || "Addis Ababa"}</span>
+                      </div>
+                      <div className="text-xs font-semibold text-gray-600 pl-6">
+                        Zone / Sub-City: <span className="font-bold text-black">{selectedReq.zone_name || "All Zones in Region"}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Mission Duration</h4>
-                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 font-bold text-xs text-slate-900">
-                      {selectedReq.duration_days || 1} Day(s) Deployment
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {/* Volunteer Benefits Provided */}
-              {selectedReq.benefits && (
-                <div className="space-y-1.5">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Volunteer Benefits & Accommodations</h4>
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-semibold text-slate-700">
-                    <div>Accommodation: <span className="font-bold text-black">{selectedReq.benefits.accommodation || "Standard"}</span></div>
-                    <div>Meals: <span className="font-bold text-black">{selectedReq.benefits.meals || "Standard"}</span></div>
-                    <div>Transport: <span className="font-bold text-black">{selectedReq.benefits.transport || "Standard"}</span></div>
-                    {selectedReq.benefits.safety_gear && <div className="text-emerald-600 font-bold">✓ Safety Kits Provided</div>}
-                    {selectedReq.benefits.certificate && <div className="text-emerald-600 font-bold">✓ Certificates Awarded</div>}
+                  <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 space-y-2">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Timeline & Duration</span>
+                    <div className="space-y-1">
+                      <div className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-blue-600 shrink-0" />
+                        <span>{selectedReq.duration_days || 1} Day(s) Mission</span>
+                      </div>
+                      <div className="text-xs font-semibold text-gray-600 pl-6">
+                        Start: <span className="font-bold text-black">{selectedReq.start_date || "Immediate"}</span> • End: <span className="font-bold text-black">{selectedReq.end_date || "Flexible"}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Type & Engagement Areas */}
               <div className="grid md:grid-cols-2 gap-4">
@@ -373,44 +489,133 @@ export default function AdminVolunteerRequestsPage() {
                 </div>
               </div>
 
-              {/* Qualifications */}
-              {selectedReq.qualifications && (
+              {/* Volunteer Benefits Provided */}
+              {selectedReq.benefits && (
                 <div className="space-y-1.5">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Specific Qualifications & Requirements</h4>
-                  <p className="text-xs font-medium text-slate-700 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
-                    {selectedReq.qualifications}
-                  </p>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Volunteer Benefits & Accommodations (Organization Policy)</h4>
+                  <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                      <div className="p-2.5 bg-white rounded-xl border border-gray-100 space-y-1">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase block">Accommodation</span>
+                        <span className="font-bold text-slate-900 block leading-tight">
+                          {selectedReq.benefits.custom_accommodation ? `Custom: ${selectedReq.benefits.custom_accommodation}` : (selectedReq.benefits.accommodation || "Standard Provided")}
+                        </span>
+                      </div>
+                      <div className="p-2.5 bg-white rounded-xl border border-gray-100 space-y-1">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase block">Meals & Per Diem</span>
+                        <span className="font-bold text-slate-900 block leading-tight">
+                          {selectedReq.benefits.custom_meals ? `Custom: ${selectedReq.benefits.custom_meals}` : (selectedReq.benefits.meals || "Provided")}
+                        </span>
+                      </div>
+                      <div className="p-2.5 bg-white rounded-xl border border-gray-100 space-y-1">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase block">Local Transport</span>
+                        <span className="font-bold text-slate-900 block leading-tight">
+                          {selectedReq.benefits.custom_transport ? `Custom: ${selectedReq.benefits.custom_transport}` : (selectedReq.benefits.transport || "Covered")}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-1 text-xs">
+                      {Number(selectedReq.benefits.custom_perk_amount || 0) > 0 && (
+                        <div className="px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg font-bold flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+                          <span>Custom Stipend: +{selectedReq.benefits.custom_perk_amount} ETB/day/volunteer</span>
+                        </div>
+                      )}
+                      {selectedReq.benefits.safety_gear && (
+                        <div className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg font-bold flex items-center gap-1.5">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Safety Kits Provided
+                        </div>
+                      )}
+                      {selectedReq.benefits.certificate && (
+                        <div className="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg font-bold flex items-center gap-1.5">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Certificates Awarded
+                        </div>
+                      )}
+                      {selectedReq.benefits.notes && (
+                        <div className="w-full text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-gray-100">
+                          <span className="font-bold text-slate-800">Special Notes: </span>
+                          <span>{selectedReq.benefits.notes}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Payment Info */}
+              {/* Qualifications */}
               <div className="space-y-1.5">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Financial & Payment Status</h4>
-                <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Payment Amount</span>
-                    <p className="text-xl font-black text-emerald-900">{selectedReq.payment_amount || 0} ETB</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Payment Status</span>
-                    <span className="inline-block px-3 py-1 bg-white rounded-lg text-xs font-black text-emerald-700 border border-emerald-200 mt-0.5">
-                      {selectedReq.payment_status || "PENDING"}
-                    </span>
-                  </div>
-                </div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Specific Qualifications & Requirements</h4>
+                <p className="text-xs font-medium text-slate-700 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                  {selectedReq.qualifications || "Standard Ethiopian Red Cross Society volunteer qualifications apply."}
+                </p>
+              </div>
 
-                {selectedReq.payment_proof_url && (
-                  <div className="pt-2">
-                    <a 
-                      href={selectedReq.payment_proof_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-xs font-black text-blue-600 hover:underline"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" /> View Payment Proof Document
-                    </a>
+              {/* Payment Info & Calculation Breakdown */}
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Financial & Calculated Budget Breakdown</h4>
+                <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 space-y-3">
+                  <div className="flex items-center justify-between pb-3 border-b border-emerald-200/50">
+                    <div>
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Total Calculated Money</span>
+                      <p className="text-2xl font-black text-emerald-950">{(selectedReq.payment_amount || 0).toLocaleString()} <span className="text-sm font-bold text-emerald-700">ETB</span></p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Payment Status</span>
+                      <span className="inline-block px-3 py-1 bg-white rounded-lg text-xs font-black text-emerald-700 border border-emerald-200 mt-0.5 shadow-sm">
+                        {selectedReq.payment_status || "PENDING"}
+                      </span>
+                    </div>
                   </div>
-                )}
+
+                  {selectedReq.breakdown && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[10px] font-semibold text-emerald-900">
+                      <div className="bg-white/70 p-2 rounded-lg border border-emerald-100">
+                        <span className="text-emerald-600 block text-[9px] uppercase font-bold">Daily Allowance</span>
+                        <span>{(selectedReq.breakdown.dailyBase || 0).toLocaleString()} ETB</span>
+                      </div>
+                      <div className="bg-white/70 p-2 rounded-lg border border-emerald-100">
+                        <span className="text-emerald-600 block text-[9px] uppercase font-bold">Accommodations</span>
+                        <span>{(selectedReq.breakdown.accommodation || 0).toLocaleString()} ETB</span>
+                      </div>
+                      <div className="bg-white/70 p-2 rounded-lg border border-emerald-100">
+                        <span className="text-emerald-600 block text-[9px] uppercase font-bold">Meals & Per Diem</span>
+                        <span>{(selectedReq.breakdown.meals || 0).toLocaleString()} ETB</span>
+                      </div>
+                      <div className="bg-white/70 p-2 rounded-lg border border-emerald-100">
+                        <span className="text-emerald-600 block text-[9px] uppercase font-bold">Local Transport</span>
+                        <span>{(selectedReq.breakdown.transport || 0).toLocaleString()} ETB</span>
+                      </div>
+                      {Number(selectedReq.breakdown.customPerk || 0) > 0 && (
+                        <div className="bg-white/70 p-2 rounded-lg border border-emerald-100">
+                          <span className="text-emerald-600 block text-[9px] uppercase font-bold">Custom Stipends</span>
+                          <span>{(selectedReq.breakdown.customPerk || 0).toLocaleString()} ETB</span>
+                        </div>
+                      )}
+                      <div className="bg-white/70 p-2 rounded-lg border border-emerald-100">
+                        <span className="text-emerald-600 block text-[9px] uppercase font-bold">Insurance & Kits</span>
+                        <span>{(selectedReq.breakdown.insurance || 0).toLocaleString()} ETB</span>
+                      </div>
+                      <div className="bg-white/70 p-2 rounded-lg border border-emerald-100">
+                        <span className="text-emerald-600 block text-[9px] uppercase font-bold">Admin Fee</span>
+                        <span>{(selectedReq.breakdown.adminFee || 0).toLocaleString()} ETB</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedReq.payment_proof_url && (
+                    <div className="pt-2 border-t border-emerald-200/50">
+                      <a 
+                        href={selectedReq.payment_proof_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-xs font-black text-emerald-800 hover:underline"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" /> View Uploaded Payment Proof Document
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

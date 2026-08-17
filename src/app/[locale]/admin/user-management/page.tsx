@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import PhoneNumberInput, { buildFullPhoneNumber } from "@/components/ui/phone-number-input";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { getUserScope } from "@/lib/auth-scope";
 
 type SystemUser = {
   id: string;
@@ -178,11 +179,12 @@ export default function UserManagementPage() {
 
   // Determine Current Logged-In User Scope
   const adminScope = useMemo(() => {
-    const rawRole = currentUser?.role || (typeof window !== "undefined" ? localStorage.getItem("user_role") : "") || "SUPER_ADMIN";
-    const rawRegId = Number(currentUser?.region_id || (typeof window !== "undefined" ? localStorage.getItem("user_region") : 0) || 0);
-    const rawZoneId = currentUser?.zone_id || (typeof window !== "undefined" ? localStorage.getItem("user_zone") : "") || "";
-    const rawWoredaId = currentUser?.woreda_id || (typeof window !== "undefined" ? localStorage.getItem("user_woreda") : "") || "";
-    const rawBranchId = currentUser?.branch_id || (typeof window !== "undefined" ? localStorage.getItem("user_branch") : "") || "";
+    const globalScope = getUserScope();
+    const rawRole = currentUser?.role || globalScope.role;
+    const rawRegId = Number(currentUser?.region_id || globalScope.regionNumber || 0);
+    const rawZoneId = currentUser?.zone_id || globalScope.zoneId || "";
+    const rawWoredaId = currentUser?.woreda_id || globalScope.woredaId || "";
+    const rawBranchId = currentUser?.branch_id || globalScope.branchId || "";
 
     const isSuper = rawRole === "SUPER_ADMIN" || rawRole === "ROLE_super_admin" || rawRole === 1 || rawRole === "1";
     const isRegional = rawRole === "REGIONAL_ADMIN" || rawRole === "ROLE_regional_admin" || rawRole === 2 || rawRole === "2";
@@ -251,9 +253,9 @@ export default function UserManagementPage() {
         api.get("/system-settings").catch(() => ({ data: { settings: {} } }))
       ]);
 
-      setZones(zRes.data?.zones || []);
-      setWoredas(wRes.data?.woredas || []);
-      setBranches(bRes.data?.branches || []);
+      if (zRes.data?.zones && zRes.data.zones.length > 0) setZones(zRes.data.zones);
+      if (wRes.data?.woredas && wRes.data.woredas.length > 0) setWoredas(wRes.data.woredas);
+      if (bRes.data?.branches) setBranches(bRes.data.branches);
 
       const settings = sRes.data?.settings || {};
       if (settings.all_regions) {
@@ -274,6 +276,64 @@ export default function UserManagementPage() {
     fetchProfile();
   }, [fetchLocations, fetchProfile]);
 
+  // Dynamic fetch when form region changes
+  useEffect(() => {
+    const regId = adminScope.isSuper ? form.region : adminScope.regionId;
+    if (regId && regId > 0) {
+      api.get(`/location/zones?region_id=${regId}`).then(res => {
+        if (res.data?.zones && res.data.zones.length > 0) {
+          setZones(prev => {
+            const others = prev.filter(z => Number(z.region_id) !== Number(regId));
+            return [...others, ...res.data.zones];
+          });
+        }
+      }).catch(() => {});
+    }
+  }, [form.region, adminScope]);
+
+  // Dynamic fetch when form zone changes
+  useEffect(() => {
+    if (form.zone) {
+      api.get(`/location/woredas?zone_id=${form.zone}`).then(res => {
+        if (res.data?.woredas && res.data.woredas.length > 0) {
+          setWoredas(prev => {
+            const others = prev.filter(w => String(w.zone_id) !== String(form.zone));
+            return [...others, ...res.data.woredas];
+          });
+        }
+      }).catch(() => {});
+    }
+  }, [form.zone]);
+
+  // Dynamic fetch when filterRegion changes
+  useEffect(() => {
+    const regId = adminScope.isSuper ? filterRegion : adminScope.regionId;
+    if (regId && regId > 0) {
+      api.get(`/location/zones?region_id=${regId}`).then(res => {
+        if (res.data?.zones && res.data.zones.length > 0) {
+          setZones(prev => {
+            const others = prev.filter(z => Number(z.region_id) !== Number(regId));
+            return [...others, ...res.data.zones];
+          });
+        }
+      }).catch(() => {});
+    }
+  }, [filterRegion, adminScope]);
+
+  // Dynamic fetch when filterZone changes
+  useEffect(() => {
+    if (filterZone) {
+      api.get(`/location/woredas?zone_id=${filterZone}`).then(res => {
+        if (res.data?.woredas && res.data.woredas.length > 0) {
+          setWoredas(prev => {
+            const others = prev.filter(w => String(w.zone_id) !== String(filterZone));
+            return [...others, ...res.data.woredas];
+          });
+        }
+      }).catch(() => {});
+    }
+  }, [filterZone]);
+
   // Handle URL create query param
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -289,7 +349,7 @@ export default function UserManagementPage() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      let url = "/users?page=1&page_size=150";
+      let url = "/users?page=1&page_size=200";
       
       if (!adminScope.isSuper) {
         if (adminScope.regionId > 0) url += `&region_id=${adminScope.regionId}`;
@@ -920,7 +980,13 @@ export default function UserManagementPage() {
                   <div className="space-y-3">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Module Access & Capabilities</Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {MODULE_PERMISSIONS.map(m => (
+                      {MODULE_PERMISSIONS.filter(m => {
+                        const isSuperOnly = ["FORMS", "MEMBERSHIP_PLANS", "CMS", "SETTINGS"].includes(m.id);
+                        if (isSuperOnly) {
+                          return adminScope.isSuper && form.role === 1;
+                        }
+                        return true;
+                      }).map(m => (
                         <div key={m.id} className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors">
                           <input type="checkbox" defaultChecked className="rounded border-gray-300 text-red-600 focus:ring-red-500 h-3.5 w-3.5" />
                           <div className="flex items-center gap-1.5 min-w-0">

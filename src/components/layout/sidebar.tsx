@@ -144,7 +144,7 @@ export function Sidebar() {
 
       {/* Navigation Space */}
       <nav className="flex-1 space-y-6 py-6 overflow-y-auto overflow-x-hidden custom-scrollbar px-4">
-        {navigationSections.map((section, secIdx) => (
+        {visibleSections.map((section, secIdx) => (
           <div key={secIdx} className="space-y-2">
             <h4 className={cn(
               "text-[9px] font-black uppercase tracking-[0.25em] text-gray-400 px-3 mb-3",

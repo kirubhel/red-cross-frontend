@@ -34,6 +34,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { getUserScope } from "@/lib/auth-scope";
 
 interface Branch {
   id: string;
@@ -121,7 +122,18 @@ export default function BranchManagementPage() {
 
   // Filtered branches
   const filteredBranches = useMemo(() => {
+    const scope = getUserScope();
     return branches.filter((b) => {
+      // Scope constraint
+      if (!scope.isSuperAdmin) {
+        if (scope.regionNumber > 0 && Number(b.region_id) !== Number(scope.regionNumber)) {
+          return false;
+        }
+        if (scope.isBranchOfficer && scope.branchId && b.id !== scope.branchId) {
+          return false;
+        }
+      }
+
       // Region filter
       if (selectedRegion !== "ALL" && String(b.region_id) !== selectedRegion) {
         return false;

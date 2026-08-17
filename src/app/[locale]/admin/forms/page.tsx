@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import type { Cell, CellValue } from "exceljs";
+import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
 
 type FormField = {
   id: string;
@@ -578,7 +579,8 @@ export default function FormConfigurationPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <SuperAdminGuard>
+      <div className="space-y-6">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-1">
@@ -763,5 +765,6 @@ export default function FormConfigurationPage() {
         </div>
       </div>
     </div>
+    </SuperAdminGuard>
   );
 }

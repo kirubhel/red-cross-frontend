@@ -206,8 +206,12 @@ export default function OrganizationPortal() {
   const [targetZoneId, setTargetZoneId] = useState<string>("");
   const [durationDays, setDurationDays] = useState<number>(1);
   const [benefitsAccommodation, setBenefitsAccommodation] = useState<string>("PROVIDED");
+  const [customAccommodation, setCustomAccommodation] = useState<string>("");
   const [benefitsMeals, setBenefitsMeals] = useState<string>("FULL_BOARD");
+  const [customMeals, setCustomMeals] = useState<string>("");
   const [benefitsTransport, setBenefitsTransport] = useState<string>("ORG_VEHICLE");
+  const [customTransport, setCustomTransport] = useState<string>("");
+  const [customPerkAmount, setCustomPerkAmount] = useState<string>("0");
   const [benefitsSafetyGear, setBenefitsSafetyGear] = useState<boolean>(true);
   const [benefitsCertificate, setBenefitsCertificate] = useState<boolean>(true);
   const [benefitsNotes, setBenefitsNotes] = useState<string>("");
@@ -369,10 +373,11 @@ export default function OrganizationPortal() {
     const accommodation = benefitsAccommodation === "PROVIDED" ? (volunteerRates.accommodationDailyCost || 350) : 0;
     const meals = (benefitsMeals === "FULL_BOARD" || benefitsMeals === "DAILY_STIPEND") ? (volunteerRates.mealDailyCost || 250) : (benefitsMeals === "LUNCH_ONLY" ? Math.round((volunteerRates.mealDailyCost || 250) * 0.6) : 0);
     const transport = (benefitsTransport === "DAILY_ALLOWANCE" || benefitsTransport === "ORG_VEHICLE") ? (volunteerRates.transportAllowance || 150) : 0;
+    const customPerk = Math.max(Number(customPerkAmount) || 0, 0);
     const insurance = volunteerRates.insuranceFeePerVolunteer || 50;
     const adminPercent = (volunteerRates.adminFeePercent || 5) / 100;
 
-    const subtotalPerVol = (dailyBase + accommodation + meals + transport) * dCount + insurance;
+    const subtotalPerVol = (dailyBase + accommodation + meals + transport + customPerk) * dCount + insurance;
     const subtotal = subtotalPerVol * vCount;
     const adminFee = Math.round(subtotal * adminPercent);
     const total = subtotal + adminFee;
@@ -382,6 +387,7 @@ export default function OrganizationPortal() {
       accommodation: accommodation * dCount * vCount,
       meals: meals * dCount * vCount,
       transport: transport * dCount * vCount,
+      customPerk: customPerk * dCount * vCount,
       insurance: insurance * vCount,
       adminFee,
       total
@@ -410,6 +416,42 @@ export default function OrganizationPortal() {
     const selectedZoneObj = zones.find(z => z.id === targetZoneId);
     const costEstimate = calcEstimatedCost(Number(headcount), durationDays);
 
+    const effAccommodation = benefitsAccommodation === "CUSTOM" && customAccommodation.trim() 
+      ? `Custom: ${customAccommodation.trim()}` 
+      : (benefitsAccommodation === "PROVIDED" ? "Provided by Organization" : "Self / Not Included");
+
+    const effMeals = benefitsMeals === "CUSTOM" && customMeals.trim()
+      ? `Custom: ${customMeals.trim()}`
+      : (benefitsMeals === "FULL_BOARD" ? "Full Board Provided" : benefitsMeals === "LUNCH_ONLY" ? "Lunch Only" : benefitsMeals === "DAILY_STIPEND" ? "Daily Stipend" : "None");
+
+    const effTransport = benefitsTransport === "CUSTOM" && customTransport.trim()
+      ? `Custom: ${customTransport.trim()}`
+      : (benefitsTransport === "ORG_VEHICLE" ? "Org Vehicle Arranged" : benefitsTransport === "DAILY_ALLOWANCE" ? "Transport Allowance" : "None");
+
+    const structuredMetadata = {
+      title,
+      description,
+      region_id: Number(targetRegionId),
+      zone_id: targetZoneId,
+      region_name: selectedRegionObj?.name || "Addis Ababa",
+      zone_name: selectedZoneObj?.name || "Central Sub-City",
+      duration_days: durationDays,
+      payment_amount: costEstimate.total,
+      breakdown: costEstimate,
+      benefits: {
+        accommodation: effAccommodation,
+        custom_accommodation: customAccommodation,
+        meals: effMeals,
+        custom_meals: customMeals,
+        transport: effTransport,
+        custom_transport: customTransport,
+        custom_perk_amount: Number(customPerkAmount) || 0,
+        safety_gear: benefitsSafetyGear,
+        certificate: benefitsCertificate,
+        notes: benefitsNotes
+      }
+    };
+
     const payload = {
       headcount: Number(headcount),
       activities_skills: selectedAreas.join(", "),
@@ -419,22 +461,15 @@ export default function OrganizationPortal() {
       qualifications,
       activities,
       volunteer_type: volunteerType,
-      title,
-      description,
+      title: title || (selectedAreas.join(", ") || "Volunteer Mission"),
+      description: JSON.stringify(structuredMetadata),
       region_id: Number(targetRegionId),
       zone_id: targetZoneId,
-      region_name: selectedRegionObj?.name || "",
-      zone_name: selectedZoneObj?.name || "",
+      region_name: selectedRegionObj?.name || "Addis Ababa",
+      zone_name: selectedZoneObj?.name || "Central Sub-City",
       duration_days: durationDays,
       payment_amount: costEstimate.total,
-      benefits: {
-        accommodation: benefitsAccommodation,
-        meals: benefitsMeals,
-        transport: benefitsTransport,
-        safety_gear: benefitsSafetyGear,
-        certificate: benefitsCertificate,
-        notes: benefitsNotes
-      }
+      benefits: structuredMetadata.benefits
     };
 
     setTempPayload(payload);
@@ -1346,7 +1381,7 @@ export default function OrganizationPortal() {
                     <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24] flex items-center gap-1.5">
                       <Award className="h-3.5 w-3.5" /> Volunteer Benefits & Accommodations Covered
                     </Label>
-                    <span className="text-[9px] font-black uppercase text-slate-400">Policy Compliance</span>
+                    <span className="text-[9px] font-black uppercase text-slate-400">Customizable Policy</span>
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-3">
@@ -1357,9 +1392,19 @@ export default function OrganizationPortal() {
                         onChange={(e) => setBenefitsAccommodation(e.target.value)}
                         className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold text-slate-900"
                       >
-                        <option value="PROVIDED">Provided by Org ({volunteerRates.accommodationDailyCost} ETB/d)</option>
+                        <option value="PROVIDED">Provided by Org ({volunteerRates.accommodationDailyCost || 350} ETB/d)</option>
                         <option value="NOT_INCLUDED">Self / Not Applicable</option>
+                        <option value="CUSTOM">Custom Arrangement...</option>
                       </select>
+                      {benefitsAccommodation === "CUSTOM" && (
+                        <input
+                          type="text"
+                          placeholder="e.g. Hotel booked, Guesthouse..."
+                          value={customAccommodation}
+                          onChange={(e) => setCustomAccommodation(e.target.value)}
+                          className="w-full h-7 bg-white border border-slate-200 rounded-lg px-2 text-[11px] font-semibold text-slate-900 mt-1"
+                        />
+                      )}
                     </div>
 
                     <div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
@@ -1369,11 +1414,21 @@ export default function OrganizationPortal() {
                         onChange={(e) => setBenefitsMeals(e.target.value)}
                         className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold text-slate-900"
                       >
-                        <option value="FULL_BOARD">Full Board ({volunteerRates.mealDailyCost} ETB/d)</option>
-                        <option value="LUNCH_ONLY">Lunch Only ({Math.round(volunteerRates.mealDailyCost * 0.6)} ETB/d)</option>
-                        <option value="DAILY_STIPEND">Daily Stipend ({volunteerRates.mealDailyCost} ETB/d)</option>
+                        <option value="FULL_BOARD">Full Board ({volunteerRates.mealDailyCost || 250} ETB/d)</option>
+                        <option value="LUNCH_ONLY">Lunch Only ({Math.round((volunteerRates.mealDailyCost || 250) * 0.6)} ETB/d)</option>
+                        <option value="DAILY_STIPEND">Daily Stipend ({volunteerRates.mealDailyCost || 250} ETB/d)</option>
                         <option value="NONE">None</option>
+                        <option value="CUSTOM">Custom Arrangement...</option>
                       </select>
+                      {benefitsMeals === "CUSTOM" && (
+                        <input
+                          type="text"
+                          placeholder="e.g. Breakfast + Dinner provided..."
+                          value={customMeals}
+                          onChange={(e) => setCustomMeals(e.target.value)}
+                          className="w-full h-7 bg-white border border-slate-200 rounded-lg px-2 text-[11px] font-semibold text-slate-900 mt-1"
+                        />
+                      )}
                     </div>
 
                     <div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
@@ -1384,9 +1439,43 @@ export default function OrganizationPortal() {
                         className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold text-slate-900"
                       >
                         <option value="ORG_VEHICLE">Org Vehicle Arranged</option>
-                        <option value="DAILY_ALLOWANCE">Transport Allowance ({volunteerRates.transportAllowance} ETB/d)</option>
+                        <option value="DAILY_ALLOWANCE">Transport Allowance ({volunteerRates.transportAllowance || 150} ETB/d)</option>
                         <option value="NONE">None</option>
+                        <option value="CUSTOM">Custom Arrangement...</option>
                       </select>
+                      {benefitsTransport === "CUSTOM" && (
+                        <input
+                          type="text"
+                          placeholder="e.g. Dedicated Van, Flight covered..."
+                          value={customTransport}
+                          onChange={(e) => setCustomTransport(e.target.value)}
+                          className="w-full h-7 bg-white border border-slate-200 rounded-lg px-2 text-[11px] font-semibold text-slate-900 mt-1"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Custom Extra Daily Stipend (ETB/day/vol)</span>
+                      <input 
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={customPerkAmount}
+                        onChange={(e) => setCustomPerkAmount(e.target.value)}
+                        className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold text-slate-900"
+                      />
+                    </div>
+                    <div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Benefits & Logistics Notes</span>
+                      <input 
+                        type="text"
+                        placeholder="e.g. Special safety kit, communication radio provided..."
+                        value={benefitsNotes}
+                        onChange={(e) => setBenefitsNotes(e.target.value)}
+                        className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold text-slate-900"
+                      />
                     </div>
                   </div>
 

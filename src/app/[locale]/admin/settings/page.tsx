@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Settings, Save, Check, RefreshCw, Hash, ShieldAlert, MapPin, Map, Globe, Plus, Trash2, Edit3, MessageCircle, ShieldCheck, Key, Smartphone, Copy, CheckCircle2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import api from "@/lib/api";
+import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
 
 type MemberIDConfig = {
   prefix: string;
@@ -324,16 +325,19 @@ export default function SystemSettingsPage() {
 
   if (loading) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-          <Settings className="h-10 w-10 text-gray-200" />
-        </motion.div>
-      </div>
+      <SuperAdminGuard>
+        <div className="h-96 flex items-center justify-center">
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+            <Settings className="h-10 w-10 text-gray-200" />
+          </motion.div>
+        </div>
+      </SuperAdminGuard>
     );
   }
 
   return (
-    <div className="space-y-6 w-full max-w-7xl mx-auto pb-10">
+    <SuperAdminGuard>
+      <div className="space-y-6 w-full max-w-7xl mx-auto pb-10">
       {/* Header */ }
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-1.5">
@@ -1264,5 +1268,6 @@ export default function SystemSettingsPage() {
         </div>
       </div>
     </div>
+    </SuperAdminGuard>
   );
 }

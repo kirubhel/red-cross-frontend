@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
+import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
 
 type MembershipPlan = {
   id: string;
@@ -117,7 +118,8 @@ export default function MembershipPlansPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <SuperAdminGuard>
+      <div className="space-y-6">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="space-y-1.5">
@@ -407,5 +409,6 @@ export default function MembershipPlansPage() {
         </AnimatePresence>
       </div>
     </div>
+    </SuperAdminGuard>
   );
 }

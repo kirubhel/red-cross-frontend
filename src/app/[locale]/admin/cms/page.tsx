@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import api from "@/lib/api";
 import { translations, Language } from "@/lib/translations";
 import { footerSocialIconOptions, FooterSocialIcon } from "@/lib/footer-links";
+import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
 
 type CMSContent = typeof translations.en;
 
@@ -60,13 +61,11 @@ export default function CMSPage() {
       
       const newContents = { ...contents };
       results.forEach(({ lang, data }) => {
-        // Safe deep merge to ensure new keys in translations are preserved
         newContents[lang] = {
           ...translations[lang],
           ...data,
-          nav: { ...translations[lang].nav, ...(data?.nav || {}) },
-          hero: { 
-            ...translations[lang].hero, 
+          hero: {
+            ...translations[lang].hero,
             ...(data?.hero || {}),
             imageUrls: data?.hero?.imageUrls || (data?.hero?.imageUrl ? [data.hero.imageUrl] : translations[lang].hero.imageUrls)
           },
@@ -92,9 +91,11 @@ export default function CMSPage() {
           contactSection: { ...translations[lang].contactSection, ...(data?.contactSection || {}) }
         };
       });
+
       setContents(newContents);
-    } catch (err) {
-      console.error("Failed to fetch CMS content:", err);
+    } catch (error) {
+      console.error("Failed to load CMS content:", error);
+      toast.error("Failed to load live CMS data. Using local defaults.");
     } finally {
       setIsLoading(false);
     }
@@ -125,10 +126,10 @@ export default function CMSPage() {
         language_code: activeLang,
         content_json: JSON.stringify(contents[activeLang])
       });
-      toast.success(`Changes for ${activeLang === 'en' ? 'English' : activeLang === 'am' ? 'Amharic' : 'Oromiffa'} saved successfully!`);
-    } catch (err) {
-      console.error("Failed to save CMS content:", err);
-      toast.error("Failed to save changes. Please try again.");
+      toast.success(`Successfully published landing page updates for ${activeLang.toUpperCase()}`);
+    } catch (error) {
+      console.error("Failed to save CMS content:", error);
+      toast.error("Failed to save landing page changes. Ensure you have admin privileges.");
     } finally {
       setIsSaving(false);
     }
@@ -149,16 +150,19 @@ export default function CMSPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="h-10 w-10 text-[#ED1C24] animate-spin" />
-      </div>
+      <SuperAdminGuard>
+        <div className="flex h-[60vh] items-center justify-center">
+          <Loader2 className="h-10 w-10 text-[#ED1C24] animate-spin" />
+        </div>
+      </SuperAdminGuard>
     );
   }
 
   const current = contents[activeLang];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <SuperAdminGuard>
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-black tracking-tighter">Landing Page CMS</h1>
@@ -1228,6 +1232,7 @@ export default function CMSPage() {
         </Button>
       </div>
     </div>
+    </SuperAdminGuard>
   );
 }
 

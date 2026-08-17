@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { resolveRegionId } from "@/lib/constants";
 import { GeographicMapReport } from "@/components/admin/GeographicMapReport";
 import type { Cell, CellValue } from "exceljs";
+import { getUserScope } from "@/lib/auth-scope";
 
 
 type Volunteer = {
@@ -241,13 +242,20 @@ export default function VolunteersPage() {
       if (areaFilter) finalSearch += ` area:${areaFilter}`;
       if (classificationFilter) finalSearch += ` class:${classificationFilter}`;
 
-      const userRole = typeof window !== 'undefined' ? localStorage.getItem("user_role") : null;
-      const userBranch = typeof window !== 'undefined' ? (localStorage.getItem("user_branch") || localStorage.getItem("user_branch_id")) : null;
-      if (userRole === "BRANCH_OFFICER" && userBranch) {
+      const scope = getUserScope();
+      let effectiveRegion = regionFilter;
+      let userBranch = typeof window !== 'undefined' ? (localStorage.getItem("user_branch") || localStorage.getItem("user_branch_id")) : null;
+
+      if (!scope.isSuperAdmin) {
+        if (scope.regionId) effectiveRegion = scope.regionId;
+        if (scope.branchId) userBranch = scope.branchId;
+      }
+
+      if (scope.isBranchOfficer && userBranch) {
         finalSearch += ` ${userBranch}`;
       }
 
-      const url = `/volunteers?search=${encodeURIComponent(finalSearch)}&region=${regionFilter}&status=${statusFilter}&page=${currentPage}&page_size=${pageSize}`;
+      const url = `/volunteers?search=${encodeURIComponent(finalSearch)}&region=${effectiveRegion}&status=${statusFilter}&page=${currentPage}&page_size=${pageSize}`;
       const res = await api.get(url);
       setVolunteers(res.data.volunteers || []);
       setTotalPages(res.data.pagination?.total_pages || 1);

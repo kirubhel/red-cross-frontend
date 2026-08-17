@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { getUserScope, UserScope } from "@/lib/auth-scope";
 
 const ERCS_RED = "#ED1C24";
 const CHART_COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', ERCS_RED];
@@ -274,6 +275,16 @@ export default function DashboardPage() {
     { value: 14, label: "South Ethiopia" }
   ];
 
+  const [scope, setScope] = useState<UserScope>(getUserScope());
+
+  useEffect(() => {
+    const userScope = getUserScope();
+    setScope(userScope);
+    if (!userScope.isSuperAdmin && userScope.regionId) {
+      setSelectedRegion(userScope.regionId);
+    }
+  }, []);
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -281,16 +292,39 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
+      const userScope = getUserScope();
+      let personUrl = `/person?page=1&page_size=1000`;
+      let volUrl = `/volunteers`;
+
+      if (!userScope.isSuperAdmin) {
+        if (userScope.regionId) {
+          personUrl += `&region=${userScope.regionId}`;
+          volUrl += `${volUrl.includes("?") ? "&" : "?"}region=${userScope.regionId}`;
+        }
+        if (userScope.zoneId) {
+          personUrl += `&zone=${userScope.zoneId}`;
+          volUrl += `${volUrl.includes("?") ? "&" : "?"}zone=${userScope.zoneId}`;
+        }
+        if (userScope.woredaId) {
+          personUrl += `&woreda=${userScope.woredaId}`;
+          volUrl += `${volUrl.includes("?") ? "&" : "?"}woreda=${userScope.woredaId}`;
+        }
+        if (userScope.branchId) {
+          personUrl += `&branch_id=${userScope.branchId}`;
+          volUrl += `${volUrl.includes("?") ? "&" : "?"}branch_id=${userScope.branchId}`;
+        }
+      }
+
       const [peopleRes, volunteersRes] = await Promise.all([
-        api.get('/person?page=1&page_size=1000').catch(() => ({ data: { people: [] }})),
-        api.get('/volunteers').catch(() => ({ data: { volunteers: [] }}))
+        api.get(personUrl).catch(() => ({ data: { people: [] }})),
+        api.get(volUrl).catch(() => ({ data: { volunteers: [] }}))
       ]);
       
       const people = peopleRes.data?.people || [];
       const volunteers = volunteersRes.data?.volunteers || [];
 
       // Merge backend entries
-      const merged = [
+      let merged = [
         ...people.map((p: any) => ({
           id: p.id || p.ercs_id || `mem-${Math.random()}`,
           first_name: p.first_name || p.name || "",
@@ -316,6 +350,11 @@ export default function DashboardPage() {
           role: "VOLUNTEER"
         }))
       ];
+
+      if (!userScope.isSuperAdmin && userScope.regionId) {
+        merged = merged.filter(m => m.region === userScope.regionId);
+      }
+
       setAllRegistry(merged);
 
     } catch (error) {
@@ -529,22 +568,29 @@ export default function DashboardPage() {
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
               Region:
             </span>
-            <select
-              value={selectedRegion}
-              onChange={(e) => setSelectedRegion(e.target.value)}
-              className={cn(
-                "h-9 px-3 text-xs font-bold text-black border border-gray-200",
-                "rounded-xl bg-gray-50 focus:outline-none focus:border-[#ED1C24]",
-                "transition-all cursor-pointer shadow-sm"
-              )}
-            >
-              <option value="">All Regions</option>
-              {REGIONS_LIST.map(r => (
-                <option key={r.value} value={r.value.toString()}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
+            {scope.isSuperAdmin ? (
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className={cn(
+                  "h-9 px-3 text-xs font-bold text-black border border-gray-200",
+                  "rounded-xl bg-gray-50 focus:outline-none focus:border-[#ED1C24]",
+                  "transition-all cursor-pointer shadow-sm"
+                )}
+              >
+                <option value="">All Regions</option>
+                {REGIONS_LIST.map(r => (
+                  <option key={r.value} value={r.value.toString()}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="h-9 px-3 text-xs font-extrabold text-[#ED1C24] border border-red-100 rounded-xl bg-red-50/60 flex items-center gap-1.5 shadow-sm">
+                <span>{scope.regionName}</span>
+                <span className="text-[9px] uppercase font-bold text-red-400">(Jurisdiction)</span>
+              </div>
+            )}
           </div>
 
           {/* Gender Selection */}

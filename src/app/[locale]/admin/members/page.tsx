@@ -54,6 +54,7 @@ import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
 import { resolveRegionId } from "@/lib/constants";
 import { GeographicMapReport } from "@/components/admin/GeographicMapReport";
+import { getUserScope } from "@/lib/auth-scope";
 
 type Member = {
   id: string;
@@ -237,11 +238,22 @@ export default function MembersPage() {
   const fetchMembers = async () => {
     setLoading(true);
     try {
-      const userRole = typeof window !== 'undefined' ? localStorage.getItem("user_role") : null;
-      const userBranch = typeof window !== 'undefined' ? (localStorage.getItem("user_branch") || localStorage.getItem("user_branch_id")) : null;
-      let url = `/person?page=${page}&page_size=${pageSize}&search=${search}&region=${regionFilter}&status=${statusFilter}&type=${typeFilter}&zone=${zoneFilter}&woreda=${woredaFilter}&category=${mainCategory}`;
-      if (userRole === "BRANCH_OFFICER" && userBranch) {
-        url += `&branch_id=${userBranch}`;
+      const scope = getUserScope();
+      let effectiveRegion = regionFilter;
+      let effectiveZone = zoneFilter;
+      let effectiveWoreda = woredaFilter;
+      let effectiveBranch = typeof window !== 'undefined' ? (localStorage.getItem("user_branch") || localStorage.getItem("user_branch_id")) : null;
+
+      if (!scope.isSuperAdmin) {
+        if (scope.regionId) effectiveRegion = scope.regionId;
+        if (scope.zoneId) effectiveZone = scope.zoneId;
+        if (scope.woredaId) effectiveWoreda = scope.woredaId;
+        if (scope.branchId) effectiveBranch = scope.branchId;
+      }
+
+      let url = `/person?page=${page}&page_size=${pageSize}&search=${search}&region=${effectiveRegion}&status=${statusFilter}&type=${typeFilter}&zone=${effectiveZone}&woreda=${effectiveWoreda}&category=${mainCategory}`;
+      if (effectiveBranch) {
+        url += `&branch_id=${effectiveBranch}`;
       }
       const res = await api.get(url);
       setMembers(res.data.people || []);
