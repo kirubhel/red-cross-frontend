@@ -24,6 +24,7 @@ import {
   MessageCircle,
   ShieldCheck,
   User,
+  Camera,
   XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -198,7 +199,7 @@ export default function DashboardPage() {
 
         const firstName = userData?.first_name || userData?.firstName || "";
         const fatherName = userData?.father_name || userData?.fatherName || "";
-        const grandfatherName = userData?.grandfather_name || userData?.grandfatherName || "";
+        const grandfatherName = userData?.grandfather_name || userData?.grandfatherName || userData?.last_name || userData?.lastName || userMeta?.grandfather_name || userMeta?.last_name || "";
         const constructedName = [firstName, fatherName, grandfatherName].filter(Boolean).join(" ");
         const fullName = constructedName || "Valued Member";
         const personId = userData?.id || userData?.person_id || userData?.personId || "";
@@ -327,10 +328,10 @@ export default function DashboardPage() {
       }));
       
       toast.success("Profile photo updated!", {
-        description: "Your digital ID has been updated."
+        description: "Your digital ID card has been updated with the new photo."
       });
     } catch (err: any) {
-      console.error("Profile update failed:", err);
+      console.error("Upload failed:", err);
       const errorDetail = err.response?.data?.error || err.response?.data || err.message;
       toast.error("Update failed", {
         description: typeof errorDetail === 'string' ? errorDetail : "Check server logs or connection."
@@ -393,18 +394,9 @@ export default function DashboardPage() {
   const isVolunteer = user?.role === "VOLUNTEER" || user?.role === "5" || user?.role === 5;
 
   const stats = [
-    isVolunteer 
-      ? { label: "Volunteer Hours", value: user?.totalHours || 0, icon: Clock, color: "text-blue-600", bg: "bg-blue-50" }
-      : { label: "Membership Years", value: user?.membershipYears || 1, icon: Award, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Total Donations", value: user?.donations || "0 ETB", icon: Heart, color: "text-red-600", bg: "bg-red-50" },
-    { label: "Impact Score", value: `${user?.impactScore || 0}%`, icon: TrendingUp, color: "text-green-600", bg: "bg-green-50" },
-    { label: isVolunteer ? "Volunteer Points" : "Member Points", value: user?.points || 0, icon: Award, color: "text-amber-600", bg: "bg-amber-50" },
-  ];
-
-  const upcomingEvents = [
-    { title: "First Aid Training", date: "April 28, 2024", location: "ERCS HQ, Addis", type: isVolunteer ? "Training" : "Workshop" },
-    { title: "Blood Donation Drive", date: "May 02, 2024", location: "Meskel Square", type: "Field Work" },
-    { title: "Community Health Awareness", date: "May 10, 2024", location: "Kality Sub-city", type: "Outreach" },
+    { label: "Community Status", value: user?.status, desc: "Active ERCS Volunteer", icon: ShieldCheck, color: "text-[#ED1C24]", bg: "bg-red-50" },
+    { label: "Service Hours", value: `${user?.totalHours || 0} hrs`, desc: "Total Verified Contribution", icon: Clock, color: "text-blue-500", bg: "bg-blue-50" },
+    { label: "Direct Impact", value: `${user?.donations || "0 ETB"}`, desc: "Total Financial Contribution", icon: CreditCard, color: "text-green-500", bg: "bg-green-50" },
   ];
 
   if (loading) {
@@ -420,21 +412,51 @@ export default function DashboardPage() {
   // --- MEMBER DASHBOARD VIEW ---
   if (isMember) {
     return (
-      <div className="p-6 md:p-8 space-y-8 bg-[#F8FAFC] min-h-full pb-20">
-        
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16">
+      {/* Top Banner: Verification/Warning */}
+      {!user?.isApproved && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-amber-500/10 border border-amber-500/20 rounded-[28px] p-5 flex flex-col md:flex-row items-center justify-between gap-4 text-amber-900"
+        >
+          <div className="flex items-center gap-3">
+             <div className="h-10 w-10 bg-amber-500 rounded-xl flex items-center justify-center text-white shrink-0 shadow-md shadow-amber-500/20">
+                <AlertCircle className="h-5 w-5" />
+             </div>
+             <div>
+                <h4 className="text-sm font-black uppercase tracking-tight">Membership Pending Approval</h4>
+                <p className="text-xs font-semibold text-amber-800/80">Your profile is currently under review by our administrative branch officers.</p>
+             </div>
+          </div>
+          <div className="flex items-center gap-2">
+             <Button 
+               onClick={() => router.push("/dashboard/profile")}
+               variant="outline" 
+               className="bg-white/80 hover:bg-white text-amber-900 border-amber-200 text-[10px] font-black uppercase tracking-widest rounded-xl h-9"
+             >
+                Review Profile
+             </Button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Main Dashboard Layout */}
+      <div className="space-y-6">
+        {/* Photo Upload Banner if Missing Photo */}
         {!user?.photo && (
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-[#ED1C24]/10 border border-[#ED1C24]/20 p-4 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-r from-red-600 via-[#ED1C24] to-red-700 rounded-[32px] p-6 text-white shadow-xl shadow-red-500/10 flex flex-col md:flex-row items-center justify-between gap-4"
           >
-            <div className="flex items-center gap-3 text-[#ED1C24]">
-              <div className="h-10 w-10 bg-[#ED1C24] rounded-2xl flex items-center justify-center text-white shrink-0">
-                <AlertCircle className="h-6 w-6" />
+            <div className="flex items-center gap-4 text-center md:text-left">
+              <div className="h-12 w-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20 shrink-0">
+                <Camera className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-sm font-black uppercase tracking-tight">Profile Photo Missing</p>
-                <p className="text-xs font-medium opacity-80">Please upload your photo to complete your Digital ID card and verify your membership.</p>
+                <h3 className="text-base font-black tracking-tight">Upload Your Profile Photograph</h3>
+                <p className="text-xs text-white/80 font-medium">Add your photo to complete your digital membership identification card.</p>
               </div>
             </div>
             <input 
@@ -447,79 +469,82 @@ export default function DashboardPage() {
             <Button 
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
-              className="bg-[#ED1C24] hover:bg-black text-white px-6 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-red-500/20"
+              className="bg-white hover:bg-gray-100 text-[#ED1C24] px-6 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md cursor-pointer"
             >
                {uploading ? "Uploading..." : "Upload Photo Now"}
             </Button>
           </motion.div>
         )}
 
-        {/* Top Row: Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Top Row: Compact Info Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Membership Type */}
-          <div className="bg-[#ED1C24] rounded-[32px] p-6 text-white shadow-lg shadow-red-900/10 flex flex-col justify-between min-h-[160px]">
+          <div className="bg-[#ED1C24] rounded-[24px] p-5 text-white shadow-md shadow-red-900/10 flex flex-col justify-between min-h-[120px]">
             <div className="flex justify-between items-start">
-               <h3 className="text-2xl font-black tracking-tighter uppercase leading-tight">{user?.membershipType}</h3>
-               <div className="p-2 bg-white/10 rounded-xl"><User className="h-5 w-5" /></div>
+               <h3 className="text-xl font-black tracking-tighter uppercase leading-tight">{user?.membershipType}</h3>
+               <div className="p-2 bg-white/10 rounded-xl"><User className="h-4 w-4" /></div>
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Membership Type</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest opacity-70">Membership Type</p>
           </div>
 
           {/* Membership Status */}
-          <div className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm flex flex-col justify-between min-h-[160px]">
+          <div className="bg-white rounded-[24px] p-5 border border-gray-100 shadow-xs flex flex-col justify-between min-h-[120px]">
             <div className="flex justify-between items-start">
-               <h3 className="text-2xl font-black tracking-tighter text-[#ED1C24] uppercase">{user?.status}</h3>
-               <div className="p-2 bg-gray-50 rounded-xl text-gray-400"><CreditCard className="h-5 w-5" /></div>
+               <h3 className="text-xl font-black tracking-tighter text-[#ED1C24] uppercase">{user?.status}</h3>
+               <div className="p-2 bg-gray-50 rounded-xl text-gray-400"><CreditCard className="h-4 w-4" /></div>
             </div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Membership Status</p>
+            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Membership Status</p>
           </div>
 
           {/* Telegram Connection */}
-          <div className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm flex flex-col gap-4 min-h-[160px]">
-             <p className="text-xs font-bold text-gray-500">Become a Telegram member to receive notifications.</p>
+          <div className="bg-white rounded-[24px] p-5 border border-gray-100 shadow-xs flex flex-col justify-between min-h-[120px]">
+             <div>
+               <p className="text-xs font-bold text-gray-700">ERCS Telegram Community</p>
+               <p className="text-[10px] text-gray-400 mt-0.5">Receive official alerts & updates.</p>
+             </div>
              <button 
                onClick={() => window.open("https://t.me/ethiopianredcross", "_blank")}
-               className="w-full bg-[#0088CC] hover:bg-[#0077B5] text-white py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md shadow-blue-500/10 cursor-pointer"
+               className="w-full bg-[#0088CC] hover:bg-[#0077B5] text-white py-2 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
              >
-                <MessageCircle className="h-4 w-4" /> Connect with Telegram
+                <MessageCircle className="h-3.5 w-3.5" /> Connect Telegram
              </button>
           </div>
 
           {/* Expiry Date */}
-          <div className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm flex flex-col justify-between min-h-[160px] relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
-               <Calendar className="h-16 w-16 text-[#ED1C24]" />
+          <div className="bg-white rounded-[24px] p-5 border border-gray-100 shadow-xs flex flex-col justify-between min-h-[120px] relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:scale-110 transition-transform">
+               <Calendar className="h-12 w-12 text-[#ED1C24]" />
             </div>
             <div>
-               <h3 className="text-xl font-black tracking-tighter text-gray-900">{user?.expiryDate}</h3>
-               <p className="text-xs font-black text-[#ED1C24] uppercase mt-1">{user?.daysLeft} Days Left</p>
+               <h3 className="text-lg font-black tracking-tighter text-gray-900">{user?.expiryDate}</h3>
+               <p className="text-[10px] font-black text-[#ED1C24] uppercase mt-0.5">{user?.daysLeft} Days Left</p>
             </div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Expired Date</p>
+            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Expired Date</p>
           </div>
         </div>
 
         {/* Digital ID Section */}
-        <div className="bg-white rounded-[48px] p-10 border border-gray-100 shadow-sm space-y-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-gray-50 pb-8">
+        <div className="bg-white rounded-[36px] p-6 md:p-8 border border-gray-100 shadow-sm space-y-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-100 pb-5">
              <div>
-                <h2 className="text-3xl font-black tracking-tighter">Digital ID Card</h2>
-                <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mt-1">Official ERCS {user?.role === "VOLUNTEER" ? "Volunteer" : "Membership"} Identification</p>
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tighter text-gray-900">Digital ID Card</h2>
+                <p className="text-gray-400 font-bold uppercase text-[9px] tracking-widest mt-0.5">Official ERCS {user?.role === "VOLUNTEER" ? "Volunteer" : "Membership"} Identification</p>
              </div>
              <Button 
                 onClick={downloadIDCard}
-                className="bg-[#ED1C24] hover:bg-black text-white px-8 h-14 rounded-2xl font-black tracking-widest uppercase text-xs shadow-xl shadow-red-500/20 transition-all flex items-center gap-2"
+                className="bg-[#ED1C24] hover:bg-black text-white px-6 h-11 rounded-xl font-black tracking-widest uppercase text-[10px] shadow-lg shadow-red-500/20 transition-all flex items-center gap-2"
               >
-                <Download className="h-4 w-4" /> Download ID Card
+                <Download className="h-3.5 w-3.5" /> Download ID Card
              </Button>
           </div>
 
           <div 
             ref={idCardRef} 
               data-id-card-grid="true"
-              className="grid grid-cols-1 lg:grid-cols-2 gap-10 p-4 bg-white"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-3 bg-white"
             >
               {/* Front View */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'center' }}>
                 <p style={{ textAlign: 'center', fontSize: '10px', fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.3em', margin: 0 }}>Card Front</p>
                 <div 
                   style={{ backgroundColor: 'white', borderRadius: '24px', border: '2px solid rgba(153, 27, 27, 0.15)', overflow: 'hidden', position: 'relative', width: '500px', height: '312px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)', flexShrink: 0 }}
@@ -578,53 +603,53 @@ export default function DashboardPage() {
               </div>
 
               {/* Back View */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'center' }}>
                 <p style={{ textAlign: 'center', fontSize: '10px', fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.3em', margin: 0 }}>Card Back</p>
                 <div 
                    style={{ backgroundColor: 'white', borderRadius: '24px', border: '2px solid rgba(153, 27, 27, 0.15)', overflow: 'hidden', position: 'relative', width: '500px', height: '312px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)', flexShrink: 0 }}
                 >
                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                      <div style={{ backgroundColor: '#ED1C24', color: 'white', padding: '10px 12px', textAlign: 'center', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <div style={{ backgroundColor: '#ED1C24', color: 'white', padding: '10px 12px', textAlign: 'center', fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                          Emergency Contact & Authentication
                       </div>
                       
-                      <div style={{ flex: 1, padding: '14px 20px 6px', display: 'flex', gap: '20px' }}>
-                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ flex: 1, padding: '16px 20px 8px', display: 'flex', gap: '20px' }}>
+                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {/* Member Address */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                               <p style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Member Address</p>
-                               <p style={{ fontSize: '8.5px', fontWeight: '800', color: '#111827', lineHeight: '1.3', margin: 0 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                               <p style={{ fontSize: '7.5px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Member Address</p>
+                               <p style={{ fontSize: '9px', fontWeight: '800', color: '#111827', lineHeight: '1.4', margin: 0, letterSpacing: '0.02em' }}>
                                   Region: {user?.region || "Ethiopia"}<br />
                                   {[
                                     user?.address?.zone && `Zone: ${user.address.zone}`,
                                     user?.address?.woreda && `Woreda: ${user.address.woreda}`,
                                     user?.address?.kebele && `Kebele: ${user.address.kebele}`
-                                  ].filter(Boolean).join(" • ") || (user?.address?.area ? `Area: ${user.address.area}` : "National Registry")}
+                                  ].filter(Boolean).join("  •  ") || (user?.address?.area ? `Area: ${user.address.area}` : "National Registry")}
                                   {user?.address?.houseNo ? <><br />House No: {user.address.houseNo}</> : null}
                                </p>
                             </div>
 
                             {/* Emergency Contact or Member Contact */}
                             {user?.address?.emergencyName || user?.address?.emergencyPhone ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                 <p style={{ fontSize: '6.5px', fontWeight: '900', color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Emergency Contact</p>
-                                 <p style={{ fontSize: '8px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
-                                    {user.address.emergencyName || "Contact"} {user.address.emergencyPhone && `• ${user.address.emergencyPhone}`}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                 <p style={{ fontSize: '7px', fontWeight: '900', color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Emergency Contact</p>
+                                 <p style={{ fontSize: '8.5px', fontWeight: '700', color: '#1F2937', margin: 0, lineHeight: '1.35', letterSpacing: '0.02em' }}>
+                                    {user.address.emergencyName || "Contact"} {user.address.emergencyPhone && ` •  ${user.address.emergencyPhone}`}
                                  </p>
                               </div>
                             ) : (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                 <p style={{ fontSize: '6.5px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Member Contact</p>
-                                 <p style={{ fontSize: '8px', fontWeight: '700', color: '#1F2937', margin: 0 }}>
-                                    Tel: {user?.phone || "+251..."} • Email: {user?.email || "N/A"}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                 <p style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Member Contact</p>
+                                 <p style={{ fontSize: '8.5px', fontWeight: '700', color: '#1F2937', margin: 0, lineHeight: '1.35', letterSpacing: '0.02em' }}>
+                                    Tel: {user?.phone || "+251..."}  •  Email: {user?.email || "N/A"}
                                  </p>
                               </div>
                             )}
 
                             {/* Contact Details from CMS */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                               <p style={{ fontSize: '6.5px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>ERCS Headquarters Contact</p>
-                               <p style={{ fontSize: '7.5px', fontWeight: '600', color: '#374151', margin: 0, lineHeight: '1.2' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                               <p style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>ERCS Headquarters Contact</p>
+                               <p style={{ fontSize: '8px', fontWeight: '600', color: '#374151', margin: 0, lineHeight: '1.4', letterSpacing: '0.02em' }}>
                                   Tel: {cmsContact.tel || cmsContact.mobile}<br />
                                   Email: {cmsContact.email}<br />
                                   Web: {cmsContact.web || "www.redcrosseth.org"}
@@ -678,8 +703,8 @@ export default function DashboardPage() {
 
                       {/* Bottom Location from CMS Contact Us section */}
                       <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', backgroundColor: '#ED1C24', padding: '5px 16px', textAlign: 'center' }}>
-                         <p style={{ fontSize: '7.5px', fontWeight: '700', color: 'white', textTransform: 'uppercase', letterSpacing: '-0.01em', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {cmsContact.address} • Tel: {cmsContact.tel || cmsContact.mobile}
+                         <p style={{ fontSize: '7.5px', fontWeight: '700', color: 'white', textTransform: 'uppercase', letterSpacing: '0.02em', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {cmsContact.address}  •  Tel: {cmsContact.tel || cmsContact.mobile}
                          </p>
                       </div>
                    </div>
@@ -689,26 +714,27 @@ export default function DashboardPage() {
         </div>
 
         {/* Footer Support */}
-        <div className="bg-[#ED1C24] rounded-[40px] p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6">
-           <div className="flex items-center gap-6 text-center md:text-left">
-              <div className="h-16 w-16 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-xl border border-white/10 shrink-0">
-                 <ShieldCheck className="h-8 w-8" />
+        <div className="bg-[#ED1C24] rounded-[32px] p-6 text-white flex flex-col md:flex-row items-center justify-between gap-4">
+           <div className="flex items-center gap-4 text-center md:text-left">
+              <div className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/10 shrink-0">
+                 <ShieldCheck className="h-6 w-6" />
               </div>
               <div>
-                 <h4 className="text-xl font-black">Secure Your Membership</h4>
-                 <p className="text-sm font-medium opacity-60">Keep your information up to date to ensure seamless access to ERCS benefits.</p>
+                 <h4 className="text-base font-black">Secure Your Membership</h4>
+                 <p className="text-xs font-medium opacity-70">Keep your information up to date to ensure seamless access to ERCS benefits.</p>
               </div>
            </div>
            <button 
              onClick={() => router.push("/dashboard/profile")}
-             className="whitespace-nowrap px-8 py-4 bg-white text-[#ED1C24] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all shadow-xl shadow-black/20 cursor-pointer"
+             className="whitespace-nowrap px-6 py-3 bg-white text-[#ED1C24] rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-100 transition-all shadow-md cursor-pointer"
            >
               Update Profile Information
            </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // --- VOLUNTEER DASHBOARD VIEW (Original) ---
   return (
