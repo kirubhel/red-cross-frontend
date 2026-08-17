@@ -892,139 +892,143 @@ export default function OrganizationPortal() {
       </div>
 
       {/* Sidebar */}
-      <aside className="w-full md:w-80 bg-white border-r border-slate-200 p-8 flex flex-col z-10">
-        <div className="flex items-center gap-3 mb-16">
-          <div className="bg-[#ED1C24] p-2 rounded-xl group hover:scale-110 transition-transform cursor-pointer">
-            <Plus className="h-6 w-6 text-white" strokeWidth={4} />
+      <aside className="w-full md:w-60 bg-white border-r border-slate-200 p-4 md:p-5 flex flex-col z-10 shrink-0">
+        <div className="flex items-center gap-2.5 mb-6">
+          <div className="bg-[#ED1C24] p-1.5 rounded-lg group hover:scale-105 transition-transform cursor-pointer">
+            <Plus className="h-4 w-4 text-white" strokeWidth={3.5} />
           </div>
           <div className="flex flex-col">
-            <span className="font-black text-xl tracking-tighter leading-none text-slate-900">ERCS PORTAL</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Organization Management</span>
+            <span className="font-black text-base tracking-tight leading-none text-slate-900">ERCS PORTAL</span>
+            <span className="text-[8px] font-bold uppercase tracking-wider text-[#ED1C24] mt-0.5">Org Management</span>
           </div>
         </div>
 
-        <nav className="flex-1 space-y-2">
+        <nav className="flex-1 space-y-1">
           <button 
             onClick={() => setActiveTab("dashboard")}
-            className={`w-full flex items-center justify-between p-4 rounded-2xl font-black text-sm transition-all group ${activeTab === 'dashboard' ? 'bg-[#ED1C24] text-white shadow-lg shadow-[#ED1C24]/20' : 'text-slate-400 hover:bg-slate-50 hover:text-[#ED1C24]'}`}
+            className={`w-full flex items-center justify-between py-2 px-3 rounded-xl font-bold text-xs transition-all group ${activeTab === 'dashboard' ? 'bg-[#ED1C24] text-white shadow-md shadow-[#ED1C24]/15' : 'text-slate-500 hover:bg-slate-50 hover:text-[#ED1C24]'}`}
           >
-            <span className="flex items-center gap-3">
-              <Layers className="h-5 w-5" /> Dashboard
+            <span className="flex items-center gap-2.5">
+              <Layers className="h-4 w-4" /> Dashboard
             </span>
-            <ChevronRight className={`h-4 w-4 transition-transform ${activeTab === 'dashboard' ? 'group-hover:translate-x-1' : 'opacity-0'}`} />
+            <ChevronRight className={`h-3.5 w-3.5 transition-transform ${activeTab === 'dashboard' ? 'group-hover:translate-x-0.5' : 'opacity-0'}`} />
           </button>
           
           <button 
             onClick={() => setActiveTab("requests")}
-            className={`w-full flex items-center justify-between p-4 rounded-2xl font-black text-sm transition-all group ${activeTab === 'requests' ? 'bg-[#ED1C24] text-white shadow-lg shadow-[#ED1C24]/20' : 'text-slate-400 hover:bg-slate-50 hover:text-[#ED1C24]'}`}
+            className={`w-full flex items-center justify-between py-2 px-3 rounded-xl font-bold text-xs transition-all group ${activeTab === 'requests' ? 'bg-[#ED1C24] text-white shadow-md shadow-[#ED1C24]/15' : 'text-slate-500 hover:bg-slate-50 hover:text-[#ED1C24]'}`}
           >
-            <span className="flex items-center gap-3">
-              <Briefcase className="h-5 w-5" /> Manage Requests
+            <span className="flex items-center gap-2.5">
+              <Briefcase className="h-4 w-4" /> Manage Requests
             </span>
-            <ChevronRight className={`h-4 w-4 transition-transform ${activeTab === 'requests' ? 'group-hover:translate-x-1' : 'opacity-0'}`} />
+            <ChevronRight className={`h-3.5 w-3.5 transition-transform ${activeTab === 'requests' ? 'group-hover:translate-x-0.5' : 'opacity-0'}`} />
           </button>
 
           <button 
             onClick={() => setActiveTab("profile")}
-            className={`w-full flex items-center justify-between p-4 rounded-2xl font-black text-sm transition-all group ${activeTab === 'profile' ? 'bg-[#ED1C24] text-white shadow-lg shadow-[#ED1C24]/20' : 'text-slate-400 hover:bg-slate-50 hover:text-[#ED1C24]'}`}
+            className={`w-full flex items-center justify-between py-2 px-3 rounded-xl font-bold text-xs transition-all group ${activeTab === 'profile' ? 'bg-[#ED1C24] text-white shadow-md shadow-[#ED1C24]/15' : 'text-slate-500 hover:bg-slate-50 hover:text-[#ED1C24]'}`}
           >
-            <span className="flex items-center gap-3">
-              <Building2 className="h-5 w-5" /> Profile Settings
+            <span className="flex items-center gap-2.5">
+              <Building2 className="h-4 w-4" /> Profile Settings
             </span>
-            <ChevronRight className={`h-4 w-4 transition-transform ${activeTab === 'profile' ? 'group-hover:translate-x-1' : 'opacity-0'}`} />
+            <ChevronRight className={`h-3.5 w-3.5 transition-transform ${activeTab === 'profile' ? 'group-hover:translate-x-0.5' : 'opacity-0'}`} />
           </button>
 
           <button 
             onClick={() => setActiveTab("support")}
-            className={`w-full flex items-center justify-between p-4 rounded-2xl font-black text-sm transition-all group ${activeTab === 'support' ? 'bg-[#ED1C24] text-white shadow-lg shadow-[#ED1C24]/20' : 'text-slate-400 hover:bg-slate-50 hover:text-[#ED1C24]'}`}
+            className={`w-full flex items-center justify-between py-2 px-3 rounded-xl font-bold text-xs transition-all group ${activeTab === 'support' ? 'bg-[#ED1C24] text-white shadow-md shadow-[#ED1C24]/15' : 'text-slate-500 hover:bg-slate-50 hover:text-[#ED1C24]'}`}
           >
-            <span className="flex items-center gap-3">
-              <AlertCircle className="h-5 w-5" /> Support
+            <span className="flex items-center gap-2.5">
+              <AlertCircle className="h-4 w-4" /> Support
             </span>
-            <ChevronRight className={`h-4 w-4 transition-transform ${activeTab === 'support' ? 'group-hover:translate-x-1' : 'opacity-0'}`} />
+            <ChevronRight className={`h-3.5 w-3.5 transition-transform ${activeTab === 'support' ? 'group-hover:translate-x-0.5' : 'opacity-0'}`} />
           </button>
         </nav>
 
         <button 
           onClick={handleLogout}
-          className="mt-8 flex items-center gap-3 p-4 text-rose-500 hover:bg-rose-500/10 rounded-2xl font-black text-sm transition-all group border border-transparent hover:border-rose-500/20"
+          className="mt-4 flex items-center gap-2.5 py-2 px-3 text-rose-500 hover:bg-rose-500/10 rounded-xl font-bold text-xs transition-all group"
         >
-          <LogOut className="h-5 w-5 group-hover:-translate-x-1 transition-transform" /> Sign Out
+          <LogOut className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" /> Sign Out
         </button>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 md:p-12 overflow-y-auto z-10 bg-[#F8F9FA]">
-        <div className="max-w-6xl mx-auto space-y-12 pb-20">
+      <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto z-10 bg-[#F8F9FA]">
+        <div className="max-w-5xl mx-auto space-y-6 pb-12">
           
           {activeTab === 'dashboard' && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               {/* Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-2 text-slate-900">
+                  <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900">
                     Mission <span className="text-[#ED1C24]">Control</span>
                   </h1>
-                  <p className="text-slate-400 font-bold">Manage your humanitarian volunteer requests and impact.</p>
+                  <p className="text-slate-400 font-semibold text-xs mt-0.5">Manage your humanitarian volunteer deployments and community impact.</p>
                 </div>
                 <Button 
                   onClick={() => setShowForm(true)}
-                  className="h-16 px-8 bg-[#ED1C24] hover:bg-slate-900 text-white rounded-2xl font-black tracking-widest uppercase text-xs flex items-center gap-2 group transition-all shadow-xl shadow-[#ED1C24]/20"
+                  className="h-10 px-4 bg-[#ED1C24] hover:bg-red-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 group transition-all shadow-sm shrink-0"
                 >
-                  <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform" /> New Volunteer Request
+                  <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform" /> New Volunteer Request
                 </Button>
               </div>
 
               {/* Stats Bar */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 {[
-                  { label: "Active Requests", value: requests.filter(r => r.status === 'PENDING' || r.status === 'APPROVED').length, icon: <Clock className="text-amber-500" />, trend: "+2 this month" },
-                  { label: "Total Missions", value: requests.length, icon: <TrendingUp className="text-emerald-500" />, trend: "Goal: 20" },
-                  { label: "Volunteers Needed", value: requests.reduce((acc, r) => acc + (r.status === 'PENDING' ? r.headcount : 0), 0), icon: <Users className="text-[#ED1C24]" />, trend: "Across 4 regions" }
+                  { label: "Active Requests", value: requests.filter(r => r.status === 'PENDING' || r.status === 'APPROVED' || r.status === 'MATCHED' || r.status === 'IN_PROGRESS').length, icon: <Clock className="h-4 w-4 text-amber-500" />, trend: "+2 this month" },
+                  { label: "Total Missions", value: requests.length, icon: <TrendingUp className="h-4 w-4 text-emerald-500" />, trend: "Active Deployments" },
+                  { label: "Volunteers Needed", value: requests.reduce((acc, r) => acc + (r.status === 'PENDING' || r.status === 'APPROVED' ? r.headcount : 0), 0), icon: <Users className="h-4 w-4 text-[#ED1C24]" />, trend: "Across Regions" }
                 ].map((stat, i) => (
-                  <div key={i} className="bg-white border border-slate-200 p-8 rounded-[32px] group hover:border-[#ED1C24]/30 transition-all shadow-sm hover:shadow-xl hover:shadow-[#ED1C24]/5">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-[#ED1C24]/10 transition-colors">
+                  <div key={i} className="bg-white border border-slate-200/80 p-4 rounded-2xl group hover:border-[#ED1C24]/30 transition-all shadow-sm hover:shadow-md">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="p-2 bg-slate-50 rounded-xl group-hover:bg-[#ED1C24]/10 transition-colors">
                         {stat.icon}
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{stat.trend}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{stat.trend}</span>
                     </div>
-                    <div className="text-4xl font-black tracking-tighter mb-1 text-slate-900">{stat.value}</div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.label}</div>
+                    <div className="text-2xl font-black tracking-tight mb-0.5 text-slate-900">{stat.value}</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{stat.label}</div>
                   </div>
                 ))}
               </div>
 
               {/* Recent Requests Summary */}
-              <div className="space-y-6">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-black tracking-tighter uppercase tracking-widest text-[#ED1C24]">Recent Requests</h3>
-                  <Button variant="ghost" onClick={() => setActiveTab('requests')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-[#ED1C24]">View All</Button>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-[#ED1C24]">Recent Requests</h3>
+                  <Button variant="ghost" onClick={() => setActiveTab('requests')} className="text-[10px] font-bold uppercase tracking-wider text-slate-400 hover:text-[#ED1C24] h-7 px-2">View All</Button>
                 </div>
-                <div className="h-px bg-slate-200 w-full" />
 
                 {requests.length === 0 ? (
-                  <div className="bg-white border border-dashed border-slate-200 rounded-[40px] p-20 text-center shadow-sm">
-                    <div className="h-20 w-20 bg-slate-50 rounded-3xl mx-auto flex items-center justify-center mb-6">
-                      <Briefcase className="h-10 w-10 text-slate-200" />
+                  <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-12 text-center shadow-sm">
+                    <div className="h-12 w-12 bg-slate-50 rounded-2xl mx-auto flex items-center justify-center mb-3">
+                      <Briefcase className="h-6 w-6 text-slate-300" />
                     </div>
-                    <h4 className="text-2xl font-black tracking-tight mb-2 text-slate-900">No active requests</h4>
-                    <p className="text-slate-400 font-medium max-w-sm mx-auto">You haven't submitted any volunteer requests yet.</p>
+                    <h4 className="text-base font-bold tracking-tight mb-1 text-slate-900">No active requests</h4>
+                    <p className="text-slate-400 font-medium text-xs max-w-sm mx-auto">You haven't submitted any volunteer requests yet.</p>
                   </div>
                 ) : (
-                  <div className="grid gap-4">
-                    {requests.slice(0, 3).map((request) => (
-                      <div key={request.id} className="bg-white border border-slate-100 p-6 rounded-[32px] flex items-center justify-between shadow-sm">
-                        <div className="flex items-center gap-6">
-                          <div className="h-12 w-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
-                             <span className="text-lg font-black text-slate-900">{request.headcount}</span>
+                  <div className="grid gap-2.5">
+                    {requests.slice(0, 4).map((request) => (
+                      <div key={request.id} className="bg-white border border-slate-200/80 p-3.5 rounded-xl flex items-center justify-between shadow-xs hover:border-slate-300 transition-all">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-9 w-9 bg-slate-50 rounded-lg flex items-center justify-center border border-slate-100 shrink-0">
+                             <span className="text-xs font-black text-slate-900">{request.headcount}</span>
                           </div>
-                          <div>
-                            <StatusBadge status={request.status} />
-                            <h4 className="font-black text-slate-900">{request.activities_skills}</h4>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <StatusBadge status={request.status} />
+                              {request.region_name && (
+                                <span className="text-[9px] font-bold text-slate-400">· {request.region_name}</span>
+                              )}
+                            </div>
+                            <h4 className="font-bold text-xs text-slate-900 truncate max-w-md">{request.title || request.activities_skills}</h4>
                           </div>
                         </div>
-                        <Button variant="outline" onClick={() => setActiveTab('requests')} className="rounded-xl font-black text-[10px] uppercase tracking-widest">Details</Button>
+                        <Button variant="outline" onClick={() => handleViewDetails(request)} className="rounded-lg font-bold text-[10px] uppercase tracking-wider h-7 px-3 border-slate-200 shrink-0">Details</Button>
                       </div>
                     ))}
                   </div>
@@ -1152,82 +1156,82 @@ export default function OrganizationPortal() {
           )}
 
           {activeTab === 'profile' && profile && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-3xl mx-auto space-y-8">
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto space-y-4">
                <div>
-                  <h1 className="text-3xl font-extrabold tracking-tight mb-1 text-slate-900">Profile <span className="text-[#ED1C24]">Settings</span></h1>
-                  <p className="text-slate-500 font-medium text-xs">Update your organization's public information.</p>
+                  <h1 className="text-2xl font-black tracking-tight mb-0.5 text-slate-900">Profile <span className="text-[#ED1C24]">Settings</span></h1>
+                  <p className="text-slate-400 font-semibold text-xs">Update your organization's public information and contact credentials.</p>
                </div>
 
-               <form onSubmit={handleUpdateProfile} className="space-y-6 bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                  <div className="grid md:grid-cols-2 gap-5">
-                     <div className="space-y-1.5">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Organization Name</Label>
+               <form onSubmit={handleUpdateProfile} className="space-y-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                  <div className="grid md:grid-cols-2 gap-3.5">
+                     <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase tracking-wider text-[#ED1C24]">Organization Name</Label>
                         <Input 
                           value={profile.name}
                           onChange={(e) => setProfile({...profile, name: e.target.value})}
-                          className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
+                          className="h-9 bg-slate-50 border-slate-200 rounded-xl font-semibold text-xs text-slate-900"
                         />
                      </div>
-                     <div className="space-y-1.5">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Type</Label>
+                     <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase tracking-wider text-[#ED1C24]">Type</Label>
                         <Input 
                           value={profile.type}
                           onChange={(e) => setProfile({...profile, type: e.target.value})}
-                          className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
+                          className="h-9 bg-slate-50 border-slate-200 rounded-xl font-semibold text-xs text-slate-900"
                         />
                      </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-5">
-                     <div className="space-y-1.5">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Contact Person</Label>
+                  <div className="grid md:grid-cols-2 gap-3.5">
+                     <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase tracking-wider text-[#ED1C24]">Contact Person</Label>
                         <Input 
                           value={profile.contact_person}
                           onChange={(e) => setProfile({...profile, contact_person: e.target.value})}
-                          className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
+                          className="h-9 bg-slate-50 border-slate-200 rounded-xl font-semibold text-xs text-slate-900"
                         />
                      </div>
-                     <div className="space-y-1.5">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Phone Number</Label>
+                     <div className="space-y-1">
+                        <Label className="text-[10px] font-bold uppercase tracking-wider text-[#ED1C24]">Phone Number</Label>
                         <Input 
                           value={profile.phone}
                           onChange={(e) => setProfile({...profile, phone: e.target.value})}
-                          className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
+                          className="h-9 bg-slate-50 border-slate-200 rounded-xl font-semibold text-xs text-slate-900"
                         />
                      </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                     <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Email Address</Label>
+                  <div className="space-y-1">
+                     <Label className="text-[10px] font-bold uppercase tracking-wider text-[#ED1C24]">Email Address</Label>
                      <Input 
                         value={profile.email}
                         onChange={(e) => setProfile({...profile, email: e.target.value})}
-                        className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
+                        className="h-9 bg-slate-50 border-slate-200 rounded-xl font-semibold text-xs text-slate-900"
                      />
                   </div>
 
-                  <div className="space-y-1.5">
-                     <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Website</Label>
+                  <div className="space-y-1">
+                     <Label className="text-[10px] font-bold uppercase tracking-wider text-[#ED1C24]">Website</Label>
                      <Input 
                         value={profile.website}
                         onChange={(e) => setProfile({...profile, website: e.target.value})}
-                        className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-sm text-slate-900"
+                        className="h-9 bg-slate-50 border-slate-200 rounded-xl font-semibold text-xs text-slate-900"
                      />
                   </div>
 
-                  <div className="space-y-1.5">
-                     <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Description</Label>
+                  <div className="space-y-1">
+                     <Label className="text-[10px] font-bold uppercase tracking-wider text-[#ED1C24]">Description</Label>
                      <textarea 
                         value={profile.description}
                         onChange={(e) => setProfile({...profile, description: e.target.value})}
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-sm min-h-[90px] outline-none focus:ring-2 focus:ring-[#ED1C24]/10 text-slate-900 resize-none"
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-xs min-h-[70px] outline-none focus:ring-1 focus:ring-[#ED1C24]/20 text-slate-900 resize-none"
                      />
                   </div>
 
                   <Button 
                     type="submit" 
                     disabled={updatingProfile}
-                    className="w-full h-11 bg-[#ED1C24] text-white rounded-xl font-bold uppercase tracking-wider text-xs shadow-md shadow-[#ED1C24]/20 hover:bg-slate-900 transition-all"
+                    className="w-full h-9 bg-[#ED1C24] text-white rounded-xl font-bold uppercase tracking-wider text-xs shadow-sm hover:bg-slate-900 transition-all"
                   >
                     {updatingProfile ? "Updating..." : "Save Changes"}
                   </Button>
@@ -1236,150 +1240,141 @@ export default function OrganizationPortal() {
           )}
 
           {activeTab === 'support' && (
-             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-4xl mx-auto space-y-8">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-100 pb-6">
+             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="max-w-3xl mx-auto space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-slate-100 pb-4">
                    <div>
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#ED1C24]/10 text-[#ED1C24] rounded-full text-[10px] font-extrabold uppercase tracking-wider mb-2">
-                        <MessageSquare className="h-3.5 w-3.5" /> Direct Support Channel
+                      <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#ED1C24]/10 text-[#ED1C24] rounded-full text-[9px] font-bold uppercase tracking-wider mb-1">
+                        <MessageSquare className="h-3 w-3" /> Direct Support Channel
                       </div>
-                      <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+                      <h1 className="text-2xl font-black tracking-tight text-slate-900">
                         Admin <span className="text-[#ED1C24]">Support & Inquiries</span>
                       </h1>
-                      <p className="text-slate-500 font-medium text-xs mt-1">
+                      <p className="text-slate-400 font-semibold text-xs mt-0.5">
                         Send messages directly to the ERCS Administration Team regarding volunteer requests, payments, or platform assistance.
                       </p>
                    </div>
                    <Button 
                      onClick={() => setShowSupportForm(!showSupportForm)}
-                     className="h-10 px-5 bg-slate-900 hover:bg-[#ED1C24] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2"
+                     className="h-8 px-3.5 bg-slate-900 hover:bg-[#ED1C24] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0"
                    >
-                     <Plus className="h-4 w-4" /> {showSupportForm ? "View Ticket History" : "New Message"}
+                     <Plus className="h-3.5 w-3.5" /> {showSupportForm ? "Ticket History" : "New Message"}
                    </Button>
                 </div>
 
                 {showSupportForm ? (
-                  <form onSubmit={handleSendSupportMessage} className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-5">
-                    <h3 className="text-base font-extrabold text-slate-900 border-b border-slate-100 pb-3">
-                      Compose Support Message to ERCS Admin
-                    </h3>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Inquiry Category *</Label>
-                        <select 
+                  <form onSubmit={handleSendSupportMessage} className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-3.5">
+                    <div className="grid md:grid-cols-2 gap-3.5">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Category</Label>
+                        <select
                           value={supportCategory}
                           onChange={(e) => setSupportCategory(e.target.value)}
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#ED1C24]/10"
+                          className="w-full h-9 bg-slate-50 border border-slate-200 rounded-xl px-2.5 text-xs font-semibold text-slate-800 outline-none"
                         >
-                          <option value="Volunteer Request Assistance">Volunteer Request Assistance</option>
-                          <option value="Payment & ArifPay Gateway">Payment & ArifPay Gateway</option>
-                          <option value="Organization Verification">Organization Verification</option>
-                          <option value="Urgent Emergency Support">Urgent Emergency Support</option>
-                          <option value="Other Inquiry">Other Inquiry</option>
+                          <option value="GENERAL">General Inquiry</option>
+                          <option value="PAYMENT">Payment & Billing</option>
+                          <option value="VOLUNTEER">Volunteer Assignment</option>
+                          <option value="TECHNICAL">Technical Issue</option>
                         </select>
                       </div>
-
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Priority Level *</Label>
-                        <div className="flex gap-2">
-                          {["NORMAL", "URGENT"].map(level => (
-                            <button
-                              key={level}
-                              type="button"
-                              onClick={() => setSupportPriority(level)}
-                              className={`flex-1 h-10 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border ${supportPriority === level ? (level === 'URGENT' ? 'bg-[#ED1C24] text-white border-[#ED1C24]' : 'bg-slate-900 text-white border-slate-900') : 'bg-slate-50 text-slate-600 border-slate-200'}`}
-                            >
-                              {level === 'URGENT' ? '🚨 URGENT' : 'NORMAL'}
-                            </button>
-                          ))}
-                        </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase">Priority Level</Label>
+                        <select
+                          value={supportPriority}
+                          onChange={(e) => setSupportPriority(e.target.value)}
+                          className="w-full h-9 bg-slate-50 border border-slate-200 rounded-xl px-2.5 text-xs font-semibold text-slate-800 outline-none"
+                        >
+                          <option value="NORMAL">Normal Priority</option>
+                          <option value="HIGH">High Priority</option>
+                          <option value="URGENT">Urgent (Emergency)</option>
+                        </select>
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Subject *</Label>
-                      <Input 
-                        placeholder="e.g. Assistance needed for first aid volunteer matching"
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase">Subject</Label>
+                      <Input
+                        placeholder="e.g. Question regarding volunteer deployment timeline"
                         value={supportSubject}
                         onChange={(e) => setSupportSubject(e.target.value)}
-                        className="h-10 bg-slate-50 border-slate-200 rounded-xl font-medium text-xs text-slate-900"
+                        className="h-9 bg-slate-50 border-slate-200 rounded-xl text-xs font-medium"
                         required
                       />
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Message to Admin *</Label>
-                      <textarea 
-                        placeholder="Detail your request or issue clearly for the ERCS admin team..."
+                    <div className="space-y-1">
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase">Message Content</Label>
+                      <textarea
+                        placeholder="Please provide complete details regarding your inquiry or request..."
                         value={supportContent}
                         onChange={(e) => setSupportContent(e.target.value)}
-                        className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#ED1C24]/10 min-h-[110px] resize-none"
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-xs min-h-[80px] outline-none focus:ring-1 focus:ring-[#ED1C24]/20 text-slate-900 resize-none"
                         required
                       />
                     </div>
 
-                    <div className="pt-2 flex justify-end gap-3">
+                    <div className="pt-1 flex justify-end gap-2">
                       <Button 
                         type="button" 
                         variant="outline" 
                         onClick={() => setShowSupportForm(false)}
-                        className="h-11 px-6 rounded-xl font-bold text-xs uppercase tracking-wider border-slate-200 text-slate-600"
+                        className="h-8 px-4 rounded-xl font-bold text-xs uppercase tracking-wider border-slate-200 text-slate-600"
                       >
                         Cancel
                       </Button>
                       <Button 
                         type="submit" 
                         disabled={sendingSupport || !supportSubject || !supportContent}
-                        className="h-11 px-8 bg-[#ED1C24] hover:bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md shadow-[#ED1C24]/20"
+                        className="h-8 px-5 bg-[#ED1C24] hover:bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
                       >
-                        {sendingSupport ? "Sending..." : <>Send Message <Send className="h-4 w-4" /></>}
+                        {sendingSupport ? "Sending..." : <>Send Message <Send className="h-3.5 w-3.5" /></>}
                       </Button>
                     </div>
                   </form>
                 ) : (
-                  <div className="space-y-6">
-                     <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                           <div className="h-12 w-12 rounded-2xl bg-[#ED1C24]/10 flex items-center justify-center text-[#ED1C24] shrink-0">
-                              <MessageSquare className="h-6 w-6" />
+                  <div className="space-y-4">
+                     <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                           <div className="h-9 w-9 rounded-xl bg-[#ED1C24]/10 flex items-center justify-center text-[#ED1C24] shrink-0">
+                              <MessageSquare className="h-4 w-4" />
                            </div>
                            <div>
-                              <h3 className="font-extrabold text-slate-900 text-sm">Need immediate assistance?</h3>
-                              <p className="text-xs text-slate-500 font-medium">Send a direct message to ERCS admins or check ticket progress below.</p>
+                              <h3 className="font-bold text-slate-900 text-xs">Need immediate assistance?</h3>
+                              <p className="text-[11px] text-slate-500 font-medium">Send a direct message to ERCS admins or check ticket status below.</p>
                            </div>
                         </div>
                         <Button 
                           onClick={() => setShowSupportForm(true)}
-                          className="h-10 px-6 bg-[#ED1C24] hover:bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shrink-0"
+                          className="h-8 px-4 bg-[#ED1C24] hover:bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shrink-0"
                         >
                            Write Support Message
                         </Button>
                      </div>
 
-                     <div className="space-y-3">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Support Ticket History</h3>
+                     <div className="space-y-2.5">
+                        <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Support Ticket History</h3>
                         {supportMessages.length === 0 ? (
-                           <div className="bg-slate-50 p-8 rounded-2xl text-center border border-slate-100">
+                           <div className="bg-slate-50 p-6 rounded-2xl text-center border border-slate-100">
                               <p className="text-slate-400 font-semibold text-xs">No support messages sent yet.</p>
                            </div>
                         ) : (
                            supportMessages.map(msg => (
-                              <div key={msg.id} className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2">
+                              <div key={msg.id} className="bg-white p-3.5 rounded-xl border border-slate-200/80 space-y-1.5">
                                  <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                       <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${msg.priority === 'URGENT' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}`}>
+                                       <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${msg.priority === 'URGENT' ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}`}>
                                           {msg.priority}
                                        </span>
-                                       <span className="text-xs font-extrabold text-slate-900">{msg.subject}</span>
+                                       <span className="text-xs font-bold text-slate-900">{msg.subject}</span>
                                     </div>
-                                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-emerald-100">
+                                    <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
                                        {msg.status}
                                     </span>
                                  </div>
-                                 <p className="text-xs text-slate-600 font-medium bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                 <p className="text-xs text-slate-600 font-medium bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                                     {msg.content}
                                  </p>
-                                 <div className="flex justify-between items-center text-[10px] text-slate-400 font-semibold pt-1">
+                                 <div className="flex justify-between items-center text-[9px] text-slate-400 font-medium pt-0.5">
                                     <span>Category: {msg.category}</span>
                                     <span>Sent: {msg.created_at}</span>
                                  </div>
