@@ -201,12 +201,12 @@ export default function LoginPage() {
                 unoptimized
               />
             </div>
-            <h1 className="text-4xl md:text-5xl font-black text-black leading-[0.9] tracking-tighter">
-              Manage Your <br />
-              <span className="text-[#ED1C24]">Mission.</span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-black leading-[1.05] tracking-tighter">
+              Be a Member, Volunteer and <br />
+              <span className="text-[#ED1C24]">Red Cross Family</span>
             </h1>
-            <p className="text-base text-black/60 font-medium max-w-sm">
-              Access the Ethiopia Red Cross Society internal portal to manage volunteers, memberships, and humanitarian impact.
+            <p className="text-sm sm:text-base text-black/60 font-medium max-w-sm">
+              Access the Ethiopian Red Cross Society portal to manage memberships, volunteer assignments, and humanitarian impact.
             </p>
           </div>
 

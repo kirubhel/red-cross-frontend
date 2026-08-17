@@ -20,7 +20,16 @@ import {
   Briefcase,
   MessageSquare,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  Star,
+  MapPin,
+  Award,
+  CheckSquare,
+  Square,
+  ThumbsUp,
+  Heart,
+  Check,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +52,23 @@ type VolunteerRequest = {
   payment_amount: number;
   payment_status: string;
   activities: { name: string; count: number }[];
+  volunteer_type: string;
+  title?: string;
+  description?: string;
   payment_proof_url?: string;
+  region_id?: number;
+  zone_id?: string;
+  region_name?: string;
+  zone_name?: string;
+  duration_days?: number;
+  benefits?: {
+    accommodation?: string;
+    meals?: string;
+    transport?: string;
+    safety_gear?: boolean;
+    certificate?: boolean;
+    notes?: string;
+  };
 };
 
 type Assignment = {
@@ -52,7 +77,51 @@ type Assignment = {
   volunteer_id: string;
   status: string;
   assigned_at: string;
+  hours_worked?: number;
+  rating?: number;
+  feedback?: string;
+  evaluated_at?: string;
+  evaluation?: {
+    punctuality: number;
+    skills: number;
+    teamwork: number;
+    conduct: number;
+    overall: number;
+    hours: number;
+    outcome: string;
+    notes: string;
+  };
 };
+
+type Region = {
+  id: number;
+  name: string;
+  code: string;
+};
+
+type Zone = {
+  id: string;
+  region_id: number;
+  name: string;
+  code: string;
+};
+
+const DEFAULT_REGIONS: Region[] = [
+  { id: 1, name: "Addis Ababa", code: "AA" },
+  { id: 2, name: "Afar", code: "AF" },
+  { id: 3, name: "Amhara", code: "AM" },
+  { id: 4, name: "Benishangul-Gumuz", code: "BG" },
+  { id: 5, name: "Dire Dawa", code: "DD" },
+  { id: 6, name: "Gambela", code: "GM" },
+  { id: 7, name: "Harari", code: "HR" },
+  { id: 8, name: "Oromia", code: "OR" },
+  { id: 9, name: "Sidama", code: "SD" },
+  { id: 10, name: "Somali", code: "SM" },
+  { id: 11, name: "South Ethiopia", code: "SE" },
+  { id: 12, name: "South West Ethiopia", code: "SW" },
+  { id: 13, name: "Tigray", code: "TG" },
+  { id: 14, name: "Central Ethiopia", code: "CE" }
+];
 
 const ENGAGEMENT_AREAS = [
   "First Aid Service",
@@ -77,13 +146,15 @@ const StatusBadge = ({ status }: { status: string }) => {
     PENDING: "bg-amber-500/10 text-amber-500 border-amber-500/20",
     APPROVED: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
     REJECTED: "bg-rose-500/10 text-rose-500 border-rose-500/20",
-    COMPLETED: "bg-blue-500/10 text-blue-500 border-blue-500/20"
+    MATCHED: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+    COMPLETED: "bg-purple-500/10 text-purple-500 border-purple-500/20"
   };
   
   const icons = {
     PENDING: <Clock className="h-3 w-3" />,
     APPROVED: <CheckCircle2 className="h-3 w-3" />,
     REJECTED: <AlertCircle className="h-3 w-3" />,
+    MATCHED: <Users className="h-3 w-3" />,
     COMPLETED: <ShieldCheck className="h-3 w-3" />
   };
 
@@ -103,6 +174,19 @@ export default function OrganizationPortal() {
   const [requests, setRequests] = useState<VolunteerRequest[]>([]);
   const [showForm, setShowForm] = useState(false);
   
+  // Pricing Rates & Hierarchy
+  const [volunteerRates, setVolunteerRates] = useState({
+    dailyRatePerVolunteer: 500,
+    accommodationDailyCost: 350,
+    mealDailyCost: 250,
+    transportAllowance: 150,
+    insuranceFeePerVolunteer: 50,
+    minMissionDays: 1,
+    adminFeePercent: 5
+  });
+  const [regions, setRegions] = useState<Region[]>(DEFAULT_REGIONS);
+  const [zones, setZones] = useState<Zone[]>([]);
+  
   // Form State
   const [headcount, setHeadcount] = useState("");
   const [qualifications, setQualifications] = useState("");
@@ -116,6 +200,18 @@ export default function OrganizationPortal() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  
+  // Regional & Benefits Form State
+  const [targetRegionId, setTargetRegionId] = useState<number>(1);
+  const [targetZoneId, setTargetZoneId] = useState<string>("");
+  const [durationDays, setDurationDays] = useState<number>(1);
+  const [benefitsAccommodation, setBenefitsAccommodation] = useState<string>("PROVIDED");
+  const [benefitsMeals, setBenefitsMeals] = useState<string>("FULL_BOARD");
+  const [benefitsTransport, setBenefitsTransport] = useState<string>("ORG_VEHICLE");
+  const [benefitsSafetyGear, setBenefitsSafetyGear] = useState<boolean>(true);
+  const [benefitsCertificate, setBenefitsCertificate] = useState<boolean>(true);
+  const [benefitsNotes, setBenefitsNotes] = useState<string>("");
+  
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [tempPayload, setTempPayload] = useState<any>(null);
   
@@ -136,6 +232,22 @@ export default function OrganizationPortal() {
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+
+  // Volunteer Selection & Evaluation State
+  const [selectedAssignmentIds, setSelectedAssignmentIds] = useState<string[]>([]);
+  const [showEvaluationModal, setShowEvaluationModal] = useState(false);
+  const [evaluatingAssignments, setEvaluatingAssignments] = useState<Assignment[]>([]);
+  const [evaluationForm, setEvaluationForm] = useState({
+    punctuality: 5,
+    skills: 5,
+    teamwork: 5,
+    conduct: 5,
+    hoursWorked: 8,
+    outcome: "COMPLETED_EXCELLENT",
+    feedback: "",
+    certificateIssued: true
+  });
+  const [submittingEvaluation, setSubmittingEvaluation] = useState(false);
 
   // Support Messaging State
   const [showSupportForm, setShowSupportForm] = useState(false);
@@ -222,12 +334,58 @@ export default function OrganizationPortal() {
     try {
       const res = await api.get("/organizations/requests");
       setRequests(res.data.requests || []);
-      setLoading(false);
     } catch (err) {
       console.error(err);
-      // toast.error("Failed to load portal data");
+    } finally {
       setLoading(false);
     }
+
+    try {
+      const settingsRes = await api.get("/system-settings");
+      const settings = settingsRes.data?.settings || {};
+      if (settings.volunteer_rates) {
+        try {
+          setVolunteerRates(JSON.parse(settings.volunteer_rates));
+        } catch (_) {}
+      }
+      if (settings.all_regions) {
+        try {
+          setRegions(JSON.parse(settings.all_regions));
+        } catch (_) {}
+      }
+      if (settings.locations_hierarchy) {
+        try {
+          const parsed = JSON.parse(settings.locations_hierarchy);
+          setZones(parsed.zones || []);
+        } catch (_) {}
+      }
+    } catch (_) {}
+  };
+
+  const calcEstimatedCost = (volCount: number, days: number) => {
+    const vCount = Math.max(volCount || 1, 1);
+    const dCount = Math.max(days || 1, 1);
+    const dailyBase = volunteerRates.dailyRatePerVolunteer || 500;
+    const accommodation = benefitsAccommodation === "PROVIDED" ? (volunteerRates.accommodationDailyCost || 350) : 0;
+    const meals = (benefitsMeals === "FULL_BOARD" || benefitsMeals === "DAILY_STIPEND") ? (volunteerRates.mealDailyCost || 250) : (benefitsMeals === "LUNCH_ONLY" ? Math.round((volunteerRates.mealDailyCost || 250) * 0.6) : 0);
+    const transport = (benefitsTransport === "DAILY_ALLOWANCE" || benefitsTransport === "ORG_VEHICLE") ? (volunteerRates.transportAllowance || 150) : 0;
+    const insurance = volunteerRates.insuranceFeePerVolunteer || 50;
+    const adminPercent = (volunteerRates.adminFeePercent || 5) / 100;
+
+    const subtotalPerVol = (dailyBase + accommodation + meals + transport) * dCount + insurance;
+    const subtotal = subtotalPerVol * vCount;
+    const adminFee = Math.round(subtotal * adminPercent);
+    const total = subtotal + adminFee;
+
+    return {
+      dailyBase: dailyBase * dCount * vCount,
+      accommodation: accommodation * dCount * vCount,
+      meals: meals * dCount * vCount,
+      transport: transport * dCount * vCount,
+      insurance: insurance * vCount,
+      adminFee,
+      total
+    };
   };
 
   const handleCreateRequest = async (e: React.FormEvent) => {
@@ -237,11 +395,20 @@ export default function OrganizationPortal() {
       return;
     }
 
+    if (!targetRegionId) {
+      toast.error("Please select a target deployment region");
+      return;
+    }
+
     const activitiesSum = activities.reduce((acc, curr) => acc + (curr.count || 0), 0);
     if (activitiesSum > Number(headcount)) {
       toast.error(`Activity breakdown sum (${activitiesSum}) cannot exceed total headcount (${headcount})`);
       return;
     }
+
+    const selectedRegionObj = regions.find(r => r.id === Number(targetRegionId));
+    const selectedZoneObj = zones.find(z => z.id === targetZoneId);
+    const costEstimate = calcEstimatedCost(Number(headcount), durationDays);
 
     const payload = {
       headcount: Number(headcount),
@@ -253,7 +420,21 @@ export default function OrganizationPortal() {
       activities,
       volunteer_type: volunteerType,
       title,
-      description
+      description,
+      region_id: Number(targetRegionId),
+      zone_id: targetZoneId,
+      region_name: selectedRegionObj?.name || "",
+      zone_name: selectedZoneObj?.name || "",
+      duration_days: durationDays,
+      payment_amount: costEstimate.total,
+      benefits: {
+        accommodation: benefitsAccommodation,
+        meals: benefitsMeals,
+        transport: benefitsTransport,
+        safety_gear: benefitsSafetyGear,
+        certificate: benefitsCertificate,
+        notes: benefitsNotes
+      }
     };
 
     setTempPayload(payload);
@@ -265,7 +446,7 @@ export default function OrganizationPortal() {
     setSubmitting(true);
     try {
       await api.post("/organizations/requests", tempPayload);
-      toast.success("Volunteer request created!");
+      toast.success("Volunteer mission request created successfully!");
       setShowForm(false);
       setShowConfirmModal(false);
       
@@ -280,6 +461,8 @@ export default function OrganizationPortal() {
       setSelectedAreas([]);
       setTitle("");
       setDescription("");
+      setDurationDays(1);
+      setBenefitsNotes("");
       
       fetchPortalData();
     } catch (err) {
@@ -320,6 +503,7 @@ export default function OrganizationPortal() {
 
   const handleViewDetails = async (req: VolunteerRequest) => {
     setSelectedRequest(req);
+    setSelectedAssignmentIds([]);
     if (req.status === "APPROVED" || req.status === "MATCHED" || req.status === "COMPLETED") {
       setLoadingAssignments(true);
       try {
@@ -330,6 +514,83 @@ export default function OrganizationPortal() {
       } finally {
         setLoadingAssignments(false);
       }
+    }
+  };
+
+  const handleToggleSelectVolunteer = (id: string) => {
+    setSelectedAssignmentIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedAssignmentIds.length === assignments.length) {
+      setSelectedAssignmentIds([]);
+    } else {
+      setSelectedAssignmentIds(assignments.map(a => a.id));
+    }
+  };
+
+  const handleOpenEvaluation = (targetAssignments: Assignment[]) => {
+    if (targetAssignments.length === 0) return;
+    setEvaluatingAssignments(targetAssignments);
+    setEvaluationForm({
+      punctuality: 5,
+      skills: 5,
+      teamwork: 5,
+      conduct: 5,
+      hoursWorked: (selectedRequest?.duration_days || 1) * 8 || 8,
+      outcome: "COMPLETED_EXCELLENT",
+      feedback: "",
+      certificateIssued: true
+    });
+    setShowEvaluationModal(true);
+  };
+
+  const handleSaveEvaluation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (evaluatingAssignments.length === 0) return;
+    setSubmittingEvaluation(true);
+    try {
+      const overallRating = Math.round(((Number(evaluationForm.punctuality) + Number(evaluationForm.skills) + Number(evaluationForm.teamwork) + Number(evaluationForm.conduct)) / 4) * 10) / 10;
+      
+      for (const a of evaluatingAssignments) {
+        await api.put("/organizations/volunteers/evaluate", {
+          assignment_id: a.id,
+          volunteer_id: a.volunteer_id,
+          request_id: selectedRequest?.id,
+          hours_worked: Number(evaluationForm.hoursWorked),
+          punctuality: Number(evaluationForm.punctuality),
+          skills: Number(evaluationForm.skills),
+          teamwork: Number(evaluationForm.teamwork),
+          conduct: Number(evaluationForm.conduct),
+          overall: overallRating,
+          outcome: evaluationForm.outcome,
+          feedback: evaluationForm.feedback,
+          certificate_issued: evaluationForm.certificateIssued
+        }).catch(() => null);
+      }
+
+      toast.success(`Successfully submitted performance evaluation for ${evaluatingAssignments.length} volunteer(s)!`);
+      
+      const evaluatedIds = evaluatingAssignments.map(a => a.id);
+      setAssignments(prev => prev.map(a => evaluatedIds.includes(a.id) ? {
+        ...a,
+        status: "COMPLETED",
+        hours_worked: Number(evaluationForm.hoursWorked),
+        rating: overallRating,
+        feedback: evaluationForm.feedback,
+        evaluated_at: new Date().toISOString()
+      } : a));
+
+      setSelectedAssignmentIds([]);
+      setShowEvaluationModal(false);
+      setEvaluatingAssignments([]);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to submit volunteer evaluation report");
+    } finally {
+      setSubmittingEvaluation(false);
     }
   };
 
@@ -968,6 +1229,57 @@ export default function OrganizationPortal() {
                   </div>
                 </div>
 
+                {/* Regional Branch & Zone Targeting */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-[#ED1C24]" /> Target Region *
+                    </Label>
+                    <select
+                      value={targetRegionId}
+                      onChange={(e) => {
+                        const newRegId = Number(e.target.value);
+                        setTargetRegionId(newRegId);
+                        setTargetZoneId("");
+                      }}
+                      className="w-full h-9 bg-white border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#ED1C24]/10"
+                      required
+                    >
+                      {regions.map(r => (
+                        <option key={r.id} value={r.id}>{r.name} ({r.code})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">Target Zone / Sub-City</Label>
+                    <select
+                      value={targetZoneId}
+                      onChange={(e) => setTargetZoneId(e.target.value)}
+                      className="w-full h-9 bg-white border border-slate-200 rounded-xl px-3 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#ED1C24]/10"
+                    >
+                      <option value="">All Zones in Region</option>
+                      {zones.filter(z => z.region_id === Number(targetRegionId)).map(z => (
+                        <option key={z.id} value={z.id}>{z.name} ({z.code})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
+                      <Calendar className="h-3 w-3 text-[#ED1C24]" /> Mission Duration (Days) *
+                    </Label>
+                    <Input 
+                      type="number"
+                      min={1}
+                      value={durationDays}
+                      onChange={(e) => setDurationDays(Math.max(1, Number(e.target.value)))}
+                      className="h-9 bg-white border-slate-200 rounded-xl font-bold text-xs text-slate-900"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Mission Description *</Label>
                   <textarea 
@@ -1028,6 +1340,79 @@ export default function OrganizationPortal() {
                   </div>
                 </div>
 
+                {/* Volunteer Benefits & Accommodations */}
+                <div className="space-y-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24] flex items-center gap-1.5">
+                      <Award className="h-3.5 w-3.5" /> Volunteer Benefits & Accommodations Covered
+                    </Label>
+                    <span className="text-[9px] font-black uppercase text-slate-400">Policy Compliance</span>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-3">
+                    <div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Accommodation</span>
+                      <select 
+                        value={benefitsAccommodation} 
+                        onChange={(e) => setBenefitsAccommodation(e.target.value)}
+                        className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold text-slate-900"
+                      >
+                        <option value="PROVIDED">Provided by Org ({volunteerRates.accommodationDailyCost} ETB/d)</option>
+                        <option value="NOT_INCLUDED">Self / Not Applicable</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Meals & Per Diem</span>
+                      <select 
+                        value={benefitsMeals} 
+                        onChange={(e) => setBenefitsMeals(e.target.value)}
+                        className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold text-slate-900"
+                      >
+                        <option value="FULL_BOARD">Full Board ({volunteerRates.mealDailyCost} ETB/d)</option>
+                        <option value="LUNCH_ONLY">Lunch Only ({Math.round(volunteerRates.mealDailyCost * 0.6)} ETB/d)</option>
+                        <option value="DAILY_STIPEND">Daily Stipend ({volunteerRates.mealDailyCost} ETB/d)</option>
+                        <option value="NONE">None</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Local Transport</span>
+                      <select 
+                        value={benefitsTransport} 
+                        onChange={(e) => setBenefitsTransport(e.target.value)}
+                        className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold text-slate-900"
+                      >
+                        <option value="ORG_VEHICLE">Org Vehicle Arranged</option>
+                        <option value="DAILY_ALLOWANCE">Transport Allowance ({volunteerRates.transportAllowance} ETB/d)</option>
+                        <option value="NONE">None</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-4 pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                      <input 
+                        type="checkbox" 
+                        checked={benefitsSafetyGear} 
+                        onChange={(e) => setBenefitsSafetyGear(e.target.checked)}
+                        className="rounded text-[#ED1C24] focus:ring-red-500" 
+                      />
+                      <span className="text-xs font-bold text-slate-700">Safety Gear / Medical Kits Provided</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                      <input 
+                        type="checkbox" 
+                        checked={benefitsCertificate} 
+                        onChange={(e) => setBenefitsCertificate(e.target.checked)}
+                        className="rounded text-[#ED1C24] focus:ring-red-500" 
+                      />
+                      <span className="text-xs font-bold text-slate-700">Certificate of Appreciation Awarded</span>
+                    </label>
+                  </div>
+                </div>
+
                 {/* Engagement Areas & Qualifications */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -1067,6 +1452,24 @@ export default function OrganizationPortal() {
                     />
                   </div>
                 </div>
+
+                {/* Live Estimated Budget Card */}
+                {Number(headcount) > 0 && (
+                  <div className="bg-slate-900 text-white p-4 rounded-2xl space-y-2 border border-slate-800">
+                    <div className="flex justify-between items-center text-xs pb-2 border-b border-white/10">
+                      <span className="font-bold text-slate-300">Live Estimated Cost ({headcount} Volunteers × {durationDays} Days):</span>
+                      <span className="font-black text-lg text-white">
+                        {calcEstimatedCost(Number(headcount), durationDays).total.toLocaleString()} <span className="text-xs text-[#ED1C24]">ETB</span>
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] text-slate-400 font-semibold">
+                      <div>Daily Allowance: {calcEstimatedCost(Number(headcount), durationDays).dailyBase.toLocaleString()} ETB</div>
+                      <div>Accommodations: {calcEstimatedCost(Number(headcount), durationDays).accommodation.toLocaleString()} ETB</div>
+                      <div>Meals & Per Diem: {calcEstimatedCost(Number(headcount), durationDays).meals.toLocaleString()} ETB</div>
+                      <div>Admin Fee ({volunteerRates.adminFeePercent}%): {calcEstimatedCost(Number(headcount), durationDays).adminFee.toLocaleString()} ETB</div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Specific Activities Breakdown */}
                 <div className="space-y-3 pt-2 border-t border-slate-100">
@@ -1111,8 +1514,8 @@ export default function OrganizationPortal() {
                 {/* Action Footer */}
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
                   <Button 
-                    type="button"
-                    variant="outline"
+                    type="button" 
+                    variant="outline" 
                     onClick={() => setShowForm(false)}
                     className="h-11 px-6 text-slate-600 font-bold uppercase tracking-wider text-xs border-slate-200 rounded-xl hover:bg-slate-100"
                   >
@@ -1145,14 +1548,22 @@ export default function OrganizationPortal() {
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
-              className="w-full max-w-3xl bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-2xl relative z-10 overflow-hidden max-h-[88vh] overflow-y-auto custom-scrollbar"
+              className="w-full max-w-4xl bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-2xl relative z-10 overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
             >
               <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-900" />
               
               <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
-                  <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Request <span className="text-[#ED1C24]">Details</span></h2>
-                  <p className="text-slate-500 font-medium text-xs mt-0.5">{selectedRequest.activities_skills}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] bg-red-50 px-2 py-0.5 rounded">Mission Details</span>
+                    {selectedRequest.region_name && (
+                      <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded flex items-center gap-1">
+                        <MapPin className="h-2.5 w-2.5" /> {selectedRequest.region_name} {selectedRequest.zone_name ? `· ${selectedRequest.zone_name}` : ""}
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">{selectedRequest.title || selectedRequest.activities_skills}</h2>
+                  <p className="text-slate-500 font-medium text-xs mt-0.5">{selectedRequest.description || selectedRequest.activities_skills}</p>
                 </div>
                 <Button variant="ghost" onClick={() => setSelectedRequest(null)} className="h-8 w-8 rounded-full p-0 hover:bg-slate-100">
                   <Plus className="h-5 w-5 rotate-45 text-slate-400" />
@@ -1219,29 +1630,96 @@ export default function OrganizationPortal() {
 
                 {/* Volunteers/Assignments Section */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Assigned Volunteers</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Assigned Volunteers ({assignments.length})
+                    </h3>
+                    {assignments.length > 0 && (
+                      <button 
+                        type="button"
+                        onClick={handleToggleSelectAll}
+                        className="text-[10px] font-black uppercase tracking-wider text-slate-600 hover:text-[#ED1C24] flex items-center gap-1.5"
+                      >
+                        {selectedAssignmentIds.length === assignments.length ? (
+                          <><CheckSquare className="h-3.5 w-3.5 text-[#ED1C24]" /> Deselect All</>
+                        ) : (
+                          <><Square className="h-3.5 w-3.5 text-slate-400" /> Select All ({selectedAssignmentIds.length})</>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Batch Actions Bar */}
+                  {selectedAssignmentIds.length > 0 && (
+                    <div className="bg-slate-900 text-white p-3 rounded-2xl flex items-center justify-between shadow-lg animate-in slide-in-from-top-2">
+                      <span className="text-xs font-bold">
+                        {selectedAssignmentIds.length} volunteer(s) selected
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const targets = assignments.filter(a => selectedAssignmentIds.includes(a.id));
+                          handleOpenEvaluation(targets);
+                        }}
+                        className="h-8 bg-[#ED1C24] hover:bg-red-600 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Star className="h-3.5 w-3.5 fill-current" /> Submit Evaluation ({selectedAssignmentIds.length})
+                      </Button>
+                    </div>
+                  )}
+
                   {loadingAssignments ? (
-                    <div className="p-6 text-center text-slate-400 font-semibold text-xs animate-pulse">Loading...</div>
+                    <div className="p-6 text-center text-slate-400 font-semibold text-xs animate-pulse">Loading assigned personnel...</div>
                   ) : assignments.length === 0 ? (
                     <div className="bg-slate-50 p-6 rounded-2xl text-center border border-slate-100">
                       <p className="text-slate-400 font-medium text-xs">No volunteers assigned yet. {selectedRequest.status !== 'APPROVED' ? "Wait for approval." : "Wait for matching."}</p>
                     </div>
                   ) : (
-                    <div className="space-y-2.5">
+                    <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
                       {assignments.map(a => (
-                        <div key={a.id} className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center justify-between">
-                          <div>
-                            <p className="font-bold text-slate-900 text-sm">{a.volunteer_name || "Unknown Volunteer"}</p>
-                            <p className="text-[10px] font-semibold text-slate-400">ID: {a.volunteer_id.substring(0,8)}</p>
+                        <div key={a.id} className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${selectedAssignmentIds.includes(a.id) ? 'bg-red-50/50 border-[#ED1C24]/40 shadow-sm' : 'bg-white border-slate-200'}`}>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedAssignmentIds.includes(a.id)}
+                              onChange={() => handleToggleSelectVolunteer(a.id)}
+                              className="rounded text-[#ED1C24] focus:ring-red-500 h-4 w-4"
+                            />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-slate-900 text-sm">{a.volunteer_name || "Volunteer"}</p>
+                                <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                  a.status === 'COMPLETED' ? 'bg-purple-100 text-purple-700' :
+                                  a.status === 'ONBOARDED' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {a.status === 'ONBOARDED' ? 'ON SERVICE' : a.status}
+                                </span>
+                              </div>
+                              <p className="text-[10px] font-semibold text-slate-400">ID: {a.volunteer_id.substring(0,8)}</p>
+                              {a.rating && (
+                                <div className="flex items-center gap-1 text-amber-500 text-[10px] font-black mt-0.5">
+                                  <Star className="h-3 w-3 fill-current" /> {a.rating} / 5.0 Rating · {a.hours_worked || 8} hrs
+                                </div>
+                              )}
+                            </div>
                           </div>
+
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${a.status === 'ONBOARDED' ? 'text-emerald-500' : 'text-blue-500'}`}>{a.status}</span>
                             {a.status === 'ASSIGNED' && (
                               <Button 
                                 onClick={() => handleOnboard(a.id)}
                                 className="h-7 px-3 bg-slate-900 hover:bg-[#ED1C24] text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all"
                               >
                                 Onboard
+                              </Button>
+                            )}
+                            {(a.status === 'ONBOARDED' || a.status === 'ASSIGNED') && (
+                              <Button 
+                                size="sm"
+                                onClick={() => handleOpenEvaluation([a])}
+                                className="h-7 px-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1"
+                              >
+                                <Star className="h-3 w-3 fill-current" /> Evaluate
                               </Button>
                             )}
                           </div>
@@ -1254,6 +1732,169 @@ export default function OrganizationPortal() {
             </motion.div>
           </motion.div>
         )}
+
+        {/* Volunteer Performance Evaluation Modal */}
+        {showEvaluationModal && evaluatingAssignments.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowEvaluationModal(false)} />
+            <motion.div 
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              className="w-full max-w-lg bg-white rounded-3xl p-6 md:p-8 shadow-2xl relative z-10 max-h-[90vh] overflow-y-auto custom-scrollbar"
+            >
+              <div className="h-12 w-12 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-500">
+                <Star className="h-6 w-6 fill-current" />
+              </div>
+              <h2 className="text-2xl font-black text-center tracking-tight text-slate-900">
+                Volunteer <span className="text-amber-500">Performance Evaluation</span>
+              </h2>
+              <p className="text-slate-500 font-medium text-xs text-center mb-6">
+                Evaluating {evaluatingAssignments.length} volunteer(s): {evaluatingAssignments.map(a => a.volunteer_name || "Volunteer").join(", ")}
+              </p>
+
+              <form onSubmit={handleSaveEvaluation} className="space-y-4">
+                {/* 4-Criteria Star Ratings */}
+                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                    <span>1. Punctuality & Attendance</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setEvaluationForm({ ...evaluationForm, punctuality: star })}
+                          className="focus:outline-none"
+                        >
+                          <Star className={`h-4 w-4 ${star <= evaluationForm.punctuality ? 'text-amber-500 fill-current' : 'text-slate-300'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                    <span>2. Humanitarian Skill & Execution</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setEvaluationForm({ ...evaluationForm, skills: star })}
+                          className="focus:outline-none"
+                        >
+                          <Star className={`h-4 w-4 ${star <= evaluationForm.skills ? 'text-amber-500 fill-current' : 'text-slate-300'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                    <span>3. Teamwork & Communication</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setEvaluationForm({ ...evaluationForm, teamwork: star })}
+                          className="focus:outline-none"
+                        >
+                          <Star className={`h-4 w-4 ${star <= evaluationForm.teamwork ? 'text-amber-500 fill-current' : 'text-slate-300'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                    <span>4. Discipline & Conduct</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setEvaluationForm({ ...evaluationForm, conduct: star })}
+                          className="focus:outline-none"
+                        >
+                          <Star className={`h-4 w-4 ${star <= evaluationForm.conduct ? 'text-amber-500 fill-current' : 'text-slate-300'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-bold text-slate-600 uppercase">Hours Contributed</Label>
+                    <Input 
+                      type="number"
+                      value={evaluationForm.hoursWorked}
+                      onChange={(e) => setEvaluationForm({ ...evaluationForm, hoursWorked: Number(e.target.value) })}
+                      className="h-9 bg-slate-50 border-slate-200 rounded-xl font-bold text-xs text-slate-900"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-bold text-slate-600 uppercase">Mission Outcome</Label>
+                    <select
+                      value={evaluationForm.outcome}
+                      onChange={(e) => setEvaluationForm({ ...evaluationForm, outcome: e.target.value })}
+                      className="w-full h-9 bg-slate-50 border border-slate-200 rounded-xl px-2 text-xs font-bold text-slate-900"
+                    >
+                      <option value="COMPLETED_EXCELLENT">Completed with Distinction ⭐</option>
+                      <option value="COMPLETED_SATISFACTORY">Completed Satisfactorily</option>
+                      <option value="RELEASED_EARLY">Released Early</option>
+                      <option value="INCIDENT_REPORTED">Incident Reported</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-bold text-slate-600 uppercase">Commendation & Feedback Notes</Label>
+                  <textarea
+                    placeholder="Write detailed commendation, task performance notes, or constructive feedback..."
+                    value={evaluationForm.feedback}
+                    onChange={(e) => setEvaluationForm({ ...evaluationForm, feedback: e.target.value })}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-xs min-h-[70px] outline-none focus:ring-2 focus:ring-amber-500/20 text-slate-900 resize-none"
+                    required
+                  />
+                </div>
+
+                <label className="flex items-center gap-2 cursor-pointer bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <input
+                    type="checkbox"
+                    checked={evaluationForm.certificateIssued}
+                    onChange={(e) => setEvaluationForm({ ...evaluationForm, certificateIssued: e.target.checked })}
+                    className="rounded text-amber-500 focus:ring-amber-500"
+                  />
+                  <span className="text-xs font-bold text-slate-800">Issue ERCS Official Certificate of Service</span>
+                </label>
+
+                <div className="grid grid-cols-2 gap-3 pt-3">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowEvaluationModal(false)}
+                    className="h-11 rounded-xl font-bold uppercase tracking-wider text-xs border-slate-200"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={submittingEvaluation}
+                    className="h-11 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black uppercase tracking-wider text-xs shadow-md shadow-amber-500/20"
+                  >
+                    {submittingEvaluation ? "Submitting..." : "Submit Report & Release"}
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+
         {showConfirmModal && tempPayload && (
           <motion.div 
             initial={{ opacity: 0 }}
@@ -1267,25 +1908,29 @@ export default function OrganizationPortal() {
               animate={{ scale: 1, y: 0 }}
               className="w-full max-w-md bg-white rounded-3xl p-6 md:p-8 shadow-2xl relative z-10 text-center"
             >
-              <div className="h-14 w-14 bg-[#ED1C24]/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <div className="h-14 w-14 bg-[#ED1C24]/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <AlertCircle className="h-7 w-7 text-[#ED1C24]" />
               </div>
-              <h2 className="text-2xl font-extrabold tracking-tight mb-2 text-slate-900">Confirm <span className="text-[#ED1C24]">Mission Request</span></h2>
-              <p className="text-slate-500 font-medium text-xs mb-6">You are requesting {tempPayload.headcount} volunteers. Please review the estimated costs below.</p>
+              <h2 className="text-2xl font-extrabold tracking-tight mb-1 text-slate-900">Confirm <span className="text-[#ED1C24]">Mission Request</span></h2>
+              <p className="text-slate-500 font-medium text-xs mb-5">Deploying {tempPayload.headcount} volunteers for {tempPayload.duration_days} day(s) in {tempPayload.region_name || "Target Region"}.</p>
               
-              <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3 border border-slate-100">
-                <div className="flex justify-between items-center text-xs font-semibold text-slate-500">
-                  <span>Volunteers</span>
-                  <span className="text-slate-900 font-bold">{tempPayload.headcount}</span>
+              <div className="bg-slate-50 rounded-2xl p-4 mb-5 space-y-2.5 border border-slate-100 text-left text-xs">
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>Target Region & Zone:</span>
+                  <span className="text-slate-900 font-bold">{tempPayload.region_name} {tempPayload.zone_name ? `· ${tempPayload.zone_name}` : ""}</span>
                 </div>
-                <div className="flex justify-between items-center text-xs font-semibold text-slate-500">
-                  <span>Rate per Volunteer</span>
-                  <span className="text-slate-900 font-bold">{profile?.rate_per_volunteer || 0} ETB</span>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>Personnel Breakdown:</span>
+                  <span className="text-slate-900 font-bold">{tempPayload.headcount} Volunteers ({tempPayload.men_count}M / {tempPayload.women_count}W)</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>Duration:</span>
+                  <span className="text-slate-900 font-bold">{tempPayload.duration_days} Day(s)</span>
                 </div>
                 <div className="h-px bg-slate-200" />
                 <div className="flex justify-between items-center text-xs font-bold text-[#ED1C24]">
-                  <span>Total Estimated Cost</span>
-                  <span className="text-lg font-extrabold text-slate-900">{(tempPayload.headcount * (profile?.rate_per_volunteer || 0)).toLocaleString()} ETB</span>
+                  <span>Total Calculated Budget</span>
+                  <span className="text-xl font-black text-slate-900">{(tempPayload.payment_amount || 0).toLocaleString()} <span className="text-xs text-[#ED1C24]">ETB</span></span>
                 </div>
               </div>
 

@@ -18,6 +18,16 @@ type MemberIDConfig = {
   useZoneCode?: boolean;
 };
 
+export type VolunteerRatesConfig = {
+  dailyRatePerVolunteer: number;
+  accommodationDailyCost: number;
+  mealDailyCost: number;
+  transportAllowance: number;
+  insuranceFeePerVolunteer: number;
+  minMissionDays: number;
+  adminFeePercent: number;
+};
+
 type Region = {
   id: number;
   name: string;
@@ -47,7 +57,7 @@ export default function SystemSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<"id" | "regions" | "zones" | "woredas" | "assets" | "system" | "security">("id");
+  const [activeTab, setActiveTab] = useState<"id" | "volunteer_rates" | "regions" | "zones" | "woredas" | "assets" | "system" | "security">("id");
   
   const [regions, setRegions] = useState<Region[]>([]);
   const [locationHierarchy, setLocationHierarchy] = useState<LocationHierarchy>({ zones: [], woredas: [] });
@@ -62,6 +72,16 @@ export default function SystemSettingsPage() {
     padding: 6,
     useRegionCode: true,
     useZoneCode: true,
+  });
+
+  const [volunteerRates, setVolunteerRates] = useState<VolunteerRatesConfig>({
+    dailyRatePerVolunteer: 500,
+    accommodationDailyCost: 350,
+    mealDailyCost: 250,
+    transportAllowance: 150,
+    insuranceFeePerVolunteer: 50,
+    minMissionDays: 1,
+    adminFeePercent: 5
   });
 
   const [idAssets, setIdAssets] = useState({
@@ -136,6 +156,12 @@ export default function SystemSettingsPage() {
 
       if (settings.member_id_config) {
         setMemberConfig(JSON.parse(settings.member_id_config));
+      }
+
+      if (settings.volunteer_rates) {
+        try {
+          setVolunteerRates(JSON.parse(settings.volunteer_rates));
+        } catch (_) {}
       }
 
       if (settings.id_assets) {
@@ -225,6 +251,10 @@ export default function SystemSettingsPage() {
           value_json: JSON.stringify(memberConfig),
         }),
         api.post("/system-settings", {
+          key: "volunteer_rates",
+          value_json: JSON.stringify(volunteerRates),
+        }),
+        api.post("/system-settings", {
           key: "locations_hierarchy",
           value_json: JSON.stringify(locationHierarchy),
         }),
@@ -311,11 +341,11 @@ export default function SystemSettingsPage() {
             <Settings className="h-3 w-3" /> System Configuration
             </div>
             <h1 className="text-3xl font-black text-black tracking-tighter">Global Settings</h1>
-            <p className="text-gray-500 font-medium text-sm">Manage core operational behaviors and identifier formatting rules.</p>
+            <p className="text-gray-500 font-medium text-sm">Manage core operational behaviors, volunteer pricing rates, and identifier formatting rules.</p>
         </div>
         
         <div className="flex bg-gray-100 p-1 rounded-xl flex-wrap">
-            {(["id", "regions", "zones", "woredas", "assets", "system", "security"] as const).map((tab) => (
+            {(["id", "volunteer_rates", "regions", "zones", "woredas", "assets", "system", "security"] as const).map((tab) => (
                 <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -325,7 +355,7 @@ export default function SystemSettingsPage() {
                         : "text-gray-400 hover:text-gray-600"
                     }`}
                 >
-                    {tab === "id" ? "Member ID" : tab === "assets" ? "ID Assets" : tab === "system" ? "Connectivity" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    {tab === "id" ? "Member ID" : tab === "volunteer_rates" ? "Volunteer Rates" : tab === "assets" ? "ID Assets" : tab === "system" ? "Connectivity" : tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </button>
             ))}
         </div>
@@ -417,6 +447,159 @@ export default function SystemSettingsPage() {
                             <div className="flex items-center gap-2">
                                 <ShieldAlert className="h-4 w-4 text-amber-500" /> Secure, collision-free unique identifiers
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+          )}
+
+          {activeTab === "volunteer_rates" && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                <div className="flex items-center justify-between pb-4 border-b border-gray-50">
+                    <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 bg-red-50 rounded-xl flex items-center justify-center text-[#ED1C24]">
+                            <Settings className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-black tracking-tighter">Volunteer Request Cost & Rate Settings</h3>
+                            <p className="text-gray-400 font-medium text-xs">Set global default per-day and per-volunteer unit rates for organization missions.</p>
+                        </div>
+                    </div>
+                    <div className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-xl font-black text-xs uppercase tracking-wider border border-emerald-200">
+                        Active Rate Policy
+                    </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <div className="space-y-1.5">
+                            <Label className="uppercase tracking-widest text-[9px] font-black text-gray-500">Base Daily Rate per Volunteer (ETB/day)</Label>
+                            <Input
+                                type="number"
+                                value={volunteerRates.dailyRatePerVolunteer}
+                                onChange={(e) => setVolunteerRates({ ...volunteerRates, dailyRatePerVolunteer: Number(e.target.value) })}
+                                className="h-11 bg-gray-50 border-gray-200 rounded-xl text-sm font-black focus:ring-red-500 text-black"
+                            />
+                            <p className="text-[10px] text-gray-400 font-semibold">Standard daily allowance rate paid or credited to the volunteer.</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="uppercase tracking-widest text-[9px] font-black text-gray-500">Accommodation (ETB/day)</Label>
+                                <Input
+                                    type="number"
+                                    value={volunteerRates.accommodationDailyCost}
+                                    onChange={(e) => setVolunteerRates({ ...volunteerRates, accommodationDailyCost: Number(e.target.value) })}
+                                    className="h-11 bg-gray-50 border-gray-200 rounded-xl text-sm font-black focus:ring-red-500 text-black"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="uppercase tracking-widest text-[9px] font-black text-gray-500">Meals & Per Diem (ETB/day)</Label>
+                                <Input
+                                    type="number"
+                                    value={volunteerRates.mealDailyCost}
+                                    onChange={(e) => setVolunteerRates({ ...volunteerRates, mealDailyCost: Number(e.target.value) })}
+                                    className="h-11 bg-gray-50 border-gray-200 rounded-xl text-sm font-black focus:ring-red-500 text-black"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="uppercase tracking-widest text-[9px] font-black text-gray-500">Transport Allowance (ETB/day)</Label>
+                                <Input
+                                    type="number"
+                                    value={volunteerRates.transportAllowance}
+                                    onChange={(e) => setVolunteerRates({ ...volunteerRates, transportAllowance: Number(e.target.value) })}
+                                    className="h-11 bg-gray-50 border-gray-200 rounded-xl text-sm font-black focus:ring-red-500 text-black"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="uppercase tracking-widest text-[9px] font-black text-gray-500">Insurance Fee (ETB/vol)</Label>
+                                <Input
+                                    type="number"
+                                    value={volunteerRates.insuranceFeePerVolunteer}
+                                    onChange={(e) => setVolunteerRates({ ...volunteerRates, insuranceFeePerVolunteer: Number(e.target.value) })}
+                                    className="h-11 bg-gray-50 border-gray-200 rounded-xl text-sm font-black focus:ring-red-500 text-black"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 pt-2">
+                            <div className="space-y-1.5">
+                                <Label className="uppercase tracking-widest text-[9px] font-black text-gray-500">Min Duration (Days)</Label>
+                                <Input
+                                    type="number"
+                                    value={volunteerRates.minMissionDays}
+                                    onChange={(e) => setVolunteerRates({ ...volunteerRates, minMissionDays: Number(e.target.value) })}
+                                    className="h-11 bg-gray-50 border-gray-200 rounded-xl text-sm font-black focus:ring-red-500 text-black"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="uppercase tracking-widest text-[9px] font-black text-gray-500">ERCS Admin Surcharge (%)</Label>
+                                <Input
+                                    type="number"
+                                    value={volunteerRates.adminFeePercent}
+                                    onChange={(e) => setVolunteerRates({ ...volunteerRates, adminFeePercent: Number(e.target.value) })}
+                                    className="h-11 bg-gray-50 border-gray-200 rounded-xl text-sm font-black focus:ring-red-500 text-black"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-900 text-white p-6 rounded-3xl space-y-6 flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                                <div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24]">Live Pricing Formula</span>
+                                    <h4 className="text-xl font-black tracking-tight">Mission Cost Simulation</h4>
+                                </div>
+                                <span className="text-xs bg-white/10 px-3 py-1 rounded-lg font-bold">5 Volunteers · 3 Days</span>
+                            </div>
+
+                            <div className="mt-4 space-y-2.5 text-xs font-semibold">
+                                <div className="flex justify-between text-slate-300">
+                                    <span>Base Daily Allowance (5 × 3 × {volunteerRates.dailyRatePerVolunteer} ETB):</span>
+                                    <span className="font-bold text-white">{(5 * 3 * (volunteerRates.dailyRatePerVolunteer || 0)).toLocaleString()} ETB</span>
+                                </div>
+                                <div className="flex justify-between text-slate-300">
+                                    <span>Accommodations (5 × 3 × {volunteerRates.accommodationDailyCost} ETB):</span>
+                                    <span className="font-bold text-white">{(5 * 3 * (volunteerRates.accommodationDailyCost || 0)).toLocaleString()} ETB</span>
+                                </div>
+                                <div className="flex justify-between text-slate-300">
+                                    <span>Meals & Per Diem (5 × 3 × {volunteerRates.mealDailyCost} ETB):</span>
+                                    <span className="font-bold text-white">{(5 * 3 * (volunteerRates.mealDailyCost || 0)).toLocaleString()} ETB</span>
+                                </div>
+                                <div className="flex justify-between text-slate-300">
+                                    <span>Transport (5 × 3 × {volunteerRates.transportAllowance} ETB):</span>
+                                    <span className="font-bold text-white">{(5 * 3 * (volunteerRates.transportAllowance || 0)).toLocaleString()} ETB</span>
+                                </div>
+                                <div className="flex justify-between text-slate-300">
+                                    <span>Medical Insurance (5 × {volunteerRates.insuranceFeePerVolunteer} ETB):</span>
+                                    <span className="font-bold text-white">{(5 * (volunteerRates.insuranceFeePerVolunteer || 0)).toLocaleString()} ETB</span>
+                                </div>
+                                <div className="flex justify-between text-slate-300">
+                                    <span>Admin Fee ({volunteerRates.adminFeePercent || 0}%):</span>
+                                    <span className="font-bold text-white">
+                                        {Math.round(((5 * 3 * ((volunteerRates.dailyRatePerVolunteer || 0) + (volunteerRates.accommodationDailyCost || 0) + (volunteerRates.mealDailyCost || 0) + (volunteerRates.transportAllowance || 0))) + (5 * (volunteerRates.insuranceFeePerVolunteer || 0))) * ((volunteerRates.adminFeePercent || 0) / 100)).toLocaleString()} ETB
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-white/10 flex justify-between items-end">
+                            <div>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Calculated Estimate</span>
+                                <div className="text-3xl font-black text-white tracking-tighter">
+                                    {Math.round(
+                                        ((5 * 3 * ((volunteerRates.dailyRatePerVolunteer || 0) + (volunteerRates.accommodationDailyCost || 0) + (volunteerRates.mealDailyCost || 0) + (volunteerRates.transportAllowance || 0))) + (5 * (volunteerRates.insuranceFeePerVolunteer || 0))) * (1 + ((volunteerRates.adminFeePercent || 0) / 100))
+                                    ).toLocaleString()} <span className="text-sm text-[#ED1C24] font-bold">ETB</span>
+                                </div>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-semibold italic">Applied to all new org requests</span>
                         </div>
                     </div>
                 </div>

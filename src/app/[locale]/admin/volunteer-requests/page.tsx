@@ -26,7 +26,8 @@ import {
   CreditCard,
   Briefcase,
   ShieldCheck,
-  ExternalLink
+  ExternalLink,
+  MapPin
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
@@ -51,6 +52,17 @@ type VolunteerRequest = {
   activities?: any;
   volunteer_type?: string;
   payment_proof_url?: string;
+  region_name?: string;
+  zone_name?: string;
+  duration_days?: number;
+  benefits?: {
+    accommodation?: string;
+    meals?: string;
+    transport?: string;
+    safety_gear?: boolean;
+    certificate?: boolean;
+    notes?: string;
+  };
 };
 
 export default function AdminVolunteerRequestsPage() {
@@ -311,6 +323,39 @@ export default function AdminVolunteerRequestsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Deployment Location & Duration */}
+              {(selectedReq.region_name || selectedReq.duration_days) && (
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Target Location</h4>
+                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-blue-600" />
+                      {selectedReq.region_name || "Regional Branch"} {selectedReq.zone_name ? `· ${selectedReq.zone_name}` : ""}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Mission Duration</h4>
+                    <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 font-bold text-xs text-slate-900">
+                      {selectedReq.duration_days || 1} Day(s) Deployment
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Volunteer Benefits Provided */}
+              {selectedReq.benefits && (
+                <div className="space-y-1.5">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Volunteer Benefits & Accommodations</h4>
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-semibold text-slate-700">
+                    <div>Accommodation: <span className="font-bold text-black">{selectedReq.benefits.accommodation || "Standard"}</span></div>
+                    <div>Meals: <span className="font-bold text-black">{selectedReq.benefits.meals || "Standard"}</span></div>
+                    <div>Transport: <span className="font-bold text-black">{selectedReq.benefits.transport || "Standard"}</span></div>
+                    {selectedReq.benefits.safety_gear && <div className="text-emerald-600 font-bold">✓ Safety Kits Provided</div>}
+                    {selectedReq.benefits.certificate && <div className="text-emerald-600 font-bold">✓ Certificates Awarded</div>}
+                  </div>
+                </div>
+              )}
 
               {/* Type & Engagement Areas */}
               <div className="grid md:grid-cols-2 gap-4">
