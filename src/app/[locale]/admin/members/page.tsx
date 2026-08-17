@@ -13,7 +13,42 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin, Map as MapIcon } from "lucide-react";
+import {
+  Search,
+  Users,
+  Plus,
+  Filter,
+  Download,
+  FileText,
+  Table as TableIcon,
+  X,
+  Upload,
+  ArrowUpRight,
+  CreditCard,
+  Phone,
+  Mail,
+  MapPin,
+  Map as MapIcon,
+  CheckSquare,
+  Square,
+  MinusSquare,
+  Check,
+  Copy,
+  Calendar,
+  Briefcase,
+  GraduationCap,
+  Building,
+  Clock,
+  ShieldCheck,
+  Eye,
+  Sparkles,
+  UserCheck,
+  Hash,
+  Camera,
+  ExternalLink,
+  BadgeCheck,
+  Heart
+} from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
@@ -29,6 +64,8 @@ type Member = {
   phone_number?: string;
   national_id?: string;
   gender?: string;
+  date_of_birth?: string;
+  photo_url?: string;
   region: any;
   status: string;
   ercs_id: string;
@@ -36,6 +73,33 @@ type Member = {
   metadata?: string;
   zone_id?: string;
   woreda_id?: string;
+  branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+const resolvePhotoUrl = (url?: string | null) => {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === "null" || trimmed === "undefined" || trimmed === "N/A") return null;
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:image/")) {
+    return trimmed;
+  }
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "https://member.redcrosseth.org/api/v1";
+  const hostBase = apiBase.replace(/\/api\/v1\/?$/, "");
+  return `${hostBase}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+};
+
+const getMemberPhoto = (m: any): string | null => {
+  if (!m) return null;
+  let meta: Record<string, any> = {};
+  try {
+    meta = typeof m?.metadata === "string" ? JSON.parse(m.metadata || "{}") : (m?.metadata || {});
+  } catch {
+    meta = {};
+  }
+  const photo = m?.photo_url || m?.photoUrl || m?.photo || m?.avatar_url || m?.avatarUrl || m?.avatar || m?.image || meta?.photo_url || meta?.photoUrl || meta?.photo || meta?.avatar || meta?.image;
+  return resolvePhotoUrl(photo);
 };
 
 type Region = {
@@ -191,30 +255,140 @@ export default function MembersPage() {
     }
   };
 
-  const exportToCSV = () => {
-    if (members.length === 0) {
-        toast.error("No data to export");
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, label: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedText(label);
+    toast.success(`Copied ${label} to clipboard`);
+    setTimeout(() => setCopiedText(null), 2000);
+  };
+
+  const toggleSelectMember = (id: string) => {
+    setSelectedMemberIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const isAllCurrentPageSelected = members.length > 0 && members.every(m => selectedMemberIds.has(m.id));
+  const isSomeCurrentPageSelected = members.some(m => selectedMemberIds.has(m.id)) && !isAllCurrentPageSelected;
+
+  const toggleSelectAllCurrentPage = () => {
+    if (isAllCurrentPageSelected) {
+      setSelectedMemberIds(prev => {
+        const next = new Set(prev);
+        members.forEach(m => next.delete(m.id));
+        return next;
+      });
+    } else {
+      setSelectedMemberIds(prev => {
+        const next = new Set(prev);
+        members.forEach(m => next.add(m.id));
+        return next;
+      });
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedMemberIds(new Set());
+  };
+
+  const exportToCSV = (membersToExport?: Member[]) => {
+    const list = membersToExport && membersToExport.length > 0 
+      ? membersToExport 
+      : (selectedMemberIds.size > 0 
+          ? members.filter(m => selectedMemberIds.has(m.id)) 
+          : members);
+
+    if (list.length === 0) {
+        toast.error("No member data to export");
         return;
     }
 
-    const headers = ["ERCS ID", "First Name", "Father Name", "Region", "Type", "Status"];
-    const rows = members.map(m => [
-        m.ercs_id,
-        m.first_name,
-        m.father_name,
-        (regions || DEFAULT_REGIONS).find(r => String(r.id) === String(m.region))?.name || String(m.region),
-        m.membership_type || "N/A",
-        m.status || "Active"
-    ]);
+    const headers = [
+      "ERCS ID",
+      "First Name",
+      "Father Name",
+      "Grandfather Name",
+      "Full Name",
+      "Gender",
+      "Phone Number",
+      "Email",
+      "National ID",
+      "Region",
+      "Zone",
+      "Woreda",
+      "Branch Office",
+      "Membership Category",
+      "Status",
+      "Occupation",
+      "Organization Name",
+      "Education Level",
+      "Kebele",
+      "Area",
+      "Languages",
+      "Registration Date"
+    ];
 
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const escapeCsv = (str: any) => {
+      if (str === null || str === undefined) return '""';
+      const stringified = String(str).trim();
+      return `"${stringified.replace(/"/g, '""')}"`;
+    };
+
+    const rows = list.map(m => {
+      let meta: Record<string, any> = {};
+      try {
+        meta = typeof m.metadata === "string" ? JSON.parse(m.metadata || "{}") : (m.metadata || {});
+      } catch {
+        meta = {};
+      }
+      const regionName = (regions || DEFAULT_REGIONS).find(r => String(r.id) === String(m.region))?.name || String(m.region || "");
+      const fullName = [m.first_name, m.father_name, m.grandfather_name].filter(Boolean).join(" ");
+      
+      return [
+        escapeCsv(m.ercs_id || ""),
+        escapeCsv(m.first_name || ""),
+        escapeCsv(m.father_name || ""),
+        escapeCsv(m.grandfather_name || ""),
+        escapeCsv(fullName),
+        escapeCsv(m.gender || ""),
+        escapeCsv(m.phone_number || ""),
+        escapeCsv(m.email || ""),
+        escapeCsv(m.national_id || ""),
+        escapeCsv(regionName),
+        escapeCsv(m.zone_id || (m as any).zoneId || ""),
+        escapeCsv(m.woreda_id || (m as any).woredaId || ""),
+        escapeCsv((m as any).branch_id || ""),
+        escapeCsv((m as any).membership_type || (m as any).membershipType || "REGULAR"),
+        escapeCsv(m.status || "ACTIVE"),
+        escapeCsv(meta.occupation || ""),
+        escapeCsv(meta.organizationName || ""),
+        escapeCsv(meta.educationLevel || ""),
+        escapeCsv(meta.kebele || ""),
+        escapeCsv(meta.area || ""),
+        escapeCsv(meta.languages || ""),
+        escapeCsv((m as any).created_at ? new Date((m as any).created_at).toLocaleDateString() : "")
+      ];
+    });
+
+    const csvContent = [headers.map(escapeCsv), ...rows].map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `ercs_members_${new Date().toISOString().split('T')[0]}.csv`);
+    const isSelectedExport = selectedMemberIds.size > 0 && (!membersToExport || membersToExport.length === selectedMemberIds.size);
+    link.setAttribute("download", `ercs_members_${isSelectedExport ? 'selected_' : ''}${new Date().toISOString().split('T')[0]}.csv`);
     link.click();
-    toast.success("CSV Report Generated");
+    toast.success(`Exported ${list.length} member record${list.length === 1 ? '' : 's'} to CSV`);
   };
   
   const downloadTemplate = async () => {
@@ -597,11 +771,14 @@ export default function MembersPage() {
                 <Download className="h-4 w-4" /> Template
             </Button>
             <Button 
-                onClick={exportToCSV}
+                onClick={() => exportToCSV()}
                 variant="outline" 
-                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest"
+                className={`rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest transition-all ${
+                  selectedMemberIds.size > 0 ? 'bg-[#ED1C24] text-white border-[#ED1C24] hover:bg-red-700' : ''
+                }`}
             >
-                <TableIcon className="h-4 w-4" /> CSV
+                <TableIcon className="h-4 w-4" /> 
+                {selectedMemberIds.size > 0 ? `CSV (${selectedMemberIds.size} Selected)` : 'CSV'}
             </Button>
             <div className="relative">
                 <Input 
@@ -671,6 +848,40 @@ export default function MembersPage() {
                 {showFilters ? 'Hide' : 'Filters'}
             </Button>
         </div>
+
+        {/* Selected Members Bulk Action Banner */}
+        {selectedMemberIds.size > 0 && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-neutral-900 text-white p-4 px-6 rounded-2xl shadow-xl border border-neutral-800 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ED1C24] text-white font-black text-xs shadow-sm">
+                {selectedMemberIds.size}
+              </div>
+              <div>
+                <p className="font-black text-xs uppercase tracking-wider text-white">
+                  {selectedMemberIds.size} Member{selectedMemberIds.size === 1 ? '' : 's'} Selected
+                </p>
+                <p className="text-[10px] text-gray-400 font-medium">
+                  Apply mass actions or export selective records
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                onClick={() => exportToCSV()}
+                className="h-9 px-4 rounded-xl font-black bg-[#ED1C24] hover:bg-red-700 text-white text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-sm transition-all"
+              >
+                <Download className="h-3.5 w-3.5" /> Export Selected ({selectedMemberIds.size}) to CSV
+              </Button>
+              <Button
+                onClick={clearSelection}
+                variant="ghost"
+                className="h-9 px-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-gray-300 hover:text-white hover:bg-white/10"
+              >
+                <X className="h-3.5 w-3.5 mr-1" /> Deselect All
+              </Button>
+            </div>
+          </div>
+        )}
 
         {showFilters && (
             <div className="space-y-4 p-6 bg-gray-50 rounded-[28px] border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -803,188 +1014,663 @@ export default function MembersPage() {
         />
       ) : (
         <div className="bg-white rounded-[32px] border border-gray-100 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.03)] overflow-hidden print:shadow-none print:border-none print:rounded-none">
-          <Table>
-          <TableHeader className="bg-gray-50/50 print:bg-transparent">
-            <TableRow className="hover:bg-transparent border-gray-50">
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">ID</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Full Identity</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Region</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Category</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Status</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40 text-right print:hidden">Audit</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-48 text-center">
-                  <div className="flex flex-col items-center justify-center space-y-3">
-                     <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
-                     <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Syncing Registry...</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : members.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-64 text-center">
-                   <p className="text-sm font-bold text-gray-400">No members found matching your search.</p>
-                </TableCell>
-              </TableRow>
-            ) : (
-              members.map((member) => (
-                <TableRow key={member.id} className="hover:bg-[#ED1C24]/5 transition-colors border-gray-50">
-                  <TableCell className="px-6 py-4 font-black text-black text-[11px]">{member.ercs_id}</TableCell>
-                  <TableCell className="px-6 py-4">
-                    <div className="flex flex-col">
-                        <span className="font-bold text-gray-900 text-xs">{member.first_name} {member.father_name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-6 py-4 font-black text-[9px] uppercase tracking-wider text-gray-400">
-                    {(regions || DEFAULT_REGIONS).find(r => String(r.id) === String(member.region))?.name || String(member.region)}
-                  </TableCell>
-                  <TableCell className="px-6 py-4 font-bold text-[11px] text-gray-500">
-                    {(member as any).membership_type || (member as any).membershipType || "REGULAR"}
-                  </TableCell>
-
-                  <TableCell className="px-6 py-4">
-                    <span
-                      className={cn(
-                        "inline-flex items-center rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-widest",
-                        member.status === "ACTIVE" || !member.status
-                          ? "bg-green-50 text-green-600 border border-green-200"
-                          : member.status === "INACTIVE"
-                          ? "bg-gray-100 text-gray-500 border border-gray-200"
-                          : member.status === "EXPIRED"
-                          ? "bg-red-50 text-[#ED1C24] border border-red-200"
-                          : "bg-amber-50 text-amber-600 border border-amber-200"
-                      )}
-                    >
-                      {member.status || "ACTIVE"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-right print:hidden">
-                    <button 
-                        onClick={() => { setSelectedMember(member); setShowModal(true); }}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
-                    >
-                        <ArrowUpRight className="h-4 w-4 ml-auto text-gray-300 group-hover:text-[#ED1C24] transition-colors" />
-                    </button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-gray-50/70 print:bg-transparent">
+                <TableRow className="hover:bg-transparent border-gray-100">
+                  <TableHead className="w-12 px-4 py-4 text-center print:hidden">
+                    <input
+                      type="checkbox"
+                      checked={isAllCurrentPageSelected}
+                      ref={(el) => {
+                        if (el) el.indeterminate = isSomeCurrentPageSelected;
+                      }}
+                      onChange={toggleSelectAllCurrentPage}
+                      className="h-4 w-4 rounded text-[#ED1C24] focus:ring-[#ED1C24] border-gray-300 cursor-pointer accent-[#ED1C24]"
+                      title="Select all on this page"
+                    />
+                  </TableHead>
+                  <TableHead className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">ID / ERCS ID</TableHead>
+                  <TableHead className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Member Details</TableHead>
+                  <TableHead className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Contact</TableHead>
+                  <TableHead className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Location</TableHead>
+                  <TableHead className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Category / Plan</TableHead>
+                  <TableHead className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Status</TableHead>
+                  <TableHead className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Registered</TableHead>
+                  <TableHead className="px-5 py-4 text-[9px] font-black uppercase tracking-widest text-black/40 text-right print:hidden">Actions</TableHead>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="h-48 text-center">
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                         <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
+                         <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Syncing Registry...</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : members.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="h-64 text-center">
+                       <p className="text-sm font-bold text-gray-400">No members found matching your search.</p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  members.map((member) => {
+                    const isSelected = selectedMemberIds.has(member.id);
+                    const regionObj = (regions || DEFAULT_REGIONS).find(r => String(r.id) === String(member.region));
+                    const initials = `${(member.first_name || '').charAt(0)}${(member.father_name || '').charAt(0)}`.toUpperCase() || "RC";
+                    const rowPhoto = getMemberPhoto(member);
+                    const formattedDate = (member as any).created_at 
+                      ? new Date((member as any).created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                      : "—";
+
+                    return (
+                      <TableRow 
+                        key={member.id} 
+                        className={`transition-colors border-gray-50 cursor-pointer ${isSelected ? 'bg-red-50/30 hover:bg-red-50/50' : 'hover:bg-gray-50/80'}`}
+                        onClick={() => toggleSelectMember(member.id)}
+                      >
+                        <TableCell className="w-12 px-4 py-4 text-center print:hidden" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectMember(member.id)}
+                            className="h-4 w-4 rounded text-[#ED1C24] focus:ring-[#ED1C24] border-gray-300 cursor-pointer accent-[#ED1C24]"
+                          />
+                        </TableCell>
+                        <TableCell className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1.5 group">
+                            <span className="font-mono font-black text-black text-xs tracking-tight bg-gray-100/80 px-2 py-1 rounded-lg border border-gray-200">
+                              {member.ercs_id || "N/A"}
+                            </span>
+                            {member.ercs_id && (
+                              <button
+                                onClick={() => copyToClipboard(member.ercs_id, "ERCS ID")}
+                                title="Copy ID"
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded text-gray-500 transition-all"
+                              >
+                                {copiedText === "ERCS ID" ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                              </button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl overflow-hidden bg-gradient-to-br from-red-50 to-red-100 text-[#ED1C24] font-black text-xs flex items-center justify-center border border-gray-200 shrink-0 shadow-xs relative">
+                              {rowPhoto ? (
+                                <img 
+                                  src={rowPhoto} 
+                                  alt={member.first_name} 
+                                  className="h-full w-full object-cover object-center" 
+                                  onError={(e) => {
+                                    (e.target as HTMLElement).style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                <span>{initials}</span>
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-extrabold text-gray-900 text-xs">
+                                {member.first_name} {member.father_name} {member.grandfather_name || ""}
+                              </span>
+                              <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                                {member.national_id && (
+                                  <span className="text-[10px] font-semibold text-gray-400">
+                                    ID: {member.national_id}
+                                  </span>
+                                )}
+                                {member.gender && (
+                                  <span className="text-[9px] font-bold uppercase text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                    {member.gender}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                          <div className="flex flex-col gap-0.5">
+                            {member.phone_number ? (
+                              <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                                <Phone className="h-3 w-3 text-gray-400 shrink-0" />
+                                {member.phone_number}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400 italic">No phone</span>
+                            )}
+                            {member.email && (
+                              <span className="text-[10px] text-gray-500 font-medium truncate max-w-[160px] flex items-center gap-1.5">
+                                <Mail className="h-3 w-3 text-gray-400 shrink-0" />
+                                {member.email}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-black text-gray-800">
+                              <MapPin className="h-3 w-3 text-[#ED1C24] shrink-0" />
+                              {regionObj ? regionObj.name : (member.region || "Unspecified")}
+                            </span>
+                            {((member as any).zone_id || (member as any).zoneId || (member as any).woreda_id || (member as any).woredaId) && (
+                              <span className="text-[10px] font-semibold text-gray-400 pl-4">
+                                {[(member as any).zone_id || (member as any).zoneId, (member as any).woreda_id || (member as any).woredaId].filter(Boolean).join(" • ")}
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-gray-800 text-[10px] font-black uppercase tracking-wider border border-gray-200">
+                            <CreditCard className="h-3 w-3 mr-1 text-[#ED1C24]" />
+                            {(member as any).membership_type || (member as any).membershipType || "REGULAR"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[9px] font-black uppercase tracking-widest border",
+                              member.status === "ACTIVE" || !member.status
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : member.status === "INACTIVE"
+                                ? "bg-gray-100 text-gray-600 border-gray-200"
+                                : member.status === "EXPIRED"
+                                ? "bg-red-50 text-[#ED1C24] border-red-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            )}
+                          >
+                            <span className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              member.status === "ACTIVE" || !member.status
+                                ? "bg-green-500"
+                                : member.status === "INACTIVE"
+                                ? "bg-gray-400"
+                                : member.status === "EXPIRED"
+                                ? "bg-red-500"
+                                : "bg-amber-500"
+                            )} />
+                            {member.status || "ACTIVE"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
+                          <span className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
+                            <Calendar className="h-3 w-3 text-gray-400 shrink-0" />
+                            {formattedDate}
+                          </span>
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-right print:hidden" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1">
+                            <button 
+                              onClick={() => { setSelectedMember(member); setShowModal(true); }}
+                              className="p-2 hover:bg-red-50 rounded-xl transition-all group flex items-center gap-1 text-gray-400 hover:text-[#ED1C24]"
+                              title="View Audit Details"
+                            >
+                              <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:inline transition-all">Details</span>
+                              <ArrowUpRight className="h-4 w-4 text-gray-400 group-hover:text-[#ED1C24] transition-colors" />
+                            </button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
         {/* Member Detail Modal */}
-        {showModal && selectedMember && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-                <motion.div 
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100"
-                >
-                    <div className="p-8 border-b border-gray-50 flex justify-between items-start">
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">Member Audit Log</p>
-                            <h2 className="text-2xl font-black tracking-tight text-black">
-                                {selectedMember.first_name} {selectedMember.father_name} {selectedMember.grandfather_name}
-                            </h2>
-                            <p className="text-xs font-bold text-gray-400">{selectedMember.ercs_id}</p>
-                        </div>
-                        <button 
-                            onClick={() => setShowModal(false)}
-                            className="h-10 w-10 flex items-center justify-center rounded-2xl hover:bg-gray-50 transition-colors"
+        {showModal && selectedMember && (() => {
+          let meta: Record<string, any> = {};
+          try {
+            meta = typeof selectedMember.metadata === "string" 
+              ? JSON.parse(selectedMember.metadata || "{}") 
+              : (selectedMember.metadata || {});
+          } catch {
+            meta = {};
+          }
+
+          const memberPhoto = getMemberPhoto(selectedMember);
+          const initials = `${(selectedMember.first_name || '').charAt(0)}${(selectedMember.father_name || '').charAt(0)}`.toUpperCase() || "RC";
+          const regionObj = (regions || DEFAULT_REGIONS).find(r => String(r.id) === String(selectedMember.region));
+          const regionName = regionObj ? regionObj.name : String(selectedMember.region || "Unspecified");
+          
+          const createdDate = (selectedMember as any).created_at 
+            ? new Date((selectedMember as any).created_at).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+            : "—";
+          const updatedDate = (selectedMember as any).updated_at 
+            ? new Date((selectedMember as any).updated_at).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+            : "—";
+          
+          const rawDob = selectedMember.date_of_birth || (selectedMember as any).dob || meta.date_of_birth || meta.dateOfBirth || meta.dob;
+          let dobFormatted = "Not Specified";
+          let age: number | null = null;
+          if (rawDob) {
+            dobFormatted = String(rawDob);
+            const birthYear = parseInt(String(rawDob).split(/[-/]/)[0], 10);
+            if (!isNaN(birthYear) && birthYear > 1900 && birthYear < 2030) {
+              age = new Date().getFullYear() - birthYear;
+            }
+          }
+
+          // Emergency Contacts
+          const emergencyName = meta.emergency_contact_name || meta.emergencyContactName || meta.emergency_contact || meta.emergencyName;
+          const emergencyPhone = meta.emergency_contact_phone || meta.emergencyContactPhone || meta.emergencyPhone;
+
+          // Location details
+          const zoneVal = selectedMember.zone_id || (selectedMember as any).zoneId || meta.zone || meta.zone_name || meta.zone_id;
+          const woredaVal = selectedMember.woreda_id || (selectedMember as any).woredaId || meta.woreda || meta.woreda_name || meta.woreda_id;
+          const kebeleVal = meta.kebele || meta.kebele_id || (selectedMember as any).kebele_id;
+          const houseNo = meta.house_number || meta.house_no || meta.houseNo;
+          const branchOffice = (selectedMember as any).branch_id || meta.branch || meta.branch_name || meta.branch_id;
+
+          // Known meta keys to skip in dynamic custom attributes
+          const standardMetaKeys = new Set([
+            "occupation", "profession", "organizationName", "organization_name", "organization",
+            "educationLevel", "education_level", "education", "languages", "skills", "area",
+            "kebele", "kebele_id", "zone", "zone_id", "zone_name", "zoneId", "woreda", "woreda_id",
+            "woreda_name", "woredaId", "branch", "branch_id", "branch_name", "house_number", "house_no",
+            "houseNo", "emergency_contact_name", "emergencyContactName", "emergency_contact", "emergencyName",
+            "emergency_contact_phone", "emergencyContactPhone", "emergencyPhone", "blood_type", "bloodType",
+            "bio", "photo", "photo_url", "photoUrl", "avatar", "avatar_url", "avatarUrl", "image",
+            "date_of_birth", "dateOfBirth", "dob", "gender", "national_id", "nationalId", "first_name",
+            "father_name", "grandfather_name", "email", "phone_number"
+          ]);
+
+          const customAttributes = Object.entries(meta).filter(
+            ([key, value]) => !standardMetaKeys.has(key) && value !== null && value !== undefined && value !== ""
+          );
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-white rounded-[36px] shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-gray-100"
+              >
+                {/* Modal Header with Member Photo & Status */}
+                <div className="p-6 sm:p-8 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start gap-4 bg-gradient-to-r from-gray-50/90 via-white to-red-50/20 shrink-0">
+                  <div className="flex items-start gap-5">
+                    {/* Member Profile Photo */}
+                    <div className="relative group shrink-0">
+                      <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-3xl overflow-hidden border-2 border-gray-200 bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center shadow-md relative">
+                        {memberPhoto ? (
+                          <img 
+                            src={memberPhoto} 
+                            alt={selectedMember.first_name} 
+                            className="h-full w-full object-cover object-center"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-[#ED1C24]">
+                            <span className="text-xl sm:text-2xl font-black">{initials}</span>
+                            <span className="text-[8px] font-bold uppercase tracking-wider text-gray-400 mt-0.5">No Photo</span>
+                          </div>
+                        )}
+                      </div>
+                      <div 
+                        className={`absolute -bottom-1.5 -right-1.5 p-1 rounded-full border-2 border-white shadow-sm ${memberPhoto ? 'bg-green-500' : 'bg-gray-400'}`} 
+                        title={memberPhoto ? "Verified Profile Photo" : "No photo uploaded"}
+                      >
+                        {memberPhoto ? <Check className="h-3 w-3 text-white" /> : <Camera className="h-3 w-3 text-white" />}
+                      </div>
+                    </div>
+
+                    {/* Header Info */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2.5 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
+                          Member Audit Record
+                        </span>
+                        <span className={cn(
+                          "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest",
+                          selectedMember.status === "ACTIVE" || !selectedMember.status
+                            ? "bg-green-100 text-green-700"
+                            : selectedMember.status === "INACTIVE"
+                            ? "bg-gray-200 text-gray-700"
+                            : selectedMember.status === "EXPIRED"
+                            ? "bg-red-100 text-[#ED1C24]"
+                            : "bg-amber-100 text-amber-700"
+                        )}>
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                          {selectedMember.status || "ACTIVE"}
+                        </span>
+                        {memberPhoto ? (
+                          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                            <BadgeCheck className="h-3 w-3" /> Photo Verified
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-bold bg-gray-100 text-gray-500 border border-gray-200">
+                            <Camera className="h-3 w-3 text-gray-400" /> Photo Missing
+                          </span>
+                        )}
+                      </div>
+                      <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-black">
+                        {selectedMember.first_name} {selectedMember.father_name} {selectedMember.grandfather_name || ""}
+                      </h2>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono font-bold text-xs bg-gray-100 text-gray-800 px-2.5 py-1 rounded-lg border border-gray-200">
+                          {selectedMember.ercs_id || "No ERCS ID"}
+                        </span>
+                        {selectedMember.ercs_id && (
+                          <button
+                            onClick={() => copyToClipboard(selectedMember.ercs_id, "ERCS ID")}
+                            className="p-1 hover:bg-gray-200 rounded text-gray-500 transition-colors flex items-center gap-1 text-[10px] font-bold"
+                            title="Copy ERCS ID"
+                          >
+                            <Copy className="h-3 w-3" /> Copy
+                          </button>
+                        )}
+                        <a
+                          href={`/en/verify/${selectedMember.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-[10px] font-bold text-[#ED1C24] hover:underline bg-red-50 px-2 py-1 rounded-lg border border-red-100 ml-1"
                         >
-                            <X className="h-5 w-5 text-gray-400" />
-                        </button>
+                          <ExternalLink className="h-3 w-3" /> Public Verification
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => setShowModal(false)}
+                    className="h-10 w-10 flex items-center justify-center rounded-2xl hover:bg-gray-100 transition-colors shrink-0 self-start sm:self-auto"
+                  >
+                    <X className="h-5 w-5 text-gray-400" />
+                  </button>
+                </div>
+
+                {/* Modal Scrollable Content: All Datas visually displayed */}
+                <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1">
+                  
+                  {/* Grid 1: Personal Identity & Contact */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {/* Identity Details Card */}
+                    <div className="bg-gray-50/70 p-5 rounded-[24px] border border-gray-100 space-y-4">
+                      <div className="flex items-center gap-2 border-b border-gray-200/60 pb-3">
+                        <Users className="h-4 w-4 text-[#ED1C24]" />
+                        <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                          Personal & Identity Details
+                        </h4>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Full Identity</p>
+                          <p className="text-xs font-bold text-black mt-0.5">
+                            {selectedMember.first_name} {selectedMember.father_name} {selectedMember.grandfather_name || "—"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Gender</p>
+                          <p className="text-xs font-bold text-black mt-0.5">{selectedMember.gender || "Not Specified"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Date of Birth</p>
+                          <p className="text-xs font-bold text-black mt-0.5">
+                            {dobFormatted} {age !== null && `(${age} yrs)`}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">National / Kebele ID</p>
+                          <p className="text-xs font-bold text-black mt-0.5">{selectedMember.national_id || meta.national_id || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Membership Plan</p>
+                          <p className="text-xs font-extrabold text-[#ED1C24] mt-0.5">
+                            {(selectedMember as any).membership_type || (selectedMember as any).membershipType || "REGULAR"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Blood Type</p>
+                          <p className="text-xs font-bold text-black mt-0.5">{meta.blood_type || meta.bloodType || "N/A"}</p>
+                        </div>
+                      </div>
+                      {meta.bio && (
+                        <div className="pt-2 border-t border-gray-200/50">
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Bio / Note</p>
+                          <p className="text-xs text-gray-700 font-medium mt-0.5 italic">{meta.bio}</p>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="p-8 grid grid-cols-2 gap-8">
-                        <div className="space-y-6">
-                            <div>
-                                <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Identity Details</h4>
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Users className="h-4 w-4 text-gray-400" /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase">Gender</p>
-                                            <p className="text-xs font-bold text-black">{selectedMember.gender || "Not Specified"}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><FileText className="h-4 w-4 text-gray-400" /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase">National ID</p>
-                                            <p className="text-xs font-bold text-black">{selectedMember.national_id || "N/A"}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><CreditCard className="h-4 w-4 text-gray-400" /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase">Category</p>
-                                            <p className="text-xs font-bold text-[#ED1C24]">
-                                                {(selectedMember as any).membership_type || (selectedMember as any).membershipType || "REGULAR"}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    {/* Contact & Emergency Card */}
+                    <div className="bg-gray-50/70 p-5 rounded-[24px] border border-gray-100 space-y-4">
+                      <div className="flex items-center gap-2 border-b border-gray-200/60 pb-3">
+                        <Phone className="h-4 w-4 text-[#ED1C24]" />
+                        <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                          Contact & Emergency Info
+                        </h4>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Phone Number</p>
+                            <p className="text-xs font-bold text-black mt-0.5">
+                              {selectedMember.phone_number ? (
+                                <a href={`tel:${selectedMember.phone_number}`} className="hover:text-[#ED1C24] transition-colors">
+                                  {selectedMember.phone_number}
+                                </a>
+                              ) : "No Phone"}
+                            </p>
+                          </div>
+                          {selectedMember.phone_number && (
+                            <button
+                              onClick={() => copyToClipboard(selectedMember.phone_number!, "Phone Number")}
+                              className="p-1 hover:bg-gray-200 rounded text-gray-500 transition-colors"
+                              title="Copy Phone"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          )}
                         </div>
-
-                        <div className="space-y-6">
-                            <div>
-                                <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Contact & Location</h4>
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Phone className="h-4 w-4 text-gray-400" /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase">Phone</p>
-                                            <p className="text-xs font-bold text-black">{selectedMember.phone_number || "No Phone"}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Mail className="h-4 w-4 text-gray-400" /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase">Email</p>
-                                            <p className="text-xs font-bold text-black">{selectedMember.email || "No Email"}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><MapPin className="h-4 w-4 text-gray-400" /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase">Location Hierarchy</p>
-                                            <p className="text-xs font-bold text-black">
-                                                {(regions || DEFAULT_REGIONS).find(r => String(r.id) === String(selectedMember.region))?.name || "Unknown Region"}
-                                                {((selectedMember as any).zone_id || (selectedMember as any).zoneId) && ` • ${(selectedMember as any).zone_id || (selectedMember as any).zoneId}`}
-                                                {((selectedMember as any).woreda_id || (selectedMember as any).woredaId) && ` • ${(selectedMember as any).woreda_id || (selectedMember as any).woredaId}`}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Email Address</p>
+                            <p className="text-xs font-bold text-black mt-0.5">
+                              {selectedMember.email ? (
+                                <a href={`mailto:${selectedMember.email}`} className="hover:text-[#ED1C24] transition-colors">
+                                  {selectedMember.email}
+                                </a>
+                              ) : "No Email"}
+                            </p>
+                          </div>
+                          {selectedMember.email && (
+                            <button
+                              onClick={() => copyToClipboard(selectedMember.email!, "Email")}
+                              className="p-1 hover:bg-gray-200 rounded text-gray-500 transition-colors"
+                              title="Copy Email"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          )}
                         </div>
+                        {(emergencyName || emergencyPhone) && (
+                          <div className="pt-2 border-t border-gray-200/50">
+                            <p className="text-[9px] font-black text-red-600 uppercase tracking-wider flex items-center gap-1">
+                              <Heart className="h-3 w-3" /> Emergency Contact
+                            </p>
+                            <p className="text-xs font-bold text-black mt-0.5">
+                              {emergencyName || "Contact"} {emergencyPhone && `• ${emergencyPhone}`}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="px-8 pb-8">
-                        <div className="p-6 bg-gray-50 rounded-[32px] border border-gray-100">
-                            <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">System Metadata</h4>
-                            <pre className="text-[10px] font-mono text-gray-500 overflow-auto max-h-48">
-                                {JSON.stringify(selectedMember, null, 2)}
-                            </pre>
-                        </div>
-                        <div className="mt-6 flex gap-3">
-                            <Button className="flex-1 bg-black text-white rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest">
-                                Print Audit Record
-                            </Button>
-                            <Button variant="outline" className="flex-1 rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest border-gray-200">
-                                Edit Profile
-                            </Button>
-                        </div>
+                  {/* Grid 2: Location & Hierarchy Details */}
+                  <div className="bg-gray-50/70 p-5 rounded-[24px] border border-gray-100 space-y-4">
+                    <div className="flex items-center gap-2 border-b border-gray-200/60 pb-3">
+                      <MapPin className="h-4 w-4 text-[#ED1C24]" />
+                      <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                        Geographic Hierarchy & Residence Location
+                      </h4>
                     </div>
-                </motion.div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Regional Branch</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{regionName}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Zone / Subcity</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{zoneVal || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Woreda / District</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{woredaVal || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Kebele</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{kebeleVal || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">House No / Street</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{houseNo || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Area Settlement</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{meta.area || "N/A"}</p>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Coordination Branch</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{branchOffice || "Main Branch"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Grid 3: Socio-Economic Profile */}
+                  <div className="bg-gray-50/70 p-5 rounded-[24px] border border-gray-100 space-y-4">
+                    <div className="flex items-center gap-2 border-b border-gray-200/60 pb-3">
+                      <Briefcase className="h-4 w-4 text-[#ED1C24]" />
+                      <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                        Socio-Economic, Professional & Community Profile
+                      </h4>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Occupation / Profession</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{meta.occupation || meta.profession || (selectedMember as any).profession || "Not Specified"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Organization / Employer</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{meta.organizationName || meta.organization_name || meta.organization || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Education Level</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{meta.educationLevel || meta.education_level || meta.education || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Languages Spoken</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{meta.languages || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Special Skills / Badges</p>
+                        <p className="text-xs font-bold text-black mt-0.5">
+                          {Array.isArray(meta.skills) ? meta.skills.join(", ") : (meta.skills || "N/A")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Registration Mode</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{meta.registration_mode || meta.channel || "Standard Registry"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Grid 4: Dynamic Extra Attributes (if any extra keys exist in metadata) */}
+                  {customAttributes.length > 0 && (
+                    <div className="bg-gray-50/70 p-5 rounded-[24px] border border-gray-100 space-y-4">
+                      <div className="flex items-center gap-2 border-b border-gray-200/60 pb-3">
+                        <Sparkles className="h-4 w-4 text-[#ED1C24]" />
+                        <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                          Additional Member Attributes & Metadata
+                        </h4>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {customAttributes.map(([key, val]) => (
+                          <div key={key}>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">
+                              {key.replace(/_/g, " ")}
+                            </p>
+                            <p className="text-xs font-bold text-black mt-0.5 truncate">
+                              {typeof val === "object" ? JSON.stringify(val) : String(val)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Grid 5: System Audit Information */}
+                  <div className="bg-gray-50/70 p-5 rounded-[24px] border border-gray-100 space-y-4">
+                    <div className="flex items-center gap-2 border-b border-gray-200/60 pb-3">
+                      <ShieldCheck className="h-4 w-4 text-[#ED1C24]" />
+                      <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                        System Record Security & Timestamps
+                      </h4>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="sm:col-span-1">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">System Record UUID</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <p className="text-[11px] font-mono font-bold text-gray-700 truncate max-w-[180px]">
+                            {selectedMember.id}
+                          </p>
+                          <button
+                            onClick={() => copyToClipboard(selectedMember.id, "System ID")}
+                            className="p-1 hover:bg-gray-200 rounded text-gray-500 transition-colors"
+                            title="Copy UUID"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Registered Timestamp</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{createdDate}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Last Profile Updated</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{updatedDate}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-6 bg-gray-50/90 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                  <Button 
+                    onClick={() => exportToCSV([selectedMember])}
+                    variant="outline" 
+                    className="rounded-2xl h-11 px-5 font-black text-[10px] uppercase tracking-widest border-gray-200 bg-white hover:bg-gray-100 flex items-center gap-2 shadow-xs"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Export Member CSV
+                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button 
+                      onClick={() => window.print()}
+                      className="bg-black hover:bg-gray-800 text-white rounded-2xl h-11 px-5 font-black text-[10px] uppercase tracking-widest flex items-center gap-2 shadow-sm"
+                    >
+                      <FileText className="h-3.5 w-3.5" /> Print Audit Record
+                    </Button>
+                    <Button 
+                      onClick={() => setShowModal(false)}
+                      variant="outline" 
+                      className="rounded-2xl h-11 px-5 font-black text-[10px] uppercase tracking-widest border-gray-200 bg-white"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
             </div>
-        )}
+          );
+        })()}
 
         {/* Pagination Footer */}
         <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between print:hidden">
