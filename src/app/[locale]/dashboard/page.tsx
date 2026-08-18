@@ -792,7 +792,7 @@ export default function DashboardPage() {
             className="bg-[#ED1C24] text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
           >
             {isVolunteer ? (
-              <><Plus className="h-4 w-4" /> Log Service Hours</>
+              <><Calendar className="h-4 w-4" /> Explore Events & Drills</>
             ) : (
               <><Award className="h-4 w-4" /> Renew Membership</>
             )}
