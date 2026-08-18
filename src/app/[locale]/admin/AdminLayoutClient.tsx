@@ -45,18 +45,18 @@ export default function AdminLayoutClient({
         let reqList: any[] = [];
 
         try {
-          const orgRes = await api.get('/organizations');
+          const orgRes = await api.get('/organizations?page=1&page_size=100');
           orgList = orgRes.data?.organizations || (Array.isArray(orgRes.data) ? orgRes.data : []);
         } catch (e) {
           console.warn("Could not fetch organizations for notifications", e);
         }
 
         try {
-          const reqRes = await api.get('/admin/volunteer-requests');
+          const reqRes = await api.get('/admin/volunteer-requests?page=1&page_size=100');
           reqList = reqRes.data?.requests || (Array.isArray(reqRes.data) ? reqRes.data : []);
         } catch {
           try {
-            const reqRes = await api.get('/organizations/requests');
+            const reqRes = await api.get('/organizations/requests?page=1&page_size=100');
             reqList = reqRes.data?.requests || (Array.isArray(reqRes.data) ? reqRes.data : []);
           } catch (e) {
             console.warn("Could not fetch volunteer requests for notifications", e);

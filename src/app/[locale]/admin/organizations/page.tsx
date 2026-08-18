@@ -188,7 +188,7 @@ export default function AdminOrganizationsPage() {
   const fetchOrganizations = useCallback(async () => {
     setOrgLoading(true);
     try {
-      const res = await api.get("/organizations");
+      const res = await api.get("/organizations?page=1&page_size=100");
       setOrganizations(res.data.organizations || (Array.isArray(res.data) ? res.data : []));
     } catch (err) {
       console.error("Failed to fetch organizations:", err);
@@ -204,10 +204,10 @@ export default function AdminOrganizationsPage() {
     try {
       let rawRequests: VolunteerRequest[] = [];
       try {
-        const res = await api.get("/admin/volunteer-requests");
+        const res = await api.get("/admin/volunteer-requests?page=1&page_size=100");
         rawRequests = res.data?.requests || (Array.isArray(res.data) ? res.data : []);
       } catch {
-        const res = await api.get("/organizations/requests");
+        const res = await api.get("/organizations/requests?page=1&page_size=100");
         rawRequests = res.data?.requests || (Array.isArray(res.data) ? res.data : []);
       }
       setRequests(rawRequests);
@@ -680,34 +680,51 @@ export default function AdminOrganizationsPage() {
             </Table>
 
             {/* Pagination Controls */}
-            {filteredOrgs.length > orgPageSize && (
-              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+            {filteredOrgs.length > 0 && (
+              <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50">
                 <span className="text-xs font-semibold text-gray-500">
                   Showing {(orgPage - 1) * orgPageSize + 1} to{" "}
                   {Math.min(orgPage * orgPageSize, filteredOrgs.length)} of {filteredOrgs.length} organizations
                 </span>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    disabled={orgPage <= 1}
-                    onClick={() => setOrgPage((p) => p - 1)}
-                    variant="outline"
-                    className="h-8 w-8 p-0 rounded-lg border-gray-200"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="text-xs font-bold text-gray-700 px-2">
-                    Page {orgPage} of {totalOrgPages}
-                  </span>
-                  <Button
-                    disabled={orgPage >= totalOrgPages}
-                    onClick={() => setOrgPage((p) => p + 1)}
-                    variant="outline"
-                    className="h-8 w-8 p-0 rounded-lg border-gray-200"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                {totalOrgPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      disabled={orgPage <= 1}
+                      onClick={() => setOrgPage((p) => Math.max(1, p - 1))}
+                      variant="outline"
+                      className="h-8 px-2.5 rounded-lg border-gray-200 text-xs font-bold gap-1 hover:bg-gray-100"
+                    >
+                      <ChevronLeft className="h-4 w-4" /> Prev
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalOrgPages }, (_, i) => i + 1).map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          onClick={() => setOrgPage(pageNum)}
+                          className={cn(
+                            "h-8 min-w-8 px-2 rounded-lg text-xs font-black transition-all cursor-pointer",
+                            orgPage === pageNum
+                              ? "bg-[#ED1C24] text-white shadow-sm"
+                              : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                          )}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+                    </div>
+
+                    <Button
+                      disabled={orgPage >= totalOrgPages}
+                      onClick={() => setOrgPage((p) => Math.min(totalOrgPages, p + 1))}
+                      variant="outline"
+                      className="h-8 px-2.5 rounded-lg border-gray-200 text-xs font-bold gap-1 hover:bg-gray-100"
+                    >
+                      Next <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -920,34 +937,51 @@ export default function AdminOrganizationsPage() {
             </Table>
 
             {/* Pagination Controls */}
-            {filteredRequests.length > reqPageSize && (
-              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+            {filteredRequests.length > 0 && (
+              <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50/50">
                 <span className="text-xs font-semibold text-gray-500">
                   Showing {(reqPage - 1) * reqPageSize + 1} to{" "}
                   {Math.min(reqPage * reqPageSize, filteredRequests.length)} of {filteredRequests.length} requests
                 </span>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    disabled={reqPage <= 1}
-                    onClick={() => setReqPage((p) => p - 1)}
-                    variant="outline"
-                    className="h-8 w-8 p-0 rounded-lg border-gray-200"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="text-xs font-bold text-gray-700 px-2">
-                    Page {reqPage} of {totalReqPages}
-                  </span>
-                  <Button
-                    disabled={reqPage >= totalReqPages}
-                    onClick={() => setReqPage((p) => p + 1)}
-                    variant="outline"
-                    className="h-8 w-8 p-0 rounded-lg border-gray-200"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                {totalReqPages > 1 && (
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      disabled={reqPage <= 1}
+                      onClick={() => setReqPage((p) => Math.max(1, p - 1))}
+                      variant="outline"
+                      className="h-8 px-2.5 rounded-lg border-gray-200 text-xs font-bold gap-1 hover:bg-gray-100"
+                    >
+                      <ChevronLeft className="h-4 w-4" /> Prev
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalReqPages }, (_, i) => i + 1).map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          onClick={() => setReqPage(pageNum)}
+                          className={cn(
+                            "h-8 min-w-8 px-2 rounded-lg text-xs font-black transition-all cursor-pointer",
+                            reqPage === pageNum
+                              ? "bg-[#ED1C24] text-white shadow-sm"
+                              : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
+                          )}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+                    </div>
+
+                    <Button
+                      disabled={reqPage >= totalReqPages}
+                      onClick={() => setReqPage((p) => Math.min(totalReqPages, p + 1))}
+                      variant="outline"
+                      className="h-8 px-2.5 rounded-lg border-gray-200 text-xs font-bold gap-1 hover:bg-gray-100"
+                    >
+                      Next <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
