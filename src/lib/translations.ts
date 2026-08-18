@@ -220,6 +220,28 @@ export const translations = {
       mobile: "+251-911-90-79-78, +251-913-79-88-80",
       fax: "+251-115-15-00-99"
     },
+    faq: {
+      badge: "FAQ",
+      title: "Frequently Asked Questions",
+      subtitle: "Find answers to common questions about volunteering, membership, and supporting the Ethiopian Red Cross Society.",
+      items: [
+        {
+          id: "faq-1",
+          question: "How do I become a volunteer?",
+          answer: "If you would like to offer voluntary service, browse the current opportunities listed on our Volunteer Hub or visit https://member.redcrosseth.org/. Stay updated on new opportunities and news by following us on YouTube: @ethiopianredcross3516, x.com/EthioRedCross , tiktok.com/@ercs1935, https://www.linkedin.com/company/ethiopian-red-cross-society/"
+        },
+        {
+          id: "faq-2",
+          question: "What can I expect?",
+          answer: "• A clear outline of your voluntary role and responsibilities\n• Specialized training, where required\n• Ongoing supervision, including regular check-ins with your supervisor\n• Opportunities for personal development"
+        },
+        {
+          id: "faq-3",
+          question: "What skills do I need?",
+          answer: "Requirements vary depending on the role. Some positions call for specific skills, such as fluency in a particular language when supporting a specific community. If a role requires a particular skill, you should have it before being deployed."
+        }
+      ]
+    },
     dashboard: {
       mainMenu: "Main Menu",
       dashboard: "Dashboard",
@@ -432,6 +454,28 @@ export const translations = {
       tel: "+251-115-18-01-80, +251-115-18-01-82",
       mobile: "+251-911-90-79-78, +251-913-79-88-80",
       fax: "+251-115-15-00-99"
+    },
+    faq: {
+      badge: "ተደጋጋሚ ጥያቄዎች",
+      title: "ተደጋግመው የሚጠየቁ ጥያቄዎች (FAQ)",
+      subtitle: "ስለ በጎ ፈቃደኝነት፣ አባልነት እና የኢትዮጵያ ቀይ መስቀል ማህበር ድጋፍ የተለመዱ ጥያቄዎች እና ምላሾች።",
+      items: [
+        {
+          id: "faq-1",
+          question: "እንዴት በጎ ፈቃደኛ መሆን እችላለሁ?",
+          answer: "የበጎ ፈቃድ አገልግሎት ለመስጠት ከፈለጉ በእኛ የበጎ ፈቃደኞች ማዕከል የተዘረዘሩትን ወቅታዊ ዕድሎች ይመልከቱ ወይም https://member.redcrosseth.org/ ይጎብኙ። አዳዲስ መረጃዎችን እና ዜናዎችን በዩቲዩብ፡ @ethiopianredcross3516፣ x.com/EthioRedCross፣ tiktok.com/@ercs1935፣ https://www.linkedin.com/company/ethiopian-red-cross-society/ በመከተል ያግኙ።"
+        },
+        {
+          id: "faq-2",
+          question: "ምን እጠብቃለሁ?",
+          answer: "• የበጎ ፈቃድ ሚናዎ እና ኃላፊነቶችዎ ግልጽ መግለጫ\n• እንደ አስፈላጊነቱ ልዩ ስልጠና\n• ቀጣይነት ያለው ክትትል፣ ከአስተዳዳሪዎ ጋር መደበኛ ግንኙነትን ጨምሮ\n• የግል እድገት እና ክህሎት ማዳበርያ እድሎች"
+        },
+        {
+          id: "faq-3",
+          question: "ምን አይነት ክህሎቶች ያስፈልጉኛል?",
+          answer: "መስፈርቶቹ እንደየሥራው ይለያያሉ። አንዳንድ ቦታዎች የተወሰኑ ክህሎቶችን ይጠይቃሉ፤ ለምሳሌ የተወሰነ ማህበረሰብን ሲደግፉ የተወሰነ ቋንቋ አቀላጥፎ መናገር። አንድ ሚና የተለየ ክህሎት የሚፈልግ ከሆነ፣ ከመሰማራቱ በፊት ሊኖርዎት ይገባል።"
+        }
+      ]
     },
     footer: {
       desc: "ከ1935 ጀምሮ በአገር አቀፍ ደረጃ ባለን የቁርጠኝነት መረብ አማካኝነት የሰውን ልጅ ስቃይ ማቃለል እና ሕይወትን፣ ጤናን እና ክብርን መጠበቅ።",
@@ -661,6 +705,28 @@ export const translations = {
       tel: "+251-115-18-01-80, +251-115-18-01-82",
       mobile: "+251-911-90-79-78, +251-913-79-88-80",
       fax: "+251-115-15-00-99"
+    },
+    faq: {
+      badge: "Gaaffilee Yeroo Baay'ee",
+      title: "Gaaffilee Yeroo Baay'ee Gaafataman (FAQ)",
+      subtitle: "Waa'ee tajaajila fedhii, miseensummaa fi arjoomaa ilaalchisee gaaffilee beekamoo fi deebiiwwan isaanii.",
+      items: [
+        {
+          id: "faq-1",
+          question: "Akkamitti fedhaan-laattuu ta'uu danda'a?",
+          answer: "Tajaajila fedhii kennuu yoo barbaaddan, carraawwan Wiirtuu Fedhaan-laattotaa keenya irratti tarreeffaman ilaalaa ykn https://member.redcrosseth.org/ daawwadhaa. Odeeffannoo dabalataaf YouTube: @ethiopianredcross3516, x.com/EthioRedCross , tiktok.com/@ercs1935, https://www.linkedin.com/company/ethiopian-red-cross-society/ irratti nu hordofaa."
+        },
+        {
+          id: "faq-2",
+          question: "Maal eeguu danda'a?",
+          answer: "• Ibsa ifa ta'e kan gahee fi itti gaafatamummaa tajaajila fedhii keessanii\n• Leenjii addaa, yoo barbaachise\n• Hordoffii walitti fufaa, hoggantoota waliin walqunnamtii idilee dabalatee\n• Carraawwan guddina dhuunfaa"
+        },
+        {
+          id: "faq-3",
+          question: "Dandeettii akkamiitu na barbaachisa?",
+          answer: "Ulaagaaleen akkaataa gahee hojiitiin garaagarummaa qabu. Bakka tokko tokko dandeettii addaa barbaadu, fakkeenyaaf afaan tokko sirriitti dubbachuu. Yoo gaheen sun dandeettii addaa barbaade, bobba'uu dura qabaachuu qabdu."
+        }
+      ]
     },
     footer: {
       desc: "Waggaa 1935 jalqabee guutuu biyyattiitti networkii keenya kanaan dhiphuu namoomaa hir'isuu fi lubbuu, fayyaa fi ulfina namaa eeguu.",

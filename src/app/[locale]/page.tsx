@@ -39,6 +39,7 @@ import { useEffect, useRef, useState } from "react";
 import { useInView, useMotionValue, useSpring, useTransform } from "framer-motion";
 import WhoWeAre from "@/components/WhoWeAre";
 import NewsSection from "@/components/NewsSection";
+import FAQSection from "@/components/FAQSection";
 import WelcomeModal from "@/components/WelcomeModal";
 import DonationModal from "@/components/DonationModal";
 import Header from "@/components/layout/Header";
@@ -247,6 +248,11 @@ export default function LandingPage() {
     ctaBanner: {
       ...t.ctaBanner,
       ...(dynamicContent?.[lang]?.ctaBanner || {})
+    },
+    faq: {
+      ...t.faq,
+      ...(dynamicContent?.[lang]?.faq || {}),
+      items: dynamicContent?.[lang]?.faq?.items || t.faq?.items || []
     },
     footer: {
       ...t.footer,
@@ -945,16 +951,16 @@ export default function LandingPage() {
                     </div>
                  </div>
 
-                 <div className="pt-4">
-                    <Link href="/join">
-                       <Button className="h-14 bg-[#ED1C24] hover:bg-white hover:text-black text-white rounded-2xl px-8 font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-red-500/20 group">
-                         {mergedT.volunteerSection.cta}
-                         <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                       </Button>
-                    </Link>
-                 </div>
-              </div>
-           </div>
+                  <div className="pt-4">
+                     <Link href="/join">
+                        <Button className="h-14 bg-[#ED1C24] hover:bg-white hover:text-black text-white rounded-2xl px-8 font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-red-500/20 group">
+                          {mergedT.volunteerSection.cta}
+                          <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                     </Link>
+                  </div>
+               </div>
+            </div>
         </section>
 
         {/* Call to Action Banner */}
@@ -978,9 +984,9 @@ export default function LandingPage() {
                       </div>
                       <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                         <Link href="/join">
-                           <Button size="lg" className="bg-white hover:bg-black text-[#ED1C24] hover:text-white rounded-2xl h-14 px-8 text-base font-black shadow-2xl transition-all hover:-translate-y-1 active:translate-y-0 flex items-center gap-3">
+                            <Button size="lg" className="bg-white hover:bg-black text-[#ED1C24] hover:text-white rounded-2xl h-14 px-8 text-base font-black shadow-2xl transition-all hover:-translate-y-1 active:translate-y-0 flex items-center gap-3">
                               {mergedT.ctaBanner.volunteer} <ChevronRight className="h-5 w-5" />
-                           </Button>
+                            </Button>
                         </Link>
                       </div>
                    </div>
@@ -1003,6 +1009,9 @@ export default function LandingPage() {
              </div>
           </div>
         </section>
+
+        {/* FAQ Section */}
+        <FAQSection lang={lang} content={mergedT.faq} />
 
         {/* Contact Us Section */}
         <section className="py-24 px-6 bg-white" id="contact">
