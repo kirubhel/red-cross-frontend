@@ -52,7 +52,7 @@ import {
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
-import { resolveRegionId } from "@/lib/constants";
+import { resolveRegionId, getZoneName, getWoredaName } from "@/lib/constants";
 import { GeographicMapReport } from "@/components/admin/GeographicMapReport";
 import { getUserScope } from "@/lib/auth-scope";
 
@@ -1169,7 +1169,10 @@ export default function MembersPage() {
                             </span>
                             {((member as any).zone_id || (member as any).zoneId || (member as any).woreda_id || (member as any).woredaId) && (
                               <span className="text-[10px] font-semibold text-gray-400 pl-4">
-                                {[(member as any).zone_id || (member as any).zoneId, (member as any).woreda_id || (member as any).woredaId].filter(Boolean).join(" • ")}
+                                {[
+                                  getZoneName((member as any).zone_id || (member as any).zoneId),
+                                  getWoredaName((member as any).woreda_id || (member as any).woredaId, (member as any).zone_id || (member as any).zoneId)
+                                ].filter(Boolean).join(" • ")}
                               </span>
                             )}
                           </div>

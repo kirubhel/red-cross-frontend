@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import html2canvas from "html2canvas";
+import { getRegionName, getZoneName, getWoredaName } from "@/lib/constants";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -123,8 +124,15 @@ export default function DashboardPage() {
           console.warn("Failed to parse user metadata", e);
         }
 
-        const zone = userData?.zone_id || userData?.zone || userMeta?.zone || userMeta?.zone_name || "";
-        const woreda = userData?.woreda_id || userData?.woreda || userMeta?.woreda || userMeta?.woreda_name || "";
+        const rawRegion = userData?.region_id || userData?.region || userMeta?.region || userMeta?.region_id;
+        const regionName = getRegionName(rawRegion);
+
+        const rawZone = userData?.zone_id || userData?.zone || userMeta?.zone || userMeta?.zone_name || "";
+        const zoneName = getZoneName(rawZone, rawRegion);
+
+        const rawWoreda = userData?.woreda_id || userData?.woreda || userMeta?.woreda || userMeta?.woreda_name || "";
+        const woredaName = getWoredaName(rawWoreda, rawZone);
+
         const kebele = userData?.kebele_id || userMeta?.kebele || userMeta?.kebele_id || "";
         const houseNo = userMeta?.house_number || userMeta?.house_no || userMeta?.houseNo || "";
         const area = userMeta?.area || "";
@@ -176,26 +184,6 @@ export default function DashboardPage() {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const status = userData?.membership_status || userData?.status || "PENDING";
         const isApproved = status.toUpperCase() === "APPROVED";
-
-        const REGIONS: Record<number, string> = {
-          1: "Addis Ababa",
-          2: "Dire Dawa",
-          3: "Tigray",
-          4: "Afar",
-          5: "Amhara",
-          6: "Oromia",
-          7: "Somali",
-          8: "Benishangul Gumz",
-          9: "Central Ethiopia",
-          10: "Gambela",
-          11: "Harari",
-          12: "Sidama",
-          13: "South West Ethiopia",
-          14: "South Ethiopia"
-        };
-
-        const regionId = userData?.region_id || userData?.region || 0;
-        const regionName = REGIONS[regionId] || userData?.region_name || "South Ethiopia";
 
         const firstName = userData?.first_name || userData?.firstName || "";
         const fatherName = userData?.father_name || userData?.fatherName || "";
@@ -259,8 +247,10 @@ export default function DashboardPage() {
           idAssets: idAssets,
           address: {
             region: regionName,
-            zone: zone,
-            woreda: woreda,
+            zone: zoneName,
+            rawZone: rawZone,
+            woreda: woredaName,
+            rawWoreda: rawWoreda,
             kebele: kebele,
             houseNo: houseNo,
             area: area,

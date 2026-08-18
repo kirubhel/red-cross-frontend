@@ -320,4 +320,91 @@ export function resolveRegionId(
   return dbRegions && dbRegions.length > 0 ? dbRegions[0].id : 1;
 }
 
+export function getRegionName(regionVal: any): string {
+  if (regionVal === undefined || regionVal === null || regionVal === "") return "Addis Ababa";
+  const id = resolveRegionId(regionVal, REGIONS);
+  const found = REGIONS.find(r => r.id === id);
+  return found ? found.name : "Addis Ababa";
+}
+
+export function getZoneName(zoneVal: any, regionVal?: any): string {
+  if (!zoneVal) return "";
+  const str = String(zoneVal).trim();
+  if (!str) return "";
+
+  // 1. Search through ETHIOPIA_LOCATION_DATA
+  for (const regKey of Object.keys(ETHIOPIA_LOCATION_DATA)) {
+    const zones = ETHIOPIA_LOCATION_DATA[regKey]?.zones || [];
+    const matched = zones.find(
+      z => z.id.toLowerCase() === str.toLowerCase() || z.name.toLowerCase() === str.toLowerCase()
+    );
+    if (matched) return matched.name;
+  }
+
+  // 2. If it's something like ZONE_aa_akaki_kality, clean up
+  if (str.startsWith("ZONE_") || str.includes("_")) {
+    const cleaned = str
+      .replace(/^ZONE_[a-z0-9]+_/i, "")
+      .replace(/^ZONE_/i, "")
+      .replace(/_/g, " ")
+      .trim();
+    if (cleaned) {
+      return cleaned
+        .split(" ")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+    }
+  }
+
+  return str;
+}
+
+export function getWoredaName(woredaVal: any, zoneVal?: any): string {
+  if (!woredaVal) return "";
+  const str = String(woredaVal).trim();
+  if (!str) return "";
+
+  // 1. Check in specific zone's woredas if zoneVal provided
+  if (zoneVal && ZONE_WOREDA_DATA[zoneVal]) {
+    const matched = ZONE_WOREDA_DATA[zoneVal].find(
+      w => w.id.toLowerCase() === str.toLowerCase() || w.name.toLowerCase() === str.toLowerCase()
+    );
+    if (matched) return matched.name;
+  }
+
+  // 2. Search across all ZONE_WOREDA_DATA
+  for (const zKey of Object.keys(ZONE_WOREDA_DATA)) {
+    const woredas = ZONE_WOREDA_DATA[zKey] || [];
+    const matched = woredas.find(
+      w => w.id.toLowerCase() === str.toLowerCase() || w.name.toLowerCase() === str.toLowerCase()
+    );
+    if (matched) return matched.name;
+  }
+
+  // 3. Match patterns like WOREDA_aa_akaki_01 or WOREDA_01 or WOREDA_..._12
+  const numMatch = str.match(/(\d+)$/);
+  if (numMatch) {
+    const num = numMatch[1].padStart(2, "0");
+    return `Woreda ${num}`;
+  }
+
+  // 4. Format any generic string
+  if (str.startsWith("WOREDA_") || str.includes("_")) {
+    const cleaned = str
+      .replace(/^WOREDA_[a-z0-9]+_/i, "")
+      .replace(/^WOREDA_/i, "")
+      .replace(/_/g, " ")
+      .trim();
+    if (cleaned) {
+      return cleaned
+        .split(" ")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+    }
+  }
+
+  return str;
+}
+
+
 

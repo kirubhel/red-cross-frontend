@@ -41,16 +41,30 @@ export default function AdminLayoutClient({
   useEffect(() => {
     const fetchPendingItems = async () => {
       try {
-        const [orgRes, reqRes] = await Promise.all([
-          api.get('/organizations').catch(() => ({ data: { organizations: [] } })),
-          api.get('/admin/volunteer-requests').catch(() => ({ data: { requests: [] } }))
-        ]);
-        
-        const orgList = orgRes.data.organizations || [];
-        setPendingOrgs(orgList.filter((org: any) => org.status === 'PENDING'));
+        let orgList: any[] = [];
+        let reqList: any[] = [];
 
-        const reqList = reqRes.data.requests || [];
-        setPendingRequests(reqList.filter((req: any) => req.status === 'PENDING'));
+        try {
+          const orgRes = await api.get('/organizations');
+          orgList = orgRes.data?.organizations || (Array.isArray(orgRes.data) ? orgRes.data : []);
+        } catch (e) {
+          console.warn("Could not fetch organizations for notifications", e);
+        }
+
+        try {
+          const reqRes = await api.get('/admin/volunteer-requests');
+          reqList = reqRes.data?.requests || (Array.isArray(reqRes.data) ? reqRes.data : []);
+        } catch {
+          try {
+            const reqRes = await api.get('/organizations/requests');
+            reqList = reqRes.data?.requests || (Array.isArray(reqRes.data) ? reqRes.data : []);
+          } catch (e) {
+            console.warn("Could not fetch volunteer requests for notifications", e);
+          }
+        }
+        
+        setPendingOrgs(Array.isArray(orgList) ? orgList.filter((org: any) => org.status === 'PENDING') : []);
+        setPendingRequests(Array.isArray(reqList) ? reqList.filter((req: any) => req.status === 'PENDING') : []);
       } catch (err) {
         console.error("Failed to fetch pending notifications", err);
       }
@@ -208,7 +222,7 @@ export default function AdminLayoutClient({
                             key={req.id} 
                             onClick={() => {
                               setShowNotifDropdown(false);
-                              window.location.href = "/admin/volunteer-requests";
+                              window.location.href = "/admin/organizations?tab=requests";
                             }}
                             className="p-3 rounded-xl bg-blue-50/50 hover:bg-blue-50
                               border border-blue-100/50 transition-all cursor-pointer flex gap-3

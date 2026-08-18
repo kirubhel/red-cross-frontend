@@ -43,7 +43,7 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { resolveRegionId } from "@/lib/constants";
+import { resolveRegionId, getZoneName, getWoredaName } from "@/lib/constants";
 import { GeographicMapReport } from "@/components/admin/GeographicMapReport";
 import type { Cell, CellValue } from "exceljs";
 import { getUserScope } from "@/lib/auth-scope";
@@ -1390,7 +1390,7 @@ export default function VolunteersPage() {
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase">Zone / Woreda</p>
                                         <p className="text-xs font-bold text-black">
-                                            {selectedVolunteer.zone_id || "---"} • {selectedVolunteer.woreda_id || "---"}
+                                            {getZoneName(selectedVolunteer.zone_id) || "---"} • {getWoredaName(selectedVolunteer.woreda_id, selectedVolunteer.zone_id) || "---"}
                                         </p>
                                     </div>
                                 </div>
