@@ -798,6 +798,16 @@ export default function VolunteersPage() {
 
   const getArea = (v: Volunteer) => v.interests?.find(i => i.startsWith("Area:"))?.replace("Area:", "") || "Not Specified";
   const getEducation = (v: Volunteer) => v.interests?.find(i => i.startsWith("Education:"))?.replace("Education:", "") || "Not Specified";
+  const getEducationalBackground = (v: Volunteer) => {
+    let meta: any = {};
+    try {
+      const rawMeta = (v as any).metadata;
+      meta = typeof rawMeta === 'string' ? JSON.parse(rawMeta || '{}') : (rawMeta || {});
+    } catch {
+      meta = {};
+    }
+    return meta.educationalBackground || meta.educational_background || "Not Specified";
+  };
   const getOrgName = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgName:"))?.replace("OrgName:", "") || "N/A";
   const getOrgType = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgType:"))?.replace("OrgType:", "") || "N/A";
 
@@ -1419,6 +1429,10 @@ export default function VolunteersPage() {
                                 <div>
                                     <p className="text-[10px] font-black text-gray-400 uppercase">Education Level</p>
                                     <p className="text-xs font-bold text-black">{getEducation(selectedVolunteer)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase">Educational Background</p>
+                                    <p className="text-xs font-bold text-black">{getEducationalBackground(selectedVolunteer)}</p>
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-gray-400 uppercase">Geographic Area</p>

@@ -344,6 +344,7 @@ export default function MembersPage() {
       "Occupation",
       "Organization Name",
       "Education Level",
+      "Educational Background",
       "Kebele",
       "Area",
       "Languages",
@@ -385,6 +386,7 @@ export default function MembersPage() {
         escapeCsv(meta.occupation || ""),
         escapeCsv(meta.organizationName || ""),
         escapeCsv(meta.educationLevel || ""),
+        escapeCsv(meta.educationalBackground || meta.educational_background || ""),
         escapeCsv(meta.kebele || ""),
         escapeCsv(meta.area || ""),
         escapeCsv(meta.languages || ""),
@@ -1283,7 +1285,7 @@ export default function MembersPage() {
           // Known meta keys to skip in dynamic custom attributes
           const standardMetaKeys = new Set([
             "occupation", "profession", "organizationName", "organization_name", "organization",
-            "educationLevel", "education_level", "education", "languages", "skills", "area",
+            "educationLevel", "education_level", "education", "educationalBackground", "educational_background", "languages", "skills", "area",
             "kebele", "kebele_id", "zone", "zone_id", "zone_name", "zoneId", "woreda", "woreda_id",
             "woreda_name", "woredaId", "branch", "branch_id", "branch_name", "house_number", "house_no",
             "houseNo", "emergency_contact_name", "emergencyContactName", "emergency_contact", "emergencyName",
@@ -1578,6 +1580,10 @@ export default function MembersPage() {
                       <div>
                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Education Level</p>
                         <p className="text-xs font-bold text-black mt-0.5">{meta.educationLevel || meta.education_level || meta.education || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Educational Background</p>
+                        <p className="text-xs font-bold text-black mt-0.5">{meta.educationalBackground || meta.educational_background || "N/A"}</p>
                       </div>
                       <div>
                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider">Languages Spoken</p>

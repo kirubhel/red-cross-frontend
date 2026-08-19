@@ -361,6 +361,7 @@ const DEFAULT_VOLUNTEER_FIELDS: FormField[] = [
     { label: "Masters", value: "Masters" },
     { label: "PHD", value: "PHD" }
   ]},
+  { id: "educationalBackground", label: "Educational Background", type: "text", required: false, unique: false, placeholder: "e.g. B.Sc in Public Health, AAU", audience: "INDIVIDUAL" },
   { id: "area", label: "Area", type: "select", required: false, unique: false, placeholder: "Select Area", dataSource: "MANUAL", audience: "ALL", options: [
     { label: "URBAN", value: "URBAN" },
     { label: "RURAL", value: "RURAL" }
@@ -419,6 +420,7 @@ const DEFAULT_MEMBER_FIELDS: FormField[] = [
     { label: "Masters", value: "Masters" },
     { label: "PHD", value: "PHD" }
   ]},
+  { id: "educationalBackground", label: "Educational Background", type: "text", required: false, unique: false, placeholder: "e.g. B.Sc in Public Health, AAU", audience: "INDIVIDUAL" },
   { id: "area", label: "Area", type: "select", required: false, unique: false, placeholder: "Select Area", dataSource: "MANUAL", audience: "ALL", options: [
     { label: "URBAN", value: "URBAN" },
     { label: "RURAL", value: "RURAL" }

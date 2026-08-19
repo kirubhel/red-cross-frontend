@@ -28,6 +28,7 @@ import {
   QrCode
 } from "lucide-react";
 import PhoneNumberInput, { buildFullPhoneNumber, ALL_COUNTRIES } from "@/components/ui/phone-number-input";
+import EthiopianDatePicker from "@/components/EthiopianDatePicker";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS, ETHIOPIA_LOCATION_DATA, ZONE_WOREDA_DATA, getWoredasForZone } from "@/lib/constants";
@@ -345,6 +346,8 @@ function MemberRegistrationContent() {
                     kebele: formData.kebele || "",
                     occupation: formData.occupation || "",
                     education_level: formData.educationLevel || "",
+                    educational_background: formData.educationalBackground || "",
+                    educationalBackground: formData.educationalBackground || "",
                     area: formData.area || "",
                     languages: formData.languages || ""
                 })
@@ -771,7 +774,11 @@ function MemberRegistrationContent() {
                                                  {formData.tierType !== "CORPORATE" && (
                                                      <div className="space-y-1 group">
                                                          <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Date of Birth (Eth)</Label>
-                                                         <Input id="dateOfBirth" type="text" className="h-10 rounded-lg bg-gray-50 border-none font-bold text-black px-6 text-xs" placeholder="DD/MM/YYYY (Ethiopian Calendar)" value={formData.dateOfBirth || ""} onChange={handleChange} />
+                                                         <EthiopianDatePicker
+                                                             id="dateOfBirth"
+                                                             value={formData.dateOfBirth || ""}
+                                                             onChange={(val) => setFormData((prev: any) => ({ ...prev, dateOfBirth: val }))}
+                                                         />
                                                      </div>
                                                  )}
 
@@ -819,6 +826,14 @@ function MemberRegistrationContent() {
                                                              <option value="Masters">Masters</option>
                                                              <option value="PHD">PHD</option>
                                                          </select>
+                                                     </div>
+                                                 )}
+
+                                                 {/* Educational Background (Individual Only) */}
+                                                 {formData.tierType !== "CORPORATE" && (
+                                                     <div className="space-y-1 group">
+                                                         <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Educational Background</Label>
+                                                         <Input id="educationalBackground" className="h-10 rounded-lg bg-gray-50 border-none font-bold text-black px-6 text-xs" placeholder="e.g. B.Sc in Public Health, Addis Ababa University" value={formData.educationalBackground || ""} onChange={handleChange} />
                                                      </div>
                                                  )}
 

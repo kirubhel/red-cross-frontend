@@ -27,6 +27,7 @@ import {
   Globe
 } from "lucide-react";
 import PhoneNumberInput, { buildFullPhoneNumber, ALL_COUNTRIES } from "@/components/ui/phone-number-input";
+import EthiopianDatePicker from "@/components/EthiopianDatePicker";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS, ETHIOPIA_LOCATION_DATA, ZONE_WOREDA_DATA, getWoredasForZone } from "@/lib/constants";
@@ -565,34 +566,43 @@ export default function VolunteerJoinPage() {
                                                   <Label htmlFor="email" className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Email Address</Label>
                                                   <Input id="email" type="email" className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-xs" placeholder="sara@example.com" value={formData.email || ""} onChange={handleChange} />
                                               </div>
+                                               {/* Date of Birth */}
+                                               <div className="space-y-1 group md:col-span-1">
+                                                   <Label htmlFor="dateOfBirth" className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Date of Birth (Eth)</Label>
+                                                   <EthiopianDatePicker
+                                                       id="dateOfBirth"
+                                                       value={formData.dateOfBirth || ""}
+                                                       onChange={(val) => setFormData((prev: any) => ({ ...prev, dateOfBirth: val }))}
+                                                   />
+                                               </div>
 
-                                              {/* Date of Birth */}
-                                              <div className="space-y-1 group md:col-span-1">
-                                                  <Label htmlFor="dateOfBirth" className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Date of Birth (Eth)</Label>
-                                                  <Input id="dateOfBirth" className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-xs" placeholder="DD/MM/YYYY (Ethiopian Calendar)" value={formData.dateOfBirth || ""} onChange={handleChange} />
-                                              </div>
+                                               {/* Occupation */}
+                                               <div className="space-y-1 group md:col-span-1">
+                                                   <Label htmlFor="occupation" className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Occupation</Label>
+                                                   <select id="occupation" className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black" value={formData.occupation || ""} onChange={handleChange}>
+                                                       <option value="">Select Occupation</option>
+                                                       {["Farmer", "Business Person", "Civil Servant", "House Wife", "Military", "NGO", "Self Employed", "Student", "Police", "Diplomat", "Others"].map(occ => (
+                                                           <option key={occ} value={occ}>{occ}</option>
+                                                       ))}
+                                                   </select>
+                                               </div>
 
-                                              {/* Occupation */}
-                                              <div className="space-y-1 group md:col-span-1">
-                                                  <Label htmlFor="occupation" className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Occupation</Label>
-                                                  <select id="occupation" className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black" value={formData.occupation || ""} onChange={handleChange}>
-                                                      <option value="">Select Occupation</option>
-                                                      {["Farmer", "Business Person", "Civil Servant", "House Wife", "Military", "NGO", "Self Employed", "Student", "Police", "Diplomat", "Others"].map(occ => (
-                                                          <option key={occ} value={occ}>{occ}</option>
-                                                      ))}
-                                                  </select>
-                                              </div>
+                                               {/* Education Level */}
+                                               <div className="space-y-1 group md:col-span-1">
+                                                   <Label htmlFor="educationLevel" className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Education Level</Label>
+                                                   <select id="educationLevel" className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black" value={formData.educationLevel || ""} onChange={handleChange}>
+                                                       <option value="">Select Education Level</option>
+                                                       {["Below Primary School", "Primary School Completed", "High School Completed", "Degree", "Masters", "PHD"].map(edu => (
+                                                           <option key={edu} value={edu}>{edu}</option>
+                                                       ))}
+                                                   </select>
+                                               </div>
 
-                                              {/* Education Level */}
-                                              <div className="space-y-1 group md:col-span-1">
-                                                  <Label htmlFor="educationLevel" className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Education Level</Label>
-                                                  <select id="educationLevel" className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black" value={formData.educationLevel || ""} onChange={handleChange}>
-                                                      <option value="">Select Education Level</option>
-                                                      {["Below Primary School", "Primary School Completed", "High School Completed", "Degree", "Masters", "PHD"].map(edu => (
-                                                          <option key={edu} value={edu}>{edu}</option>
-                                                      ))}
-                                                  </select>
-                                              </div>
+                                               {/* Educational Background */}
+                                               <div className="space-y-1 group md:col-span-1">
+                                                   <Label htmlFor="educationalBackground" className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Educational Background</Label>
+                                                   <Input id="educationalBackground" className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-xs" placeholder="e.g. B.Sc in Public Health, AAU" value={formData.educationalBackground || ""} onChange={handleChange} />
+                                               </div>
 
                                               {/* Organization Name */}
                                               <div className="space-y-1 group md:col-span-1">

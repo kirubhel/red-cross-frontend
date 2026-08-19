@@ -15,7 +15,9 @@ import {
   Calendar,
   CreditCard,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  X,
+  Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -23,7 +25,9 @@ import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import ImageCropper from "@/components/profile/ImageCropper";
+import SelfieCameraModal from "@/components/profile/SelfieCameraModal";
 import PhoneNumberInput, { buildFullPhoneNumber, stripDialCode } from "@/components/ui/phone-number-input";
+import EthiopianDatePicker from "@/components/EthiopianDatePicker";
 import { getCountries, getCountryCallingCode } from "react-phone-number-input";
 import { 
   REGIONS, 
@@ -51,6 +55,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isPhotoMenuOpen, setIsPhotoMenuOpen] = useState(false);
+  const [isSelfieModalOpen, setIsSelfieModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [countryIso, setCountryIso] = useState("ET");
 
@@ -70,6 +76,7 @@ export default function ProfilePage() {
     occupation: "",
     organizationName: "",
     educationLevel: "",
+    educationalBackground: "",
     area: "",
     languages: "",
     kebele: "",
@@ -125,6 +132,7 @@ export default function ProfilePage() {
           occupation: data.profession || meta.occupation || "",
           organizationName: meta.organization_name || meta.organizationName || "",
           educationLevel: meta.education_level || meta.educationLevel || "",
+          educationalBackground: meta.educational_background || meta.educationalBackground || "",
           area: meta.area || "",
           languages: meta.languages || "",
           kebele: data.kebele_id || meta.kebele || meta.kebele_id || "",
@@ -276,6 +284,8 @@ export default function ProfilePage() {
       meta.occupation = formData.occupation;
       meta.organization_name = formData.organizationName;
       meta.education_level = formData.educationLevel;
+      meta.educational_background = formData.educationalBackground;
+      meta.educationalBackground = formData.educationalBackground;
       meta.area = formData.area;
       meta.languages = formData.languages;
       meta.kebele = formData.kebele;
@@ -382,8 +392,10 @@ export default function ProfilePage() {
                 )}
               </div>
               <button 
-                onClick={() => fileInputRef.current?.click()}
+                type="button"
+                onClick={() => setIsPhotoMenuOpen(true)}
                 className="absolute -bottom-1.5 -right-1.5 h-9 w-9 bg-[#ED1C24] text-white rounded-xl flex items-center justify-center shadow-md shadow-red-500/30 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                title="Change profile photo"
               >
                 <Camera className="h-4 w-4" />
               </button>
@@ -532,13 +544,10 @@ export default function ProfilePage() {
                  </div>
                  <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-wider px-1">Date of Birth (Eth)</label>
-                    <input
-                       type="text"
-                       name="dateOfBirth"
+                    <EthiopianDatePicker
+                       id="dateOfBirth"
                        value={formData.dateOfBirth}
-                       onChange={handleInputChange}
-                       className="w-full bg-gray-50 border border-gray-100 rounded-xl h-11 px-4 font-bold text-xs text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all"
-                       placeholder="DD/MM/YYYY"
+                       onChange={(val) => setFormData(prev => ({ ...prev, dateOfBirth: val }))}
                     />
                  </div>
               </div>
@@ -569,7 +578,7 @@ export default function ProfilePage() {
                  </div>
               </div>
 
-              {/* Education Level & Area */}
+              {/* Education Level & Educational Background */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div className="space-y-1.5">
                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-wider px-1">Education Level</label>
@@ -588,19 +597,34 @@ export default function ProfilePage() {
                        <option value="PHD">PHD</option>
                     </select>
                  </div>
-                 <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-wider px-1">Area</label>
-                    <select
-                       name="area"
-                       value={formData.area}
-                       onChange={handleInputChange}
-                       className="w-full bg-gray-50 border border-gray-100 rounded-xl h-11 px-4 font-bold text-xs text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all appearance-none cursor-pointer"
-                    >
-                       <option value="">Select Area</option>
-                       <option value="URBAN">URBAN</option>
-                       <option value="RURAL">RURAL</option>
-                    </select>
-                 </div>
+                  <div className="space-y-1.5">
+                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-wider px-1">Educational Background</label>
+                     <input
+                        type="text"
+                        name="educationalBackground"
+                        value={formData.educationalBackground || ""}
+                        onChange={handleInputChange}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-xl h-11 px-4 font-bold text-xs text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all"
+                        placeholder="e.g. B.Sc in Public Health, AAU"
+                     />
+                  </div>
+               </div>
+
+               {/* Area */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-wider px-1">Area</label>
+                     <select
+                        name="area"
+                        value={formData.area}
+                        onChange={handleInputChange}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-xl h-11 px-4 font-bold text-xs text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all appearance-none cursor-pointer"
+                     >
+                        <option value="">Select Area</option>
+                        <option value="URBAN">URBAN</option>
+                        <option value="RURAL">RURAL</option>
+                     </select>
+                  </div>
               </div>
 
               {/* Languages & Kebele */}
@@ -764,14 +788,88 @@ export default function ProfilePage() {
         </div>
       </div>
       {selectedImage && (
-        <ImageCropper 
+        <ImageCropper
           image={selectedImage}
           onCropComplete={handleCropComplete}
-          onCancel={() => {
-            setSelectedImage(null);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-          }}
+          onCancel={() => setSelectedImage(null)}
         />
+      )}
+
+      {/* Live Selfie Camera Modal */}
+      <SelfieCameraModal
+        isOpen={isSelfieModalOpen}
+        onCapture={(imgDataUrl) => {
+          setSelectedImage(imgDataUrl);
+        }}
+        onClose={() => setIsSelfieModalOpen(false)}
+      />
+
+      {/* Photo Selection Dialog */}
+      {isPhotoMenuOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white w-full max-w-sm rounded-[32px] p-6 shadow-2xl border border-gray-100 space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-black text-gray-900">Profile Photo</h3>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Select Photo Source</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPhotoMenuOpen(false)}
+                className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {/* Take Selfie Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPhotoMenuOpen(false);
+                  setIsSelfieModalOpen(true);
+                }}
+                className="w-full flex items-center gap-3.5 p-4 rounded-2xl bg-red-50/70 border border-red-100/80 hover:bg-red-100/80 active:scale-[0.98] transition-all text-left group cursor-pointer"
+              >
+                <div className="h-11 w-11 rounded-xl bg-[#ED1C24] text-white flex items-center justify-center shadow-md shadow-red-500/20 group-hover:scale-105 transition-transform">
+                  <Camera className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-gray-900">Take a Selfie</p>
+                  <p className="text-[10px] text-gray-500 font-medium mt-0.5">Use your camera / webcam</p>
+                </div>
+              </button>
+
+              {/* Upload from Device Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPhotoMenuOpen(false);
+                  fileInputRef.current?.click();
+                }}
+                className="w-full flex items-center gap-3.5 p-4 rounded-2xl bg-gray-50 border border-gray-200/80 hover:bg-gray-100 active:scale-[0.98] transition-all text-left group cursor-pointer"
+              >
+                <div className="h-11 w-11 rounded-xl bg-gray-900 text-white flex items-center justify-center shadow-md shadow-black/10 group-hover:scale-105 transition-transform">
+                  <Upload className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-black text-gray-900">Upload from Device</p>
+                  <p className="text-[10px] text-gray-500 font-medium mt-0.5">Choose an image from files</p>
+                </div>
+              </button>
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsPhotoMenuOpen(false)}
+              className="w-full h-10 rounded-xl text-xs font-bold text-gray-500 hover:text-gray-900"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
