@@ -234,10 +234,10 @@ export default function SystemSettingsPage() {
       setSendingSmsOtp(true);
       await api.post("/auth/mfa/send-otp", { secret: mfaSetup.secret });
       setSmsSent(true);
-      alert(`6-digit verification code sent via SMS to ${userPhone || "your phone"}.`);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to send SMS OTP", err);
-      alert("Failed to send SMS verification code. Please check SMS gateway settings.");
+      const serverMsg = err.response?.data?.message || err.response?.data?.error || err.message;
+      alert(`Failed to send SMS verification code: ${serverMsg}`);
     } finally {
       setSendingSmsOtp(false);
     }
