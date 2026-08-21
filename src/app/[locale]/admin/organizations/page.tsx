@@ -42,11 +42,16 @@ import {
   Receipt,
   ArrowUpRight,
   RefreshCw,
+  AlertCircle,
+  Briefcase,
+  Utensils,
+  Car,
+  Shield,
+  Info,
   Users,
   Layers,
   Sparkles,
-  Check,
-  AlertCircle
+  Check
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
@@ -99,8 +104,16 @@ type VolunteerRequest = {
 
 type Assignment = {
   id: string;
-  volunteer_name: string;
+  volunteer_name?: string;
   volunteer_id: string;
+  vol_first_name?: string;
+  vol_father_name?: string;
+  volFirstName?: string;
+  volFatherName?: string;
+  vol_phone?: string;
+  volPhone?: string;
+  vol_email?: string;
+  volEmail?: string;
   status: string;
   assigned_at: string;
   hours_worked?: number;
@@ -116,6 +129,52 @@ type Assignment = {
     hours: number;
     outcome: string;
     notes: string;
+  };
+};
+
+const parseMissionScope = (rawDesc?: string, rawSkills?: string) => {
+  if (!rawDesc && !rawSkills) {
+    return {
+      title: "",
+      description: "Standard mission scope.",
+      durationDays: undefined,
+      regionName: "",
+      zoneName: "",
+      perks: null as any,
+      breakdown: null as any,
+      notes: ""
+    };
+  }
+
+  if (rawDesc && (rawDesc.trim().startsWith("{") || rawDesc.trim().startsWith("["))) {
+    try {
+      const parsed = JSON.parse(rawDesc);
+      if (parsed && typeof parsed === "object") {
+        return {
+          title: parsed.title || "",
+          description: parsed.description || "",
+          durationDays: parsed.duration_days,
+          regionName: parsed.region_name || "",
+          zoneName: parsed.zone_name || "",
+          perks: parsed.perks || null,
+          breakdown: parsed.breakdown || null,
+          notes: parsed.perks?.notes || parsed.notes || ""
+        };
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  return {
+    title: "",
+    description: rawDesc || rawSkills || "Standard mission scope.",
+    durationDays: undefined,
+    regionName: "",
+    zoneName: "",
+    perks: null as any,
+    breakdown: null as any,
+    notes: ""
   };
 };
 
@@ -1522,13 +1581,128 @@ export default function AdminOrganizationsPage() {
                 </div>
               </div>
 
-              {/* Description & Activities */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-black uppercase tracking-wider text-gray-700">Request Mission & Scope</h4>
-                <p className="text-xs font-medium text-gray-800 bg-gray-50 p-3.5 rounded-xl border border-gray-100 leading-relaxed">
-                  {inspectingReq.description || inspectingReq.qualifications || inspectingReq.activities_skills || "Standard mission scope."}
-                </p>
-              </div>
+              {/* Description & Mission Scope Details */}
+              {(() => {
+                const parsedScope = parseMissionScope(inspectingReq.description, inspectingReq.activities_skills);
+                return (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-gray-700 mb-2">Request Mission & Scope</h4>
+                      <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3">
+                        {parsedScope.title && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] bg-red-50 px-2.5 py-0.5 rounded-full border border-red-100">
+                              Mission Objective
+                            </span>
+                            <span className="text-xs font-bold text-gray-900">{parsedScope.title}</span>
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-700 leading-relaxed font-medium">
+                          {parsedScope.description || "Standard mission scope and humanitarian activities."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Logistics & Perks Summary */}
+                    {parsedScope.perks && (
+                      <div className="space-y-2">
+                        <h5 className="text-[11px] font-black uppercase tracking-wider text-gray-500">Logistics & Volunteer Provisions</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                          {parsedScope.perks.meals && (
+                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-start gap-2.5">
+                              <Utensils className="h-4 w-4 text-[#ED1C24] shrink-0 mt-0.5" />
+                              <div>
+                                <span className="text-[9px] font-black uppercase text-gray-400">Meals</span>
+                                <p className="text-xs font-bold text-gray-900 mt-0.5">{parsedScope.perks.meals}</p>
+                              </div>
+                            </div>
+                          )}
+                          {parsedScope.perks.transport && (
+                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-start gap-2.5">
+                              <Car className="h-4 w-4 text-[#ED1C24] shrink-0 mt-0.5" />
+                              <div>
+                                <span className="text-[9px] font-black uppercase text-gray-400">Transport</span>
+                                <p className="text-xs font-bold text-gray-900 mt-0.5">{parsedScope.perks.transport}</p>
+                              </div>
+                            </div>
+                          )}
+                          {parsedScope.perks.accommodation && (
+                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-start gap-2.5">
+                              <Building2 className="h-4 w-4 text-[#ED1C24] shrink-0 mt-0.5" />
+                              <div>
+                                <span className="text-[9px] font-black uppercase text-gray-400">Lodging</span>
+                                <p className="text-xs font-bold text-gray-900 mt-0.5">{parsedScope.perks.accommodation}</p>
+                              </div>
+                            </div>
+                          )}
+                          {parsedScope.perks.safety_gear && (
+                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-start gap-2.5">
+                              <Shield className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                              <div>
+                                <span className="text-[9px] font-black uppercase text-gray-400">Safety Gear</span>
+                                <p className="text-xs font-bold text-green-700 mt-0.5">Equipped & Provided</p>
+                              </div>
+                            </div>
+                          )}
+                          {parsedScope.perks.certificate && (
+                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-start gap-2.5">
+                              <Award className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                              <div>
+                                <span className="text-[9px] font-black uppercase text-gray-400">Certificates</span>
+                                <p className="text-xs font-bold text-amber-700 mt-0.5">ERCS Official Issued</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cost Breakdown */}
+                    {parsedScope.breakdown && (
+                      <div className="space-y-2">
+                        <h5 className="text-[11px] font-black uppercase tracking-wider text-gray-500">Billing & Breakdown</h5>
+                        <div className="bg-gray-50 p-3.5 rounded-2xl border border-gray-100 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                          {parsedScope.breakdown.dailyBase !== undefined && (
+                            <div>
+                              <span className="text-[9px] font-bold text-gray-400 uppercase">Daily Base</span>
+                              <p className="font-bold text-gray-900">{parsedScope.breakdown.dailyBase} ETB</p>
+                            </div>
+                          )}
+                          {parsedScope.breakdown.meals !== undefined && (
+                            <div>
+                              <span className="text-[9px] font-bold text-gray-400 uppercase">Meals</span>
+                              <p className="font-bold text-gray-900">{parsedScope.breakdown.meals} ETB</p>
+                            </div>
+                          )}
+                          {parsedScope.breakdown.transport !== undefined && (
+                            <div>
+                              <span className="text-[9px] font-bold text-gray-400 uppercase">Transport</span>
+                              <p className="font-bold text-gray-900">{parsedScope.breakdown.transport} ETB</p>
+                            </div>
+                          )}
+                          {parsedScope.breakdown.insurance !== undefined && (
+                            <div>
+                              <span className="text-[9px] font-bold text-gray-400 uppercase">Insurance</span>
+                              <p className="font-bold text-gray-900">{parsedScope.breakdown.insurance} ETB</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {parsedScope.notes && (
+                      <div className="p-3 bg-amber-50/70 border border-amber-200/60 rounded-xl text-xs flex gap-2 items-start">
+                        <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-[9px] font-black uppercase text-amber-800 tracking-wider">Special Notes</span>
+                          <p className="text-amber-900 font-medium mt-0.5">{parsedScope.notes}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Assigned Volunteers List */}
               <div className="space-y-3">
@@ -1548,20 +1722,59 @@ export default function AdminOrganizationsPage() {
                   </div>
                 ) : (
                   <div className="grid gap-2">
-                    {inspectingAssignments.map((a) => (
-                      <div
-                        key={a.id}
-                        className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between text-xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-[#ED1C24]" />
-                          <span className="font-bold text-gray-900">{a.volunteer_name}</span>
+                    {inspectingAssignments.map((a) => {
+                      const name = a.vol_first_name 
+                        ? `${a.vol_first_name} ${a.vol_father_name || ""}`.trim()
+                        : (a.volFirstName ? `${a.volFirstName} ${a.volFatherName || ""}`.trim() : (a.volunteer_name || `Volunteer #${a.volunteer_id?.slice(0, 8) || "Assigned"}`));
+                      const phone = a.vol_phone || a.volPhone;
+                      const email = a.vol_email || a.volEmail;
+
+                      return (
+                        <div
+                          key={a.id}
+                          className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-[#ED1C24]" />
+                              <span className="font-extrabold text-gray-900">{name}</span>
+                              {a.hours_worked !== undefined && a.hours_worked > 0 && (
+                                <span className="text-[10px] text-gray-500 font-bold">
+                                  ({a.hours_worked} hrs logged)
+                                </span>
+                              )}
+                            </div>
+                            {(phone || email) && (
+                              <div className="flex items-center gap-3 text-[11px] text-gray-500 pl-6">
+                                {phone && (
+                                  <a href={`tel:${phone}`} className="flex items-center gap-1 hover:text-black">
+                                    <Phone className="h-3 w-3 text-gray-400" />
+                                    <span>{phone}</span>
+                                  </a>
+                                )}
+                                {email && (
+                                  <a href={`mailto:${email}`} className="flex items-center gap-1 hover:text-black">
+                                    <Mail className="h-3 w-3 text-gray-400" />
+                                    <span className="truncate max-w-[180px]">{email}</span>
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <span
+                            className={cn(
+                              "px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase border shrink-0 self-start sm:self-auto",
+                              a.status === "COMPLETED" || a.status === "ONBOARDED"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : "bg-white text-gray-700 border-gray-200"
+                            )}
+                          >
+                            {a.status}
+                          </span>
                         </div>
-                        <span className="px-2 py-0.5 bg-white rounded-md text-[10px] font-black uppercase text-gray-600 border">
-                          {a.status}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

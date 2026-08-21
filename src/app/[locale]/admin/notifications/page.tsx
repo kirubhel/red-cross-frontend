@@ -417,16 +417,22 @@ function BroadcastModal({
   const [title, setTitle] = useState(initialData?.title || "");
   const [message, setMessage] = useState("");
   const [targetAudience, setTargetAudience] = useState<string>(
-    initialData?.region ? "REGION" : initialData?.targetType || "ALL"
+    initialData?.targetType || (initialData?.region ? "REGION" : "ALL")
   );
   const [selectedRegion, setSelectedRegion] = useState<string>(initialData?.region || "Addis Ababa");
   const [topicName, setTopicName] = useState<string>("all_users");
+  const [singleRecipient, setSingleRecipient] = useState<string>("");
   const [sending, setSending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !message.trim()) {
       toast.error("Please fill in both title and message.");
+      return;
+    }
+
+    if (targetAudience === "SINGLE" && !singleRecipient.trim()) {
+      toast.error("Please enter a recipient phone number or ID.");
       return;
     }
 
@@ -445,9 +451,13 @@ function BroadcastModal({
         payload.target_value = selectedRegion;
       } else if (targetAudience === "TOPIC") {
         payload.target_value = topicName.trim() || "all_users";
+      } else if (targetAudience === "SINGLE") {
+        payload.target_value = singleRecipient.trim();
+        payload.region = singleRecipient.trim();
       }
 
       await api.post("/notifications", payload);
+      toast.success(targetAudience === "SINGLE" ? `SMS notification sent to ${singleRecipient}` : "Broadcast dispatched successfully!");
       onSuccess();
     } catch (err: unknown) {
       console.error("Failed to send broadcast:", err);
@@ -533,11 +543,12 @@ function BroadcastModal({
           {/* Target Audience */}
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Target Audience</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: "ALL", label: "All Users", desc: "Global broadcast" },
                 { id: "REGION", label: "By Region", desc: "Regional filter" },
                 { id: "TOPIC", label: "By Topic", desc: "Custom topic" },
+                { id: "SINGLE", label: "Single User", desc: "Direct recipient" },
               ].map((t) => (
                 <button
                   type="button"
@@ -555,6 +566,19 @@ function BroadcastModal({
                 </button>
               ))}
             </div>
+
+            {targetAudience === "SINGLE" && (
+              <div className="pt-2 space-y-1">
+                <Input
+                  placeholder="e.g. +251911223344 or 0911223344 (Phone number or Member ID)"
+                  value={singleRecipient}
+                  onChange={(e) => setSingleRecipient(e.target.value)}
+                  className="h-10 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs text-black"
+                  required
+                />
+                <p className="text-[10px] text-gray-400 font-bold ml-1">SMS will be delivered directly to this recipient's mobile number.</p>
+              </div>
+            )}
 
             {targetAudience === "REGION" && (
               <div className="pt-2">

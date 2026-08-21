@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,11 +35,37 @@ export default function LoginPage() {
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [userIdForMfa, setUserIdForMfa] = useState("");
+  const [otpSentPhone, setOtpSentPhone] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendingOtp, setResendingOtp] = useState(false);
   // Country Selector and Multi-Profile selection states
   const [countryCode, setCountryCode] = useState("ET");
   const [profiles, setProfiles] = useState<any[]>([]);
   const [isMultiProfile, setIsMultiProfile] = useState(false);
   const showCountrySelector = /^[+0-9]/.test(identifier);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || resendingOtp || !userIdForMfa) return;
+    try {
+      setResendingOtp(true);
+      setError("");
+      const res = await api.post("/auth/mfa/resend", { user_id: userIdForMfa });
+      if (res.data?.phone) setOtpSentPhone(res.data.phone);
+      setResendCooldown(60);
+    } catch (err: any) {
+      setError("Failed to resend SMS code. Please try again.");
+    } finally {
+      setResendingOtp(false);
+    }
+  };
 
   const handleLoginSuccess = (data: any) => {
     const { access_token, role, ercs_id } = data;
@@ -382,17 +408,31 @@ export default function LoginPage() {
                 </Button>
               </form>
             ) : (
-              <form onSubmit={handleMfaLogin} className="space-y-8">
-                <div className="space-y-4 text-center">
-                  <div className="h-16 w-16 bg-red-50 text-[#ED1C24] rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/10">
+              <form onSubmit={handleMfaLogin} className="space-y-6">
+                <div className="space-y-3 text-center">
+                  <div className="h-16 w-16 bg-red-50 text-[#ED1C24] rounded-3xl flex items-center justify-center mx-auto mb-2 shadow-lg shadow-red-500/10">
                     <ShieldCheck className="h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-black text-black tracking-tight uppercase">Verification Code</h3>
-                  <p className="text-sm text-black/60 font-bold">Please enter the 6-digit code from your authenticator app.</p>
+                  <h3 className="text-xl font-black text-black tracking-tight uppercase">Two-Factor Authentication</h3>
+                  <p className="text-xs text-black/60 font-bold leading-relaxed max-w-xs mx-auto">
+                    {otpSentPhone 
+                      ? `We sent a 6-digit verification code via SMS to ${otpSentPhone}. You can also use your Authenticator app.`
+                      : "Enter the 6-digit code sent via SMS to your registered phone number or from your Authenticator app."}
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="mfaCode" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">6-Digit Code</Label>
+                  <div className="flex justify-between items-center ml-1">
+                    <Label htmlFor="mfaCode" className="text-[9px] font-black uppercase tracking-widest text-black/60">6-Digit Verification Code</Label>
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resendCooldown > 0 || resendingOtp}
+                      className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-70 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {resendingOtp ? "Sending..." : resendCooldown > 0 ? `Resend SMS in ${resendCooldown}s` : "Resend SMS Code"}
+                    </button>
+                  </div>
                   <Input
                     id="mfaCode"
                     type="text"
@@ -416,7 +456,7 @@ export default function LoginPage() {
                   </motion.div>
                 )}
 
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 pt-2">
                   <Button 
                     type="submit" 
                     className="w-full h-14 rounded-xl text-lg font-black shadow-xl shadow-red-500/15 active:scale-95 transition-all"
@@ -427,7 +467,11 @@ export default function LoginPage() {
                   <Button 
                     type="button" 
                     variant="ghost"
-                    onClick={() => setMfaRequired(false)}
+                    onClick={() => {
+                      setMfaRequired(false);
+                      setMfaCode("");
+                      setError("");
+                    }}
                     className="w-full h-12 rounded-xl text-xs font-black uppercase tracking-widest text-black/40 hover:text-black transition-colors"
                   >
                     Back to login
