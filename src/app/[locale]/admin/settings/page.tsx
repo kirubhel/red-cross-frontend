@@ -104,6 +104,7 @@ export default function SystemSettingsPage() {
   });
 
   // 2FA Setup states
+  const [currentUserId, setCurrentUserId] = useState("");
   const [is2faEnabled, setIs2faEnabled] = useState(false);
   const [userPhone, setUserPhone] = useState("");
   const [mfaSetup, setMfaSetup] = useState<{ secret: string; qrCodeUrl: string } | null>(null);
@@ -196,6 +197,9 @@ export default function SystemSettingsPage() {
 
       if (meRes.status === "fulfilled" && meRes.value.data) {
         setIs2faEnabled(!!meRes.value.data.is_mfa_enabled);
+        if (meRes.value.data.id) {
+          setCurrentUserId(meRes.value.data.id);
+        }
         if (meRes.value.data.phone_number) {
           setUserPhone(meRes.value.data.phone_number);
         }
@@ -232,7 +236,10 @@ export default function SystemSettingsPage() {
     if (!mfaSetup?.secret) return;
     try {
       setSendingSmsOtp(true);
-      await api.post("/auth/mfa/send-otp", { secret: mfaSetup.secret });
+      await api.post("/auth/mfa/send-otp", { 
+        user_id: currentUserId,
+        secret: mfaSetup.secret 
+      });
       setSmsSent(true);
     } catch (err: any) {
       console.error("Failed to send SMS OTP", err);
