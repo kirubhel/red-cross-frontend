@@ -118,10 +118,18 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await api.post("/auth/login-mfa", { user_id: userIdForMfa, code: mfaCode });
+      const res = await api.post("/auth/login-mfa", { user_id: userIdForMfa, code: mfaCode.trim() });
       handleLoginSuccess(res.data);
     } catch (err: any) {
-      setError("Invalid 2FA code. Please try again.");
+      console.error("MFA Login error:", err);
+      const rawMessage = typeof err.response?.data === 'string' 
+        ? err.response.data 
+        : err.response?.data?.message || err.response?.data?.error || err.message;
+      let cleanMessage = rawMessage;
+      if (typeof rawMessage === "string" && rawMessage.includes("desc = ")) {
+        cleanMessage = rawMessage.split("desc = ")[1];
+      }
+      setError(cleanMessage || "Invalid 2FA verification code. Please check and try again.");
     } finally {
       setLoading(false);
     }
