@@ -183,18 +183,75 @@ export default function VolunteersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  // Volunteer Benefits State
+  const [benefitsList, setBenefitsList] = useState<any[]>([]);
+  const [loadingBenefits, setLoadingBenefits] = useState(false);
+  const [showBenefitForm, setShowBenefitForm] = useState(false);
+  const [benefitForm, setBenefitForm] = useState({
+    benefit_type: "Safety Kit",
+    item_name: "",
+    quantity: 1,
+    provided_date: new Date().toISOString().split("T")[0],
+    remarks: ""
+  });
+  const [savingBenefit, setSavingBenefit] = useState(false);
+
+  const fetchVolunteerBenefits = async (volPersonId: string) => {
+    if (!volPersonId) return;
+    setLoadingBenefits(true);
+    try {
+      const res = await api.get(`/volunteers/benefits?volunteer_id=${volPersonId}`);
+      setBenefitsList(res.data.benefits || []);
+    } catch (_) {
+      setBenefitsList([]);
+    } finally {
+      setLoadingBenefits(false);
+    }
+  };
+
+  const handleRecordBenefit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVolunteer || !benefitForm.item_name) return;
+    setSavingBenefit(true);
+    try {
+      await api.post("/volunteers/benefits", {
+        volunteer_id: selectedVolunteer.person_id || selectedVolunteer.id,
+        benefit_type: benefitForm.benefit_type,
+        item_name: benefitForm.item_name,
+        quantity: Number(benefitForm.quantity) || 1,
+        provided_date: benefitForm.provided_date,
+        remarks: benefitForm.remarks
+      });
+      toast.success("Volunteer benefit / safety kit recorded successfully!");
+      setShowBenefitForm(false);
+      setBenefitForm({
+        benefit_type: "Safety Kit",
+        item_name: "",
+        quantity: 1,
+        provided_date: new Date().toISOString().split("T")[0],
+        remarks: ""
+      });
+      fetchVolunteerBenefits(selectedVolunteer.person_id || selectedVolunteer.id);
+    } catch (err) {
+      toast.error("Failed to record benefit");
+    } finally {
+      setSavingBenefit(false);
+    }
+  };
+
   useEffect(() => {
     fetchRegions();
   }, []);
 
   useEffect(() => {
-    if (showModal) {
+    if (showModal && selectedVolunteer) {
       document.body.style.overflow = 'hidden';
+      fetchVolunteerBenefits(selectedVolunteer.person_id || selectedVolunteer.id);
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; }
-  }, [showModal]);
+  }, [showModal, selectedVolunteer]);
 
   // Reset page to 1 when filters or search change
   useEffect(() => {
@@ -1472,6 +1529,143 @@ export default function VolunteersPage() {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Safety Kits & Volunteer Benefits Tracking */}
+                    <div className="mt-4 p-5 bg-red-50/40 rounded-[24px] border border-red-100 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h4 className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5">
+                                    <HandHeart className="h-3.5 w-3.5" /> Safety Kits & Benefits Tracking
+                                </h4>
+                                <p className="text-[11px] text-gray-500 font-medium">Record safety equipment, kits, and benefits provided to this volunteer.</p>
+                            </div>
+                            <Button 
+                                type="button" 
+                                onClick={() => setShowBenefitForm(!showBenefitForm)}
+                                className="h-8 px-3 text-[10px] font-bold uppercase tracking-wider bg-[#ED1C24] hover:bg-black text-white rounded-xl shadow-xs"
+                            >
+                                <Plus className="h-3 w-3 mr-1" /> {showBenefitForm ? "Close Form" : "Record Benefit"}
+                            </Button>
+                        </div>
+
+                        {showBenefitForm && (
+                            <form onSubmit={handleRecordBenefit} className="bg-white p-4 rounded-2xl border border-red-100 space-y-3 shadow-sm">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-600 uppercase">Benefit / Kit Type *</label>
+                                        <select
+                                            value={benefitForm.benefit_type}
+                                            onChange={(e) => setBenefitForm({...benefitForm, benefit_type: e.target.value})}
+                                            className="w-full h-8 bg-gray-50 border border-gray-200 rounded-lg px-2 text-xs font-bold text-black"
+                                            required
+                                        >
+                                            <option value="Safety Kit">Safety Kit / PPE</option>
+                                            <option value="First Aid Kit">First Aid Kit</option>
+                                            <option value="Uniform / Vest">Red Cross Uniform / Vest</option>
+                                            <option value="Boots & Raincoat">Heavy Duty Boots / Raincoat</option>
+                                            <option value="Allowance / Stipend">Transport / Food Allowance</option>
+                                            <option value="Insurance Coverage">Health & Accident Insurance</option>
+                                            <option value="Certificate">Appreciation Certificate</option>
+                                            <option value="Other">Other Benefit</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-600 uppercase">Item Name / Description *</label>
+                                        <Input 
+                                            placeholder="e.g. Standard ERCS Trauma First Aid Kit"
+                                            value={benefitForm.item_name}
+                                            onChange={(e) => setBenefitForm({...benefitForm, item_name: e.target.value})}
+                                            className="h-8 bg-gray-50 border-gray-200 rounded-lg text-xs font-semibold text-black"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-600 uppercase">Quantity *</label>
+                                        <Input 
+                                            type="number"
+                                            min={1}
+                                            value={benefitForm.quantity}
+                                            onChange={(e) => setBenefitForm({...benefitForm, quantity: Number(e.target.value)})}
+                                            className="h-8 bg-gray-50 border-gray-200 rounded-lg text-xs font-semibold text-black"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-600 uppercase">Provided Date *</label>
+                                        <Input 
+                                            type="date"
+                                            value={benefitForm.provided_date}
+                                            onChange={(e) => setBenefitForm({...benefitForm, provided_date: e.target.value})}
+                                            className="h-8 bg-gray-50 border-gray-200 rounded-lg text-xs font-semibold text-black"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-gray-600 uppercase">Remarks / Notes (Optional)</label>
+                                    <Input 
+                                        placeholder="e.g. Issued for Flood Response Mission in Ward 4"
+                                        value={benefitForm.remarks}
+                                        onChange={(e) => setBenefitForm({...benefitForm, remarks: e.target.value})}
+                                        className="h-8 bg-gray-50 border-gray-200 rounded-lg text-xs font-semibold text-black"
+                                    />
+                                </div>
+
+                                <div className="flex justify-end gap-2 pt-1">
+                                    <Button 
+                                        type="button" 
+                                        variant="ghost" 
+                                        onClick={() => setShowBenefitForm(false)}
+                                        className="h-8 px-3 text-xs font-bold text-gray-500 rounded-lg"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button 
+                                        type="submit" 
+                                        disabled={savingBenefit}
+                                        className="h-8 px-4 bg-[#ED1C24] hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm"
+                                    >
+                                        {savingBenefit ? "Saving..." : "Submit Record"}
+                                    </Button>
+                                </div>
+                            </form>
+                        )}
+
+                        {/* Benefits History Table */}
+                        <div className="space-y-2">
+                            {loadingBenefits ? (
+                                <div className="p-4 text-center text-xs text-gray-400 font-bold">Loading benefits records...</div>
+                            ) : benefitsList.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-2 max-h-[160px] overflow-y-auto pr-1">
+                                    {benefitsList.map((b: any) => (
+                                        <div key={b.id} className="p-3 bg-white rounded-xl border border-gray-100 flex items-center justify-between text-xs shadow-2xs">
+                                            <div className="space-y-0.5">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-black">{b.item_name}</span>
+                                                    <span className="px-2 py-0.5 bg-red-50 text-red-700 rounded text-[9px] font-black uppercase tracking-wider">
+                                                        {b.benefit_type} (Qty: {b.quantity})
+                                                    </span>
+                                                </div>
+                                                {b.remarks && <p className="text-[11px] text-gray-500">{b.remarks}</p>}
+                                            </div>
+                                            <div className="text-right shrink-0 pl-3">
+                                                <span className="text-[10px] font-bold text-gray-400 block">{b.provided_date ? b.provided_date.split("T")[0] : ""}</span>
+                                                <span className="text-[9px] font-bold text-emerald-600 uppercase">Recorded</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-gray-400 font-bold italic bg-white p-3 rounded-xl border border-gray-100 text-center">
+                                    No benefits or safety equipment recorded for this volunteer yet.
+                                </p>
+                            )}
                         </div>
                     </div>
 

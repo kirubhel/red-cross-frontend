@@ -31,7 +31,8 @@ import {
   Check,
   Sparkles,
   Play,
-  Timer
+  Timer,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -205,6 +206,11 @@ export default function OrganizationPortal() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [otherServicesText, setOtherServicesText] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [mouUrl, setMouUrl] = useState<string>("");
+  const [mouFileName, setMouFileName] = useState<string>("");
   
   // Regional & Benefits Form State
   const [targetRegionId, setTargetRegionId] = useState<number>(1);
@@ -441,8 +447,12 @@ export default function OrganizationPortal() {
       region_name: selectedRegionObj?.name || "Addis Ababa",
       zone_name: selectedZoneObj?.name || "Central Sub-City",
       duration_days: durationDays,
+      start_date: startDate,
+      end_date: endDate,
+      mou_url: mouUrl,
       payment_amount: costEstimate.total,
       breakdown: costEstimate,
+      other_services: otherServicesText.trim(),
       benefits: {
         accommodation: effAccommodation,
         custom_accommodation: customAccommodation,
@@ -457,17 +467,25 @@ export default function OrganizationPortal() {
       }
     };
 
+    const combinedActivities = selectedAreas.includes("Other Services") && otherServicesText.trim()
+      ? [...selectedAreas.filter(a => a !== "Other Services"), `Other Services: ${otherServicesText.trim()}`].join(", ")
+      : selectedAreas.join(", ");
+
     const payload = {
       headcount: Number(headcount),
-      activities_skills: selectedAreas.join(", "),
+      activities_skills: combinedActivities,
+      other_services: otherServicesText.trim(),
       men_count: Number(menCount),
       women_count: Number(womenCount),
       min_experience: Number(minExperience),
       qualifications,
       activities,
       volunteer_type: volunteerType,
-      title: title || (selectedAreas.join(", ") || "Volunteer Mission"),
+      title: title || (combinedActivities || "Volunteer Mission"),
       description: JSON.stringify(structuredMetadata),
+      start_date: startDate,
+      end_date: endDate,
+      mou_url: mouUrl,
       region_id: Number(targetRegionId),
       zone_id: targetZoneId,
       region_name: selectedRegionObj?.name || "Addis Ababa",
@@ -499,6 +517,11 @@ export default function OrganizationPortal() {
       setVolunteerType("General Volunteer");
       setActivities([{ name: "", count: 1 }]);
       setSelectedAreas([]);
+      setOtherServicesText("");
+      setStartDate("");
+      setEndDate("");
+      setMouUrl("");
+      setMouFileName("");
       setTitle("");
       setDescription("");
       setDurationDays(1);
@@ -1448,8 +1471,8 @@ export default function OrganizationPortal() {
                   </div>
                 </div>
 
-                {/* Regional Branch & Zone Targeting */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100">
+                {/* Regional Branch & Date Range Targeting */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100">
                   <div className="space-y-1">
                     <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
                       <MapPin className="h-3 w-3 text-[#ED1C24]" /> Target Region *
@@ -1486,15 +1509,40 @@ export default function OrganizationPortal() {
 
                   <div className="space-y-1">
                     <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
-                      <Calendar className="h-3 w-3 text-[#ED1C24]" /> Mission Duration (Days) *
+                      <Calendar className="h-3 w-3 text-[#ED1C24]" /> Start Date
                     </Label>
                     <Input 
-                      type="number"
-                      min={1}
-                      value={durationDays}
-                      onChange={(e) => setDurationDays(Math.max(1, Number(e.target.value)))}
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setStartDate(val);
+                        if (val && endDate) {
+                          const diff = Math.ceil((new Date(endDate).getTime() - new Date(val).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                          if (diff > 0) setDurationDays(diff);
+                        }
+                      }}
                       className="h-9 bg-white border-slate-200 rounded-xl font-bold text-xs text-slate-900"
-                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1">
+                      <Calendar className="h-3 w-3 text-[#ED1C24]" /> End Date ({durationDays}d)
+                    </Label>
+                    <Input 
+                      type="date"
+                      value={endDate}
+                      min={startDate || undefined}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setEndDate(val);
+                        if (startDate && val) {
+                          const diff = Math.ceil((new Date(val).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                          if (diff > 0) setDurationDays(diff);
+                        }
+                      }}
+                      className="h-9 bg-white border-slate-200 rounded-xl font-bold text-xs text-slate-900"
                     />
                   </div>
                 </div>
@@ -1712,6 +1760,20 @@ export default function OrganizationPortal() {
                         </label>
                       ))}
                     </div>
+                    {selectedAreas.includes("Other Services") && (
+                      <div className="mt-2 space-y-1 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200">
+                        <Label className="text-[11px] font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1">
+                          Specify Other Services *
+                        </Label>
+                        <Input 
+                          placeholder="Describe the other specific services required..."
+                          value={otherServicesText}
+                          onChange={(e) => setOtherServicesText(e.target.value)}
+                          className="h-8 bg-white border-amber-300 rounded-lg text-xs font-semibold text-slate-900"
+                          required={selectedAreas.includes("Other Services")}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -1724,6 +1786,61 @@ export default function OrganizationPortal() {
                       required
                     />
                   </div>
+                </div>
+
+                {/* MoU Attachment Section */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24] flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5" /> Memorandum of Understanding (MoU) Attachment (Optional)
+                    </Label>
+                    <span className="text-[9px] font-bold uppercase text-slate-400">PDF / Image / Doc</span>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-3 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-600">Upload MoU Document</span>
+                      <input 
+                        type="file" 
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setMouFileName(file.name);
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              setMouUrl(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#ED1C24]/10 file:text-[#ED1C24] hover:file:bg-[#ED1C24]/20 cursor-pointer"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-600">Or Enter Document URL</span>
+                      <Input 
+                        type="url"
+                        placeholder="https://..."
+                        value={mouUrl.startsWith("data:") ? "" : mouUrl}
+                        onChange={(e) => {
+                          setMouUrl(e.target.value);
+                          setMouFileName("");
+                        }}
+                        className="h-8 bg-white border-slate-200 rounded-lg text-xs font-semibold text-slate-900"
+                      />
+                    </div>
+                  </div>
+                  {mouUrl && (
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>MoU Document Ready: {mouFileName || "Attached"}</span>
+                      {!mouUrl.startsWith("data:") && (
+                        <a href={mouUrl} target="_blank" rel="noopener noreferrer" className="ml-auto text-[#ED1C24] underline text-[11px]">
+                          Open Link
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Live Estimated Budget Card */}

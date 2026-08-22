@@ -605,44 +605,46 @@ export default function DashboardPage() {
                       
                       <div style={{ flex: 1, padding: '16px 20px 8px', display: 'flex', gap: '20px' }}>
                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {/* Member Address */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                               <p style={{ fontSize: '7.5px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Member Address</p>
-                               <p style={{ fontSize: '9px', fontWeight: '800', color: '#111827', lineHeight: '1.4', margin: 0, letterSpacing: '0.02em' }}>
-                                  Region: {user?.region || "Ethiopia"}<br />
+                            {/* Member Address & Branch */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                               <p style={{ fontSize: '7.5px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Member & Branch Address</p>
+                               <p style={{ fontSize: '8.5px', fontWeight: '800', color: '#111827', lineHeight: '1.35', margin: 0, letterSpacing: '0.01em' }}>
+                                  Branch: {user?.branchName || user?.branch || `${user?.region || "Addis Ababa"} Branch`}<br />
+                                  <span style={{ fontSize: '7.5px', fontWeight: '600', color: '#4B5563' }}>
+                                    {user?.branchAddress || user?.address?.branchAddress || `ERCS ${user?.region || "Addis Ababa"} Regional Branch Office`}
+                                  </span>
+                               </p>
+                               <p style={{ fontSize: '8px', fontWeight: '700', color: '#374151', margin: '2px 0 0 0', lineHeight: '1.3' }}>
                                   {[
                                     user?.address?.zone && `Zone: ${user.address.zone}`,
                                     user?.address?.woreda && `Woreda: ${user.address.woreda}`,
                                     user?.address?.kebele && `Kebele: ${user.address.kebele}`
-                                  ].filter(Boolean).join("  •  ") || (user?.address?.area ? `Area: ${user.address.area}` : "National Registry")}
-                                  {user?.address?.houseNo ? <><br />House No: {user.address.houseNo}</> : null}
+                                  ].filter(Boolean).join(" • ") || (user?.address?.area ? `Area: ${user.address.area}` : "National Registry")}
                                </p>
                             </div>
 
                             {/* Emergency Contact or Member Contact */}
                             {user?.address?.emergencyName || user?.address?.emergencyPhone ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                  <p style={{ fontSize: '7px', fontWeight: '900', color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Emergency Contact</p>
-                                 <p style={{ fontSize: '8.5px', fontWeight: '700', color: '#1F2937', margin: 0, lineHeight: '1.35', letterSpacing: '0.02em' }}>
-                                    {user.address.emergencyName || "Contact"} {user.address.emergencyPhone && ` •  ${user.address.emergencyPhone}`}
+                                 <p style={{ fontSize: '8px', fontWeight: '700', color: '#1F2937', margin: 0, lineHeight: '1.3', letterSpacing: '0.01em' }}>
+                                    {user.address.emergencyName || "Contact"} {user.address.emergencyPhone && ` • ${user.address.emergencyPhone}`}
                                  </p>
                               </div>
                             ) : (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                  <p style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Member Contact</p>
-                                 <p style={{ fontSize: '8.5px', fontWeight: '700', color: '#1F2937', margin: 0, lineHeight: '1.35', letterSpacing: '0.02em' }}>
-                                    Tel: {user?.phone || "+251..."}  •  Email: {user?.email || "N/A"}
+                                 <p style={{ fontSize: '8px', fontWeight: '700', color: '#1F2937', margin: 0, lineHeight: '1.3', letterSpacing: '0.01em' }}>
+                                    Tel: {user?.phone || "+251..."} • Email: {user?.email || "N/A"}
                                  </p>
                               </div>
                             )}
 
                             {/* Contact Details from CMS */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                <p style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>ERCS Headquarters Contact</p>
-                               <p style={{ fontSize: '8px', fontWeight: '600', color: '#374151', margin: 0, lineHeight: '1.4', letterSpacing: '0.02em' }}>
-                                  Tel: {cmsContact.tel || cmsContact.mobile}<br />
-                                  Email: {cmsContact.email}<br />
-                                  Web: {cmsContact.web || "www.redcrosseth.org"}
+                               <p style={{ fontSize: '7.5px', fontWeight: '600', color: '#4B5563', margin: 0, lineHeight: '1.3', letterSpacing: '0.01em' }}>
+                                  Tel: {cmsContact.tel || cmsContact.mobile || "+251 11 515 9074"} • Email: {cmsContact.email || "info@redcrosseth.org"}
                                </p>
                             </div>
                          </div>

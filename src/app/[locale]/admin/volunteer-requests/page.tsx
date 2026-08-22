@@ -59,6 +59,7 @@ type VolunteerRequest = {
   duration_days?: number;
   start_date?: string;
   end_date?: string;
+  mou_url?: string;
   breakdown?: {
     dailyBase?: number;
     accommodation?: number;
@@ -120,6 +121,9 @@ export default function AdminVolunteerRequestsPage() {
         let paymentAmount = req.payment_amount || 0;
         let breakdown = req.breakdown || null;
         let cleanDescription = req.description || "";
+        let mouUrl = req.mou_url || "";
+        let startDate = req.start_date || "";
+        let endDate = req.end_date || "";
 
         // Check if metadata is encoded in description or qualifications JSON
         if (req.description) {
@@ -133,6 +137,9 @@ export default function AdminVolunteerRequestsPage() {
               if (parsed.payment_amount && !paymentAmount) paymentAmount = parsed.payment_amount;
               if (parsed.breakdown) breakdown = parsed.breakdown;
               if (parsed.description) cleanDescription = parsed.description;
+              if (parsed.mou_url && !mouUrl) mouUrl = parsed.mou_url;
+              if (parsed.start_date && !startDate) startDate = parsed.start_date;
+              if (parsed.end_date && !endDate) endDate = parsed.end_date;
             }
           } catch {}
         }
@@ -172,6 +179,9 @@ export default function AdminVolunteerRequestsPage() {
           description: cleanDescription,
           payment_amount: paymentAmount,
           breakdown,
+          mou_url: mouUrl,
+          start_date: startDate,
+          end_date: endDate,
           region_name: regionName || "Addis Ababa",
           zone_name: zoneName || "Central Sub-City",
           duration_days: durationDays || 1,
@@ -540,6 +550,27 @@ export default function AdminVolunteerRequestsPage() {
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* MoU Attachment */}
+              {selectedReq.mou_url && (
+                <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 text-xs font-bold text-blue-950">
+                    <FileText className="h-4 w-4 text-blue-600 shrink-0" />
+                    <div>
+                      <span>Memorandum of Understanding (MoU) Attached</span>
+                      <p className="text-[10px] font-normal text-blue-700">Official organizational partnership agreement</p>
+                    </div>
+                  </div>
+                  <a
+                    href={selectedReq.mou_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  >
+                    View Document <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
                 </div>
               )}
 

@@ -75,12 +75,15 @@ export function ElectronicReceiptModal({
           {/* Header Banner */}
           <div className="flex items-start justify-between border-b-2 border-red-600 pb-6 mb-6">
             <div className="flex items-center gap-3.5">
-              <div className="w-14 h-14 rounded-full bg-red-50 border-2 border-red-600 flex items-center justify-center text-red-600 shadow-sm shrink-0">
-                {/* Red Cross Emblem */}
-                <div className="relative w-7 h-7 flex items-center justify-center">
-                  <div className="absolute w-7 h-2.5 bg-red-600 rounded-xs" />
-                  <div className="absolute h-7 w-2.5 bg-red-600 rounded-xs" />
-                </div>
+              <div className="w-16 h-16 rounded-xl bg-white border border-gray-100 p-1 flex items-center justify-center shadow-xs shrink-0 overflow-hidden">
+                <img
+                  src="/logo.png"
+                  alt="ERCS Logo"
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
               </div>
               <div>
                 <h1 className="text-lg font-black tracking-tight text-gray-900 leading-snug">
