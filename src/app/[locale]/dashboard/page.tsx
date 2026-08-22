@@ -164,26 +164,51 @@ export default function DashboardPage() {
         const issueDate = isZeroDate(rawIssueDate) ? new Date() : rawIssueDate;
 
         const membershipType = userData?.membership_type || "REGULAR";
+        const typeStr = (membershipType || "").toUpperCase();
+        const subType = (userData?.subscription_type || userMeta?.subscription_type || "").toUpperCase();
+        const counter = Number(userData?.counter || userMeta?.counter || 1) || 1;
         
-        // Calculate Membership Expiry
+        // Calculate Membership Expiry dynamically based on Member Tier
         let expiryDate = new Date(issueDate);
-        if (membershipType.toUpperCase() === "LIFETIME") {
+        const isLifetime = (
+          typeStr.includes("LIFETIME") || 
+          typeStr.includes("LIFE") || 
+          subType === "ONE_TIME" || 
+          subType === "LIFETIME"
+        );
+
+        if (isLifetime) {
           expiryDate = new Date(issueDate.getFullYear() + 100, issueDate.getMonth(), issueDate.getDate());
-        } else if (membershipType.toUpperCase() === "MONTHLY") {
-          expiryDate.setMonth(expiryDate.getMonth() + 1);
+        } else if (subType === "MONTHLY" || typeStr.includes("MONTH")) {
+          expiryDate.setMonth(expiryDate.getMonth() + counter);
+        } else if (subType === "WEEKLY" || typeStr.includes("WEEK")) {
+          expiryDate.setDate(expiryDate.getDate() + (counter * 7));
+        } else if (subType === "DAILY" || typeStr.includes("DAY")) {
+          expiryDate.setDate(expiryDate.getDate() + counter);
         } else {
-          // Default to Yearly for REGULAR/YEARLY
-          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+          // Default to Yearly term (e.g. REGULAR, CORP_REGULAR, CORP_HIGH, CORP_SPECIAL, YOUTH)
+          expiryDate.setFullYear(expiryDate.getFullYear() + counter);
         }
 
-        // ID Card specific expiry is always +1 year from issue
-        const cardExpiry = new Date(issueDate);
-        cardExpiry.setFullYear(cardExpiry.getFullYear() + 1);
+        // Card validity matches membership tier term
+        const cardExpiry = new Date(expiryDate);
 
         const diffTime = expiryDate.getTime() - new Date().getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const status = userData?.membership_status || userData?.status || "PENDING";
-        const isApproved = status.toUpperCase() === "APPROVED";
+        const rawStatus = (userData?.membership_status || userData?.status || "ACTIVE").toUpperCase();
+        
+        // Members who register / pay are immediately ACTIVE without manual approval blocker
+        const isRejectedOrSuspended = rawStatus === "REJECTED" || rawStatus === "SUSPENDED";
+        const status = isRejectedOrSuspended ? rawStatus : "ACTIVE";
+        const isApproved = !isRejectedOrSuspended;
+
+        const formattedIssueDate = issueDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        const formattedExpiryDate = isLifetime 
+          ? "LIFETIME" 
+          : expiryDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        const formattedCardExpiry = isLifetime 
+          ? "LIFETIME" 
+          : cardExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
         const firstName = userData?.first_name || userData?.firstName || "";
         const fatherName = userData?.father_name || userData?.fatherName || "";
@@ -233,10 +258,10 @@ export default function DashboardPage() {
           isApproved: isApproved,
           membershipType: membershipType,
           role: role || "MEMBER",
-          issueDate: !isApproved ? "PENDING" : issueDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-          expiryDate: !isApproved ? "PENDING" : (membershipType.toUpperCase() === "LIFETIME" ? "LIFETIME" : expiryDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })),
-          cardExpiry: !isApproved ? "PENDING" : cardExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-          daysLeft: isApproved ? (diffDays > 0 ? diffDays : 0) : 0,
+          issueDate: isRejectedOrSuspended ? "PENDING" : formattedIssueDate,
+          expiryDate: isRejectedOrSuspended ? "PENDING" : formattedExpiryDate,
+          cardExpiry: isRejectedOrSuspended ? "PENDING" : formattedCardExpiry,
+          daysLeft: isApproved ? Math.max(1, diffDays > 0 ? diffDays : 365) : 0,
           region: regionName,
           phone: userData?.phone_number || userData?.phone || "+251...",
           email: userData?.email || "N/A",
