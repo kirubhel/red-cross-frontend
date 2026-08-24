@@ -427,7 +427,7 @@ export default function DashboardPage() {
   // --- MEMBER DASHBOARD VIEW ---
   if (isMember) {
     return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16">
+    <div className="p-6 md:p-10 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16 max-w-7xl mx-auto">
       {/* Top Banner: Verification/Warning */}
       {!user?.isApproved && (
         <motion.div 

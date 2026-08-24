@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'member.redcrosseth.org',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'redcrosseth.org',
         pathname: '/**',
       },
