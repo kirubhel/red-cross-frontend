@@ -192,6 +192,7 @@ export default function VolunteersPage() {
   // Performance & Ratings States
   const [performanceMap, setPerformanceMap] = useState<Record<string, PerformanceSummary>>({});
   const [ratingFilter, setRatingFilter] = useState<string>("ALL");
+  const [tierFilter, setTierFilter] = useState<string>("ALL");
   const [volunteerEvaluations, setVolunteerEvaluations] = useState<VolunteerEvaluation[]>([]);
   const [loadingEvaluations, setLoadingEvaluations] = useState(false);
   const [activeDetailsTab, setActiveDetailsTab] = useState<"profile" | "performance">("profile");
@@ -227,7 +228,7 @@ export default function VolunteersPage() {
   // Reset page to 1 when filters or search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter, ratingFilter]);
+  }, [search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter, ratingFilter, tierFilter]);
 
   // Fetch volunteers when page, page size, or filters change
   useEffect(() => {
@@ -783,15 +784,73 @@ export default function VolunteersPage() {
   const getOrgName = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgName:"))?.replace("OrgName:", "") || "N/A";
   const getOrgType = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgType:"))?.replace("OrgType:", "") || "N/A";
 
+  const getVolunteerTier = (v: Volunteer) => {
+    const explicitTier = v.interests?.find(i => i.startsWith("Tier:"))?.replace("Tier:", "");
+    if (explicitTier) return explicitTier.toUpperCase();
+    const hours = v.hoursSpent || 0;
+    if (hours >= 500) return "PLATINUM";
+    if (hours >= 300) return "GOLD";
+    if (hours >= 150) return "SILVER";
+    return "BRONZE";
+  };
+
+  const renderTierBadge = (tier: string) => {
+    switch (tier.toUpperCase()) {
+      case "PLATINUM":
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1.5 w-fit shadow-xs">
+            <span>💎</span>
+            <span>Platinum</span>
+          </span>
+        );
+      case "GOLD":
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1.5 w-fit shadow-xs">
+            <span>🥇</span>
+            <span>Gold</span>
+          </span>
+        );
+      case "SILVER":
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-300 flex items-center gap-1.5 w-fit">
+            <span>🥈</span>
+            <span>Silver</span>
+          </span>
+        );
+      case "BRONZE":
+      default:
+        return (
+          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-50 text-orange-800 border border-orange-200 flex items-center gap-1.5 w-fit">
+            <span>🥉</span>
+            <span>Bronze</span>
+          </span>
+        );
+    }
+  };
+
   const filteredVolunteers = (volunteers || []).filter(v => {
-    if (ratingFilter === "RATED") {
+    // Rating Filter
+    if (ratingFilter !== "ALL") {
       const summary = performanceMap[v.id] || performanceMap[v.person_id];
-      return summary && summary.total_evaluations > 0;
+      if (ratingFilter === "RATED") {
+        if (!summary || summary.total_evaluations === 0) return false;
+      } else if (ratingFilter === "UNRATED") {
+        if (summary && summary.total_evaluations > 0) return false;
+      } else if (ratingFilter === "5_STARS") {
+        if (!summary || summary.average_overall < 4.8) return false;
+      } else if (ratingFilter === "4_PLUS" || ratingFilter === "TOP_RATED") {
+        if (!summary || summary.average_overall < 4.0) return false;
+      } else if (ratingFilter === "3_PLUS") {
+        if (!summary || summary.average_overall < 3.0) return false;
+      }
     }
-    if (ratingFilter === "TOP_RATED") {
-      const summary = performanceMap[v.id] || performanceMap[v.person_id];
-      return summary && summary.total_evaluations > 0 && summary.average_overall >= 4.0;
+
+    // Tier Filter
+    if (tierFilter !== "ALL" && tierFilter !== "") {
+      const tier = getVolunteerTier(v);
+      if (tier !== tierFilter.toUpperCase()) return false;
     }
+
     return true;
   });
 
@@ -866,8 +925,74 @@ export default function VolunteersPage() {
             </Button>
         </div>
 
+        {/* Quick Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mr-1">Quick Filters:</span>
+          {[
+            { label: "All", rating: "ALL", tier: "ALL" },
+            { label: "★ 5.0 Stars", rating: "5_STARS", tier: "ALL" },
+            { label: "★ 4.0+ Stars", rating: "4_PLUS", tier: "ALL" },
+            { label: "★ 3.0+ Stars", rating: "3_PLUS", tier: "ALL" },
+            { label: "💎 Platinum Tier", rating: "ALL", tier: "PLATINUM" },
+            { label: "🥇 Gold Tier", rating: "ALL", tier: "GOLD" },
+            { label: "🥈 Silver Tier", rating: "ALL", tier: "SILVER" },
+            { label: "🥉 Bronze Tier", rating: "ALL", tier: "BRONZE" },
+            { label: "Rated Only", rating: "RATED", tier: "ALL" },
+          ].map(chip => {
+            const isActive = ratingFilter === chip.rating && tierFilter === chip.tier;
+            return (
+              <button
+                key={chip.label}
+                onClick={() => {
+                  setRatingFilter(chip.rating);
+                  setTierFilter(chip.tier);
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-black transition-all border shadow-2xs flex items-center gap-1",
+                  isActive
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                )}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+
         {showFilters && (
             <div className="grid md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Performance / Rating</label>
+                    <select 
+                        value={ratingFilter}
+                        onChange={(e) => setRatingFilter(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg bg-white border border-gray-200 font-bold text-xs outline-none"
+                    >
+                        <option value="ALL">All Ratings</option>
+                        <option value="5_STARS">★ 5.0 Stars (Top Rated)</option>
+                        <option value="4_PLUS">★ 4.0+ Stars (High Performers)</option>
+                        <option value="3_PLUS">★ 3.0+ Stars (Satisfactory & Above)</option>
+                        <option value="RATED">Rated Volunteers Only</option>
+                        <option value="UNRATED">Unrated Volunteers Only</option>
+                    </select>
+                </div>
+
+                <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Volunteer Tier</label>
+                    <select 
+                        value={tierFilter}
+                        onChange={(e) => setTierFilter(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg bg-white border border-gray-200 font-bold text-xs outline-none"
+                    >
+                        <option value="ALL">All Tiers</option>
+                        <option value="PLATINUM">💎 Platinum Tier (500+ Hours)</option>
+                        <option value="GOLD">🥇 Gold Tier (300+ Hours)</option>
+                        <option value="SILVER">🥈 Silver Tier (150+ Hours)</option>
+                        <option value="BRONZE">🥉 Bronze Tier (Base / 0-150 Hours)</option>
+                    </select>
+                </div>
+
                 <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Location/Region</label>
                     <select 
@@ -893,19 +1018,6 @@ export default function VolunteersPage() {
                         <option value="ACTIVE">Active</option>
                         <option value="INACTIVE">Inactive</option>
                         <option value="PENDING">Pending</option>
-                    </select>
-                </div>
-
-                <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Performance / Rating</label>
-                    <select 
-                        value={ratingFilter}
-                        onChange={(e) => setRatingFilter(e.target.value)}
-                        className="w-full h-10 px-3 rounded-lg bg-white border border-gray-200 font-bold text-xs outline-none"
-                    >
-                        <option value="ALL">All Volunteers</option>
-                        <option value="RATED">Rated Volunteers Only</option>
-                        <option value="TOP_RATED">Top Performers (4.0+ ★)</option>
                     </select>
                 </div>
 
@@ -959,12 +1071,13 @@ export default function VolunteersPage() {
                     </select>
                 </div>
 
-                <div className="flex items-end pb-0.5 md:col-span-2 justify-end">
+                <div className="flex items-end pb-0.5 justify-end">
                     <Button 
                         onClick={() => {
                             setRegionFilter("");
                             setStatusFilter("");
                             setRatingFilter("ALL");
+                            setTierFilter("ALL");
                             setOccupationFilter("");
                             setAreaFilter("");
                             setClassificationFilter("");
@@ -1092,9 +1205,10 @@ export default function VolunteersPage() {
           <TableHeader className="bg-gray-50/50">
             <TableRow className="hover:bg-transparent border-gray-50">
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Volunteer Identity</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Tier Level</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Performance / Rating</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contact</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Location</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Performance / Rating</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contribution</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500 text-right">Status</TableHead>
             </TableRow>
@@ -1102,7 +1216,7 @@ export default function VolunteersPage() {
           <TableBody>
             {loading ? (
                 <TableRow>
-                   <TableCell colSpan={6} className="h-32 text-center">
+                   <TableCell colSpan={7} className="h-32 text-center">
                       <div className="flex flex-col items-center justify-center space-y-4">
                          <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin"></div>
                          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading Volunteers...</p>
@@ -1111,7 +1225,7 @@ export default function VolunteersPage() {
                 </TableRow>
             ) : filteredVolunteers.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={6} className="h-32 text-center text-gray-400 font-bold italic text-xs">No volunteers found matching your criteria</TableCell>
+                   <TableCell colSpan={7} className="h-32 text-center text-gray-400 font-bold italic text-xs">No volunteers found matching your criteria</TableCell>
                 </TableRow>
             ) : (
                 filteredVolunteers.map((v) => (
@@ -1119,17 +1233,9 @@ export default function VolunteersPage() {
                     <TableCell className="px-6 py-4">
                         <span className="font-black text-black text-sm leading-tight uppercase tracking-tighter">{v.first_name} {v.last_name}</span>
                     </TableCell>
+
                     <TableCell className="px-6 py-4">
-                        <span className="text-xs font-bold text-gray-500">{v.phone_number}</span>
-                    </TableCell>
-                    
-                    <TableCell className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-[9px] font-black uppercase tracking-widest rounded-md w-fit">
-                                {regions.find(r => String(r.id) === String(v.region))?.name || v.region || 'N/A'}
-                            </span>
-                            <span className="text-[10px] text-gray-400 uppercase tracking-tighter ml-1">{v.country || 'Ethiopia'}</span>
-                        </div>
+                      {renderTierBadge(getVolunteerTier(v))}
                     </TableCell>
 
                     <TableCell className="px-6 py-4">
@@ -1150,6 +1256,19 @@ export default function VolunteersPage() {
                           </div>
                         );
                       })()}
+                    </TableCell>
+
+                    <TableCell className="px-6 py-4">
+                        <span className="text-xs font-bold text-gray-500">{v.phone_number}</span>
+                    </TableCell>
+                    
+                    <TableCell className="px-6 py-4">
+                        <div className="flex flex-col gap-1">
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-[9px] font-black uppercase tracking-widest rounded-md w-fit">
+                                {regions.find(r => String(r.id) === String(v.region))?.name || v.region || 'N/A'}
+                            </span>
+                            <span className="text-[10px] text-gray-400 uppercase tracking-tighter ml-1">{v.country || 'Ethiopia'}</span>
+                        </div>
                     </TableCell>
 
                     <TableCell className="px-6 py-4">
@@ -1278,8 +1397,9 @@ export default function VolunteersPage() {
             >
                 <div className="p-6 border-b border-gray-50 flex justify-between items-start sticky top-0 bg-white/80 backdrop-blur-md z-10">
                     <div className="space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">Volunteer Profile Audit</p>
+                          {renderTierBadge(getVolunteerTier(selectedVolunteer))}
                           {(() => {
                             const summary = performanceMap[selectedVolunteer.id] || performanceMap[selectedVolunteer.person_id];
                             if (summary && summary.total_evaluations > 0) {
@@ -1299,7 +1419,7 @@ export default function VolunteersPage() {
                     </div>
                     <button 
                         onClick={() => setShowModal(false)}
-                        className="h-10 w-10 flex items-center justify-center rounded-2xl hover:bg-gray-50 transition-colors"
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     >
                         <X className="h-5 w-5 text-gray-400" />
                     </button>
