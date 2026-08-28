@@ -42,6 +42,8 @@ type VolunteerRequest = {
   payment_status: string;
   title?: string;
   description?: string;
+  start_date?: string;
+  end_date?: string;
   men_count?: number;
   women_count?: number;
   min_experience?: number;
@@ -199,6 +201,12 @@ export default function AdminVolunteerRequestsPage() {
                     <div className="flex flex-col gap-1">
                       <span className="font-black text-black text-xs">{req.headcount} Volunteers</span>
                       <span className="text-gray-500 text-[10px] font-medium line-clamp-1">{req.activities_skills}</span>
+                      {req.start_date && req.end_date && (
+                        <span className="text-[10px] font-bold text-blue-600 flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5" />
+                          {new Date(req.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - {new Date(req.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="px-6 py-4">

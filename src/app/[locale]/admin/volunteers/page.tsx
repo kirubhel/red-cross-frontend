@@ -62,6 +62,44 @@ type Volunteer = {
   status: "ACTIVE" | "INACTIVE" | "PENDING";
 };
 
+type VolunteerEvaluation = {
+  id: string;
+  assignment_id: string;
+  request_id: string;
+  organization_id: string;
+  organization_name?: string;
+  request_title?: string;
+  volunteer_id: string;
+  volunteer_name?: string;
+  hours_worked: number;
+  punctuality: number;
+  skills: number;
+  teamwork: number;
+  conduct: number;
+  overall: number;
+  outcome: string;
+  feedback: string;
+  certificate_issued: boolean;
+  created_at: string;
+};
+
+type PerformanceSummary = {
+  volunteer_id: string;
+  person_id: string;
+  volunteer_name: string;
+  phone_number: string;
+  email: string;
+  region: string;
+  total_evaluations: number;
+  average_overall: number;
+  avg_punctuality: number;
+  avg_skills: number;
+  avg_teamwork: number;
+  avg_conduct: number;
+  total_hours_worked: number;
+  certificates_count: number;
+};
+
 type Region = {
     id: number;
     name: string;
@@ -151,6 +189,13 @@ export default function VolunteersPage() {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importPage, setImportPage] = useState(1);
 
+  // Performance & Ratings States
+  const [performanceMap, setPerformanceMap] = useState<Record<string, PerformanceSummary>>({});
+  const [ratingFilter, setRatingFilter] = useState<string>("ALL");
+  const [volunteerEvaluations, setVolunteerEvaluations] = useState<VolunteerEvaluation[]>([]);
+  const [loadingEvaluations, setLoadingEvaluations] = useState(false);
+  const [activeDetailsTab, setActiveDetailsTab] = useState<"profile" | "performance">("profile");
+
   // New Upgrade States
   const [occupationFilter, setOccupationFilter] = useState("");
   const [areaFilter, setAreaFilter] = useState("");
@@ -167,6 +212,7 @@ export default function VolunteersPage() {
 
   useEffect(() => {
     fetchRegions();
+    fetchPerformanceSummaries();
   }, []);
 
   useEffect(() => {
@@ -181,7 +227,7 @@ export default function VolunteersPage() {
   // Reset page to 1 when filters or search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter]);
+  }, [search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter, ratingFilter]);
 
   // Fetch volunteers when page, page size, or filters change
   useEffect(() => {
@@ -205,6 +251,21 @@ export default function VolunteersPage() {
     }
   };
 
+  const fetchPerformanceSummaries = async () => {
+    try {
+      const res = await api.get("/admin/volunteers/performance");
+      const list: PerformanceSummary[] = res.data.summaries || [];
+      const map: Record<string, PerformanceSummary> = {};
+      list.forEach(p => {
+        if (p.volunteer_id) map[p.volunteer_id] = p;
+        if (p.person_id) map[p.person_id] = p;
+      });
+      setPerformanceMap(map);
+    } catch (err) {
+      console.error("Failed to fetch performance summaries:", err);
+    }
+  };
+
   const fetchVolunteers = async () => {
     setLoading(true);
     try {
@@ -218,11 +279,29 @@ export default function VolunteersPage() {
       setVolunteers(res.data.volunteers || []);
       setTotalPages(res.data.pagination?.total_pages || 1);
       setTotalItems(res.data.pagination?.total_items || 0);
+      fetchPerformanceSummaries();
     } catch (err) {
       console.error("Failed to fetch volunteers:", err);
       toast.error("Failed to load volunteers");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectVolunteer = async (v: Volunteer) => {
+    setSelectedVolunteer(v);
+    setActiveDetailsTab("profile");
+    setShowModal(true);
+    setLoadingEvaluations(true);
+    try {
+      const id = v.person_id || v.id;
+      const res = await api.get(`/volunteers/evaluations?volunteer_id=${id}`);
+      setVolunteerEvaluations(res.data.evaluations || []);
+    } catch (err) {
+      console.error("Failed to fetch evaluations:", err);
+      setVolunteerEvaluations([]);
+    } finally {
+      setLoadingEvaluations(false);
     }
   };
 
@@ -704,7 +783,17 @@ export default function VolunteersPage() {
   const getOrgName = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgName:"))?.replace("OrgName:", "") || "N/A";
   const getOrgType = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgType:"))?.replace("OrgType:", "") || "N/A";
 
-  const filteredVolunteers = volunteers || [];
+  const filteredVolunteers = (volunteers || []).filter(v => {
+    if (ratingFilter === "RATED") {
+      const summary = performanceMap[v.id] || performanceMap[v.person_id];
+      return summary && summary.total_evaluations > 0;
+    }
+    if (ratingFilter === "TOP_RATED") {
+      const summary = performanceMap[v.id] || performanceMap[v.person_id];
+      return summary && summary.total_evaluations > 0 && summary.average_overall >= 4.0;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-10 print:p-0 text-black">
@@ -808,6 +897,19 @@ export default function VolunteersPage() {
                 </div>
 
                 <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Performance / Rating</label>
+                    <select 
+                        value={ratingFilter}
+                        onChange={(e) => setRatingFilter(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg bg-white border border-gray-200 font-bold text-xs outline-none"
+                    >
+                        <option value="ALL">All Volunteers</option>
+                        <option value="RATED">Rated Volunteers Only</option>
+                        <option value="TOP_RATED">Top Performers (4.0+ ★)</option>
+                    </select>
+                </div>
+
+                <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Area</label>
                     <select 
                         value={areaFilter}
@@ -857,15 +959,15 @@ export default function VolunteersPage() {
                     </select>
                 </div>
 
-                <div className="flex items-end pb-0.5 md:col-span-3 justify-end">
+                <div className="flex items-end pb-0.5 md:col-span-2 justify-end">
                     <Button 
-                        onClick={() => { 
-                            setRegionFilter(""); 
-                            setStatusFilter(""); 
-                            setSearch(""); 
-                            setAreaFilter(""); 
-                            setClassificationFilter(""); 
-                            setOccupationFilter(""); 
+                        onClick={() => {
+                            setRegionFilter("");
+                            setStatusFilter("");
+                            setRatingFilter("ALL");
+                            setOccupationFilter("");
+                            setAreaFilter("");
+                            setClassificationFilter("");
                         }}
                         variant="ghost" 
                         className="h-10 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-gray-400"
@@ -960,53 +1062,23 @@ export default function VolunteersPage() {
                                                 {column}
                                             </th>
                                         ))}
-                                        <th className="px-3 py-3 text-[9px] font-black uppercase tracking-widest text-red-600 whitespace-nowrap border-b border-gray-100">Issue</th>
+                                        <th className="px-3 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap border-b border-gray-100">Issue</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {importRows.slice((importPage - 1) * 10, importPage * 10).map(row => (
-                                        <tr key={row.rowNumber} className={cn("border-t border-gray-50 transition-colors hover:bg-gray-50/50", row.importIssue && "bg-red-50/20 hover:bg-red-50/30")}>
-                                            <td className={cn("sticky left-0 px-3 py-2 text-[10px] font-black border-r", row.importIssue ? "bg-red-100/80 text-red-600 border-red-200/50" : "bg-white text-gray-400 border-gray-100")}>{row.rowNumber}</td>
+                                    {importRows.slice((importPage - 1) * 8, importPage * 8).map((row) => (
+                                        <tr key={row.rowNumber} className={cn("border-b border-gray-50 text-xs font-bold", row.importIssue ? "bg-red-50/70 text-red-700" : "hover:bg-gray-50/50")}>
+                                            <td className="sticky left-0 bg-inherit px-3 py-2 text-[10px] font-black text-gray-400 whitespace-nowrap">{row.rowNumber}</td>
                                             {importColumns.slice(0, 8).map(column => (
-                                                <td key={`${row.rowNumber}-${column}`} className={cn("px-3 py-2 text-xs font-bold whitespace-nowrap border-r", row.importIssue ? "bg-red-100/60 text-red-700 border-red-200/50" : "text-gray-600 border-gray-100")}>
-                                                    {row.data[column] === null ? <span className="text-gray-300 italic">null</span> : String(row.data[column])}
+                                                <td key={column} className="px-3 py-2 whitespace-nowrap text-gray-600">
+                                                    {cellValueToText(row.data[column]) || "---"}
                                                 </td>
                                             ))}
-                                            <td className={cn("px-3 py-2 text-xs font-black whitespace-nowrap", row.importIssue ? "bg-red-100/80 text-red-600" : "text-gray-400")}>
-                                                {row.importIssue || "---"}
-                                            </td>
+                                            <td className="px-3 py-2 text-[10px] font-black text-red-600 whitespace-nowrap">{row.importIssue || "Pending"}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
-                        <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-                            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                                Showing {((importPage - 1) * 10) + 1}-{Math.min(importPage * 10, importRows.length)} of {importRows.length} rows (Previewing first 8 data columns)
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 px-3 rounded-lg font-black text-[9px] uppercase tracking-widest bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
-                                    onClick={() => setImportPage(prev => Math.max(1, prev - 1))}
-                                    disabled={importPage === 1}
-                                >
-                                    Previous
-                                </Button>
-                                <span className="text-[10px] font-black text-gray-500 px-1">
-                                    Page {importPage} of {Math.ceil(importRows.length / 10)}
-                                </span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 px-3 rounded-lg font-black text-[9px] uppercase tracking-widest bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
-                                    onClick={() => setImportPage(prev => Math.min(Math.ceil(importRows.length / 10), prev + 1))}
-                                    disabled={importPage >= Math.ceil(importRows.length / 10)}
-                                >
-                                    Next
-                                </Button>
-                            </div>
                         </div>
                     </div>
                 )}
@@ -1014,14 +1086,15 @@ export default function VolunteersPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none print:border-none">
+      {/* Main Table Container */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-gray-50/50 print:bg-transparent">
+          <TableHeader className="bg-gray-50/50">
             <TableRow className="hover:bg-transparent border-gray-50">
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Volunteer Identity</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contact</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Location</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Address</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Performance / Rating</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contribution</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500 text-right">Status</TableHead>
             </TableRow>
@@ -1060,9 +1133,23 @@ export default function VolunteersPage() {
                     </TableCell>
 
                     <TableCell className="px-6 py-4">
-                        <span className="text-xs text-gray-500 truncate max-w-[150px] inline-block" title={v.address}>
-                            {v.address || '---'}
-                        </span>
+                      {(() => {
+                        const summary = performanceMap[v.id] || performanceMap[v.person_id];
+                        if (!summary || summary.total_evaluations === 0) {
+                          return <span className="text-gray-300 text-[11px] font-bold">Unrated</span>;
+                        }
+                        return (
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1">
+                              <span className="text-amber-500 font-black text-sm">★ {summary.average_overall.toFixed(1)}</span>
+                              <span className="text-gray-400 text-[10px] font-bold">({summary.total_evaluations} {summary.total_evaluations === 1 ? 'review' : 'reviews'})</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[9px] font-semibold text-slate-500">
+                              <span>Punct: {summary.avg_punctuality.toFixed(1)}</span> • <span>Skills: {summary.avg_skills.toFixed(1)}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </TableCell>
 
                     <TableCell className="px-6 py-4">
@@ -1080,7 +1167,7 @@ export default function VolunteersPage() {
                                 {v.status || "PENDING"}
                             </span>
                             <button 
-                                onClick={() => { setSelectedVolunteer(v); setShowModal(true); }}
+                                onClick={() => handleSelectVolunteer(v)}
                                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
                             >
                                 <ArrowUpRight className="h-4 w-4 ml-auto text-gray-300 group-hover:text-[#ED1C24] transition-colors" />
@@ -1191,7 +1278,20 @@ export default function VolunteersPage() {
             >
                 <div className="p-6 border-b border-gray-50 flex justify-between items-start sticky top-0 bg-white/80 backdrop-blur-md z-10">
                     <div className="space-y-1">
-                        <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">Volunteer Profile Audit</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">Volunteer Profile Audit</p>
+                          {(() => {
+                            const summary = performanceMap[selectedVolunteer.id] || performanceMap[selectedVolunteer.person_id];
+                            if (summary && summary.total_evaluations > 0) {
+                              return (
+                                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 text-[10px] font-black flex items-center gap-1">
+                                  ★ {summary.average_overall.toFixed(1)} ({summary.total_evaluations})
+                                </span>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
                         <h2 className="text-2xl font-black tracking-tight text-black">
                             {selectedVolunteer.first_name} {selectedVolunteer.last_name}
                         </h2>
@@ -1205,186 +1305,314 @@ export default function VolunteersPage() {
                     </button>
                 </div>
 
-                <div className="p-6 grid grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                        <div>
-                            <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Identity & Bio</h4>
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><User className="h-4 w-4 text-gray-400" /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase">Gender</p>
-                                        <p className="text-xs font-bold text-black">{selectedVolunteer.gender || "Not Specified"}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Calendar className="h-4 w-4 text-gray-400" /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase">Date of Birth</p>
-                                        <p className="text-xs font-bold text-black">{selectedVolunteer.date_of_birth || "N/A"}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Star className="h-4 w-4 text-gray-400" /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase">Hours Contributed</p>
-                                        <p className="text-xs font-bold text-[#ED1C24]">{selectedVolunteer.hoursSpent || 0} Total Hours</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Briefcase className="h-4 w-4 text-gray-400" /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase">Profession</p>
-                                        <p className="text-xs font-bold text-black">{selectedVolunteer.profession || "N/A"}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div>
-                            <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Contact & Location</h4>
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Phone className="h-4 w-4 text-gray-400" /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase">Phone</p>
-                                        <p className="text-xs font-bold text-black">{selectedVolunteer.phone_number || "No Phone"}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><MapPin className="h-4 w-4 text-gray-400" /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase">Region / Branch</p>
-                                        <p className="text-xs font-bold text-black">
-                                            {regions.find(r => String(r.id) === String(selectedVolunteer.region))?.name || "National HQ"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Mail className="h-4 w-4 text-gray-400" /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase">Email Address</p>
-                                        <p className="text-xs font-bold text-black">{selectedVolunteer.email || "No Email"}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Home className="h-4 w-4 text-gray-400" /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase">Address / Country</p>
-                                        <p className="text-xs font-bold text-black">
-                                            {selectedVolunteer.address || "---"} • {selectedVolunteer.country || "Ethiopia"}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><MapPin className="h-4 w-4 text-gray-400" /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase">Zone / Woreda</p>
-                                        <p className="text-xs font-bold text-black">
-                                            {selectedVolunteer.zone_id || "---"} • {selectedVolunteer.woreda_id || "---"}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                {/* Tab Switcher */}
+                <div className="px-6 pt-4 flex gap-2 border-b border-gray-100 bg-gray-50/50">
+                  <button
+                    onClick={() => setActiveDetailsTab("profile")}
+                    className={cn(
+                      "px-4 py-2.5 rounded-t-xl text-xs font-black uppercase tracking-wider transition-all border-b-2",
+                      activeDetailsTab === "profile"
+                        ? "border-[#ED1C24] text-[#ED1C24] bg-white shadow-sm"
+                        : "border-transparent text-gray-500 hover:text-black"
+                    )}
+                  >
+                    Profile Overview
+                  </button>
+                  <button
+                    onClick={() => setActiveDetailsTab("performance")}
+                    className={cn(
+                      "px-4 py-2.5 rounded-t-xl text-xs font-black uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5",
+                      activeDetailsTab === "performance"
+                        ? "border-[#ED1C24] text-[#ED1C24] bg-white shadow-sm"
+                        : "border-transparent text-gray-500 hover:text-black"
+                    )}
+                  >
+                    <span>Performance & Ratings</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-red-100 text-[#ED1C24] text-[9px] font-black">
+                      {volunteerEvaluations.length}
+                    </span>
+                  </button>
                 </div>
 
-                <div className="px-6 pb-6">
-                    <div className="mt-4 p-5 bg-gray-50 rounded-[24px] border border-gray-100">
-                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Expertise & Engagement</h4>
-                        <div className="space-y-3">
+                {activeDetailsTab === "profile" ? (
+                  <>
+                    <div className="p-6 grid grid-cols-2 gap-6">
+                        <div className="space-y-4">
                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Engagement Areas</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {(selectedVolunteer.engagement_areas || []).map((area: string) => (
-                                        <span key={area} className="px-3 py-1 bg-white border border-gray-100 rounded-full text-[10px] font-bold text-black shadow-sm">
-                                            {area}
-                                        </span>
-                                    ))}
-                                    {(!selectedVolunteer?.engagement_areas || selectedVolunteer.engagement_areas.length === 0) && <p className="text-xs text-gray-400 font-bold italic">No areas selected</p>}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-gray-100">
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase">Education Level</p>
-                                    <p className="text-xs font-bold text-black">{getEducation(selectedVolunteer)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase">Geographic Area</p>
-                                    <p className="text-xs font-bold text-black">{getArea(selectedVolunteer)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase">Organization</p>
-                                    <p className="text-xs font-bold text-black">
-                                        {getOrgName(selectedVolunteer) !== "N/A" ? `${getOrgName(selectedVolunteer)} (${getOrgType(selectedVolunteer)})` : "Not Specified"}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase">Languages</p>
-                                    <p className="text-xs font-bold text-black">{selectedVolunteer.skills?.join(", ") || "None Specified"}</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Skills</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(selectedVolunteer.skills || []).map((skill: string) => (
-                                            <span key={skill} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-black uppercase tracking-wider">
-                                                {skill}
-                                            </span>
-                                        ))}
+                                <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Identity & Bio</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><User className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Gender</p>
+                                            <p className="text-xs font-bold text-black">{selectedVolunteer.gender || "Not Specified"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Calendar className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Date of Birth</p>
+                                            <p className="text-xs font-bold text-black">{selectedVolunteer.date_of_birth || "N/A"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Star className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Hours Contributed</p>
+                                            <p className="text-xs font-bold text-[#ED1C24]">{selectedVolunteer.hoursSpent || 0} Total Hours</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Briefcase className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Profession</p>
+                                            <p className="text-xs font-bold text-black">{selectedVolunteer.profession || "N/A"}</p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Interests</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {(selectedVolunteer.interests || []).map((interest: string) => (
-                                            <span key={interest} className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-md text-[9px] font-black uppercase tracking-wider">
-                                                {interest}
-                                            </span>
-                                        ))}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Contact & Location</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Phone className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Phone</p>
+                                            <p className="text-xs font-bold text-black">{selectedVolunteer.phone_number || "No Phone"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><MapPin className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Region / Branch</p>
+                                            <p className="text-xs font-bold text-black">
+                                                {regions.find(r => String(r.id) === String(selectedVolunteer.region))?.name || "National HQ"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Mail className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Email Address</p>
+                                            <p className="text-xs font-bold text-black">{selectedVolunteer.email || "No Email"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Home className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Address / Country</p>
+                                            <p className="text-xs font-bold text-black">
+                                                {selectedVolunteer.address || "---"} • {selectedVolunteer.country || "Ethiopia"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><MapPin className="h-4 w-4 text-gray-400" /></div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase">Zone / Woreda</p>
+                                            <p className="text-xs font-bold text-black">
+                                                {selectedVolunteer.zone_id || "---"} • {selectedVolunteer.woreda_id || "---"}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-4 p-5 bg-gray-50 rounded-[24px] border border-gray-100">
-                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Volunteer Status</h4>
-                        <div className="flex items-center justify-between">
-                            <span className={cn(
-                                "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                                selectedVolunteer.status === "ACTIVE" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
-                            )}>
-                                {selectedVolunteer.status || "PENDING APPROVAL"}
-                            </span>
+                    <div className="px-6 pb-6">
+                        <div className="mt-4 p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                            <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Expertise & Engagement</h4>
+                            <div className="space-y-3">
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Engagement Areas</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {(selectedVolunteer.engagement_areas || []).map((area: string) => (
+                                            <span key={area} className="px-3 py-1 bg-white border border-gray-100 rounded-full text-[10px] font-bold text-black shadow-sm">
+                                                {area}
+                                            </span>
+                                        ))}
+                                        {(!selectedVolunteer?.engagement_areas || selectedVolunteer.engagement_areas.length === 0) && <p className="text-xs text-gray-400 font-bold italic">No areas selected</p>}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-gray-100">
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Education Level</p>
+                                        <p className="text-xs font-bold text-black">{getEducation(selectedVolunteer)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Geographic Area</p>
+                                        <p className="text-xs font-bold text-black">{getArea(selectedVolunteer)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Organization</p>
+                                        <p className="text-xs font-bold text-black">
+                                            {getOrgName(selectedVolunteer) !== "N/A" ? `${getOrgName(selectedVolunteer)} (${getOrgType(selectedVolunteer)})` : "Not Specified"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase">Languages</p>
+                                        <p className="text-xs font-bold text-black">{selectedVolunteer.skills?.join(", ") || "None Specified"}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Skills</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {(selectedVolunteer.skills || []).map((skill: string) => (
+                                                <span key={skill} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-black uppercase tracking-wider">
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase mb-2">Interests</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {(selectedVolunteer.interests || []).map((interest: string) => (
+                                                <span key={interest} className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-md text-[9px] font-black uppercase tracking-wider">
+                                                    {interest}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                            <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Volunteer Status</h4>
+                            <div className="flex items-center justify-between">
+                                <span className={cn(
+                                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                                    selectedVolunteer.status === "ACTIVE" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"
+                                )}>
+                                    {selectedVolunteer.status || "PENDING APPROVAL"}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <div className="mt-4 flex gap-3">
-                        {selectedVolunteer.status === "PENDING" && (
-                            <Button 
-                                onClick={() => {
-                                    handleApprove(selectedVolunteer.person_id || selectedVolunteer.id);
-                                    setShowModal(false);
-                                }}
-                                className="flex-1 bg-[#ED1C24] text-white rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest"
-                            >
-                                Approve Volunteer
-                            </Button>
-                        )}
+                  </>
+                ) : (
+                  /* Performance & Evaluations Tab Content */
+                  <div className="p-6 space-y-6">
+                    {/* Score Summary Metrics Card */}
+                    {(() => {
+                      const summary = performanceMap[selectedVolunteer.id] || performanceMap[selectedVolunteer.person_id];
+                      return (
+                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white shadow-lg space-y-4">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Overall Rating Average</p>
+                              <div className="flex items-baseline gap-2 mt-0.5">
+                                <span className="text-3xl font-black text-amber-400">★ {summary ? summary.average_overall.toFixed(1) : "0.0"}</span>
+                                <span className="text-xs text-slate-400 font-bold">/ 5.0 ({summary ? summary.total_evaluations : 0} reviews)</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Total Hours</span>
+                              <span className="text-xl font-extrabold text-white">{summary ? summary.total_hours_worked : 0} hrs</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3 border-t border-slate-700 text-center">
+                            <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                              <span className="text-[9px] font-black text-slate-400 uppercase block">Punctuality</span>
+                              <span className="text-sm font-black text-white">{summary ? summary.avg_punctuality.toFixed(1) : "N/A"} ★</span>
+                            </div>
+                            <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                              <span className="text-[9px] font-black text-slate-400 uppercase block">Skills</span>
+                              <span className="text-sm font-black text-white">{summary ? summary.avg_skills.toFixed(1) : "N/A"} ★</span>
+                            </div>
+                            <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                              <span className="text-[9px] font-black text-slate-400 uppercase block">Teamwork</span>
+                              <span className="text-sm font-black text-white">{summary ? summary.avg_teamwork.toFixed(1) : "N/A"} ★</span>
+                            </div>
+                            <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                              <span className="text-[9px] font-black text-slate-400 uppercase block">Conduct</span>
+                              <span className="text-sm font-black text-white">{summary ? summary.avg_conduct.toFixed(1) : "N/A"} ★</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Evaluations History List */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-slate-700">Organization Performance Reviews</h4>
+                      {loadingEvaluations ? (
+                        <div className="p-8 text-center text-slate-400 font-bold text-xs animate-pulse">Loading evaluations...</div>
+                      ) : volunteerEvaluations.length === 0 ? (
+                        <div className="bg-slate-50 p-8 rounded-2xl text-center border border-slate-100">
+                          <p className="text-slate-400 font-medium text-xs">No evaluations submitted yet for this volunteer.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {volunteerEvaluations.map((evalItem) => (
+                            <div key={evalItem.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="font-extrabold text-slate-900 text-sm">{evalItem.organization_name || "Partner Organization"}</p>
+                                  <p className="text-[11px] font-semibold text-blue-600">{evalItem.request_title || "Volunteer Mission"}</p>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-amber-500 font-black text-base">★ {evalItem.overall}/5</span>
+                                  <span className="text-[10px] text-slate-400 font-bold block">{new Date(evalItem.created_at).toLocaleDateString()}</span>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 text-[10px] font-bold">
+                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">Hours: {evalItem.hours_worked}h</span>
+                                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">Outcome: {evalItem.outcome}</span>
+                                {evalItem.certificate_issued && (
+                                  <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200">🏆 Certificate Issued</span>
+                                )}
+                              </div>
+
+                              {evalItem.feedback && (
+                                <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 italic">
+                                  &ldquo;{evalItem.feedback}&rdquo;
+                                </p>
+                              )}
+
+                              <div className="grid grid-cols-4 gap-2 text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                                <div>Punctuality: <strong className="text-slate-800">{evalItem.punctuality}★</strong></div>
+                                <div>Skills: <strong className="text-slate-800">{evalItem.skills}★</strong></div>
+                                <div>Teamwork: <strong className="text-slate-800">{evalItem.teamwork}★</strong></div>
+                                <div>Conduct: <strong className="text-slate-800">{evalItem.conduct}★</strong></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-6 pt-0 flex gap-3">
+                    {selectedVolunteer.status === "PENDING" && (
                         <Button 
-                            onClick={() => setShowModal(false)}
-                            variant="outline" 
-                            className="flex-1 rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest border-gray-200"
+                            onClick={() => {
+                                handleApprove(selectedVolunteer.person_id || selectedVolunteer.id);
+                                setShowModal(false);
+                            }}
+                            className="flex-1 bg-[#ED1C24] text-white rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest"
                         >
-                            Close Profile
+                            Approve Volunteer
                         </Button>
-                    </div>
+                    )}
+                    <Button 
+                        onClick={() => setShowModal(false)}
+                        variant="outline" 
+                        className="flex-1 rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest border-gray-200"
+                    >
+                        Close Modal
+                    </Button>
                 </div>
             </motion.div>
         </div>

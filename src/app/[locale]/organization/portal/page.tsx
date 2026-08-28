@@ -44,6 +44,10 @@ type VolunteerRequest = {
   payment_status: string;
   activities: { name: string; count: number }[];
   payment_proof_url?: string;
+  title?: string;
+  description?: string;
+  start_date?: string;
+  end_date?: string;
 };
 
 type Assignment = {
@@ -52,6 +56,10 @@ type Assignment = {
   volunteer_id: string;
   status: string;
   assigned_at: string;
+  hours_worked?: number;
+  start_date?: string;
+  end_date?: string;
+  rated?: boolean;
 };
 
 const ENGAGEMENT_AREAS = [
@@ -109,6 +117,8 @@ export default function OrganizationPortal() {
   const [menCount, setMenCount] = useState("");
   const [womenCount, setWomenCount] = useState("");
   const [minExperience, setMinExperience] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [activities, setActivities] = useState<{ name: string; count: number }[]>([
     { name: "", count: 1 }
   ]);
@@ -136,6 +146,20 @@ export default function OrganizationPortal() {
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+
+  // Volunteer Evaluation / Rating Modal State
+  const [showEvaluationModal, setShowEvaluationModal] = useState(false);
+  const [evaluatingAssignment, setEvaluatingAssignment] = useState<Assignment | null>(null);
+  const [evalPunctuality, setEvalPunctuality] = useState(5);
+  const [evalSkills, setEvalSkills] = useState(5);
+  const [evalTeamwork, setEvalTeamwork] = useState(5);
+  const [evalConduct, setEvalConduct] = useState(5);
+  const [evalOverall, setEvalOverall] = useState(5);
+  const [evalHoursWorked, setEvalHoursWorked] = useState(8);
+  const [evalOutcome, setEvalOutcome] = useState("EXCELLENT");
+  const [evalFeedback, setEvalFeedback] = useState("");
+  const [evalCertificateIssued, setEvalCertificateIssued] = useState(true);
+  const [submittingEvaluation, setSubmittingEvaluation] = useState(false);
 
   // Support Messaging State
   const [showSupportForm, setShowSupportForm] = useState(false);
@@ -230,10 +254,26 @@ export default function OrganizationPortal() {
     }
   };
 
+  const calculateMissionDays = (start: string, end: string) => {
+    if (!start || !end) return 1;
+    const s = new Date(start);
+    const e = new Date(end);
+    const diff = Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return diff > 0 ? diff : 1;
+  };
+
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!menCount || !womenCount || !qualifications) {
       toast.error("Please fill in men/women counts and qualifications");
+      return;
+    }
+    if (!startDate || !endDate) {
+      toast.error("Please specify both Start Date and End Date for the mission");
+      return;
+    }
+    if (new Date(endDate) < new Date(startDate)) {
+      toast.error("End Date cannot be earlier than Start Date");
       return;
     }
 
@@ -242,6 +282,10 @@ export default function OrganizationPortal() {
       toast.error(`Activity breakdown sum (${activitiesSum}) cannot exceed total headcount (${headcount})`);
       return;
     }
+
+    const durationDays = calculateMissionDays(startDate, endDate);
+    const ratePerDay = profile?.rate_per_volunteer || 500;
+    const totalCost = Number(headcount) * ratePerDay * durationDays;
 
     const payload = {
       headcount: Number(headcount),
@@ -253,7 +297,11 @@ export default function OrganizationPortal() {
       activities,
       volunteer_type: volunteerType,
       title,
-      description
+      description,
+      start_date: startDate,
+      end_date: endDate,
+      duration_days: durationDays,
+      payment_amount: totalCost
     };
 
     setTempPayload(payload);
@@ -275,6 +323,8 @@ export default function OrganizationPortal() {
       setMenCount("");
       setWomenCount("");
       setMinExperience("");
+      setStartDate("");
+      setEndDate("");
       setVolunteerType("General Volunteer");
       setActivities([{ name: "", count: 1 }]);
       setSelectedAreas([]);
@@ -287,6 +337,52 @@ export default function OrganizationPortal() {
       toast.error("Failed to create request");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOpenEvaluation = (assignment: Assignment) => {
+    setEvaluatingAssignment(assignment);
+    setEvalOverall(5);
+    setEvalPunctuality(5);
+    setEvalSkills(5);
+    setEvalTeamwork(5);
+    setEvalConduct(5);
+    setEvalHoursWorked(assignment.hours_worked || 8);
+    setEvalOutcome("EXCELLENT");
+    setEvalFeedback("");
+    setEvalCertificateIssued(true);
+    setShowEvaluationModal(true);
+  };
+
+  const handleSubmitEvaluation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!evaluatingAssignment || !selectedRequest) return;
+    setSubmittingEvaluation(true);
+    try {
+      await api.put("/organizations/volunteers/evaluate", {
+        assignment_id: evaluatingAssignment.id,
+        volunteer_id: evaluatingAssignment.volunteer_id,
+        request_id: selectedRequest.id,
+        organization_id: profile?.id,
+        hours_worked: Number(evalHoursWorked) || 8,
+        punctuality: Number(evalPunctuality),
+        skills: Number(evalSkills),
+        teamwork: Number(evalTeamwork),
+        conduct: Number(evalConduct),
+        overall: Number(evalOverall),
+        outcome: evalOutcome,
+        feedback: evalFeedback,
+        certificate_issued: evalCertificateIssued
+      });
+      toast.success("Volunteer performance evaluation submitted successfully!");
+      setAssignments(prev => prev.map(a => a.id === evaluatingAssignment.id ? { ...a, status: "COMPLETED", rated: true } : a));
+      setShowEvaluationModal(false);
+      setEvaluatingAssignment(null);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to submit evaluation");
+    } finally {
+      setSubmittingEvaluation(false);
     }
   };
 
@@ -979,6 +1075,41 @@ export default function OrganizationPortal() {
                   />
                 </div>
 
+                {/* Mission Dates & Duration */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Mission Date Schedule & Duration *</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-100">
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-500">Start Date *</span>
+                      <Input 
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="h-9 bg-white border-slate-200 rounded-xl font-bold text-sm text-slate-900"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-500">End Date *</span>
+                      <Input 
+                        type="date"
+                        value={endDate}
+                        min={startDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="h-9 bg-white border-slate-200 rounded-xl font-bold text-sm text-slate-900"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-500">Calculated Duration</span>
+                      <div className="h-9 px-3 bg-slate-100 border border-slate-200 rounded-xl font-bold text-sm text-slate-900 flex items-center justify-between">
+                        <span>{startDate && endDate ? `${calculateMissionDays(startDate, endDate)} Days` : "1 Day (Default)"}</span>
+                        <Calendar className="h-4 w-4 text-[#ED1C24]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Numbers Grid: Men, Women, Total, Experience */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24]">Headcount & Personnel Breakdown</Label>
@@ -1235,13 +1366,22 @@ export default function OrganizationPortal() {
                             <p className="text-[10px] font-semibold text-slate-400">ID: {a.volunteer_id.substring(0,8)}</p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${a.status === 'ONBOARDED' ? 'text-emerald-500' : 'text-blue-500'}`}>{a.status}</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${a.status === 'ONBOARDED' ? 'text-emerald-500' : a.status === 'COMPLETED' ? 'text-blue-600' : 'text-slate-500'}`}>{a.status}</span>
                             {a.status === 'ASSIGNED' && (
                               <Button 
                                 onClick={() => handleOnboard(a.id)}
                                 className="h-7 px-3 bg-slate-900 hover:bg-[#ED1C24] text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all"
                               >
                                 Onboard
+                              </Button>
+                            )}
+                            {(a.status === 'ONBOARDED' || a.status === 'COMPLETED' || selectedRequest.status === 'COMPLETED' || selectedRequest.status === 'APPROVED') && (
+                              <Button 
+                                onClick={() => handleOpenEvaluation(a)}
+                                className="h-7 px-3 bg-[#ED1C24] hover:bg-black text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-1"
+                              >
+                                <ShieldCheck className="h-3 w-3" />
+                                {a.status === 'COMPLETED' ? "Re-Evaluate" : "Rate & Evaluate"}
                               </Button>
                             )}
                           </div>
@@ -1271,21 +1411,29 @@ export default function OrganizationPortal() {
                 <AlertCircle className="h-7 w-7 text-[#ED1C24]" />
               </div>
               <h2 className="text-2xl font-extrabold tracking-tight mb-2 text-slate-900">Confirm <span className="text-[#ED1C24]">Mission Request</span></h2>
-              <p className="text-slate-500 font-medium text-xs mb-6">You are requesting {tempPayload.headcount} volunteers. Please review the estimated costs below.</p>
+              <p className="text-slate-500 font-medium text-xs mb-6">You are requesting {tempPayload.headcount} volunteers for {tempPayload.duration_days || 1} days. Please review the estimated costs below.</p>
               
-              <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3 border border-slate-100">
+              <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3 border border-slate-100 text-left">
                 <div className="flex justify-between items-center text-xs font-semibold text-slate-500">
-                  <span>Volunteers</span>
-                  <span className="text-slate-900 font-bold">{tempPayload.headcount}</span>
+                  <span>Volunteers Count</span>
+                  <span className="text-slate-900 font-bold">{tempPayload.headcount} Volunteers</span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-semibold text-slate-500">
+                  <span>Mission Dates</span>
+                  <span className="text-slate-900 font-bold">{tempPayload.start_date} → {tempPayload.end_date}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-semibold text-slate-500">
+                  <span>Calculated Duration</span>
+                  <span className="text-slate-900 font-bold">{tempPayload.duration_days || 1} Days</span>
                 </div>
                 <div className="flex justify-between items-center text-xs font-semibold text-slate-500">
                   <span>Rate per Volunteer</span>
-                  <span className="text-slate-900 font-bold">{profile?.rate_per_volunteer || 0} ETB</span>
+                  <span className="text-slate-900 font-bold">{profile?.rate_per_volunteer || 500} ETB / Day</span>
                 </div>
                 <div className="h-px bg-slate-200" />
                 <div className="flex justify-between items-center text-xs font-bold text-[#ED1C24]">
                   <span>Total Estimated Cost</span>
-                  <span className="text-lg font-extrabold text-slate-900">{(tempPayload.headcount * (profile?.rate_per_volunteer || 0)).toLocaleString()} ETB</span>
+                  <span className="text-lg font-extrabold text-slate-900">{(tempPayload.payment_amount || (tempPayload.headcount * (profile?.rate_per_volunteer || 500) * (tempPayload.duration_days || 1))).toLocaleString()} ETB</span>
                 </div>
               </div>
 
@@ -1305,6 +1453,192 @@ export default function OrganizationPortal() {
                   {submitting ? "Submitting..." : "Confirm & Send"}
                 </Button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Volunteer Performance Evaluation Modal */}
+        {showEvaluationModal && evaluatingAssignment && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          >
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowEvaluationModal(false)} />
+            <motion.div 
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              className="w-full max-w-lg bg-white rounded-3xl p-6 md:p-8 shadow-2xl relative z-10 max-h-[90vh] overflow-y-auto custom-scrollbar-small"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight">Evaluate <span className="text-[#ED1C24]">Volunteer Performance</span></h2>
+                  <p className="text-slate-500 font-medium text-xs mt-0.5">Rating for <strong className="text-slate-900">{evaluatingAssignment.volunteer_name}</strong></p>
+                </div>
+                <Button variant="ghost" onClick={() => setShowEvaluationModal(false)} className="h-8 w-8 rounded-full p-0 hover:bg-slate-100">
+                  <Plus className="h-5 w-5 rotate-45 text-slate-400" />
+                </Button>
+              </div>
+
+              <form onSubmit={handleSubmitEvaluation} className="space-y-4">
+                {/* Rating Criteria Grid */}
+                <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-700">Overall Performance Score</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setEvalOverall(star)}
+                          className={`text-lg transition-transform hover:scale-125 ${star <= evalOverall ? 'text-amber-400' : 'text-slate-200'}`}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-slate-200" />
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="space-y-1">
+                      <span className="font-semibold text-slate-500">Punctuality & Reliability</span>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setEvalPunctuality(star)}
+                            className={`text-sm ${star <= evalPunctuality ? 'text-amber-400' : 'text-slate-200'}`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="font-semibold text-slate-500">Skills & Task Execution</span>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setEvalSkills(star)}
+                            className={`text-sm ${star <= evalSkills ? 'text-amber-400' : 'text-slate-200'}`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="font-semibold text-slate-500">Teamwork & Collaboration</span>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setEvalTeamwork(star)}
+                            className={`text-sm ${star <= evalTeamwork ? 'text-amber-400' : 'text-slate-200'}`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="font-semibold text-slate-500">Conduct & ERCS Values</span>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setEvalConduct(star)}
+                            className={`text-sm ${star <= evalConduct ? 'text-amber-400' : 'text-slate-200'}`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hours Worked & Outcome */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-slate-700">Hours Contributed *</Label>
+                    <Input 
+                      type="number"
+                      value={evalHoursWorked}
+                      onChange={(e) => setEvalHoursWorked(Number(e.target.value))}
+                      min={1}
+                      className="h-9 bg-slate-50 border-slate-200 rounded-xl font-bold text-sm text-slate-900"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs font-bold text-slate-700">Mission Outcome</Label>
+                    <select
+                      value={evalOutcome}
+                      onChange={(e) => setEvalOutcome(e.target.value)}
+                      className="w-full h-9 px-3 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-xs text-slate-900 outline-none"
+                    >
+                      <option value="EXCELLENT">Excellent Contribution</option>
+                      <option value="SUCCESSFUL">Successfully Completed</option>
+                      <option value="SATISFACTORY">Satisfactory</option>
+                      <option value="NEEDS_IMPROVEMENT">Needs Improvement</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Feedback / Review Text */}
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-700">Organization Feedback & Remarks</Label>
+                  <textarea 
+                    placeholder="Provide specific feedback on the volunteer's performance, strengths, or impact..."
+                    value={evalFeedback}
+                    onChange={(e) => setEvalFeedback(e.target.value)}
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-xs min-h-[80px] outline-none focus:ring-2 focus:ring-[#ED1C24]/10 text-slate-900 resize-none"
+                  />
+                </div>
+
+                {/* Certificate Checkbox */}
+                <label className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-100 cursor-pointer">
+                  <input 
+                    type="checkbox"
+                    checked={evalCertificateIssued}
+                    onChange={(e) => setEvalCertificateIssued(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#ED1C24] focus:ring-[#ED1C24]"
+                  />
+                  <span className="text-xs font-semibold text-slate-700">Recommend / Issue Certificate of Appreciation</span>
+                </label>
+
+                {/* Submit Buttons */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    onClick={() => setShowEvaluationModal(false)}
+                    className="h-10 rounded-xl font-bold uppercase tracking-wider text-xs border-slate-200"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={submittingEvaluation}
+                    className="h-10 bg-[#ED1C24] hover:bg-black text-white rounded-xl font-bold uppercase tracking-wider text-xs shadow-md shadow-[#ED1C24]/20"
+                  >
+                    {submittingEvaluation ? "Saving..." : "Submit Evaluation"}
+                  </Button>
+                </div>
+              </form>
             </motion.div>
           </motion.div>
         )}
