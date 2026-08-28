@@ -1,7 +1,18 @@
 import type { Metadata } from "next";
+import { Inter, Outfit } from "next/font/google";
 import "../globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineSyncListener } from "@/components/OfflineSyncListener";
+
+const inter = Inter({
+  variable: "--font-sans",
+  subsets: ["latin"],
+});
+
+const outfit = Outfit({
+  variable: "--font-heading",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "Ethiopian Red Cross Society | ERCS VMMS",
@@ -28,10 +39,9 @@ export default async function RootLayout({
   return (
     <html lang={locale}>
       <body
-        className="antialiased font-sans"
+        className={`${inter.variable} ${outfit.variable} antialiased font-sans`}
         suppressHydrationWarning={true}
       >
-
         <NextIntlClientProvider messages={messages}>
           <LanguageProvider>
             <OfflineSyncListener />

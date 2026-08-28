@@ -33,11 +33,11 @@ export function getLocalPhoneLength(countryCode: string): number {
  * Generates flag emoji from country code (e.g., "ET" -> "🇪🇹")
  */
 export function getFlagEmoji(countryCode: string): string {
-  if (!countryCode || typeof countryCode !== "string" || countryCode.length !== 2) return "";
+  if (!countryCode || countryCode.length !== 2) return "";
   const codePoints = countryCode
     .toUpperCase()
     .split("")
-    .map((char) => 127397 + (typeof char.charCodeAt === "function" ? char.charCodeAt(0) : 0));
+    .map((char) => 127397 + char.charCodeAt(0));
   return String.fromCodePoint(...codePoints);
 }
 

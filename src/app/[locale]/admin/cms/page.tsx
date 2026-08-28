@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,14 +23,12 @@ import {
   Phone,
   Trash2,
   MapPin,
-  UserPlus,
-  HelpCircle
+  UserPlus
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { translations, Language } from "@/lib/translations";
 import { footerSocialIconOptions, FooterSocialIcon } from "@/lib/footer-links";
-import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
 
 type CMSContent = typeof translations.en;
 
@@ -62,11 +58,13 @@ export default function CMSPage() {
       
       const newContents = { ...contents };
       results.forEach(({ lang, data }) => {
+        // Safe deep merge to ensure new keys in translations are preserved
         newContents[lang] = {
           ...translations[lang],
           ...data,
-          hero: {
-            ...translations[lang].hero,
+          nav: { ...translations[lang].nav, ...(data?.nav || {}) },
+          hero: { 
+            ...translations[lang].hero, 
             ...(data?.hero || {}),
             imageUrls: data?.hero?.imageUrls || (data?.hero?.imageUrl ? [data.hero.imageUrl] : translations[lang].hero.imageUrls)
           },
@@ -78,11 +76,6 @@ export default function CMSPage() {
             ...translations[lang].membership, 
             ...(data?.membership || {}),
             tiers: { ...(translations[lang].membership?.tiers || {}), ...(data?.membership?.tiers || {}) }
-          },
-          faq: { 
-            ...translations[lang].faq, 
-            ...(data?.faq || {}),
-            items: data?.faq?.items || translations[lang].faq?.items || []
           },
           footer: { 
             ...translations[lang].footer, 
@@ -97,11 +90,9 @@ export default function CMSPage() {
           contactSection: { ...translations[lang].contactSection, ...(data?.contactSection || {}) }
         };
       });
-
       setContents(newContents);
-    } catch (error) {
-      console.error("Failed to load CMS content:", error);
-      toast.error("Failed to load live CMS data. Using local defaults.");
+    } catch (err) {
+      console.error("Failed to fetch CMS content:", err);
     } finally {
       setIsLoading(false);
     }
@@ -132,10 +123,10 @@ export default function CMSPage() {
         language_code: activeLang,
         content_json: JSON.stringify(contents[activeLang])
       });
-      toast.success(`Successfully published landing page updates for ${activeLang.toUpperCase()}`);
-    } catch (error) {
-      console.error("Failed to save CMS content:", error);
-      toast.error("Failed to save landing page changes. Ensure you have admin privileges.");
+      toast.success(`Changes for ${activeLang === 'en' ? 'English' : activeLang === 'am' ? 'Amharic' : 'Oromiffa'} saved successfully!`);
+    } catch (err) {
+      console.error("Failed to save CMS content:", err);
+      toast.error("Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -156,19 +147,16 @@ export default function CMSPage() {
 
   if (isLoading) {
     return (
-      <SuperAdminGuard>
-        <div className="flex h-[60vh] items-center justify-center">
-          <Loader2 className="h-10 w-10 text-[#ED1C24] animate-spin" />
-        </div>
-      </SuperAdminGuard>
+      <div className="flex h-[60vh] items-center justify-center">
+        <Loader2 className="h-10 w-10 text-[#ED1C24] animate-spin" />
+      </div>
     );
   }
 
   const current = contents[activeLang];
 
   return (
-    <SuperAdminGuard>
-      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-black tracking-tighter">Landing Page CMS</h1>
@@ -931,163 +919,9 @@ export default function CMSPage() {
                 <Input value={current.contactSection.mobile} onChange={(e) => updateField('contactSection', 'mobile', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
              </div>
              <div className="space-y-2">
-                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Fax</Label>
-                 <Input value={current.contactSection.fax} onChange={(e) => updateField('contactSection', 'fax', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
-              </div>
-           </CardContent>
-        </Card>
-
-        {/* FAQ Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                  <HelpCircle className="h-5 w-5" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-black tracking-tight text-black">Frequently Asked Questions (FAQ)</CardTitle>
-                  <CardDescription className="text-xs font-semibold text-gray-400">
-                    Manage the questions and detailed answers displayed in the landing page FAQ section.
-                  </CardDescription>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl h-10 px-4 font-bold border-dashed border-[#ED1C24]/30 text-[#ED1C24] hover:bg-red-50 gap-2 shrink-0 self-start sm:self-auto"
-                onClick={() => {
-                  const currentItems = current.faq?.items || [];
-                  const newItems = [
-                    ...currentItems,
-                    {
-                      id: `faq-${Date.now()}`,
-                      question: "",
-                      answer: ""
-                    }
-                  ];
-                  updateField('faq', 'items', newItems);
-                }}
-              >
-                <Plus className="h-4 w-4" /> Add FAQ Item
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-8 space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Section Badge</Label>
-                <Input 
-                  value={current.faq?.badge || ""} 
-                  onChange={(e) => updateField('faq', 'badge', e.target.value)} 
-                  placeholder="e.g. FAQ" 
-                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Section Title</Label>
-                <Input 
-                  value={current.faq?.title || ""} 
-                  onChange={(e) => updateField('faq', 'title', e.target.value)} 
-                  placeholder="Frequently Asked Questions" 
-                  className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" 
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Section Subtitle / Description</Label>
-              <Input 
-                value={current.faq?.subtitle || ""} 
-                onChange={(e) => updateField('faq', 'subtitle', e.target.value)} 
-                placeholder="Find answers to common questions..." 
-                className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" 
-              />
-            </div>
-
-            <div className="h-px bg-gray-100 my-4" />
-            <div className="text-xs font-black uppercase tracking-[0.2em] text-[#ED1C24] mb-2">
-              Questions & Answers ({(current.faq?.items || []).length})
-            </div>
-
-            <div className="space-y-4">
-              {(!current.faq?.items || current.faq.items.length === 0) ? (
-                <div className="p-8 text-center border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-                  <p className="text-sm font-bold text-gray-400">No FAQ items yet.</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mt-3 rounded-xl font-bold border-dashed border-[#ED1C24]/30 text-[#ED1C24]"
-                    onClick={() => {
-                      updateField('faq', 'items', [
-                        { id: `faq-${Date.now()}`, question: "", answer: "" }
-                      ]);
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Add First Question
-                  </Button>
-                </div>
-              ) : (
-                current.faq.items.map((item: any, index: number) => (
-                  <div 
-                    key={item.id || index} 
-                    className="p-6 rounded-2xl bg-gray-50/70 border border-gray-100 space-y-4 transition-all hover:border-gray-200"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="h-7 w-7 rounded-lg bg-red-100 text-[#ED1C24] font-black text-xs flex items-center justify-center">
-                          {index + 1}
-                        </span>
-                        <span className="text-xs font-black uppercase tracking-wider text-gray-600">
-                          Question #{index + 1}
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-3 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 border-gray-200 gap-1.5 text-xs font-bold"
-                        onClick={() => {
-                          const newItems = (current.faq?.items || []).filter((_: any, i: number) => i !== index);
-                          updateField('faq', 'items', newItems);
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" /> Remove
-                      </Button>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Question</Label>
-                      <Input 
-                        value={item.question} 
-                        onChange={(e) => {
-                          const newItems = [...(current.faq?.items || [])];
-                          newItems[index] = { ...newItems[index], question: e.target.value };
-                          updateField('faq', 'items', newItems);
-                        }}
-                        placeholder="e.g. How do I become a volunteer?"
-                        className="rounded-xl h-11 font-bold bg-white text-black border-gray-200"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Answer (Supports multi-line text, bullet points & URLs)</Label>
-                      <textarea 
-                        value={item.answer} 
-                        onChange={(e) => {
-                          const newItems = [...(current.faq?.items || [])];
-                          newItems[index] = { ...newItems[index], answer: e.target.value };
-                          updateField('faq', 'items', newItems);
-                        }}
-                        placeholder="Type answer here..."
-                        rows={4}
-                        className="w-full p-4 rounded-xl border border-gray-200 bg-white text-black font-medium text-sm leading-relaxed focus:ring-2 focus:ring-[#ED1C24]/10 focus:outline-none placeholder:text-gray-400"
-                      />
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Fax</Label>
+                <Input value={current.contactSection.fax} onChange={(e) => updateField('contactSection', 'fax', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
+             </div>
           </CardContent>
         </Card>
 
@@ -1392,7 +1226,6 @@ export default function CMSPage() {
         </Button>
       </div>
     </div>
-    </SuperAdminGuard>
   );
 }
 

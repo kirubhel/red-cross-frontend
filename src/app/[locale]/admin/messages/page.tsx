@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,14 +47,9 @@ export default function AdminMessagesPage() {
   const [replyText, setReplyText] = useState("");
   const [isSendingReply, setIsSendingReply] = useState(false);
 
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
     fetchMessages();
   }, []);
-
-
 
   const fetchMessages = async () => {
     setLoading(true);
@@ -140,15 +133,6 @@ export default function AdminMessagesPage() {
       return isoStr;
     }
   };
-
-  if (!mounted) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-20 bg-gray-100 rounded-2xl w-full"></div>
-        <div className="h-64 bg-gray-100 rounded-2xl w-full"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

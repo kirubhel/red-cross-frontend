@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,73 +35,21 @@ export default function LoginPage() {
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [userIdForMfa, setUserIdForMfa] = useState("");
-  const [otpSentPhone, setOtpSentPhone] = useState("");
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [resendingOtp, setResendingOtp] = useState(false);
   // Country Selector and Multi-Profile selection states
   const [countryCode, setCountryCode] = useState("ET");
   const [profiles, setProfiles] = useState<any[]>([]);
   const [isMultiProfile, setIsMultiProfile] = useState(false);
   const showCountrySelector = /^[+0-9]/.test(identifier);
 
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setInterval(() => {
-      setResendCooldown((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
-
-  const handleResendOtp = async () => {
-    if (resendCooldown > 0 || resendingOtp || !userIdForMfa) return;
-    try {
-      setResendingOtp(true);
-      setError("");
-      const res = await api.post("/auth/mfa/resend", { user_id: userIdForMfa });
-      if (res.data?.phone) setOtpSentPhone(res.data.phone);
-      setResendCooldown(60);
-    } catch (err: any) {
-      setError("Failed to resend SMS code. Please try again.");
-    } finally {
-      setResendingOtp(false);
-    }
-  };
-
   const handleLoginSuccess = (data: any) => {
     const { access_token, role, ercs_id } = data;
     localStorage.setItem("token", access_token);
     localStorage.setItem("access_token", access_token);
-
-    const rawRole = role;
-    let roleStr = typeof rawRole === "string" ? rawRole : "";
-    if (rawRole === 1 || rawRole === "ROLE_super_admin") roleStr = "SUPER_ADMIN";
-    else if (rawRole === 2 || rawRole === "ROLE_regional_admin") roleStr = "REGIONAL_ADMIN";
-    else if (rawRole === 3 || rawRole === "ROLE_zonal_admin" || rawRole === "ZONE_ADMIN") roleStr = "ZONE_ADMIN";
-    else if (rawRole === 4 || rawRole === "ROLE_woreda_admin") roleStr = "WOREDA_ADMIN";
-    else if (rawRole === 7 || rawRole === "ROLE_branch_officer") roleStr = "BRANCH_OFFICER";
-    else if (rawRole === 6 || rawRole === "ROLE_member") roleStr = "MEMBER";
-    else if (rawRole === 5 || rawRole === "ROLE_volunteer") roleStr = "VOLUNTEER";
-    else if (rawRole === 8 || rawRole === "ROLE_organization") roleStr = "ORGANIZATION";
-    else if (!roleStr) roleStr = String(rawRole || "");
-
-    localStorage.setItem("user_role", roleStr); 
+    localStorage.setItem("user_role", role); 
     if (ercs_id) localStorage.setItem("ercs_id", ercs_id);
-
-    const regId = data.region_id !== undefined && data.region_id !== null ? String(data.region_id) : (data.regionId !== undefined ? String(data.regionId) : "");
-    const zoneId = data.zone_id || data.zoneId || "";
-    const woredaId = data.woreda_id || data.woredaId || "";
-    const branchId = data.branch_id || data.branchId || "";
-
-    if (regId !== "") localStorage.setItem("user_region", regId);
-    if (zoneId) localStorage.setItem("user_zone", zoneId);
-    if (woredaId) localStorage.setItem("user_woreda", woredaId);
-    if (branchId) {
-      localStorage.setItem("user_branch", branchId);
-      localStorage.setItem("user_branch_id", branchId);
-    }
     
-    const isAdmin = ["SUPER_ADMIN", "REGIONAL_ADMIN", "ZONE_ADMIN", "ZONAL_ADMIN", "WOREDA_ADMIN", "BRANCH_OFFICER", "1", "2", "3", "4", "7"].includes(roleStr) || [1, 2, 3, 4, 7].includes(rawRole);
-    const isOrg = roleStr === "ORGANIZATION" || roleStr === "8" || rawRole === 8;
+    const isAdmin = role === "SUPER_ADMIN" || role === "REGIONAL_ADMIN" || role === 1 || role === 2;
+    const isOrg = role === "ORGANIZATION" || role === 8;
     
     if (isAdmin) {
       router.push("/admin");
@@ -118,18 +66,10 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await api.post("/auth/login-mfa", { user_id: userIdForMfa, code: mfaCode.trim() });
+      const res = await api.post("/auth/login-mfa", { user_id: userIdForMfa, code: mfaCode });
       handleLoginSuccess(res.data);
     } catch (err: any) {
-      console.error("MFA Login error:", err);
-      const rawMessage = typeof err.response?.data === 'string' 
-        ? err.response.data 
-        : err.response?.data?.message || err.response?.data?.error || err.message;
-      let cleanMessage = rawMessage;
-      if (typeof rawMessage === "string" && rawMessage.includes("desc = ")) {
-        cleanMessage = rawMessage.split("desc = ")[1];
-      }
-      setError(cleanMessage || "Invalid 2FA verification code. Please check and try again.");
+      setError("Invalid 2FA code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -261,12 +201,12 @@ export default function LoginPage() {
                 unoptimized
               />
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-black leading-[1.05] tracking-tighter">
-              Be a Member, Volunteer and <br />
-              <span className="text-[#ED1C24]">Red Cross Family</span>
+            <h1 className="text-4xl md:text-5xl font-black text-black leading-[0.9] tracking-tighter">
+              Manage Your <br />
+              <span className="text-[#ED1C24]">Mission.</span>
             </h1>
-            <p className="text-sm sm:text-base text-black/60 font-medium max-w-sm">
-              Access the Ethiopian Red Cross Society portal to manage memberships, volunteer assignments, and humanitarian impact.
+            <p className="text-base text-black/60 font-medium max-w-sm">
+              Access the Ethiopia Red Cross Society internal portal to manage volunteers, memberships, and humanitarian impact.
             </p>
           </div>
 
@@ -416,31 +356,17 @@ export default function LoginPage() {
                 </Button>
               </form>
             ) : (
-              <form onSubmit={handleMfaLogin} className="space-y-6">
-                <div className="space-y-3 text-center">
-                  <div className="h-16 w-16 bg-red-50 text-[#ED1C24] rounded-3xl flex items-center justify-center mx-auto mb-2 shadow-lg shadow-red-500/10">
+              <form onSubmit={handleMfaLogin} className="space-y-8">
+                <div className="space-y-4 text-center">
+                  <div className="h-16 w-16 bg-red-50 text-[#ED1C24] rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/10">
                     <ShieldCheck className="h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-black text-black tracking-tight uppercase">Two-Factor Authentication</h3>
-                  <p className="text-xs text-black/60 font-bold leading-relaxed max-w-xs mx-auto">
-                    {otpSentPhone 
-                      ? `We sent a 6-digit verification code via SMS to ${otpSentPhone}. You can also use your Authenticator app.`
-                      : "Enter the 6-digit code sent via SMS to your registered phone number or from your Authenticator app."}
-                  </p>
+                  <h3 className="text-xl font-black text-black tracking-tight uppercase">Verification Code</h3>
+                  <p className="text-sm text-black/60 font-bold">Please enter the 6-digit code from your authenticator app.</p>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center ml-1">
-                    <Label htmlFor="mfaCode" className="text-[9px] font-black uppercase tracking-widest text-black/60">6-Digit Verification Code</Label>
-                    <button
-                      type="button"
-                      onClick={handleResendOtp}
-                      disabled={resendCooldown > 0 || resendingOtp}
-                      className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-70 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {resendingOtp ? "Sending..." : resendCooldown > 0 ? `Resend SMS in ${resendCooldown}s` : "Resend SMS Code"}
-                    </button>
-                  </div>
+                  <Label htmlFor="mfaCode" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">6-Digit Code</Label>
                   <Input
                     id="mfaCode"
                     type="text"
@@ -464,7 +390,7 @@ export default function LoginPage() {
                   </motion.div>
                 )}
 
-                <div className="flex flex-col gap-3 pt-2">
+                <div className="flex flex-col gap-3">
                   <Button 
                     type="submit" 
                     className="w-full h-14 rounded-xl text-lg font-black shadow-xl shadow-red-500/15 active:scale-95 transition-all"
@@ -475,11 +401,7 @@ export default function LoginPage() {
                   <Button 
                     type="button" 
                     variant="ghost"
-                    onClick={() => {
-                      setMfaRequired(false);
-                      setMfaCode("");
-                      setError("");
-                    }}
+                    onClick={() => setMfaRequired(false)}
                     className="w-full h-12 rounded-xl text-xs font-black uppercase tracking-widest text-black/40 hover:text-black transition-colors"
                   >
                     Back to login

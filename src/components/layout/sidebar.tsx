@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
@@ -22,25 +22,11 @@ import {
   Building2,
   BarChart3,
   Sparkles,
-  Mail,
-  MapPin
+  Mail
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getUserScope } from "@/lib/auth-scope";
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: any;
-  superAdminOnly?: boolean;
-}
-
-interface NavSection {
-  title: string;
-  items: NavItem[];
-}
-
-const navigationSections: NavSection[] = [
+const navigationSections = [
   {
     title: "Core Registry",
     items: [
@@ -61,17 +47,16 @@ const navigationSections: NavSection[] = [
       { href: "/admin/notifications", label: "Notifications", icon: Bell },
       { href: "/admin/messages", label: "Contact Messages", icon: Mail },
       { href: "/admin/news", label: "News & Media", icon: Newspaper },
-      { href: "/admin/cms", label: "Landing Page CMS", icon: LayoutDashboard, superAdminOnly: true },
+      { href: "/admin/cms", label: "Landing Page CMS", icon: LayoutDashboard },
     ]
   },
   {
     title: "Administration",
     items: [
       { href: "/admin/user-management", label: "User Management", icon: ShieldCheck },
-      { href: "/admin/branches", label: "Branch Management", icon: MapPin },
-      { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList, superAdminOnly: true },
-      { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard, superAdminOnly: true },
-      { href: "/admin/settings", label: "Settings", icon: Settings, superAdminOnly: true },
+      { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList },
+      { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard },
+      { href: "/admin/settings", label: "Settings", icon: Settings },
     ]
   }
 ];
@@ -79,21 +64,6 @@ const navigationSections: NavSection[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(true);
-
-  useEffect(() => {
-    const scope = getUserScope();
-    setIsSuperAdmin(scope.isSuperAdmin);
-  }, []);
-
-  const visibleSections = useMemo(() => {
-    return navigationSections
-      .map(section => ({
-        ...section,
-        items: section.items.filter(item => !item.superAdminOnly || isSuperAdmin)
-      }))
-      .filter(section => section.items.length > 0);
-  }, [isSuperAdmin]);
 
   return (
     <div className={cn(
@@ -144,7 +114,7 @@ export function Sidebar() {
 
       {/* Navigation Space */}
       <nav className="flex-1 space-y-6 py-6 overflow-y-auto overflow-x-hidden custom-scrollbar px-4">
-        {visibleSections.map((section, secIdx) => (
+        {navigationSections.map((section, secIdx) => (
           <div key={secIdx} className="space-y-2">
             <h4 className={cn(
               "text-[9px] font-black uppercase tracking-[0.25em] text-gray-400 px-3 mb-3",

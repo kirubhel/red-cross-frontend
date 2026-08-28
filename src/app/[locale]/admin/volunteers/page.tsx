@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -33,21 +31,14 @@ import {
     Briefcase,
     Home,
     Upload,
-    Download,
     Loader2,
     CheckCircle2,
-    AlertCircle,
-    Map as MapIcon
+    AlertCircle
 } from "lucide-react";
-
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { resolveRegionId, getZoneName, getWoredaName } from "@/lib/constants";
-import { GeographicMapReport } from "@/components/admin/GeographicMapReport";
 import type { Cell, CellValue } from "exceljs";
-import { getUserScope } from "@/lib/auth-scope";
-
 
 type Volunteer = {
   id: string;
@@ -144,7 +135,6 @@ const hasRichText = (value: CellValue): value is CellValue & { richText: { text?
 export default function VolunteersPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
-  const [viewMode, setViewMode] = useState<"table" | "map">("table");
   const [search, setSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -155,19 +145,11 @@ export default function VolunteersPage() {
   const [importColumns, setImportColumns] = useState<string[]>([]);
   const [importRows, setImportRows] = useState<ImportedRow[]>([]);
   const [importFileName, setImportFileName] = useState("");
-  const [importRegion, setImportRegion] = useState("from_file");
-  const [importZone, setImportZone] = useState("from_file");
-  const [importWoreda, setImportWoreda] = useState("from_file");
-  const [importBranch, setImportBranch] = useState("from_file");
-  const [importZones, setImportZones] = useState<{ id: string; region_id: number; name: string }[]>([]);
-  const [importWoredas, setImportWoredas] = useState<{ id: string; zone_id: string; name: string }[]>([]);
-  const [importBranches, setImportBranches] = useState<any[]>([]);
-  const [showImportPromptModal, setShowImportPromptModal] = useState(false);
+  const [importRegion, setImportRegion] = useState("1");
   const [parsingImport, setParsingImport] = useState(false);
   const [submittingImport, setSubmittingImport] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importPage, setImportPage] = useState(1);
-
 
   // New Upgrade States
   const [occupationFilter, setOccupationFilter] = useState("");
@@ -183,75 +165,18 @@ export default function VolunteersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  // Volunteer Benefits State
-  const [benefitsList, setBenefitsList] = useState<any[]>([]);
-  const [loadingBenefits, setLoadingBenefits] = useState(false);
-  const [showBenefitForm, setShowBenefitForm] = useState(false);
-  const [benefitForm, setBenefitForm] = useState({
-    benefit_type: "Safety Kit",
-    item_name: "",
-    quantity: 1,
-    provided_date: new Date().toISOString().split("T")[0],
-    remarks: ""
-  });
-  const [savingBenefit, setSavingBenefit] = useState(false);
-
-  const fetchVolunteerBenefits = async (volPersonId: string) => {
-    if (!volPersonId) return;
-    setLoadingBenefits(true);
-    try {
-      const res = await api.get(`/volunteers/benefits?volunteer_id=${volPersonId}`);
-      setBenefitsList(res.data.benefits || []);
-    } catch (_) {
-      setBenefitsList([]);
-    } finally {
-      setLoadingBenefits(false);
-    }
-  };
-
-  const handleRecordBenefit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedVolunteer || !benefitForm.item_name) return;
-    setSavingBenefit(true);
-    try {
-      await api.post("/volunteers/benefits", {
-        volunteer_id: selectedVolunteer.person_id || selectedVolunteer.id,
-        benefit_type: benefitForm.benefit_type,
-        item_name: benefitForm.item_name,
-        quantity: Number(benefitForm.quantity) || 1,
-        provided_date: benefitForm.provided_date,
-        remarks: benefitForm.remarks
-      });
-      toast.success("Volunteer benefit / safety kit recorded successfully!");
-      setShowBenefitForm(false);
-      setBenefitForm({
-        benefit_type: "Safety Kit",
-        item_name: "",
-        quantity: 1,
-        provided_date: new Date().toISOString().split("T")[0],
-        remarks: ""
-      });
-      fetchVolunteerBenefits(selectedVolunteer.person_id || selectedVolunteer.id);
-    } catch (err) {
-      toast.error("Failed to record benefit");
-    } finally {
-      setSavingBenefit(false);
-    }
-  };
-
   useEffect(() => {
     fetchRegions();
   }, []);
 
   useEffect(() => {
-    if (showModal && selectedVolunteer) {
+    if (showModal) {
       document.body.style.overflow = 'hidden';
-      fetchVolunteerBenefits(selectedVolunteer.person_id || selectedVolunteer.id);
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; }
-  }, [showModal, selectedVolunteer]);
+  }, [showModal]);
 
   // Reset page to 1 when filters or search change
   useEffect(() => {
@@ -268,23 +193,12 @@ export default function VolunteersPage() {
 
   const fetchRegions = async () => {
     try {
-        const [res, branchRes] = await Promise.all([
-          api.get("/system-settings"),
-          api.get("/location/branches").catch(() => ({ data: { branches: [] } }))
-        ]);
+        const res = await api.get("/system-settings");
         if (res.data && res.data.settings && res.data.settings.all_regions) {
             const parsed = JSON.parse(res.data.settings.all_regions);
             if (Array.isArray(parsed) && parsed.length > 0) {
               setRegions(parsed);
             }
-        }
-        if (res.data?.settings?.locations_hierarchy) {
-          const hierarchy = JSON.parse(res.data.settings.locations_hierarchy);
-          setImportZones(hierarchy.zones || []);
-          setImportWoredas(hierarchy.woredas || []);
-        }
-        if (branchRes.data?.branches) {
-          setImportBranches(branchRes.data.branches);
         }
     } catch (err) {
         console.error("Failed to fetch regions:", err);
@@ -299,20 +213,7 @@ export default function VolunteersPage() {
       if (areaFilter) finalSearch += ` area:${areaFilter}`;
       if (classificationFilter) finalSearch += ` class:${classificationFilter}`;
 
-      const scope = getUserScope();
-      let effectiveRegion = regionFilter;
-      let userBranch = typeof window !== 'undefined' ? (localStorage.getItem("user_branch") || localStorage.getItem("user_branch_id")) : null;
-
-      if (!scope.isSuperAdmin) {
-        if (scope.regionId) effectiveRegion = scope.regionId;
-        if (scope.branchId) userBranch = scope.branchId;
-      }
-
-      if (scope.isBranchOfficer && userBranch) {
-        finalSearch += ` ${userBranch}`;
-      }
-
-      const url = `/volunteers?search=${encodeURIComponent(finalSearch)}&region=${effectiveRegion}&status=${statusFilter}&page=${currentPage}&page_size=${pageSize}`;
+      const url = `/volunteers?search=${encodeURIComponent(finalSearch)}&region=${regionFilter}&status=${statusFilter}&page=${currentPage}&page_size=${pageSize}`;
       const res = await api.get(url);
       setVolunteers(res.data.volunteers || []);
       setTotalPages(res.data.pagination?.total_pages || 1);
@@ -371,11 +272,11 @@ export default function VolunteersPage() {
     try {
       const ExcelJS = await import("exceljs");
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet("ERCS volunteers Regist");
+      const worksheet = workbook.addWorksheet("Volunteers Template");
 
-      // Set up headers matching North Addis Ababa volunteers.xlsx template
+      // Set up headers
       const headers = [
-        "No.", "Mobile", "Name", "Father Name", "Last Name", "Gender", 
+        "Mobile", "Name", "Father Name", "Last Name", "Gender", 
         "Date of Birth (Eth)", "Registration Date", "Occupation", 
         "Organization Name", "Organization Type", "Education Level", 
         "Area", "Languages", "Kebele", "Email", 
@@ -405,81 +306,60 @@ export default function VolunteersPage() {
         };
       });
 
-      // Add Formula helper sheet matching official template
-      const formulaSheet = workbook.addWorksheet("Formula");
-      
-      const occupations = ["Farmer", "Business Person", "Civil Servant", "House Wife", "Military", "NGO", "Self Employed", "Student", "Police", "Diplomat", "Others"];
-      occupations.forEach((val, i) => { formulaSheet.getCell(`A${i+1}`).value = val; });
-
-      const genders = ["Male", "Female"];
-      genders.forEach((val, i) => { formulaSheet.getCell(`B${i+1}`).value = val; });
-
-      const orgTypes = ["Government", "Ngo", "Private", "Association"];
-      orgTypes.forEach((val, i) => { formulaSheet.getCell(`C${i+1}`).value = val; });
-
-      const areas = ["URBAN", "RURAL"];
-      areas.forEach((val, i) => { formulaSheet.getCell(`D${i+1}`).value = val; });
-
-      const eduLevels = ["Below Primary School", "Primary School Completed", "High School Completed", "Degree", "Masters", "PHD"];
-      eduLevels.forEach((val, i) => { formulaSheet.getCell(`E${i+1}`).value = val; });
-
-      const classChoices = ["YES", "NO"];
-      classChoices.forEach((val, i) => { formulaSheet.getCell(`F${i+1}`).value = val; });
-
-      // Add sample rows (2-100) with data validation referencing Formula sheet
+      // Add sample rows (2-100) with data validation
       const totalRows = 100;
       for (let i = 2; i <= totalRows; i++) {
-        // Gender column (F)
-        worksheet.getCell(`F${i}`).dataValidation = {
+        // Gender column (E)
+        worksheet.getCell(`E${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
-          formulae: ["'Formula'!$B$1:$B$2"]
+          formulae: ['"Male,Female"']
         };
 
-        // Occupation column (I)
-        worksheet.getCell(`I${i}`).dataValidation = {
+        // Occupation column (H)
+        worksheet.getCell(`H${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
-          formulae: ["'Formula'!$A$1:$A$11"]
+          formulae: ['"Farmer,Business Person,Civil Servant,House Wife,Military,NGO,Self Employed,Student,Police,Diplomat,Others"']
         };
 
-        // Organization Type column (K)
+        // Organization Type column (J)
+        worksheet.getCell(`J${i}`).dataValidation = {
+          type: "list",
+          allowBlank: true,
+          formulae: ['"Government,Ngo,Private,Association"']
+        };
+
+        // Education Level column (K)
         worksheet.getCell(`K${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
-          formulae: ["'Formula'!$C$1:$C$4"]
+          formulae: ['"Below Primary School,Primary School Completed,High School Completed,Degree,Masters,PHD"']
         };
 
-        // Education Level column (L)
+        // Area column (L)
         worksheet.getCell(`L${i}`).dataValidation = {
           type: "list",
           allowBlank: true,
-          formulae: ["'Formula'!$E$1:$E$6"]
+          formulae: ['"URBAN,RURAL"']
         };
 
-        // Area column (M)
-        worksheet.getCell(`M${i}`).dataValidation = {
-          type: "list",
-          allowBlank: true,
-          formulae: ["'Formula'!$D$1:$D$2"]
-        };
-
-        // Classifications: General (Q), Youth (R), Professional (S), Leadership (T)
-        const classCols = ["Q", "R", "S", "T"];
+        // Classifications: General (P), Youth (Q), Professional (R), Leadership (S)
+        const classCols = ["P", "Q", "R", "S"];
         classCols.forEach((col) => {
           worksheet.getCell(`${col}${i}`).dataValidation = {
             type: "list",
             allowBlank: true,
-            formulae: ["'Formula'!$F$1:$F$2"]
+            formulae: ['"YES,NO"']
           };
         });
       }
 
       // Add dummy data for first row as help
       worksheet.addRow([
-        1, "0939296961", "mengesha", "werkneh", "yrga", "Male", 
-        "02/01/1990", "16/10/2024", "House Wife", "ERCS", "Government", 
-        "Degree", "URBAN", "Amharic, English", "Kebele 20", "mengesha@example.com", 
+        "+251911223344", "Sara", "Belay", "Tadesse", "Female", 
+        "12/04/1995", "05/07/2026", "NGO", "ERCS", "Ngo", 
+        "Degree", "URBAN", "Amharic, English", "Kebele 03, House 405", "sara@example.com", 
         "YES", "NO", "YES", "NO"
       ]);
 
@@ -498,7 +378,7 @@ export default function VolunteersPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "North Addis Ababa volunteers.xlsx";
+      link.download = "volunteer_registration_template.xlsx";
       link.click();
       toast.success("Excel Template downloaded successfully!");
     } catch (err) {
@@ -598,12 +478,8 @@ export default function VolunteersPage() {
 
       setImportColumns(uniqueHeaders);
       setImportRows(rows);
-      setImportRegion("from_file");
-      setImportZone("from_file");
-      setImportWoreda("from_file");
       setImportFileName(file.name);
       setImportPage(1);
-      setShowImportPromptModal(true);
       toast.success(`Parsed ${rows.length} volunteer rows`);
     } catch (err) {
       console.error("Failed to parse volunteer import:", err);
@@ -612,7 +488,6 @@ export default function VolunteersPage() {
       setParsingImport(false);
     }
   };
-
 
   const downloadDefectiveWorkbook = async (failedRows: ImportedRow[]) => {
     if (failedRows.length === 0) return;
@@ -753,12 +628,6 @@ export default function VolunteersPage() {
       languages: languages || null,
     };
 
-    const rawRegionInRow = getImportValue(row, ["Region", "Region (Select from list)", "Branch"]);
-    const targetRegionId = importRegion === "from_file"
-      ? resolveRegionId(rawRegionInRow, regions)
-      : (Number(importRegion) || 1);
-
-
     return {
       first_name: firstName,
       father_name: fatherName,
@@ -766,10 +635,7 @@ export default function VolunteersPage() {
       phone_number: phoneNumber,
       email,
       password: `ERCS@${phoneNumber.slice(-4) || String(index + 1).padStart(4, "0")}`,
-      region: targetRegionId,
-      zone_id: importZone === "from_file" ? getImportValue(row, ["Zone", "Zone ID", "zone_id"]) : importZone,
-      woreda_id: importWoreda === "from_file" ? getImportValue(row, ["Woreda", "Woreda ID", "woreda_id"]) : importWoreda,
-      branch_id: importBranch === "from_file" ? getImportValue(row, ["Branch ID", "Branch", "branch_id", "Branch Office", "Branch Name"]) : importBranch,
+      region: Number(importRegion) || 1,
       role: 5,
       gender,
       date_of_birth: formatDOBForBackend(dateOfBirth),
@@ -783,7 +649,6 @@ export default function VolunteersPage() {
     };
   };
 
-
   const submitImportedVolunteers = async () => {
     if (importRows.length === 0) {
       toast.error("Choose an Excel file before importing");
@@ -793,30 +658,11 @@ export default function VolunteersPage() {
     setSubmittingImport(true);
     const result: ImportResult = { success: 0, failed: 0, errors: [] };
     const failedRows: ImportedRow[] = [];
-    const seenPhones = new Set<string>();
-    const seenEmails = new Set<string>();
 
     for (const [index, row] of importRows.entries()) {
       const payload = buildVolunteerPayload(row, index);
-      const rowIssues: string[] = [];
-      const phone = payload.phone_number.replace(/[^0-9+]/g, "");
-      const email = payload.email.trim().toLowerCase();
-      if (!payload.first_name) rowIssues.push("first name is required");
-      if (!phone) rowIssues.push("phone number is required");
-      else if (!/^\+?\d{7,15}$/.test(phone)) rowIssues.push("invalid phone number");
-      else if (seenPhones.has(phone)) rowIssues.push("duplicate phone number in file");
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) rowIssues.push("invalid email");
-      else if (email && seenEmails.has(email)) rowIssues.push("duplicate email in file");
-      if (phone) seenPhones.add(phone);
-      if (email) seenEmails.add(email);
-      if (!regions.some(region => region.id === Number(payload.region))) rowIssues.push("invalid region");
-      if (payload.zone_id && !importZones.some(zone => zone.id === payload.zone_id && zone.region_id === Number(payload.region))) rowIssues.push("zone does not belong to region");
-      if (payload.woreda_id && !importWoredas.some(woreda => woreda.id === payload.woreda_id && woreda.zone_id === payload.zone_id)) rowIssues.push("woreda/branch does not belong to zone");
-      if (payload.date_of_birth && !/^\d{4}-\d{2}-\d{2}$/.test(payload.date_of_birth)) rowIssues.push("date must be YYYY-MM-DD");
-      if (payload.gender && !["Male", "Female"].includes(payload.gender)) rowIssues.push("gender must be Male or Female");
-
-      if (rowIssues.length > 0) {
-        const issue = rowIssues.join(", ");
+      if (!payload.first_name && !payload.phone_number) {
+        const issue = "Missing name and phone";
         result.failed += 1;
         result.errors.push(`Row ${row.rowNumber}: ${issue}`);
         failedRows.push({ ...row, importIssue: issue });
@@ -855,16 +701,6 @@ export default function VolunteersPage() {
 
   const getArea = (v: Volunteer) => v.interests?.find(i => i.startsWith("Area:"))?.replace("Area:", "") || "Not Specified";
   const getEducation = (v: Volunteer) => v.interests?.find(i => i.startsWith("Education:"))?.replace("Education:", "") || "Not Specified";
-  const getEducationalBackground = (v: Volunteer) => {
-    let meta: any = {};
-    try {
-      const rawMeta = (v as any).metadata;
-      meta = typeof rawMeta === 'string' ? JSON.parse(rawMeta || '{}') : (rawMeta || {});
-    } catch {
-      meta = {};
-    }
-    return meta.educationalBackground || meta.educational_background || "Not Specified";
-  };
   const getOrgName = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgName:"))?.replace("OrgName:", "") || "N/A";
   const getOrgType = (v: Volunteer) => v.interests?.find(i => i.startsWith("OrgType:"))?.replace("OrgType:", "") || "N/A";
 
@@ -882,83 +718,53 @@ export default function VolunteersPage() {
           <p className="text-gray-500 font-medium text-sm">Manage all field volunteers, track hours, and coordinate field activities.</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
             <Button 
                 onClick={downloadTemplate}
                 variant="outline" 
-                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest text-black"
+                className="rounded-xl h-10 px-6 font-black border-gray-200 flex items-center gap-2"
             >
-                <Download className="h-4 w-4" /> Template
+                <Upload className="h-4 w-4 rotate-180" /> Download Template
+            </Button>
+            <Button 
+                onClick={() => setShowClearConfirm(true)}
+                variant="destructive" 
+                className="rounded-xl h-10 px-6 font-black bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+            >
+                <X className="h-4 w-4" /> Clear Registry
             </Button>
             <Button 
                 onClick={exportToCSV}
                 variant="outline" 
-                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest text-black"
+                className="rounded-xl h-10 px-6 font-black border-gray-200"
             >
-                <TableIcon className="h-4 w-4" /> CSV
+                <TableIcon className="h-4 w-4 mr-2" /> Export CSV
             </Button>
-            <div className="relative">
-                <input 
-                    type="file" 
-                    accept=".xlsx,.csv" 
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImportFile(file);
-                      e.target.value = "";
-                    }} 
-                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                    disabled={parsingImport || submittingImport}
-                />
-                <Button 
-                    variant="outline" 
-                    className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest text-black"
-                >
-                    {parsingImport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Import
-                </Button>
-            </div>
             <Button 
                 onClick={exportToPDF}
                 variant="outline" 
-                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest text-black"
+                className="rounded-xl h-10 px-6 font-black border-gray-200"
             >
-                <FileText className="h-4 w-4" /> PDF
+                <FileText className="h-4 w-4 mr-2" /> Export PDF
             </Button>
             <Link href="/admin/user-management?create=true">
-              <Button className="rounded-xl h-10 px-6 font-black shadow-xl shadow-red-500/10 flex items-center gap-2 bg-[#ED1C24] hover:bg-red-700 text-white text-[10px] uppercase tracking-widest">
+              <Button className="rounded-xl h-10 px-6 font-black shadow-lg shadow-red-500/10 flex items-center gap-2">
                   <Plus className="h-4 w-4" /> Add Volunteer
               </Button>
             </Link>
         </div>
       </div>
 
-
       <div className="flex flex-col gap-4 print:hidden">
         <div className="flex w-full items-center justify-between gap-4">
-            <div className="flex items-center gap-3 flex-1">
-                <div className="relative w-full max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                    placeholder="Search volunteers..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="h-10 pl-10 bg-white border border-gray-200 shadow-sm text-black rounded-xl font-bold text-sm"
-                    />
-                </div>
-
-                <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-xs">
-                    <button
-                        onClick={() => setViewMode("table")}
-                        className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-all ${viewMode === 'table' ? 'bg-white text-black shadow-xs' : 'text-gray-500 hover:text-black'}`}
-                    >
-                        <TableIcon className="h-3.5 w-3.5" /> Table
-                    </button>
-                    <button
-                        onClick={() => setViewMode("map")}
-                        className={`px-3 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-widest flex items-center gap-1.5 transition-all ${viewMode === 'map' ? 'bg-[#ED1C24] text-white shadow-xs' : 'text-gray-500 hover:text-black'}`}
-                    >
-                        <MapIcon className="h-3.5 w-3.5" /> Map View
-                    </button>
-                </div>
+            <div className="relative w-full max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                placeholder="Search volunteers..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-10 pl-10 bg-white border border-gray-200 shadow-sm text-black rounded-xl font-bold text-sm"
+                />
             </div>
 
             <Button 
@@ -1051,14 +857,7 @@ export default function VolunteersPage() {
                     </select>
                 </div>
 
-                <div className="flex items-center gap-2 pb-0.5 md:col-span-3 justify-end">
-                    <Button 
-                        onClick={() => setShowClearConfirm(true)}
-                        variant="ghost" 
-                        className="h-10 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-red-600 hover:text-red-700 hover:bg-red-50 transition-all"
-                    >
-                        <X className="h-3.5 w-3.5 mr-1" /> Clear Registry
-                    </Button>
+                <div className="flex items-end pb-0.5 md:col-span-3 justify-end">
                     <Button 
                         onClick={() => { 
                             setRegionFilter(""); 
@@ -1069,18 +868,59 @@ export default function VolunteersPage() {
                             setOccupationFilter(""); 
                         }}
                         variant="ghost" 
-                        className="h-10 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-gray-400 hover:text-[#ED1C24] hover:bg-white transition-all"
+                        className="h-10 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-gray-400"
                     >
-                        <X className="h-3.5 w-3.5 mr-1" /> Reset Filters
+                        <X className="h-3 w-3 mr-2" /> Reset Filters
                     </Button>
                 </div>
             </div>
         )}
       </div>
 
-      {(importRows.length > 0 || importResult) && (
-        <div className="print:hidden rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden p-5 space-y-4">
+      <div className="print:hidden rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-gray-50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Excel Import</p>
+                <h2 className="text-lg font-black text-black tracking-tight">Import Volunteers</h2>
+                <p className="text-xs font-bold text-gray-400 mt-1">
+                    Successful rows are removed after upload; defective rows stay red with the issue attached.
+                </p>
+            </div>
 
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <select
+                    value={importRegion}
+                    onChange={(e) => setImportRegion(e.target.value)}
+                    className="h-10 min-w-[180px] rounded-xl border border-gray-200 bg-white px-3 text-xs font-black outline-none"
+                >
+                    {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map(region => (
+                        <option key={region.id} value={region.id}>{region.name}</option>
+                    ))}
+                </select>
+                <label className="h-10 px-5 rounded-xl border border-gray-200 bg-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors">
+                    {parsingImport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    Choose Excel
+                    <input
+                        type="file"
+                        accept=".xlsx"
+                        className="hidden"
+                        disabled={parsingImport || submittingImport}
+                        onChange={(e) => handleImportFile(e.target.files?.[0])}
+                    />
+                </label>
+                <Button
+                    onClick={submitImportedVolunteers}
+                    disabled={importRows.length === 0 || parsingImport || submittingImport}
+                    className="h-10 px-5 rounded-xl font-black text-xs"
+                >
+                    {submittingImport ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                    Upload {importRows.length > 0 ? importRows.length : ""}
+                </Button>
+            </div>
+        </div>
+
+        {(importRows.length > 0 || importResult) && (
+            <div className="p-5 space-y-4">
                 {importRows.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
                         <span className="px-2 py-1 rounded-md bg-gray-50 text-gray-500">{importFileName}</span>
@@ -1172,22 +1012,10 @@ export default function VolunteersPage() {
                 )}
             </div>
         )}
+      </div>
 
-
-      {viewMode === "map" ? (
-        <GeographicMapReport
-          items={volunteers}
-          title="Volunteers Geographic Distribution"
-          type="volunteers"
-          onSelectRegion={(regId) => {
-            setRegionFilter(regId);
-            setViewMode("table");
-          }}
-        />
-      ) : (
-        <>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none print:border-none">
-            <Table>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none print:border-none">
+        <Table>
           <TableHeader className="bg-gray-50/50 print:bg-transparent">
             <TableRow className="hover:bg-transparent border-gray-50">
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Volunteer Identity</TableHead>
@@ -1352,8 +1180,6 @@ export default function VolunteersPage() {
           </div>
         </div>
       </div>
-      </>
-      )}
 
       {/* Volunteer Detail Modal */}
       {showModal && selectedVolunteer && (
@@ -1457,7 +1283,7 @@ export default function VolunteersPage() {
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase">Zone / Woreda</p>
                                         <p className="text-xs font-bold text-black">
-                                            {getZoneName(selectedVolunteer.zone_id) || "---"} • {getWoredaName(selectedVolunteer.woreda_id, selectedVolunteer.zone_id) || "---"}
+                                            {selectedVolunteer.zone_id || "---"} • {selectedVolunteer.woreda_id || "---"}
                                         </p>
                                     </div>
                                 </div>
@@ -1486,10 +1312,6 @@ export default function VolunteersPage() {
                                 <div>
                                     <p className="text-[10px] font-black text-gray-400 uppercase">Education Level</p>
                                     <p className="text-xs font-bold text-black">{getEducation(selectedVolunteer)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase">Educational Background</p>
-                                    <p className="text-xs font-bold text-black">{getEducationalBackground(selectedVolunteer)}</p>
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-gray-400 uppercase">Geographic Area</p>
@@ -1529,143 +1351,6 @@ export default function VolunteersPage() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Safety Kits & Volunteer Benefits Tracking */}
-                    <div className="mt-4 p-5 bg-red-50/40 rounded-[24px] border border-red-100 space-y-3">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h4 className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5">
-                                    <HandHeart className="h-3.5 w-3.5" /> Safety Kits & Benefits Tracking
-                                </h4>
-                                <p className="text-[11px] text-gray-500 font-medium">Record safety equipment, kits, and benefits provided to this volunteer.</p>
-                            </div>
-                            <Button 
-                                type="button" 
-                                onClick={() => setShowBenefitForm(!showBenefitForm)}
-                                className="h-8 px-3 text-[10px] font-bold uppercase tracking-wider bg-[#ED1C24] hover:bg-black text-white rounded-xl shadow-xs"
-                            >
-                                <Plus className="h-3 w-3 mr-1" /> {showBenefitForm ? "Close Form" : "Record Benefit"}
-                            </Button>
-                        </div>
-
-                        {showBenefitForm && (
-                            <form onSubmit={handleRecordBenefit} className="bg-white p-4 rounded-2xl border border-red-100 space-y-3 shadow-sm">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-gray-600 uppercase">Benefit / Kit Type *</label>
-                                        <select
-                                            value={benefitForm.benefit_type}
-                                            onChange={(e) => setBenefitForm({...benefitForm, benefit_type: e.target.value})}
-                                            className="w-full h-8 bg-gray-50 border border-gray-200 rounded-lg px-2 text-xs font-bold text-black"
-                                            required
-                                        >
-                                            <option value="Safety Kit">Safety Kit / PPE</option>
-                                            <option value="First Aid Kit">First Aid Kit</option>
-                                            <option value="Uniform / Vest">Red Cross Uniform / Vest</option>
-                                            <option value="Boots & Raincoat">Heavy Duty Boots / Raincoat</option>
-                                            <option value="Allowance / Stipend">Transport / Food Allowance</option>
-                                            <option value="Insurance Coverage">Health & Accident Insurance</option>
-                                            <option value="Certificate">Appreciation Certificate</option>
-                                            <option value="Other">Other Benefit</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-gray-600 uppercase">Item Name / Description *</label>
-                                        <Input 
-                                            placeholder="e.g. Standard ERCS Trauma First Aid Kit"
-                                            value={benefitForm.item_name}
-                                            onChange={(e) => setBenefitForm({...benefitForm, item_name: e.target.value})}
-                                            className="h-8 bg-gray-50 border-gray-200 rounded-lg text-xs font-semibold text-black"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-gray-600 uppercase">Quantity *</label>
-                                        <Input 
-                                            type="number"
-                                            min={1}
-                                            value={benefitForm.quantity}
-                                            onChange={(e) => setBenefitForm({...benefitForm, quantity: Number(e.target.value)})}
-                                            className="h-8 bg-gray-50 border-gray-200 rounded-lg text-xs font-semibold text-black"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-gray-600 uppercase">Provided Date *</label>
-                                        <Input 
-                                            type="date"
-                                            value={benefitForm.provided_date}
-                                            onChange={(e) => setBenefitForm({...benefitForm, provided_date: e.target.value})}
-                                            className="h-8 bg-gray-50 border-gray-200 rounded-lg text-xs font-semibold text-black"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-gray-600 uppercase">Remarks / Notes (Optional)</label>
-                                    <Input 
-                                        placeholder="e.g. Issued for Flood Response Mission in Ward 4"
-                                        value={benefitForm.remarks}
-                                        onChange={(e) => setBenefitForm({...benefitForm, remarks: e.target.value})}
-                                        className="h-8 bg-gray-50 border-gray-200 rounded-lg text-xs font-semibold text-black"
-                                    />
-                                </div>
-
-                                <div className="flex justify-end gap-2 pt-1">
-                                    <Button 
-                                        type="button" 
-                                        variant="ghost" 
-                                        onClick={() => setShowBenefitForm(false)}
-                                        className="h-8 px-3 text-xs font-bold text-gray-500 rounded-lg"
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button 
-                                        type="submit" 
-                                        disabled={savingBenefit}
-                                        className="h-8 px-4 bg-[#ED1C24] hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-lg shadow-sm"
-                                    >
-                                        {savingBenefit ? "Saving..." : "Submit Record"}
-                                    </Button>
-                                </div>
-                            </form>
-                        )}
-
-                        {/* Benefits History Table */}
-                        <div className="space-y-2">
-                            {loadingBenefits ? (
-                                <div className="p-4 text-center text-xs text-gray-400 font-bold">Loading benefits records...</div>
-                            ) : benefitsList.length > 0 ? (
-                                <div className="grid grid-cols-1 gap-2 max-h-[160px] overflow-y-auto pr-1">
-                                    {benefitsList.map((b: any) => (
-                                        <div key={b.id} className="p-3 bg-white rounded-xl border border-gray-100 flex items-center justify-between text-xs shadow-2xs">
-                                            <div className="space-y-0.5">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-black">{b.item_name}</span>
-                                                    <span className="px-2 py-0.5 bg-red-50 text-red-700 rounded text-[9px] font-black uppercase tracking-wider">
-                                                        {b.benefit_type} (Qty: {b.quantity})
-                                                    </span>
-                                                </div>
-                                                {b.remarks && <p className="text-[11px] text-gray-500">{b.remarks}</p>}
-                                            </div>
-                                            <div className="text-right shrink-0 pl-3">
-                                                <span className="text-[10px] font-bold text-gray-400 block">{b.provided_date ? b.provided_date.split("T")[0] : ""}</span>
-                                                <span className="text-[9px] font-bold text-emerald-600 uppercase">Recorded</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-xs text-gray-400 font-bold italic bg-white p-3 rounded-xl border border-gray-100 text-center">
-                                    No benefits or safety equipment recorded for this volunteer yet.
-                                </p>
-                            )}
                         </div>
                     </div>
 
@@ -1758,200 +1443,7 @@ export default function VolunteersPage() {
         </div>
       )}
 
-      {/* Volunteer Import - Branch / Region Prompt Modal */}
-
-      {showImportPromptModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white rounded-[32px] shadow-2xl w-full max-w-6xl xl:max-w-7xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100"
-          >
-            <div className="p-6 border-b border-gray-100 flex justify-between items-start shrink-0">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
-                  <Upload className="h-3 w-3" /> Volunteer Import Prompt
-                </div>
-                <h2 className="text-xl font-black tracking-tight text-black">Assign Import Location</h2>
-                <p className="text-xs font-bold text-gray-400">
-                  File: <span className="text-black font-extrabold">{importFileName}</span> ({importRows.length} rows parsed, {importColumns.length} columns)
-                </p>
-              </div>
-              <button 
-                onClick={() => setShowImportPromptModal(false)}
-                className="h-9 w-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6 overflow-y-auto flex-1">
-              <div className="space-y-3 bg-gray-50/80 p-4 sm:p-5 rounded-2xl border border-gray-100">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                  <label className="text-[11px] font-black uppercase tracking-widest text-black/80 block">
-                    Target Branch & Location Assignment
-                  </label>
-                  <span className="text-[10px] font-semibold text-gray-500">
-                    Applies to all {importRows.length} imported volunteers
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <div>
-                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
-                      Target Regional Branch
-                    </label>
-                    <select
-                      value={importRegion}
-                      onChange={(e) => { setImportRegion(e.target.value); setImportZone("from_file"); setImportWoreda("from_file"); setImportBranch("from_file"); }}
-                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs focus:ring-2 focus:ring-[#ED1C24]/20 focus:border-[#ED1C24] outline-none transition-all cursor-pointer shadow-sm"
-                    >
-                      <option value="from_file">📁 Use Region from File (Auto-mapped)</option>
-                      {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map((r) => (
-                        <option key={r.id} value={r.id}>
-                          🏛️ {r.name} (Region ID: {r.id})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
-                      Zone
-                    </label>
-                    <select 
-                      value={importZone} 
-                      disabled={importRegion === "from_file"} 
-                      onChange={(e) => { setImportZone(e.target.value); setImportWoreda("from_file"); }} 
-                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs disabled:opacity-50 disabled:bg-gray-100 shadow-sm"
-                    >
-                      <option value="from_file">Use Zone from file</option>
-                      {importZones.filter(z => String(z.region_id) === importRegion).map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
-                      Woreda
-                    </label>
-                    <select 
-                      value={importWoreda} 
-                      disabled={importZone === "from_file"} 
-                      onChange={(e) => setImportWoreda(e.target.value)} 
-                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs disabled:opacity-50 disabled:bg-gray-100 shadow-sm"
-                    >
-                      <option value="from_file">Use Woreda from file</option>
-                      {importWoredas.filter(w => w.zone_id === importZone).map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 mb-1 block">
-                      Branch / Coordination Office
-                    </label>
-                    <select 
-                      value={importBranch} 
-                      onChange={(e) => setImportBranch(e.target.value)} 
-                      className="w-full h-11 px-3.5 rounded-xl bg-white text-black border border-gray-200 font-bold text-xs shadow-sm"
-                    >
-                      <option value="from_file">Use Branch from file</option>
-                      {importBranches
-                        .filter(b => importRegion === "from_file" || String(b.region_id) === importRegion)
-                        .map(b => (
-                          <option key={b.id} value={b.id}>
-                            🏢 {b.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Data Preview */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                    File Data Preview ({Math.min(50, importRows.length)} of {importRows.length} rows &bull; {importColumns.length} columns)
-                  </p>
-                  <span className="text-[10px] font-semibold text-gray-400">Scroll horizontally to view all columns &rarr;</span>
-                </div>
-                <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-                  <div className="overflow-x-auto overflow-y-auto max-h-[360px]">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead className="bg-gray-100/90 backdrop-blur-sm border-b border-gray-200 text-[9px] font-black uppercase text-gray-500 sticky top-0 z-10">
-                        <tr>
-                          <th className="px-4 py-3 sticky left-0 bg-gray-100 z-20 whitespace-nowrap border-r border-gray-200"># Row</th>
-                          <th className="px-4 py-3 whitespace-nowrap bg-red-50/60 text-[#ED1C24] border-r border-gray-200">Target Branch (Assigned)</th>
-                          {importColumns.map((col) => (
-                            <th key={col} className="px-4 py-3 whitespace-nowrap border-r border-gray-200 last:border-r-0">{col}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
-                        {importRows.slice(0, 50).map((row, idx) => {
-                          const rawRegionInRow = getImportValue(row, ["Region", "Region (Select from list)", "Branch"]);
-                          const effectiveRegionId = importRegion === "from_file" 
-                            ? resolveRegionId(rawRegionInRow, regions) 
-                            : (Number(importRegion) || 1);
-
-                          const regionObj = (regions || DEFAULT_REGIONS).find(r => r.id === effectiveRegionId);
-                          return (
-                            <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
-                              <td className="px-4 py-2.5 text-gray-400 font-mono whitespace-nowrap sticky left-0 bg-white shadow-[1px_0_0_0_#f3f4f6] z-1 border-r border-gray-100">
-                                #{row.rowNumber}
-                              </td>
-                              <td className="px-4 py-2.5 font-bold text-[#ED1C24] whitespace-nowrap bg-red-50/20 border-r border-gray-100">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-100 text-[10px] font-bold">
-                                  {regionObj ? regionObj.name : `Region ${effectiveRegionId}`}
-                                </span>
-                              </td>
-                              {importColumns.map((col) => {
-                                const val = cellValueToText(row.data[col]);
-                                return (
-                                  <td key={col} className="px-4 py-2.5 text-gray-700 whitespace-nowrap border-r border-gray-100 last:border-r-0">
-                                    {val || <span className="text-gray-300">—</span>}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0">
-              <Button
-                variant="outline"
-                disabled={submittingImport}
-                onClick={() => setShowImportPromptModal(false)}
-                className="rounded-xl h-10 px-5 font-black text-xs border-gray-200"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowImportPromptModal(false);
-                  submitImportedVolunteers();
-                }}
-                disabled={submittingImport || importRows.length === 0}
-                className="rounded-xl h-10 px-6 font-black text-xs bg-[#ED1C24] hover:bg-red-700 text-white shadow-lg shadow-red-500/20"
-              >
-                {submittingImport ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Uploading...
-                  </span>
-                ) : (
-                  `Confirm & Upload ${importRows.length} Volunteers`
-                )}
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
       {/* Print-only Report Header */}
-
       <div className="hidden print:block mb-8">
           <div className="flex items-start justify-between">
               <div>

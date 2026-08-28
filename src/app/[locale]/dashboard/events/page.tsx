@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { 
   Calendar, 
   MapPin, 
@@ -14,477 +14,271 @@ import {
   Plus,
   Heart,
   Award,
-  ShieldCheck,
-  CheckCircle2,
-  Share2,
-  Sparkles,
-  X
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { toast } from "sonner";
+import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-type EventItem = {
-  id: string;
-  title: string;
-  category: "training" | "field" | "donation" | "outreach" | "youth";
-  categoryLabel: string;
-  date: string;
-  time: string;
-  location: string;
-  venue: string;
-  attendees: number;
-  maxCapacity: number;
-  image: string;
-  type: string;
-  description: string;
-  organizer: string;
-  prerequisites?: string;
-  certification?: string;
-};
-
-const ERCS_STATIC_EVENTS: EventItem[] = [
-  {
-    id: "ercs-ev-01",
-    title: "World Red Cross & Red Crescent Day 2026 Celebration",
-    category: "outreach",
-    categoryLabel: "Special Gathering",
-    date: "May 08, 2026",
-    time: "08:30 AM - 04:30 PM",
-    location: "Addis Ababa",
-    venue: "ERCS National Headquarters, Ras Desta Damtew St",
-    attendees: 380,
-    maxCapacity: 500,
-    image: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800",
-    type: "National Commemoration",
-    description: "Annual commemoration honoring humanitarian service, international volunteerism, and community solidarity across all Ethiopian branches.",
-    organizer: "ERCS Youth & Volunteer Directorate",
-    certification: "Commemorative Participation Certificate"
-  },
-  {
-    id: "ercs-ev-02",
-    title: "National Emergency Blood Donation Drive",
-    category: "donation",
-    categoryLabel: "Blood Drive",
-    date: "June 14, 2026",
-    time: "08:00 AM - 06:00 PM",
-    location: "Meskel Square, Addis Ababa",
-    venue: "National Blood Bank Service Pavilion",
-    attendees: 215,
-    maxCapacity: 400,
-    image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800",
-    type: "Public Health Campaign",
-    description: "Multi-branch emergency blood donation drive to support critical trauma centers and maternity hospitals throughout the country.",
-    organizer: "ERCS Health & Care Department in partnership with NBBS",
-    certification: "Donor Hero Recognition Pin"
-  },
-  {
-    id: "ercs-ev-03",
-    title: "Standard First Aid & CPR Certification Workshop",
-    category: "training",
-    categoryLabel: "Training Workshop",
-    date: "July 04, 2026",
-    time: "09:00 AM - 05:00 PM",
-    location: "Bishoftu / Oromia",
-    venue: "ERCS Regional Training Center",
-    attendees: 42,
-    maxCapacity: 50,
-    image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800",
-    type: "Accredited Training",
-    description: "Comprehensive hands-on training covering trauma management, CPR, airway obstruction, burn treatment, and psychological first aid.",
-    organizer: "ERCS First Aid Training Unit",
-    certification: "2-Year Official First Aid Certificate",
-    prerequisites: "Active Member or Registered Volunteer"
-  },
-  {
-    id: "ercs-ev-04",
-    title: "Disaster Preparedness & Flood Rescue Simulation Drill",
-    category: "field",
-    categoryLabel: "Emergency Drill",
-    date: "August 12, 2026",
-    time: "06:30 AM - 03:00 PM",
-    location: "Adama Regional Hub",
-    venue: "Awash Basin Contingency Grounds",
-    attendees: 88,
-    maxCapacity: 100,
-    image: "https://images.unsplash.com/photo-1502101872923-d48509bff386?auto=format&fit=crop&q=80&w=800",
-    type: "Field Exercise",
-    description: "Full-scale multi-agency disaster simulation testing emergency rapid response teams, evacuation routes, triage zones, and shelter setup.",
-    organizer: "ERCS Disaster Preparedness & Prevention (DPP) Department",
-    certification: "Rapid Response Team Endorsement"
-  },
-  {
-    id: "ercs-ev-05",
-    title: "Community Health & Water Sanitation Campaign (WASH)",
-    category: "outreach",
-    categoryLabel: "Community Outreach",
-    date: "September 02, 2026",
-    time: "09:00 AM - 02:00 PM",
-    location: "Akaki Kality Sub-City",
-    venue: "Woreda 03 Community Center",
-    attendees: 64,
-    maxCapacity: 120,
-    image: "https://images.unsplash.com/photo-1584483766114-2cea6facdf57?auto=format&fit=crop&q=80&w=800",
-    type: "Volunteering Action",
-    description: "Door-to-door hygiene promotion, water purification tablet distribution, and sanitation education for vulnerable households.",
-    organizer: "Addis Ababa Branch Volunteer Committee",
-    certification: "Community Impact Credit (6 Hours)"
-  },
-  {
-    id: "ercs-ev-06",
-    title: "Youth Humanitarian Leadership & Climate Forum",
-    category: "youth",
-    categoryLabel: "Youth & Climate",
-    date: "October 18, 2026",
-    time: "09:30 AM - 04:00 PM",
-    location: "Hawassa, Sidama",
-    venue: "Lake View Humanitarian Assembly Hall",
-    attendees: 110,
-    maxCapacity: 150,
-    image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=800",
-    type: "Leadership Forum",
-    description: "Empowering young humanitarian leaders with climate resilience strategies, green tree planting initiatives, and digital community mobilization.",
-    organizer: "ERCS National Youth Council",
-    certification: "Youth Ambassador Credential"
-  }
-];
-
-const EVENT_CATEGORIES = [
+const eventCategories = [
   { label: "All Events", value: "all" },
-  { label: "Training & CPR", value: "training" },
-  { label: "Emergency Drills", value: "field" },
-  { label: "Blood Drives", value: "donation" },
-  { label: "Community Outreach", value: "outreach" },
-  { label: "Youth & Climate", value: "youth" },
+  { label: "Training", value: "training" },
+  { label: "Field Work", value: "field" },
+  { label: "Donation", value: "donation" },
+  { label: "Outreach", value: "outreach" },
 ];
 
 export default function EventsPage() {
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [registeredEvents, setRegisteredEvents] = useState<string[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
-  const [isRegistering, setIsRegistering] = useState(false);
 
-  const filteredEvents = useMemo(() => {
-    return ERCS_STATIC_EVENTS.filter((event) => {
-      const matchesFilter = filter === "all" || event.category === filter;
-      const matchesSearch =
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesFilter && matchesSearch;
-    });
-  }, [filter, searchQuery]);
+  // Mock events for now, ideally fetched from an API
+  const events = [
+    {
+      id: 1,
+      title: "Advanced First Aid Training",
+      category: "training",
+      date: "April 28, 2024",
+      time: "09:00 AM - 04:00 PM",
+      location: "ERCS HQ, Addis Ababa",
+      attendees: 45,
+      maxCapacity: 100,
+      image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800",
+      type: "Official Training"
+    },
+    {
+      id: 2,
+      title: "Annual Blood Donation Drive",
+      category: "donation",
+      date: "May 02, 2024",
+      time: "10:00 AM - 06:00 PM",
+      location: "Meskel Square, Addis Ababa",
+      attendees: 120,
+      maxCapacity: 500,
+      image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&q=80&w=800",
+      type: "Community Event"
+    },
+    {
+      id: 3,
+      title: "Community Health Awareness",
+      category: "outreach",
+      date: "May 10, 2024",
+      time: "08:30 AM - 01:00 PM",
+      location: "Kality Sub-city Health Center",
+      attendees: 28,
+      maxCapacity: 50,
+      image: "https://images.unsplash.com/photo-1584483766114-2cea6facdf57?auto=format&fit=crop&q=80&w=800",
+      type: "Volunteering"
+    },
+    {
+      id: 4,
+      title: "Disaster Response Simulation",
+      category: "training",
+      date: "June 05, 2024",
+      time: "06:00 AM - 08:00 PM",
+      location: "ERCS Warehouse Complex",
+      attendees: 75,
+      maxCapacity: 80,
+      image: "https://images.unsplash.com/photo-1502101872923-d48509bff386?auto=format&fit=crop&q=80&w=800",
+      type: "Drill"
+    }
+  ];
 
-  const handleRegister = (event: EventItem) => {
-    setIsRegistering(true);
-    setTimeout(() => {
-      setRegisteredEvents((prev) => [...prev, event.id]);
-      setIsRegistering(false);
-      setSelectedEvent(null);
-      toast.success(`Successfully registered for ${event.title}!`, {
-        description: `Your attendance has been confirmed for ${event.date} at ${event.location}.`,
-      });
-    }, 600);
-  };
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const filteredEvents = events.filter(event => {
+    const matchesFilter = filter === "all" || event.category === filter;
+    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                         event.location.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-8 w-8 text-[#ED1C24] animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 md:p-10 space-y-10 max-w-7xl mx-auto font-sans">
-      {/* Header Section */}
+    <div className="p-6 md:p-10 space-y-10 pb-20">
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-red-50 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-wider border border-red-100">
-            <Calendar className="h-3.5 w-3.5" /> Official Event Hub
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-black">
-            Humanitarian <span className="text-[#ED1C24]">Events & Drills</span>
-          </h1>
-          <p className="text-gray-500 font-medium text-sm max-w-2xl">
-            Join national campaigns, emergency response simulations, first aid workshops, and volunteer mobilization gatherings.
+        <div className="space-y-2">
+          <Link 
+            href="/dashboard" 
+            className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-[#ED1C24] transition-colors flex items-center gap-2 group"
+          >
+            <ArrowLeft className="h-3 w-3 group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
+          </Link>
+          <h1 className="text-4xl font-black tracking-tighter text-black">Upcoming Events</h1>
+          <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+            Discover missions, trainings, and community outreach programs
           </p>
         </div>
-
-        {/* Global Stats */}
-        <div className="flex items-center gap-3">
-          <div className="px-4 py-2.5 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-red-50 text-[#ED1C24] flex items-center justify-center font-black">
-              <Calendar className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Events</p>
-              <p className="text-base font-black text-black leading-none">{ERCS_STATIC_EVENTS.length}</p>
-            </div>
-          </div>
-
-          <div className="px-4 py-2.5 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-green-50 text-green-600 flex items-center justify-center font-black">
-              <CheckCircle2 className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">My RSVPs</p>
-              <p className="text-base font-black text-green-600 leading-none">{registeredEvents.length}</p>
-            </div>
-          </div>
-        </div>
+        <Button className="bg-[#ED1C24] hover:bg-black text-white px-8 h-14 rounded-2xl font-black tracking-widest uppercase text-xs shadow-xl shadow-red-500/20 transition-all flex items-center gap-2">
+          <Plus className="h-4 w-4" /> Propose an Event
+        </Button>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search events by name, location, or keyword..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-11 pl-10 bg-gray-50/70 text-black border-gray-200 rounded-2xl text-xs font-semibold focus:border-[#ED1C24]"
-          />
-        </div>
-
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar-small">
-          {EVENT_CATEGORIES.map((cat) => (
+      {/* Filters & Search */}
+      <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 w-full lg:w-auto no-scrollbar">
+          {eventCategories.map((cat) => (
             <button
               key={cat.value}
               onClick={() => setFilter(cat.value)}
               className={cn(
-                "px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap",
-                filter === cat.value
-                  ? "bg-black text-white shadow-sm"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                "px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap",
+                filter === cat.value 
+                  ? "bg-black text-white shadow-lg" 
+                  : "bg-white text-gray-400 border border-gray-100 hover:bg-gray-50 hover:text-black"
               )}
             >
               {cat.label}
             </button>
           ))}
         </div>
+
+        <div className="relative w-full lg:w-96">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
+          <input 
+            type="text" 
+            placeholder="Search events, locations..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-gray-100 rounded-2xl h-14 pl-12 pr-6 font-bold text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all shadow-sm"
+          />
+          <Filter className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 cursor-pointer hover:text-[#ED1C24]" />
+        </div>
       </div>
 
       {/* Events Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEvents.map((event, idx) => {
-          const isRegistered = registeredEvents.includes(event.id);
-          const percentFull = Math.round((event.attendees / event.maxCapacity) * 100);
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {filteredEvents.map((event, idx) => (
+          <motion.div
+            key={event.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className="bg-white rounded-[40px] overflow-hidden border border-gray-100 shadow-sm group hover:shadow-2xl hover:shadow-gray-200/50 transition-all cursor-pointer flex flex-col"
+          >
+            {/* Image Section */}
+            <div className="h-60 relative overflow-hidden">
+               <img 
+                 src={event.image} 
+                 alt={event.title} 
+                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+               />
+               <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 shadow-xl">
+                  <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-widest">{event.type}</p>
+               </div>
+               <div className="absolute bottom-4 right-4 h-12 w-12 bg-[#ED1C24] text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <Plus className="h-6 w-6" />
+               </div>
+            </div>
 
-          return (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="bg-white rounded-[32px] border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-gray-200/50 hover:border-red-100 transition-all flex flex-col overflow-hidden group"
-            >
-              {/* Event Image Banner */}
-              <div className="h-48 w-full relative overflow-hidden bg-gray-100">
-                <img
-                  src={event.image}
-                  alt={event.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
-                
-                {/* Category & Status Badges */}
-                <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                  <span className="px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-wider border border-white/10">
-                    {event.categoryLabel}
-                  </span>
-
-                  {isRegistered && (
-                    <span className="px-2.5 py-1 rounded-lg bg-green-500 text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md">
-                      <CheckCircle2 className="h-3 w-3" /> Registered
-                    </span>
-                  )}
-                </div>
-
-                <div className="absolute bottom-3 left-4 right-4 text-white">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-red-300">
-                    {event.type}
-                  </span>
-                </div>
-              </div>
-
-              {/* Event Body */}
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <h3 className="text-base font-black text-black tracking-tight leading-snug group-hover:text-[#ED1C24] transition-colors">
+            {/* Content Section */}
+            <div className="p-8 flex-1 flex flex-col space-y-6">
+               <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-[#ED1C24]">
+                    <Calendar className="h-4 w-4" />
+                    <span className="text-xs font-black uppercase tracking-tighter">{event.date}</span>
+                  </div>
+                  <h3 className="text-xl font-black tracking-tight text-gray-900 group-hover:text-[#ED1C24] transition-colors leading-tight">
                     {event.title}
                   </h3>
-                  <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
-                    {event.description}
-                  </p>
-                </div>
+               </div>
 
-                {/* Key Metadata */}
-                <div className="space-y-2 text-xs font-semibold text-gray-600 pt-2 border-t border-gray-50">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5 text-[#ED1C24] shrink-0" />
-                    <span>{event.date} • {event.time}</span>
+               <div className="space-y-3 pt-2">
+                  <div className="flex items-center gap-3 text-gray-400 text-sm font-bold">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{event.location}</span>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5 text-[#ED1C24] shrink-0" />
-                    <span className="truncate">{event.location} ({event.venue})</span>
+                  <div className="flex items-center gap-3 text-gray-400 text-sm font-bold">
+                    <Clock className="h-4 w-4 shrink-0" />
+                    <span>{event.time}</span>
                   </div>
+               </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center gap-1.5 text-gray-500 text-[11px]">
-                      <Users className="h-3.5 w-3.5 text-blue-500" />
-                      <span>{event.attendees + (isRegistered ? 1 : 0)} / {event.maxCapacity} Confirmed</span>
-                    </div>
-                    <span className="text-[10px] font-black text-gray-400">{percentFull}% Full</span>
+               {/* Attendees Progress */}
+               <div className="space-y-2">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                     <span className="text-gray-400">Capacity</span>
+                     <span className="text-black">{event.attendees} / {event.maxCapacity} joined</span>
                   </div>
-
-                  {/* Capacity Bar */}
-                  <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        percentFull > 85 ? "bg-[#ED1C24]" : "bg-green-500"
-                      )} 
-                      style={{ width: `${Math.min(100, percentFull)}%` }} 
-                    />
+                  <div className="h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
+                     <div 
+                       className="h-full bg-amber-500 rounded-full" 
+                       style={{ width: `${(event.attendees / event.maxCapacity) * 100}%` }}
+                     />
                   </div>
-                </div>
+               </div>
 
-                {/* Footer Buttons */}
-                <div className="pt-2 flex items-center gap-2">
-                  <Button
-                    onClick={() => setSelectedEvent(event)}
-                    variant="outline"
-                    className="flex-1 h-10 rounded-xl text-xs font-bold border-gray-200 hover:bg-gray-50"
-                  >
-                    View Details
-                  </Button>
-
-                  <Button
-                    onClick={() => {
-                      if (isRegistered) {
-                        toast.info("You are already registered for this event.");
-                      } else {
-                        setSelectedEvent(event);
-                      }
-                    }}
-                    className={cn(
-                      "h-10 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
-                      isRegistered
-                        ? "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
-                        : "bg-[#ED1C24] hover:bg-black text-white shadow-md"
-                    )}
-                  >
-                    {isRegistered ? "Going ✓" : "RSVP"}
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
+               <div className="pt-4 flex items-center justify-between">
+                  <div className="flex -space-x-3">
+                     {[1, 2, 3, 4].map((i) => (
+                       <div key={i} className="h-9 w-9 rounded-xl border-2 border-white bg-gray-100 flex items-center justify-center overflow-hidden">
+                          <img src={`https://i.pravatar.cc/150?u=${i + event.id}`} alt="user" className="h-full w-full object-cover" />
+                       </div>
+                     ))}
+                     <div className="h-9 w-9 rounded-xl border-2 border-white bg-[#ED1C24] text-white flex items-center justify-center text-[10px] font-black">
+                        +{event.attendees - 4}
+                     </div>
+                  </div>
+                  <button className="flex items-center gap-2 text-[10px] font-black text-[#ED1C24] uppercase tracking-widest group-hover:translate-x-2 transition-transform">
+                     See Details <ChevronRight className="h-3 w-3" />
+                  </button>
+               </div>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
-      {/* EVENT DETAIL / RSVP MODAL */}
-      <AnimatePresence>
-        {selectedEvent && (() => {
-          const isRegistered = registeredEvents.includes(selectedEvent.id);
-
-          return (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                className="bg-white w-full max-w-xl rounded-[32px] overflow-hidden shadow-2xl relative border border-gray-100 max-h-[90vh] overflow-y-auto"
-              >
-                {/* Banner */}
-                <div className="h-44 w-full relative bg-gray-100">
-                  <img src={selectedEvent.image} alt={selectedEvent.title} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
-                  
-                  <button
-                    onClick={() => setSelectedEvent(null)}
-                    className="absolute top-4 right-4 p-2 rounded-xl bg-black/50 hover:bg-black text-white transition-colors"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-
-                  <div className="absolute bottom-4 left-6 right-6 text-white">
-                    <span className="px-2.5 py-0.5 rounded-md bg-[#ED1C24] text-white text-[9px] font-black uppercase tracking-wider">
-                      {selectedEvent.categoryLabel}
-                    </span>
-                    <h3 className="text-xl font-black tracking-tight leading-tight mt-1.5">
-                      {selectedEvent.title}
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="p-6 sm:p-8 space-y-6">
-                  {/* Key Info Grid */}
-                  <div className="grid grid-cols-2 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs">
-                    <div>
-                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Date & Time</p>
-                      <p className="font-bold text-black">{selectedEvent.date}</p>
-                      <p className="text-gray-500 font-medium text-[11px]">{selectedEvent.time}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Venue</p>
-                      <p className="font-bold text-black truncate">{selectedEvent.location}</p>
-                      <p className="text-gray-500 font-medium text-[11px] truncate">{selectedEvent.venue}</p>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <div className="space-y-1.5">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-black">About This Event</h4>
-                    <p className="text-xs text-gray-600 font-medium leading-relaxed bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
-                      {selectedEvent.description}
-                    </p>
-                  </div>
-
-                  {/* Organizer & Certification */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs p-3 bg-gray-50 rounded-xl border border-gray-100">
-                      <span className="font-bold text-gray-500">Organized By:</span>
-                      <span className="font-black text-black">{selectedEvent.organizer}</span>
-                    </div>
-
-                    {selectedEvent.certification && (
-                      <div className="flex items-center justify-between text-xs p-3 bg-red-50/60 rounded-xl border border-red-100">
-                        <span className="font-bold text-[#ED1C24] flex items-center gap-1">
-                          <Award className="h-3.5 w-3.5" /> Award / Credit:
-                        </span>
-                        <span className="font-black text-red-900">{selectedEvent.certification}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedEvent(null)}
-                      className="h-11 px-5 rounded-xl font-bold text-xs"
-                    >
-                      Close
-                    </Button>
-
-                    <Button
-                      onClick={() => handleRegister(selectedEvent)}
-                      disabled={isRegistering || isRegistered}
-                      className={cn(
-                        "h-11 px-7 rounded-xl font-black text-xs uppercase tracking-wider transition-all",
-                        isRegistered
-                          ? "bg-green-600 text-white cursor-default"
-                          : "bg-[#ED1C24] hover:bg-black text-white shadow-lg shadow-red-500/20"
-                      )}
-                    >
-                      {isRegistered ? "Already Registered ✓" : isRegistering ? "Confirming RSVP..." : "Confirm My Attendance"}
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
+      {/* Featured Banner */}
+      <div className="bg-[#ED1C24] rounded-[48px] p-10 md:p-16 text-white relative overflow-hidden flex flex-col md:flex-row items-center gap-12">
+         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-[100px] pointer-events-none" />
+         
+         <div className="md:w-1/2 space-y-6 relative z-10">
+            <div className="h-14 w-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/10">
+               <Award className="h-8 w-8" />
             </div>
-          );
-        })()}
-      </AnimatePresence>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-none">Become a <br />Humanitarian Hero</h2>
+            <p className="text-lg font-medium opacity-80">Join our major volunteer convention this summer and gain certified skills in disaster management and community health.</p>
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+               <Button className="h-16 px-10 bg-white text-[#ED1C24] hover:bg-black hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl transition-all">
+                  Register for Convention
+               </Button>
+               <Button variant="outline" className="h-16 px-10 border-2 border-white/30 bg-transparent text-white hover:bg-white hover:text-black rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
+                  Learn More
+               </Button>
+            </div>
+         </div>
+
+         <div className="md:w-1/2 grid grid-cols-2 gap-4 relative z-10">
+            {[
+              { label: "Hours Saved", val: "12,400+", icon: Clock },
+              { label: "Lives Impacted", val: "50,000+", icon: Heart },
+              { label: "Cities Reached", val: "42", icon: MapPin },
+              { label: "Active Members", val: "18k+", icon: Users },
+            ].map((stat, i) => (
+              <div key={i} className="bg-white/10 backdrop-blur-md border border-white/10 p-6 rounded-[32px] space-y-3">
+                 <stat.icon className="h-6 w-6 opacity-60" />
+                 <div>
+                    <p className="text-2xl font-black">{stat.val}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{stat.label}</p>
+                 </div>
+              </div>
+            ))}
+         </div>
+      </div>
     </div>
   );
 }

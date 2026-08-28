@@ -1,15 +1,13 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
-
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck, Plus, Trash2, Save, XCircle,
   CheckCircle2, UserX, User, Users, Search, RefreshCw, X,
   Eye, EyeOff, LayoutDashboard, HandHeart, Building2,
   ClipboardList, BarChart3, CreditCard, Bell, Newspaper,
-  Settings, MapPin, Globe, Lock, ChevronRight
+  Settings, MapPin, Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +16,6 @@ import { toast } from "sonner";
 import PhoneNumberInput, { buildFullPhoneNumber } from "@/components/ui/phone-number-input";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { getUserScope } from "@/lib/auth-scope";
 
 type SystemUser = {
   id: string;
@@ -44,14 +41,14 @@ type NewUserForm = {
   branch: string;
 };
 
-const ALL_ROLES = [
-  { label: "Super Admin", value: 1, minScope: "SUPER_ADMIN" },
-  { label: "Regional Admin", value: 2, minScope: "SUPER_ADMIN" },
-  { label: "Zonal Admin", value: 3, minScope: "REGIONAL_ADMIN" },
-  { label: "Woreda Admin", value: 4, minScope: "ZONAL_ADMIN" },
-  { label: "Branch Officer", value: 7, minScope: "REGIONAL_ADMIN" },
-  { label: "Volunteer", value: 5, minScope: "ALL" },
-  { label: "Member", value: 6, minScope: "ALL" },
+const ROLES = [
+  { label: "Super Admin", value: 1 },
+  { label: "Regional Admin", value: 2 },
+  { label: "Zonal Admin", value: 3 },
+  { label: "Woreda Admin", value: 4 },
+  { label: "Volunteer", value: 5 },
+  { label: "Member", value: 6 },
+  { label: "Branch Officer", value: 7 },
 ];
 
 const ROLE_LABELS: Record<string | number, string> = {
@@ -71,15 +68,14 @@ const ROLE_LABELS: Record<string | number, string> = {
   "ROLE_branch_officer": "Branch Officer",
   "SUPER_ADMIN": "Super Admin",
   "REGIONAL_ADMIN": "Regional Admin",
-  "ZONE_ADMIN": "Zonal Admin",
-  "ZONAL_ADMIN": "Zonal Admin",
-  "WOREDA_ADMIN": "Woreda Admin",
   "VOLUNTEER": "Volunteer",
   "MEMBER": "Member",
   "BRANCH_OFFICER": "Branch Officer",
 };
 
-const DEFAULT_REGIONS = [
+
+const REGIONS = [
+  { label: "South Ethiopia", value: 14 },
   { label: "Addis Ababa", value: 1 },
   { label: "Dire Dawa", value: 2 },
   { label: "Tigray", value: 3 },
@@ -93,8 +89,18 @@ const DEFAULT_REGIONS = [
   { label: "Harari", value: 11 },
   { label: "Sidama", value: 12 },
   { label: "South West Ethiopia", value: 13 },
-  { label: "South Ethiopia", value: 14 },
 ];
+
+const DEFAULT_FORM: NewUserForm = {
+  email: "",
+  phone_number: "",
+  password: "",
+  role: 5,
+  region: 14,
+  zone: "",
+  woreda: "",
+  branch: "",
+};
 
 const MODULE_PERMISSIONS = [
   { id: "OVERVIEW", label: "Overview", icon: LayoutDashboard },
@@ -115,29 +121,24 @@ const MODULE_PERMISSIONS = [
 ];
 
 const ROLE_COLORS: Record<string | number, string> = {
-  1: "bg-red-100 text-red-700 border-red-200",
-  2: "bg-orange-100 text-orange-700 border-orange-200",
-  3: "bg-amber-100 text-amber-700 border-amber-200",
-  4: "bg-sky-100 text-sky-700 border-sky-200",
-  7: "bg-blue-100 text-blue-700 border-blue-200",
-  5: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  6: "bg-gray-100 text-gray-700 border-gray-200",
-  "ROLE_super_admin": "bg-red-100 text-red-700 border-red-200",
-  "SUPER_ADMIN": "bg-red-100 text-red-700 border-red-200",
-  "ROLE_regional_admin": "bg-orange-100 text-orange-700 border-orange-200",
-  "REGIONAL_ADMIN": "bg-orange-100 text-orange-700 border-orange-200",
-  "ROLE_zonal_admin": "bg-amber-100 text-amber-700 border-amber-200",
-  "ZONE_ADMIN": "bg-amber-100 text-amber-700 border-amber-200",
-  "ZONAL_ADMIN": "bg-amber-100 text-amber-700 border-amber-200",
-  "ROLE_woreda_admin": "bg-sky-100 text-sky-700 border-sky-200",
-  "WOREDA_ADMIN": "bg-sky-100 text-sky-700 border-sky-200",
-  "ROLE_branch_officer": "bg-blue-100 text-blue-700 border-blue-200",
-  "BRANCH_OFFICER": "bg-blue-100 text-blue-700 border-blue-200",
-  "ROLE_volunteer": "bg-emerald-100 text-emerald-700 border-emerald-200",
-  "VOLUNTEER": "bg-emerald-100 text-emerald-700 border-emerald-200",
-  "ROLE_member": "bg-gray-100 text-gray-700 border-gray-200",
-  "MEMBER": "bg-gray-100 text-gray-700 border-gray-200",
+  1: "bg-red-100 text-red-700",
+  2: "bg-orange-100 text-orange-700",
+  7: "bg-blue-100 text-blue-700",
+  5: "bg-green-100 text-green-700",
+  6: "bg-gray-100 text-gray-700",
+  "ROLE_super_admin": "bg-red-100 text-red-700",
+  "SUPER_ADMIN": "bg-red-100 text-red-700",
+  "ROLE_regional_admin": "bg-orange-100 text-orange-700",
+  "REGIONAL_ADMIN": "bg-orange-100 text-orange-700",
+  "ROLE_branch_officer": "bg-blue-100 text-blue-700",
+  "BRANCH_OFFICER": "bg-blue-100 text-blue-700",
+  "ROLE_volunteer": "bg-green-100 text-green-700",
+  "VOLUNTEER": "bg-green-100 text-green-700",
+  "ROLE_member": "bg-gray-100 text-gray-700",
+  "MEMBER": "bg-gray-100 text-gray-700",
 };
+
+
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<SystemUser[]>([]);
@@ -145,99 +146,31 @@ export default function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
+  const [form, setForm] = useState<NewUserForm>({ ...DEFAULT_FORM });
   const [saving, setSaving] = useState(false);
   const [countryIso, setCountryIso] = useState("ET");
   const [showPassword, setShowPassword] = useState(false);
   const [editRole, setEditRole] = useState<number>(5);
   const [editStatus, setEditStatus] = useState<string>("ACTIVE");
-  const [editBranch, setEditBranch] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"ADMIN" | "MEMBER">("ADMIN");
-
-  // Geographic state
-  const [regions, setRegions] = useState<any[]>(DEFAULT_REGIONS);
   const [zones, setZones] = useState<any[]>([]);
   const [woredas, setWoredas] = useState<any[]>([]);
-  const [branches, setBranches] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
-
-  // Filters
   const [filterRegion, setFilterRegion] = useState<number>(0);
   const [filterZone, setFilterZone] = useState<string>("");
   const [filterWoreda, setFilterWoreda] = useState<string>("");
 
-  // Create User Form State
-  const [form, setForm] = useState<NewUserForm>({
-    email: "",
-    phone_number: "",
-    password: "",
-    role: 5,
-    region: 1,
-    zone: "",
-    woreda: "",
-    branch: "",
-  });
-
-  // Determine Current Logged-In User Scope
-  const adminScope = useMemo(() => {
-    const globalScope = getUserScope();
-    const rawRole = currentUser?.role || globalScope.role;
-    const rawRegId = Number(currentUser?.region_id || globalScope.regionNumber || 0);
-    const rawZoneId = currentUser?.zone_id || globalScope.zoneId || "";
-    const rawWoredaId = currentUser?.woreda_id || globalScope.woredaId || "";
-    const rawBranchId = currentUser?.branch_id || globalScope.branchId || "";
-
-    const isSuper = rawRole === "SUPER_ADMIN" || rawRole === "ROLE_super_admin" || rawRole === 1 || rawRole === "1";
-    const isRegional = rawRole === "REGIONAL_ADMIN" || rawRole === "ROLE_regional_admin" || rawRole === 2 || rawRole === "2";
-    const isZonal = rawRole === "ZONE_ADMIN" || rawRole === "ZONAL_ADMIN" || rawRole === "ROLE_zonal_admin" || rawRole === 3 || rawRole === "3";
-    const isWoreda = rawRole === "WOREDA_ADMIN" || rawRole === "ROLE_woreda_admin" || rawRole === 4 || rawRole === "4";
-    const isBranch = rawRole === "BRANCH_OFFICER" || rawRole === "ROLE_branch_officer" || rawRole === 7 || rawRole === "7";
-
-    return {
-      isSuper,
-      isRegional,
-      isZonal,
-      isWoreda,
-      isBranch,
-      regionId: rawRegId,
-      zoneId: rawZoneId,
-      woredaId: rawWoredaId,
-      branchId: rawBranchId,
-      roleName: isSuper ? "Super Admin" : isRegional ? "Regional Admin" : isZonal ? "Zonal Admin" : isWoreda ? "Woreda Admin" : isBranch ? "Branch Officer" : "Administrator"
-    };
-  }, [currentUser]);
-
-  // Allowed roles that the active administrator can create/assign
-  const allowedRoles = useMemo(() => {
-    if (adminScope.isSuper) {
-      return ALL_ROLES;
-    }
-    if (adminScope.isRegional) {
-      // Regional Admin cannot create Super Admin or other Regional Admins
-      return ALL_ROLES.filter(r => r.value !== 1 && r.value !== 2);
-    }
-    if (adminScope.isZonal) {
-      return ALL_ROLES.filter(r => [4, 7, 5, 6].includes(r.value));
-    }
-    // Woreda / Branch Officer
-    return ALL_ROLES.filter(r => [5, 6].includes(r.value));
-  }, [adminScope]);
-
   const fetchProfile = useCallback(async () => {
     try {
       const res = await api.get("/person/profile");
-      const person = res.data?.person;
-      if (person) {
-        setCurrentUser(person);
-        if (person.region_id && person.region_id > 0) {
-          setFilterRegion(Number(person.region_id));
-          setForm(f => ({
-            ...f,
-            region: Number(person.region_id),
-            zone: person.zone_id || "",
-            woreda: person.woreda_id || "",
-            branch: person.branch_id || ""
-          }));
-        }
+      setCurrentUser(res.data?.person);
+      if (res.data?.person) {
+        setForm(f => ({
+          ...f,
+          region: res.data.person.region_id || 14,
+          zone: res.data.person.zone_id || "",
+          woreda: res.data.person.woreda_id || "",
+        }));
       }
     } catch (err) {
       console.error("Failed to fetch profile", err);
@@ -246,122 +179,44 @@ export default function UserManagementPage() {
 
   const fetchLocations = useCallback(async () => {
     try {
-      const [zRes, wRes, bRes, sRes] = await Promise.all([
-        api.get("/location/zones").catch(() => ({ data: { zones: [] } })),
-        api.get("/location/woredas").catch(() => ({ data: { woredas: [] } })),
-        api.get("/location/branches").catch(() => ({ data: { branches: [] } })),
-        api.get("/system-settings").catch(() => ({ data: { settings: {} } }))
+      const [zRes, wRes] = await Promise.all([
+        api.get("/location/zones"),
+        api.get("/location/woredas")
       ]);
-
-      if (zRes.data?.zones && zRes.data.zones.length > 0) setZones(zRes.data.zones);
-      if (wRes.data?.woredas && wRes.data.woredas.length > 0) setWoredas(wRes.data.woredas);
-      if (bRes.data?.branches) setBranches(bRes.data.branches);
-
-      const settings = sRes.data?.settings || {};
-      if (settings.all_regions) {
-        try {
-          const parsed = JSON.parse(settings.all_regions);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setRegions(parsed.map((r: any) => ({ label: r.name || r.label, value: Number(r.id || r.value) })));
-          }
-        } catch (_) {}
-      }
+      setZones(zRes.data?.zones || []);
+      setWoredas(wRes.data?.woredas || []);
     } catch (err) {
       console.error("Failed to fetch locations", err);
     }
   }, []);
 
-  useEffect(() => {
-    fetchLocations();
-    fetchProfile();
-  }, [fetchLocations, fetchProfile]);
-
-  // Dynamic fetch when form region changes
-  useEffect(() => {
-    const regId = adminScope.isSuper ? form.region : adminScope.regionId;
-    if (regId && regId > 0) {
-      api.get(`/location/zones?region_id=${regId}`).then(res => {
-        if (res.data?.zones && res.data.zones.length > 0) {
-          setZones(prev => {
-            const others = prev.filter(z => Number(z.region_id) !== Number(regId));
-            return [...others, ...res.data.zones];
-          });
-        }
-      }).catch(() => {});
-    }
-  }, [form.region, adminScope]);
-
-  // Dynamic fetch when form zone changes
-  useEffect(() => {
-    if (form.zone) {
-      api.get(`/location/woredas?zone_id=${form.zone}`).then(res => {
-        if (res.data?.woredas && res.data.woredas.length > 0) {
-          setWoredas(prev => {
-            const others = prev.filter(w => String(w.zone_id) !== String(form.zone));
-            return [...others, ...res.data.woredas];
-          });
-        }
-      }).catch(() => {});
-    }
-  }, [form.zone]);
-
-  // Dynamic fetch when filterRegion changes
-  useEffect(() => {
-    const regId = adminScope.isSuper ? filterRegion : adminScope.regionId;
-    if (regId && regId > 0) {
-      api.get(`/location/zones?region_id=${regId}`).then(res => {
-        if (res.data?.zones && res.data.zones.length > 0) {
-          setZones(prev => {
-            const others = prev.filter(z => Number(z.region_id) !== Number(regId));
-            return [...others, ...res.data.zones];
-          });
-        }
-      }).catch(() => {});
-    }
-  }, [filterRegion, adminScope]);
-
-  // Dynamic fetch when filterZone changes
-  useEffect(() => {
-    if (filterZone) {
-      api.get(`/location/woredas?zone_id=${filterZone}`).then(res => {
-        if (res.data?.woredas && res.data.woredas.length > 0) {
-          setWoredas(prev => {
-            const others = prev.filter(w => String(w.zone_id) !== String(filterZone));
-            return [...others, ...res.data.woredas];
-          });
-        }
-      }).catch(() => {});
-    }
-  }, [filterZone]);
-
-  // Handle URL create query param
+   useEffect(() => { fetchLocations(); fetchProfile(); }, [fetchLocations, fetchProfile]);
+ 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("create") === "true") {
         setShowCreate(true);
         setSelectedUser(null);
+        setForm({ ...DEFAULT_FORM });
       }
     }
   }, []);
 
-  // Fetch users with RBAC scope
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      let url = "/users?page=1&page_size=200";
-      
-      if (!adminScope.isSuper) {
-        if (adminScope.regionId > 0) url += `&region_id=${adminScope.regionId}`;
-        if (adminScope.zoneId) url += `&zone_id=${adminScope.zoneId}`;
-        if (adminScope.woredaId) url += `&woreda_id=${adminScope.woredaId}`;
-        if (adminScope.branchId) url += `&branch_id=${adminScope.branchId}`;
+      let url = "/users?page=1&page_size=100";
+      if (currentUser?.role !== "SUPER_ADMIN" && currentUser?.role !== 1) {
+          if (currentUser?.region_id) url += `&region_id=${currentUser.region_id}`;
+          if (currentUser?.zone_id) url += `&zone_id=${currentUser.zone_id}`;
+          if (currentUser?.woreda_id) url += `&woreda_id=${currentUser.woreda_id}`;
+          if (currentUser?.branch_id) url += `&branch_id=${currentUser.branch_id}`;
       } else {
-        if (filterRegion > 0) url += `&region_id=${filterRegion}`;
-        if (filterZone !== "") url += `&zone_id=${filterZone}`;
-        if (filterWoreda !== "") url += `&woreda_id=${filterWoreda}`;
+          if (filterRegion > 0) url += `&region_id=${filterRegion}`;
+          if (filterZone !== "") url += `&zone_id=${filterZone}`;
+          if (filterWoreda !== "") url += `&woreda_id=${filterWoreda}`;
       }
-
       const res = await api.get(url);
       if (res.data?.users) {
         setUsers(res.data.users);
@@ -373,54 +228,9 @@ export default function UserManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [adminScope, filterRegion, filterZone, filterWoreda]);
+  }, [currentUser, filterRegion, filterZone, filterWoreda]);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  // Cascaded Zone options for Filter Bar
-  const filterZoneOptions = useMemo(() => {
-    const activeReg = adminScope.isSuper ? filterRegion : adminScope.regionId;
-    if (!activeReg || activeReg === 0) return zones;
-    return zones.filter(z => Number(z.region_id) === Number(activeReg));
-  }, [zones, filterRegion, adminScope]);
-
-  // Cascaded Woreda options for Filter Bar
-  const filterWoredaOptions = useMemo(() => {
-    if (filterZone) {
-      return woredas.filter(w => String(w.zone_id) === String(filterZone));
-    }
-    const activeReg = adminScope.isSuper ? filterRegion : adminScope.regionId;
-    if (activeReg && activeReg > 0) {
-      const regionZoneIds = zones.filter(z => Number(z.region_id) === Number(activeReg)).map(z => String(z.id));
-      return woredas.filter(w => regionZoneIds.includes(String(w.zone_id)));
-    }
-    return woredas;
-  }, [woredas, filterZone, filterRegion, adminScope, zones]);
-
-  // Cascaded Zones for Create User Form
-  const formZoneOptions = useMemo(() => {
-    const regId = adminScope.isSuper ? form.region : adminScope.regionId;
-    if (!regId) return [];
-    return zones.filter(z => Number(z.region_id) === Number(regId));
-  }, [zones, form.region, adminScope]);
-
-  // Cascaded Woredas for Create User Form
-  const formWoredaOptions = useMemo(() => {
-    if (!form.zone) return [];
-    return woredas.filter(w => String(w.zone_id) === String(form.zone));
-  }, [woredas, form.zone]);
-
-  // Cascaded Branches for Create User Form
-  const formBranchOptions = useMemo(() => {
-    const regId = adminScope.isSuper ? form.region : adminScope.regionId;
-    return branches.filter(b => {
-      if (regId && Number(b.region_id) !== Number(regId)) return false;
-      if (form.zone && b.zone_id && String(b.zone_id) !== String(form.zone)) return false;
-      return true;
-    });
-  }, [branches, form.region, form.zone, adminScope]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const handleCreateUser = async () => {
     if (!form.email || !form.password) {
@@ -429,35 +239,24 @@ export default function UserManagementPage() {
     }
     setSaving(true);
     try {
+      // Build full E.164 phone number from ISO country + local digits
       const finalPhone = buildFullPhoneNumber(countryIso, form.phone_number);
-      const effectiveRegion = adminScope.isSuper ? form.region : adminScope.regionId;
 
       await api.post("/users/create", {
         email: form.email,
         phone_number: finalPhone,
         password: form.password,
         role: form.role,
-        region: effectiveRegion,
+        region: form.region,
         zone_id: form.zone,
         woreda_id: form.woreda,
         branch_id: form.branch,
       });
-
       toast.success("User created successfully.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> });
       setShowCreate(false);
-      setForm({
-        email: "",
-        phone_number: "",
-        password: "",
-        role: allowedRoles[0]?.value || 5,
-        region: adminScope.isSuper ? 1 : adminScope.regionId,
-        zone: "",
-        woreda: "",
-        branch: "",
-      });
+      setForm({ ...DEFAULT_FORM });
       fetchUsers();
-    } catch (err: any) {
-      console.error(err);
+    } catch {
       toast.error("Failed to create user.", { icon: <XCircle className="h-5 w-5 text-[#ED1C24]" /> });
     } finally {
       setSaving(false);
@@ -466,17 +265,19 @@ export default function UserManagementPage() {
 
   const handleSelectUser = (user: SystemUser) => {
     setSelectedUser(user);
-    const roleByVal = ALL_ROLES.find(r => r.value === Number(user.role));
+    // Try matching by value first (if it's already a role number)
+    const roleByVal = ROLES.find(r => r.value === Number(user.role));
     if (roleByVal) {
       setEditRole(roleByVal.value);
     } else {
+      // Fallback to label match
       const label = ROLE_LABELS[user.role] || user.role;
-      setEditRole(ALL_ROLES.find(r => r.label === label)?.value ?? 5);
+      setEditRole(ROLES.find(r => r.label === label)?.value ?? 5);
     }
     setEditStatus(user.status || "ACTIVE");
-    setEditBranch(user.branch_id || "");
     setShowCreate(false);
   };
+
 
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
@@ -488,7 +289,7 @@ export default function UserManagementPage() {
         region_id: selectedUser.region_id,
         zone_id: selectedUser.zone_id,
         woreda_id: selectedUser.woreda_id,
-        branch_id: editBranch,
+        branch_id: selectedUser.branch_id,
         status: editStatus,
       });
       toast.success("User updated successfully.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> });
@@ -514,38 +315,16 @@ export default function UserManagementPage() {
     }
   };
 
-  const getRegionName = (regId: number) => {
-    return regions.find(r => Number(r.value) === Number(regId))?.label || `Region ${regId}`;
-  };
-
-  const getZoneName = (zoneId: string) => {
-    return zones.find(z => String(z.id) === String(zoneId))?.name || zoneId;
-  };
-
-  const getWoredaName = (woredaId: string) => {
-    return woredas.find(w => String(w.id) === String(woredaId))?.name || woredaId;
-  };
-
-  const getBranchName = (branchId: string) => {
-    return branches.find(b => String(b.id) === String(branchId))?.name || branchId;
-  };
-
   const filtered = users.filter(u => {
-    const isSearchMatch = (u.email || "").toLowerCase().includes(search.toLowerCase()) || 
-                          (u.phone_number || "").includes(search);
+    const isSearchMatch = u.email?.toLowerCase().includes(search.toLowerCase()) || 
+                          u.phone_number?.includes(search);
     
+    // Role values 5 and 6 are Volunteer and Member, 8 is Organization
     const roleVal = Number(u.role);
     const isVolunteerOrMember = roleVal === 5 || roleVal === 6 || u.role === "VOLUNTEER" || u.role === "MEMBER";
     const isOrg = roleVal === 8 || u.role === "ORGANIZATION";
     
-    if (isOrg) return false;
-
-    // RBAC client-side filter enforcement
-    if (!adminScope.isSuper && adminScope.regionId > 0) {
-      if (Number(u.region_id) !== Number(adminScope.regionId)) {
-        return false;
-      }
-    }
+    if (isOrg) return false; // Explicitly hide organizations as requested
 
     if (activeTab === "ADMIN") return isSearchMatch && !isVolunteerOrMember;
     return isSearchMatch && isVolunteerOrMember;
@@ -556,18 +335,11 @@ export default function UserManagementPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div className="max-w-xl space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-red-50 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-widest border border-red-100">
-            {adminScope.isSuper ? (
-              <><Globe className="h-3.5 w-3.5" /> Super Admin — Full National Jurisdiction</>
-            ) : (
-              <><MapPin className="h-3.5 w-3.5" /> {adminScope.roleName} — {getRegionName(adminScope.regionId)} Jurisdiction</>
-            )}
-          </div>
           <h1 className="text-3xl font-black text-black tracking-tighter leading-none">
             User <span className="text-[#ED1C24]">Management</span>
           </h1>
           <p className="text-gray-500 font-medium text-sm leading-snug">
-            Manage admin users, regional branches, and personnel access according to geographic jurisdiction.
+            Create admin users, assign roles and permissions, and manage access across all modules.
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -579,20 +351,7 @@ export default function UserManagementPage() {
             <RefreshCw className="mr-2 h-3.5 w-3.5" /> Refresh
           </Button>
           <Button
-            onClick={() => { 
-              setShowCreate(true); 
-              setSelectedUser(null); 
-              setForm({ 
-                email: "",
-                phone_number: "",
-                password: "",
-                role: allowedRoles[0]?.value || 5,
-                region: adminScope.isSuper ? 1 : adminScope.regionId,
-                zone: "",
-                woreda: "",
-                branch: "",
-              }); 
-            }}
+            onClick={() => { setShowCreate(true); setSelectedUser(null); setForm({ ...DEFAULT_FORM }); }}
             className="h-10 rounded-xl px-5 font-black text-[10px] uppercase tracking-widest bg-[#ED1C24] hover:bg-black text-white transition-colors"
           >
             <Plus className="mr-2 h-4 w-4" /> Create User
@@ -635,88 +394,61 @@ export default function UserManagementPage() {
             />
           </div>
 
-          {/* Cascaded Location Filters */}
-          <div className="bg-gray-50/70 p-3 rounded-2xl border border-gray-200 space-y-2">
+          <div className="bg-gray-50/50 p-2.5 rounded-2xl border border-gray-100 space-y-2">
             <div className="flex items-center justify-between px-1">
-              <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-1">
-                <MapPin className="h-3 w-3 text-[#ED1C24]" /> Cascaded Location Filters
-              </span>
-              {((adminScope.isSuper && filterRegion > 0) || filterZone !== "" || filterWoreda !== "") && (
+              <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Filters</span>
+              {(filterRegion > 0 || filterZone !== "" || filterWoreda !== "") && (
                 <button 
-                  onClick={() => { 
-                    if (adminScope.isSuper) setFilterRegion(0); 
-                    setFilterZone(""); 
-                    setFilterWoreda(""); 
-                  }}
+                  onClick={() => { setFilterRegion(0); setFilterZone(""); setFilterWoreda(""); }}
                   className="text-[9px] font-black text-red-500 uppercase tracking-widest hover:underline"
                 >
-                  Reset Filters
+                  Reset
                 </button>
               )}
             </div>
-
             <div className="grid grid-cols-3 gap-2">
-              {/* Region Selector */}
-              {adminScope.isSuper ? (
-                <select
-                  value={filterRegion}
-                  onChange={e => { 
-                    setFilterRegion(Number(e.target.value)); 
-                    setFilterZone(""); 
-                    setFilterWoreda(""); 
-                  }}
-                  className="h-8 rounded-lg bg-white border border-gray-200 px-2 text-[10px] font-bold text-gray-800 focus:ring-1 focus:ring-red-500/20"
-                >
-                  <option value={0}>All Regions</option>
-                  {regions.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
-              ) : (
-                <div className="h-8 rounded-lg bg-red-50/50 border border-red-100 px-2 flex items-center justify-between text-[10px] font-extrabold text-[#ED1C24] truncate">
-                  <span className="truncate">{getRegionName(adminScope.regionId)}</span>
-                  <Lock className="h-2.5 w-2.5 shrink-0 opacity-60 ml-1" />
-                </div>
-              )}
+              <select
+                value={filterRegion}
+                onChange={e => { setFilterRegion(Number(e.target.value)); setFilterZone(""); setFilterWoreda(""); }}
+                className="h-8 rounded-lg bg-white border border-gray-100 px-2 text-[10px] font-bold text-gray-600 focus:ring-1 focus:ring-red-500/20 appearance-none"
+              >
+                <option value={0}>Region</option>
+                {REGIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
 
-              {/* Cascaded Zone Selector */}
               <select
                 value={filterZone}
-                onChange={e => { 
-                  setFilterZone(e.target.value); 
-                  setFilterWoreda(""); 
-                }}
-                className="h-8 rounded-lg bg-white border border-gray-200 px-2 text-[10px] font-bold text-gray-800 focus:ring-1 focus:ring-red-500/20"
+                onChange={e => { setFilterZone(e.target.value); setFilterWoreda(""); }}
+                className="h-8 rounded-lg bg-white border border-gray-100 px-2 text-[10px] font-bold text-gray-600 focus:ring-1 focus:ring-red-500/20 appearance-none"
               >
-                <option value="">All Zones</option>
-                {filterZoneOptions.map(z => (
+                <option value="">Zone</option>
+                {zones.filter(z => filterRegion === 0 || z.region_id === filterRegion).map(z => (
                   <option key={z.id} value={z.id}>{z.name}</option>
                 ))}
               </select>
 
-              {/* Cascaded Woreda Selector */}
               <select
                 value={filterWoreda}
                 onChange={e => setFilterWoreda(e.target.value)}
-                className="h-8 rounded-lg bg-white border border-gray-200 px-2 text-[10px] font-bold text-gray-800 focus:ring-1 focus:ring-red-500/20"
+                className="h-8 rounded-lg bg-white border border-gray-100 px-2 text-[10px] font-bold text-gray-600 focus:ring-1 focus:ring-red-500/20 appearance-none"
               >
-                <option value="">All Woredas</option>
-                {filterWoredaOptions.map(w => (
+                <option value="">Woreda</option>
+                {woredas.filter(w => filterZone === "" || w.zone_id === filterZone).map(w => (
                   <option key={w.id} value={w.id}>{w.name}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* User Cards List */}
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
+          <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
             {loading ? (
-              <div className="h-32 flex flex-col items-center justify-center bg-gray-50 rounded-2xl gap-2">
+              <div className="h-24 flex items-center justify-center bg-gray-50 rounded-2xl">
                 <div className="h-6 w-6 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Loading Personnel...</span>
               </div>
             ) : filtered.length === 0 ? (
-              <div className="text-center p-8 bg-gray-50 rounded-2xl border border-gray-100">
+              <div className="text-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
                 <ShieldCheck className="h-8 w-8 text-gray-300 mx-auto mb-2 opacity-50" />
-                <p className="font-bold text-xs text-gray-400">No personnel found in this jurisdiction.</p>
+                <p className="font-bold text-xs text-gray-400">No users found.</p>
               </div>
             ) : (
               filtered.map(user => (
@@ -724,62 +456,40 @@ export default function UserManagementPage() {
                   key={user.id}
                   onClick={() => handleSelectUser(user)}
                   className={cn(
-                    "group cursor-pointer p-3.5 rounded-2xl border transition-all duration-200 relative",
+                    "group cursor-pointer p-4 rounded-xl border transition-all duration-200 relative",
                     selectedUser?.id === user.id
-                      ? "bg-black border-black text-white shadow-lg scale-[1.01]"
-                      : "bg-white border-gray-100 hover:border-gray-200 hover:bg-gray-50/80"
+                      ? "bg-black border-black text-white shadow-md scale-[1.01]"
+                      : "bg-white border-gray-100 hover:border-gray-200 hover:bg-gray-50"
                   )}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={cn(
-                        "h-9 w-9 rounded-xl flex items-center justify-center shrink-0",
+                        "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
                         selectedUser?.id === user.id ? "bg-white/10" : "bg-gray-100"
                       )}>
-                        <User className={cn("h-4 w-4", selectedUser?.id === user.id ? "text-white" : "text-gray-600")} />
+                        <User className={cn("h-4 w-4", selectedUser?.id === user.id ? "text-white" : "text-gray-500")} />
                       </div>
                       <div className="min-w-0">
-                        <p className={cn("font-black truncate text-xs", selectedUser?.id === user.id ? "text-white" : "text-slate-900")}>
+                        <p className={cn("font-black truncate text-xs", selectedUser?.id === user.id ? "text-white" : "text-black")}>
                           {user.email || user.phone_number || "Unknown"}
                         </p>
-                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                          <span className={cn(
-                            "px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md border",
-                            selectedUser?.id === user.id
-                              ? "bg-white/15 border-white/20 text-white"
-                              : (ROLE_COLORS[user.role] || "bg-gray-100 text-gray-700")
-                          )}>
-                            {ROLE_LABELS[user.role] || user.role}
-                          </span>
-
-                          {user.region_id > 0 && (
-                            <span className={cn(
-                              "px-1.5 py-0.5 text-[8px] font-bold rounded-md flex items-center gap-0.5",
-                              selectedUser?.id === user.id ? "bg-white/10 text-gray-300" : "bg-gray-100 text-gray-600"
-                            )}>
-                              <MapPin className="h-2.5 w-2.5 text-[#ED1C24]" /> {getRegionName(user.region_id)}
-                              {user.zone_id ? ` · ${getZoneName(user.zone_id)}` : ""}
-                            </span>
-                          )}
-
-                          {user.branch_id && (
-                            <span className={cn(
-                              "px-1.5 py-0.5 text-[8px] font-bold rounded-md flex items-center gap-0.5",
-                              selectedUser?.id === user.id ? "bg-white/10 text-gray-300" : "bg-blue-50 text-blue-700 border border-blue-100"
-                            )}>
-                              <Building2 className="h-2.5 w-2.5" /> {getBranchName(user.branch_id)}
-                            </span>
-                          )}
-                        </div>
+                        <span className={cn(
+                          "inline-block mt-0.5 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md",
+                          selectedUser?.id === user.id
+                            ? "bg-white/10 text-white"
+                            : (ROLE_COLORS[user.role] || "bg-gray-100 text-gray-600")
+                        )}>
+                          {ROLE_LABELS[user.role] || user.role}
+                        </span>
                       </div>
                     </div>
-
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={cn(
                         "px-2 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-md",
                         user.status === "ACTIVE"
-                          ? selectedUser?.id === user.id ? "bg-green-400/20 text-green-300" : "bg-green-50 text-green-600 border border-green-100"
-                          : selectedUser?.id === user.id ? "bg-red-400/20 text-red-300" : "bg-red-50 text-red-500 border border-red-100"
+                          ? selectedUser?.id === user.id ? "bg-green-400/20 text-green-300" : "bg-green-50 text-green-600"
+                          : selectedUser?.id === user.id ? "bg-red-400/20 text-red-300" : "bg-red-50 text-red-500"
                       )}>
                         {user.status}
                       </span>
@@ -789,7 +499,6 @@ export default function UserManagementPage() {
                           "p-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100",
                           selectedUser?.id === user.id ? "hover:bg-red-500/20 text-red-400" : "hover:bg-red-50 text-red-500"
                         )}
-                        title="Delete User"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -801,7 +510,7 @@ export default function UserManagementPage() {
           </div>
         </div>
 
-        {/* Right Panel: Create / Edit User */}
+        {/* Right Panel */}
         <div className="lg:col-span-7">
           <AnimatePresence mode="wait">
             {showCreate ? (
@@ -810,41 +519,37 @@ export default function UserManagementPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden"
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
               >
-                <div className="p-6 md:p-8 space-y-6">
-                  <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                <div className="p-6 space-y-6">
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-50">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-red-50 rounded-2xl flex items-center justify-center text-[#ED1C24]">
+                      <div className="h-10 w-10 bg-red-50 rounded-xl flex items-center justify-center text-[#ED1C24]">
                         <Plus className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-black text-black tracking-tight">Create Personnel Account</h3>
-                        <p className="text-gray-400 font-medium text-xs">
-                          {adminScope.isSuper ? "Register new system user or administrator across any region." : `Register new staff or personnel in ${getRegionName(adminScope.regionId)}.`}
-                        </p>
+                        <h3 className="text-xl font-black text-black tracking-tighter">Create User</h3>
+                        <p className="text-gray-400 font-medium text-xs">Add a new admin or staff member.</p>
                       </div>
                     </div>
-                    <button onClick={() => setShowCreate(false)} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+                    <button onClick={() => setShowCreate(false)} className="p-2 rounded-xl hover:bg-gray-50">
                       <X className="h-4 w-4 text-gray-400" />
                     </button>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Email Address *</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Email</Label>
                       <Input
                         type="email"
                         value={form.email}
                         onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                        placeholder="user@redcrosseth.org"
-                        className="h-10 rounded-xl bg-gray-50 text-black border-gray-200 font-bold text-sm"
-                        required
+                        placeholder="admin@ercs.org"
+                        className="h-10 rounded-xl bg-gray-50 text-black border-gray-100 font-bold text-sm"
                       />
                     </div>
-
                     <div className="space-y-1.5">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Phone Number *</Label>
+                       <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Phone</Label>
                        <PhoneNumberInput
                            countryCode={countryIso}
                            onCountryChange={(code) => {
@@ -857,17 +562,15 @@ export default function UserManagementPage() {
                            }
                        />
                     </div>
-
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Password *</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Password</Label>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
                           value={form.password}
                           onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                           placeholder="Minimum 8 characters"
-                          className="h-10 rounded-xl bg-gray-50 text-black border-gray-200 font-bold text-sm pr-10"
-                          required
+                          className="h-10 rounded-xl bg-gray-50 text-black border-gray-100 font-bold text-sm pr-10"
                         />
                         <button
                           type="button"
@@ -878,120 +581,73 @@ export default function UserManagementPage() {
                         </button>
                       </div>
                     </div>
-
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Assigned Role *</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Role</Label>
                       <select
                         value={form.role}
                         onChange={e => setForm(f => ({ ...f, role: Number(e.target.value) }))}
-                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-200 px-3 font-bold text-sm focus:ring-2 focus:ring-red-500/20"
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
-                        {allowedRoles.map(r => (
-                          <option key={r.value} value={r.value}>{r.label}</option>
-                        ))}
+                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                       </select>
                     </div>
-
-                    {/* Region Selector (Cascaded / Locked) */}
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 flex items-center justify-between">
-                        <span>Region *</span>
-                        {!adminScope.isSuper && <span className="text-[9px] font-black text-[#ED1C24] flex items-center gap-0.5"><Lock className="h-2.5 w-2.5" /> Locked by Jurisdiction</span>}
-                      </Label>
-                      {adminScope.isSuper ? (
-                        <select
-                          value={form.region}
-                          onChange={e => setForm(f => ({ 
-                            ...f, 
-                            region: Number(e.target.value), 
-                            zone: "", 
-                            woreda: "", 
-                            branch: "" 
-                          }))}
-                          className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-200 px-3 font-bold text-sm focus:ring-2 focus:ring-red-500/20"
-                        >
-                          {regions.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                        </select>
-                      ) : (
-                        <div className="flex h-10 w-full rounded-xl bg-gray-100 text-gray-700 border border-gray-200 px-3 font-bold text-sm items-center justify-between">
-                          <span>{getRegionName(adminScope.regionId)}</span>
-                          <Lock className="h-3.5 w-3.5 text-gray-400" />
-                        </div>
-                      )}
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Region</Label>
+                      <select
+                        value={form.region}
+                        onChange={e => setForm(f => ({ ...f, region: Number(e.target.value), zone: "", woreda: "" }))}
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
+                      >
+                        {REGIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
                     </div>
-
-                    {/* Zone Selector (Cascaded from Region) */}
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Zone / Sub-City</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Zone</Label>
                       <select
                         value={form.zone}
-                        onChange={e => setForm(f => ({ 
-                          ...f, 
-                          zone: e.target.value, 
-                          woreda: "", 
-                          branch: "" 
-                        }))}
-                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-200 px-3 font-bold text-sm focus:ring-2 focus:ring-red-500/20"
+                        onChange={e => setForm(f => ({ ...f, zone: e.target.value, woreda: "" }))}
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
-                        <option value="">All Zones in Region</option>
-                        {formZoneOptions.map(z => (
+                        <option value="">All Zones</option>
+                        {zones.filter(z => z.region_id === form.region).map(z => (
                           <option key={z.id} value={z.id}>{z.name}</option>
                         ))}
                       </select>
                     </div>
-
-                    {/* Woreda Selector (Cascaded from Zone) */}
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Woreda / Kebele</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Woreda</Label>
                       <select
                         value={form.woreda}
-                        onChange={e => setForm(f => ({ 
-                          ...f, 
-                          woreda: e.target.value, 
-                          branch: "" 
-                        }))}
-                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-200 px-3 font-bold text-sm focus:ring-2 focus:ring-red-500/20"
+                        onChange={e => setForm(f => ({ ...f, woreda: e.target.value }))}
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
-                        <option value="">All Woredas in Zone</option>
-                        {formWoredaOptions.map(w => (
+                        <option value="">All Woredas</option>
+                        {woredas.filter(w => w.zone_id === form.zone).map(w => (
                           <option key={w.id} value={w.id}>{w.name}</option>
                         ))}
                       </select>
                     </div>
-
-                    {/* Branch Selector (Cascaded from Region & Zone) */}
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Assigned Branch (If Applicable)</Label>
-                      <select
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Branch (If applicable)</Label>
+                      <Input
+                        type="text"
                         value={form.branch || ""}
                         onChange={e => setForm(f => ({ ...f, branch: e.target.value }))}
-                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-200 px-3 font-bold text-sm focus:ring-2 focus:ring-red-500/20"
-                      >
-                        <option value="">No Branch (Unassigned / General)</option>
-                        {formBranchOptions.map(b => (
-                          <option key={b.id} value={b.id}>
-                            {b.name} ({b.branch_type?.replace(/_/g, ' ')})
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Branch ID"
+                        className="h-10 rounded-xl bg-gray-50 text-black border-gray-100 font-bold text-sm"
+                      />
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Module Access & Capabilities</Label>
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Module Access Permissions</Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {MODULE_PERMISSIONS.filter(m => {
-                        const isSuperOnly = ["FORMS", "MEMBERSHIP_PLANS", "CMS", "SETTINGS"].includes(m.id);
-                        if (isSuperOnly) {
-                          return adminScope.isSuper && form.role === 1;
-                        }
-                        return true;
-                      }).map(m => (
-                        <div key={m.id} className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors">
-                          <input type="checkbox" defaultChecked className="rounded border-gray-300 text-red-600 focus:ring-red-500 h-3.5 w-3.5" />
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <m.icon className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                            <span className="text-[11px] font-bold text-gray-700 truncate">{m.label}</span>
+                      {MODULE_PERMISSIONS.map(m => (
+                        <div key={m.id} className="flex items-center gap-2 p-2 rounded-lg border border-gray-50 bg-gray-50/50 hover:bg-gray-50 transition-colors">
+                          <input type="checkbox" className="rounded border-gray-300 text-red-600 focus:ring-red-500" />
+                          <div className="flex items-center gap-1.5">
+                            <m.icon className="h-3 w-3 text-gray-400" />
+                            <span className="text-[10px] font-bold text-gray-600 truncate">{m.label}</span>
                           </div>
                         </div>
                       ))}
@@ -1001,119 +657,136 @@ export default function UserManagementPage() {
                   <Button
                     onClick={handleCreateUser}
                     disabled={saving}
-                    className="w-full h-11 rounded-2xl font-black text-xs uppercase tracking-widest bg-[#ED1C24] hover:bg-black text-white transition-all shadow-md shadow-[#ED1C24]/20"
+                    className="w-full h-10 rounded-xl font-black text-xs uppercase tracking-widest bg-[#ED1C24] hover:bg-black text-white transition-all"
                   >
-                    {saving ? "Creating Personnel Account..." : <><Plus className="mr-2 h-4 w-4" /> Create Personnel Account</>}
+                    {saving ? "Creating..." : <><Plus className="mr-2 h-3.5 w-3.5" /> Create User</>}
                   </Button>
                 </div>
               </motion.div>
             ) : selectedUser ? (
               <motion.div
+                key={`edit-${selectedUser.id}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-xl sticky top-6"
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
               >
-                <div className="space-y-6">
-                  {/* User Header */}
-                  <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-12 w-12 rounded-2xl bg-red-50 flex items-center justify-center text-[#ED1C24] font-black text-base shrink-0">
-                        {selectedUser.email ? selectedUser.email[0].toUpperCase() : "U"}
+                <div className="p-6 space-y-6">
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-50">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                        <User className="h-5 w-5 text-gray-500" />
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-black text-slate-900 tracking-tight truncate text-base">{selectedUser.email || "No Email"}</h3>
-                        <p className="text-xs font-bold text-gray-400 font-mono">{selectedUser.phone_number || "No Phone Number"}</p>
+                      <div>
+                        <h3 className="text-lg font-black text-black tracking-tighter">{selectedUser.email || selectedUser.phone_number}</h3>
+                        <p className="text-gray-400 font-medium text-[10px]">User ID: {selectedUser.id.slice(0, 8)}...</p>
                       </div>
                     </div>
-                    <button onClick={() => setSelectedUser(null)} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400">
-                      <X className="h-4 w-4" />
+                    <button onClick={() => setSelectedUser(null)} className="p-2 rounded-xl hover:bg-gray-50">
+                      <X className="h-4 w-4 text-gray-400" />
                     </button>
                   </div>
 
-                  {/* Geographic Jurisdiction Summary */}
-                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Assigned Jurisdiction</span>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                      <div>
-                        <span className="text-[9px] text-gray-400 font-bold uppercase block">Region</span>
-                        <span className="font-extrabold text-slate-900">{getRegionName(selectedUser.region_id)}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-gray-400 font-bold uppercase block">Zone</span>
-                        <span className="font-extrabold text-slate-900">{selectedUser.zone_id ? getZoneName(selectedUser.zone_id) : "All Zones"}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-gray-400 font-bold uppercase block">Woreda</span>
-                        <span className="font-extrabold text-slate-900">{selectedUser.woreda_id ? getWoredaName(selectedUser.woreda_id) : "All Woredas"}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-gray-400 font-bold uppercase block">Branch</span>
-                        <span className="font-extrabold text-slate-900">{selectedUser.branch_id ? getBranchName(selectedUser.branch_id) : "General"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Edit fields */}
-                  <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Role Authority</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Role</Label>
                       <select
                         value={editRole}
                         onChange={e => setEditRole(Number(e.target.value))}
-                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-200 px-3 font-bold text-sm focus:ring-2 focus:ring-red-500/20"
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
-                        {allowedRoles.map(r => (
-                          <option key={r.value} value={r.value}>{r.label}</option>
-                        ))}
+                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                       </select>
                     </div>
-
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Account Status</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Status</Label>
                       <select
                         value={editStatus}
                         onChange={e => setEditStatus(e.target.value)}
-                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-200 px-3 font-bold text-sm focus:ring-2 focus:ring-red-500/20"
+                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-100 px-3 font-bold text-sm focus:ring-1 focus:ring-red-500/20 appearance-none"
                       >
                         <option value="ACTIVE">Active</option>
                         <option value="SUSPENDED">Suspended</option>
                         <option value="INACTIVE">Inactive</option>
                       </select>
                     </div>
-
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Reassign Branch (Cascaded for {getRegionName(selectedUser.region_id)})</Label>
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Region</Label>
                       <select
-                        value={editBranch}
-                        onChange={e => setEditBranch(e.target.value)}
-                        className="flex h-10 w-full rounded-xl bg-gray-50 text-black border border-gray-200 px-3 font-bold text-sm focus:ring-2 focus:ring-red-500/20"
+                        value={selectedUser.region_id}
+                        disabled
+                        className="flex h-10 w-full rounded-xl bg-gray-200 text-gray-500 border border-gray-100 px-3 font-bold text-sm appearance-none"
                       >
-                        <option value="">No Branch (Unassigned / General)</option>
-                        {branches
-                          .filter(b => !selectedUser.region_id || Number(b.region_id) === Number(selectedUser.region_id))
-                          .map(b => (
-                            <option key={b.id} value={b.id}>
-                              {b.name} ({b.branch_type?.replace(/_/g, ' ')})
-                            </option>
-                          ))}
+                        {REGIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Zone</Label>
+                      <select
+                        value={selectedUser.zone_id}
+                        disabled
+                        className="flex h-10 w-full rounded-xl bg-gray-200 text-gray-500 border border-gray-100 px-3 font-bold text-sm appearance-none"
+                      >
+                        <option value="">All Zones</option>
+                        {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
                       </select>
                     </div>
                   </div>
 
-                  <div className="flex gap-3 pt-2">
+                  {/* Permissions section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Module Permissions</Label>
+                      <span className="text-[8px] font-black text-red-500 bg-red-50 px-2 py-0.5 rounded uppercase">Customizable Access</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {MODULE_PERMISSIONS.map(m => (
+                        <div key={m.id} className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-50 bg-gray-50/30 hover:bg-white hover:border-gray-100 hover:shadow-sm transition-all group">
+                          <input 
+                            type="checkbox" 
+                            checked={[1,2].includes(editRole)} // Mock logic for now
+                            className="rounded border-gray-300 text-red-600 focus:ring-red-500" 
+                          />
+                          <div className="flex items-center gap-2 min-w-0">
+                            <m.icon className="h-3.5 w-3.5 text-gray-400 group-hover:text-red-500 transition-colors shrink-0" />
+                            <span className="text-[10px] font-bold text-gray-600 truncate">{m.label}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Permissions info box */}
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">Role Permissions</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {editRole === 1 && ["USERS_MANAGE","MEMBERS_WRITE","MEMBERS_READ","FINANCE_MANAGE","MISSIONS_MANAGE"].map(p => (
+                        <span key={p} className="px-2 py-0.5 bg-red-50 text-red-600 text-[8px] font-black uppercase tracking-wider rounded-md">{p}</span>
+                      ))}
+                      {editRole === 2 && ["MEMBERS_READ","MISSIONS_MANAGE"].map(p => (
+                        <span key={p} className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-wider rounded-md">{p}</span>
+                      ))}
+                      {editRole === 7 && ["MEMBERS_READ","MEMBERS_WRITE"].map(p => (
+                        <span key={p} className="px-2 py-0.5 bg-green-50 text-green-600 text-[8px] font-black uppercase tracking-wider rounded-md">{p}</span>
+                      ))}
+                      {[3,4,5,6].includes(editRole) && (
+                        <span className="px-2 py-0.5 bg-white border border-gray-100 text-gray-500 text-[8px] font-black uppercase tracking-wider rounded-md">Portal Access Only</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
                     <Button
                       onClick={handleUpdateUser}
                       disabled={saving}
-                      className="flex-1 h-11 rounded-xl font-black text-xs uppercase tracking-widest bg-black hover:bg-[#ED1C24] text-white transition-all shadow-md"
+                      className="flex-1 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest bg-black hover:bg-[#ED1C24] text-white transition-all"
                     >
-                      {saving ? "Saving Changes..." : <><Save className="mr-2 h-3.5 w-3.5" /> Save Changes</>}
+                      {saving ? "Saving..." : <><Save className="mr-2 h-3.5 w-3.5" /> Save</>}
                     </Button>
                     <Button
                       onClick={e => handleDeleteUser(e as any, selectedUser.id)}
                       variant="outline"
-                      className="h-11 rounded-xl px-4 font-black text-xs uppercase tracking-widest border-red-200 text-red-600 hover:bg-red-50"
-                      title="Delete User"
+                      className="h-10 rounded-xl px-4 font-black text-[10px] uppercase tracking-widest border-red-100 text-red-500 hover:bg-red-50"
                     >
                       <UserX className="h-4 w-4" />
                     </Button>
@@ -1124,16 +797,14 @@ export default function UserManagementPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="h-full min-h-[350px] bg-white rounded-3xl border border-gray-200 border-dashed flex items-center justify-center p-8 text-center"
+                className="h-full min-h-[300px] bg-white rounded-2xl border border-gray-100 border-dashed flex items-center justify-center p-6"
               >
-                <div className="max-w-sm space-y-3">
-                  <div className="h-14 w-14 bg-red-50 rounded-2xl flex items-center justify-center text-[#ED1C24] mx-auto">
-                    <ShieldCheck className="h-7 w-7" />
+                <div className="text-center max-w-sm">
+                  <div className="h-12 w-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-300 mx-auto mb-4">
+                    <ShieldCheck className="h-6 w-6" />
                   </div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight">Personnel Directory</h3>
-                  <p className="text-gray-400 font-medium text-xs">
-                    Select a staff member, regional admin, or volunteer from the left list to review permissions and jurisdiction, or click <strong className="text-slate-700">+ Create User</strong>.
-                  </p>
+                  <h3 className="text-lg font-black text-black tracking-tighter mb-1">Select a User</h3>
+                  <p className="text-gray-400 font-bold text-xs">Choose a user from the list to manage their role and permissions, or create a new one.</p>
                 </div>
               </motion.div>
             )}

@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, Reorder, useDragControls } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -26,7 +24,6 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import type { Cell, CellValue } from "exceljs";
-import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
 
 type FormField = {
   id: string;
@@ -41,7 +38,6 @@ type FormField = {
   nullableCount?: number;
   duplicateCount?: number;
   sampleValues?: string[];
-  audience?: "ALL" | "INDIVIDUAL" | "CORPORATE";
 };
 
 type ExcelCellValue = string | number | boolean | null;
@@ -92,7 +88,6 @@ const buildOptions = (values: string[]) => {
 
 const FieldItem = ({ field, updateField, removeField, isCoreField }: { field: FormField, updateField: any, removeField: any, isCoreField: any }) => {
   const dragControls = useDragControls();
-  const currentAudience = field.audience || "ALL";
 
   return (
     <Reorder.Item
@@ -113,8 +108,7 @@ const FieldItem = ({ field, updateField, removeField, isCoreField }: { field: Fo
         <GripVertical className="h-5 w-5" />
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Label */}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="space-y-1.5">
           <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Label</Label>
           <Input 
@@ -133,11 +127,16 @@ const FieldItem = ({ field, updateField, removeField, isCoreField }: { field: Fo
               )}>
                 Nulls: {field.nullableCount || 0}
               </span>
+              <span className={cn(
+                "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest",
+                field.duplicateCount === 0 ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"
+              )}>
+                Duplicates: {field.duplicateCount || 0}
+              </span>
             </div>
           )}
         </div>
 
-        {/* Input Type */}
         <div className="space-y-1.5">
           <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Input Type</Label>
           <select 
@@ -154,30 +153,6 @@ const FieldItem = ({ field, updateField, removeField, isCoreField }: { field: Fo
           </select>
         </div>
 
-        {/* Audience / Applicability */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Target Audience</Label>
-            <span className={cn(
-              "text-[8px] font-black uppercase px-1.5 py-0.5 rounded",
-              currentAudience === "ALL" ? "bg-gray-100 text-gray-600" :
-              currentAudience === "INDIVIDUAL" ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"
-            )}>
-              {currentAudience}
-            </span>
-          </div>
-          <select 
-            value={currentAudience}
-            onChange={(e) => updateField(field.id, { audience: e.target.value as any })}
-            className="flex h-11 w-full rounded-xl bg-gray-50 border-none px-3 py-2 text-xs font-black text-gray-900 focus:ring-1 focus:ring-red-500/10 appearance-none transition-all cursor-pointer"
-          >
-            <option value="ALL">Both (Individual & Corporate)</option>
-            <option value="INDIVIDUAL">Individual Only</option>
-            <option value="CORPORATE">Corporate Only</option>
-          </select>
-        </div>
-
-        {/* Placeholder */}
         <div className="space-y-1.5">
           <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Placeholder</Label>
           <Input 
@@ -187,44 +162,41 @@ const FieldItem = ({ field, updateField, removeField, isCoreField }: { field: Fo
           />
         </div>
 
-        {/* Switches */}
-        <div className="flex items-center gap-4 pt-4">
-          <div className="flex flex-col items-center gap-1.5">
-            <Label className="text-[9px] font-black uppercase tracking-widest text-black">Required</Label>
-            <div 
-              onClick={() => updateField(field.id, { required: !field.required })}
-              className={cn(
-                "w-10 h-5 rounded-full transition-all cursor-pointer relative",
-                field.required ? "bg-[#ED1C24]" : "bg-gray-200"
-              )}
-            >
-              <div className={cn(
-                "absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all",
-                field.required ? "left-5" : "left-0.5"
-              )} />
-            </div>
+        <div className="flex flex-col justify-center gap-2">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Required</Label>
+          <div 
+            onClick={() => updateField(field.id, { required: !field.required })}
+            className={cn(
+              "w-12 h-6 rounded-full transition-all cursor-pointer relative",
+              field.required ? "bg-[#ED1C24]" : "bg-gray-200"
+            )}
+          >
+            <div className={cn(
+              "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+              field.required ? "left-7" : "left-1"
+            )} />
           </div>
+        </div>
 
-          <div className="flex flex-col items-center gap-1.5">
-            <Label className="text-[9px] font-black uppercase tracking-widest text-black">Unique</Label>
-            <div 
-              onClick={() => updateField(field.id, { unique: !field.unique })}
-              className={cn(
-                "w-10 h-5 rounded-full transition-all cursor-pointer relative",
-                field.unique ? "bg-blue-600" : "bg-gray-200"
-              )}
-            >
-              <div className={cn(
-                "absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all",
-                field.unique ? "left-5" : "left-0.5"
-              )} />
-            </div>
+        <div className="flex flex-col justify-center gap-2">
+          <Label className="text-[10px] font-black uppercase tracking-widest text-black ml-1">Unique</Label>
+          <div 
+            onClick={() => updateField(field.id, { unique: !field.unique })}
+            className={cn(
+              "w-12 h-6 rounded-full transition-all cursor-pointer relative",
+              field.unique ? "bg-blue-600" : "bg-gray-200"
+            )}
+          >
+            <div className={cn(
+              "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+              field.unique ? "left-7" : "left-1"
+            )} />
           </div>
         </div>
 
         {field.type === 'select' && (
-          <div className="md:col-span-5 mt-6 p-6 bg-gray-50/80 rounded-2xl border border-gray-100 space-y-4 shadow-inner">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+          <div className="md:col-span-4 mt-8 p-8 bg-gray-50/80 rounded-[32px] border border-gray-100 space-y-6 shadow-inner">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                   <div className="space-y-1 flex-1">
                      <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Data Source Mode</Label>
                      <div className="flex gap-4 mt-1">
@@ -321,19 +293,15 @@ const FieldItem = ({ field, updateField, removeField, isCoreField }: { field: Fo
 };
 
 const DEFAULT_VOLUNTEER_FIELDS: FormField[] = [
-  { id: "phone", label: "Phone Number", type: "tel", required: true, unique: true, placeholder: "Enter phone number", audience: "ALL" },
-  { id: "firstName", label: "First Name", type: "text", required: true, unique: false, placeholder: "e.g. Sara", audience: "ALL" },
-  { id: "fatherName", label: "Father Name", type: "text", required: true, unique: false, placeholder: "e.g. Belay", audience: "INDIVIDUAL" },
-  { id: "grandfatherName", label: "Grandfather Name", type: "text", required: true, unique: false, placeholder: "e.g. Tadesse", audience: "INDIVIDUAL" },
-  { id: "gender", label: "Gender", type: "select", required: true, unique: false, placeholder: "Select Gender", dataSource: "GENDER", audience: "INDIVIDUAL" },
-  { id: "country", label: "Country", type: "select", required: true, unique: false, placeholder: "Select Country", dataSource: "COUNTRIES", audience: "ALL" },
-  { id: "region", label: "Region", type: "select", required: true, unique: false, placeholder: "Select Region", dataSource: "REGIONS", audience: "ALL" },
-  { id: "zone", label: "Zone", type: "text", required: true, unique: false, placeholder: "Enter Zone", audience: "ALL" },
-  { id: "woreda", label: "Woreda", type: "text", required: false, unique: false, placeholder: "Enter Woreda", audience: "ALL" },
-  { id: "kebele", label: "Kebele/House No.", type: "text", required: false, unique: false, placeholder: "Enter Kebele/House No.", audience: "ALL" },
-  { id: "dateOfBirth", label: "Date of Birth (Eth)", type: "date", required: false, unique: false, placeholder: "DD/MM/YYYY (Ethiopian Calendar)", audience: "INDIVIDUAL" },
-  { id: "email", label: "Email Address", type: "email", required: false, unique: false, placeholder: "sara@example.com", audience: "ALL" },
-  { id: "occupation", label: "Occupation", type: "select", required: false, unique: false, placeholder: "Select Occupation", dataSource: "MANUAL", audience: "INDIVIDUAL", options: [
+  { id: "country", label: "Country", type: "select", required: true, unique: false, placeholder: "Select Country", dataSource: "COUNTRIES" },
+  { id: "region", label: "Region", type: "select", required: true, unique: false, placeholder: "Select Region", dataSource: "REGIONS" },
+  { id: "zone", label: "Zone", type: "text", required: true, unique: false, placeholder: "Enter Zone" },
+  { id: "woreda", label: "Woreda", type: "text", required: true, unique: false, placeholder: "Enter Woreda" },
+  { id: "kebele", label: "Kebele/House No.", type: "text", required: true, unique: false, placeholder: "Enter Kebele/House No." },
+  { id: "gender", label: "Gender", type: "select", required: true, unique: false, placeholder: "Select Gender", dataSource: "GENDER" },
+  { id: "dateOfBirth", label: "Date of Birth (Eth)", type: "date", required: true, unique: false, placeholder: "DD/MM/YYYY (Ethiopian Calendar)" },
+  { id: "email", label: "Email Address", type: "email", required: true, unique: false, placeholder: "sara@example.com" },
+  { id: "occupation", label: "Occupation", type: "select", required: true, unique: false, placeholder: "Select Occupation", dataSource: "MANUAL", options: [
     { label: "Farmer", value: "Farmer" },
     { label: "Business Person", value: "Business Person" },
     { label: "Civil Servant", value: "Civil Servant" },
@@ -346,14 +314,14 @@ const DEFAULT_VOLUNTEER_FIELDS: FormField[] = [
     { label: "Diplomat", value: "Diplomat" },
     { label: "Others", value: "Others" }
   ]},
-  { id: "organizationName", label: "Organization Name", type: "text", required: false, unique: false, placeholder: "Enter Organization Name", audience: "CORPORATE" },
-  { id: "organizationType", label: "Organization Type", type: "select", required: false, unique: false, placeholder: "Select Organization Type", dataSource: "MANUAL", audience: "CORPORATE", options: [
+  { id: "organizationName", label: "Organization Name", type: "text", required: false, unique: false, placeholder: "Enter Organization Name" },
+  { id: "organizationType", label: "Organization Type", type: "select", required: false, unique: false, placeholder: "Select Organization Type", dataSource: "MANUAL", options: [
     { label: "Government", value: "Government" },
     { label: "Ngo", value: "Ngo" },
     { label: "Private", value: "Private" },
     { label: "Association", value: "Association" }
   ]},
-  { id: "educationLevel", label: "Education Level", type: "select", required: false, unique: false, placeholder: "Select Education Level", dataSource: "MANUAL", audience: "INDIVIDUAL", options: [
+  { id: "educationLevel", label: "Education Level", type: "select", required: true, unique: false, placeholder: "Select Education Level", dataSource: "MANUAL", options: [
     { label: "Below Primary School", value: "Below Primary School" },
     { label: "Primary School Completed", value: "Primary School Completed" },
     { label: "High School Completed", value: "High School Completed" },
@@ -361,71 +329,46 @@ const DEFAULT_VOLUNTEER_FIELDS: FormField[] = [
     { label: "Masters", value: "Masters" },
     { label: "PHD", value: "PHD" }
   ]},
-  { id: "educationalBackground", label: "Educational Background", type: "text", required: false, unique: false, placeholder: "e.g. B.Sc in Public Health, AAU", audience: "INDIVIDUAL" },
-  { id: "area", label: "Area", type: "select", required: false, unique: false, placeholder: "Select Area", dataSource: "MANUAL", audience: "ALL", options: [
+  { id: "area", label: "Area", type: "select", required: true, unique: false, placeholder: "Select Area", dataSource: "MANUAL", options: [
     { label: "URBAN", value: "URBAN" },
     { label: "RURAL", value: "RURAL" }
   ]},
-  { id: "languages", label: "Languages", type: "text", required: false, unique: false, placeholder: "e.g. Amharic, English", audience: "ALL" },
-  { id: "general", label: "General Classification", type: "select", required: false, unique: false, placeholder: "Select", dataSource: "MANUAL", audience: "ALL", options: [
+  { id: "languages", label: "Languages", type: "text", required: false, unique: false, placeholder: "e.g. Amharic, English" },
+  { id: "general", label: "General Classification", type: "select", required: true, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
     { label: "YES", value: "YES" },
     { label: "NO", value: "NO" }
   ]},
-  { id: "youth", label: "Youth Classification", type: "select", required: false, unique: false, placeholder: "Select", dataSource: "MANUAL", audience: "ALL", options: [
+  { id: "youth", label: "Youth Classification", type: "select", required: true, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
     { label: "YES", value: "YES" },
     { label: "NO", value: "NO" }
   ]},
-  { id: "professional", label: "Professional Classification", type: "select", required: false, unique: false, placeholder: "Select", dataSource: "MANUAL", audience: "ALL", options: [
+  { id: "professional", label: "Professional Classification", type: "select", required: true, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
     { label: "YES", value: "YES" },
     { label: "NO", value: "NO" }
   ]},
-  { id: "leadership", label: "Leadership Classification", type: "select", required: false, unique: false, placeholder: "Select", dataSource: "MANUAL", audience: "ALL", options: [
+  { id: "leadership", label: "Leadership Classification", type: "select", required: true, unique: false, placeholder: "Select", dataSource: "MANUAL", options: [
     { label: "YES", value: "YES" },
     { label: "NO", value: "NO" }
-  ]}
+  ]},
+  { id: "firstName", label: "First Name", type: "text", required: true, unique: false, placeholder: "e.g. Sara" },
+  { id: "fatherName", label: "Father Name", type: "text", required: true, unique: false, placeholder: "e.g. Belay" },
+  { id: "grandfatherName", label: "Grandfather Name", type: "text", required: true, unique: false, placeholder: "e.g. Tadesse" },
+  { id: "phone", label: "Phone Number", type: "tel", required: true, unique: true, placeholder: "Enter phone number" }
 ];
 
 const DEFAULT_MEMBER_FIELDS: FormField[] = [
-  { id: "phone", label: "Phone Number", type: "tel", required: true, unique: true, placeholder: "Enter phone number", audience: "ALL" },
-  { id: "firstName", label: "First Name", type: "text", required: true, unique: false, placeholder: "e.g. Abebe", audience: "ALL" },
-  { id: "fatherName", label: "Father Name", type: "text", required: true, unique: false, placeholder: "e.g. Kebede", audience: "INDIVIDUAL" },
-  { id: "grandfatherName", label: "Grandfather Name", type: "text", required: true, unique: false, placeholder: "e.g. Tadesse", audience: "INDIVIDUAL" },
-  { id: "gender", label: "Gender", type: "select", required: true, unique: false, placeholder: "Select Gender", dataSource: "GENDER", audience: "INDIVIDUAL" },
-  { id: "country", label: "Country", type: "select", required: true, unique: false, placeholder: "Select Country", dataSource: "COUNTRIES", audience: "ALL" },
-  { id: "region", label: "Region", type: "select", required: true, unique: false, placeholder: "Select Region", dataSource: "REGIONS", audience: "ALL" },
-  { id: "zone", label: "Zone", type: "text", required: true, unique: false, placeholder: "Enter Zone", audience: "ALL" },
-  { id: "woreda", label: "Woreda", type: "text", required: false, unique: false, placeholder: "Enter Woreda", audience: "ALL" },
-  { id: "kebele", label: "Kebele/House No.", type: "text", required: false, unique: false, placeholder: "Enter Kebele/House No.", audience: "ALL" },
-  { id: "dateOfBirth", label: "Date of Birth (Eth)", type: "date", required: false, unique: false, placeholder: "DD/MM/YYYY (Ethiopian Calendar)", audience: "INDIVIDUAL" },
-  { id: "email", label: "Email Address", type: "email", required: false, unique: false, placeholder: "abebe@example.com", audience: "ALL" },
-  { id: "occupation", label: "Occupation", type: "select", required: false, unique: false, placeholder: "Select Occupation", dataSource: "MANUAL", audience: "INDIVIDUAL", options: [
-    { label: "Farmer", value: "Farmer" },
-    { label: "Business Person", value: "Business Person" },
-    { label: "Civil Servant", value: "Civil Servant" },
-    { label: "House Wife", value: "House Wife" },
-    { label: "Military", value: "Military" },
-    { label: "NGO", value: "NGO" },
-    { label: "Self Employed", value: "Self Employed" },
-    { label: "Student", value: "Student" },
-    { label: "Police", value: "Police" },
-    { label: "Diplomat", value: "Diplomat" },
-    { label: "Others", value: "Others" }
-  ]},
-  { id: "organizationName", label: "Organization Name", type: "text", required: false, unique: false, placeholder: "Enter Organization Name", audience: "CORPORATE" },
-  { id: "educationLevel", label: "Education Level", type: "select", required: false, unique: false, placeholder: "Select Education Level", dataSource: "MANUAL", audience: "INDIVIDUAL", options: [
-    { label: "Below Primary School", value: "Below Primary School" },
-    { label: "Primary School Completed", value: "Primary School Completed" },
-    { label: "High School Completed", value: "High School Completed" },
-    { label: "Degree", value: "Degree" },
-    { label: "Masters", value: "Masters" },
-    { label: "PHD", value: "PHD" }
-  ]},
-  { id: "educationalBackground", label: "Educational Background", type: "text", required: false, unique: false, placeholder: "e.g. B.Sc in Public Health, AAU", audience: "INDIVIDUAL" },
-  { id: "area", label: "Area", type: "select", required: false, unique: false, placeholder: "Select Area", dataSource: "MANUAL", audience: "ALL", options: [
-    { label: "URBAN", value: "URBAN" },
-    { label: "RURAL", value: "RURAL" }
-  ]},
-  { id: "languages", label: "Languages", type: "text", required: false, unique: false, placeholder: "e.g. Amharic, English", audience: "ALL" }
+  { id: "country", label: "Country", type: "select", required: true, unique: false, placeholder: "Select Country", dataSource: "COUNTRIES" },
+  { id: "region", label: "Region", type: "select", required: true, unique: false, placeholder: "Select Region", dataSource: "REGIONS" },
+  { id: "zone", label: "Zone", type: "text", required: true, unique: false, placeholder: "Enter Zone" },
+  { id: "woreda", label: "Woreda", type: "text", required: true, unique: false, placeholder: "Enter Woreda" },
+  { id: "kebele", label: "Kebele/House No.", type: "text", required: true, unique: false, placeholder: "Enter Kebele/House No." },
+  { id: "gender", label: "Gender", type: "select", required: true, unique: false, placeholder: "Select Gender", dataSource: "GENDER" },
+  { id: "dateOfBirth", label: "Date of Birth (Eth)", type: "date", required: true, unique: false, placeholder: "DD/MM/YYYY (Ethiopian Calendar)" },
+  { id: "email", label: "Email Address", type: "email", required: true, unique: false, placeholder: "abebe@example.com" },
+  { id: "firstName", label: "First Name", type: "text", required: true, unique: false, placeholder: "e.g. Abebe" },
+  { id: "fatherName", label: "Father Name", type: "text", required: true, unique: false, placeholder: "e.g. Kebede" },
+  { id: "grandfatherName", label: "Grandfather Name", type: "text", required: true, unique: false, placeholder: "e.g. Tadesse" },
+  { id: "phone", label: "Phone Number", type: "tel", required: true, unique: true, placeholder: "Enter phone number" }
 ];
 
 export default function FormConfigurationPage() {
@@ -435,7 +378,6 @@ export default function FormConfigurationPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [importingExcel, setImportingExcel] = useState(false);
-  const [previewAudience, setPreviewAudience] = useState<"ALL" | "INDIVIDUAL" | "CORPORATE">("ALL");
 
   useEffect(() => {
     fetchConfig();
@@ -467,8 +409,7 @@ export default function FormConfigurationPage() {
       type: "text", 
       required: false, 
       unique: false,
-      placeholder: "Enter value...",
-      audience: "ALL"
+      placeholder: "Enter value..." 
     }]);
   };
 
@@ -478,7 +419,10 @@ export default function FormConfigurationPage() {
   };
 
   const removeField = (id: string) => {
-    if (isCoreField(id)) return;
+    if (isCoreField(id)) {
+      toast.error("Core fields cannot be removed.");
+      return;
+    }
     setFields(fields.filter(f => f.id !== id));
   };
 
@@ -486,63 +430,81 @@ export default function FormConfigurationPage() {
     setFields(fields.map(f => f.id === id ? { ...f, ...updates } : f));
   };
 
-  const importFieldsFromExcel = async (file?: File) => {
+  const importFieldsFromExcel = async (file?: File | null) => {
     if (!file) return;
     setImportingExcel(true);
+
     try {
       const ExcelJS = await import("exceljs");
       const workbook = new ExcelJS.Workbook();
-      const buffer = await file.arrayBuffer();
-      await workbook.xlsx.load(buffer);
+      await workbook.xlsx.load(await file.arrayBuffer());
 
-      const worksheet = workbook.worksheets[0];
+      const worksheet = workbook.worksheets.find(sheet => sheet.actualRowCount > 0);
       if (!worksheet) {
-        toast.error("No worksheets found in the Excel file");
+        toast.error("No worksheet data found");
         return;
       }
 
-      const rows: any[][] = [];
-      worksheet.eachRow((row) => {
-        const rowValues: any[] = [];
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-          rowValues[colNumber - 1] = cell.value;
+      let headerRowNumber = 1;
+      let headers: string[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (headers.length > 0) return;
+        const values = row.values as CellValue[];
+        const candidateHeaders = values.slice(1).map((value, index) => {
+          const raw = value === undefined || value === null ? "" : String(value).trim();
+          return raw || `Column ${index + 1}`;
         });
-        rows.push(rowValues);
-      });
-
-      const headerRowIndex = rows.findIndex(row => row.some(cell => typeof cell === "string" && cell.trim() !== ""));
-      if (headerRowIndex === -1) {
-        toast.error("No valid header row found");
-        return;
-      }
-
-      const headerRowNumber = headerRowIndex + 1;
-      const headerRow = rows[headerRowIndex];
-      const rawHeaders = headerRow.map((cell, idx) => {
-        if (typeof cell === "string" && cell.trim() !== "") return cell.trim();
-        return `Column ${idx + 1}`;
+        if (candidateHeaders.some(Boolean)) {
+          headerRowNumber = rowNumber;
+          headers = candidateHeaders;
+        }
       });
 
       const seenHeaders = new Map<string, number>();
-      const uniqueHeaders = rawHeaders.map(header => {
-        const base = header.trim();
+      const uniqueHeaders = headers.map((header, index) => {
+        const base = header || `Column ${index + 1}`;
         const seen = seenHeaders.get(base) || 0;
         seenHeaders.set(base, seen + 1);
         return seen === 0 ? base : `${base} ${seen + 1}`;
       });
 
+      const columnValues = uniqueHeaders.map(() => [] as ExcelCellValue[]);
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber <= headerRowNumber) return;
+        uniqueHeaders.forEach((_, index) => {
+          columnValues[index].push(readExcelCell(row.getCell(index + 1)));
+        });
+      });
+
       const generatedFields = uniqueHeaders.map((header, index) => {
-        const idBase = header.toLowerCase().replace(/\s+/g, '_');
+        const rawValues = columnValues[index] || [];
+        const filledValues = rawValues
+          .filter((value): value is string | number | boolean => value !== null && String(value).trim() !== "")
+          .map(value => String(value).trim());
+        const nullableCount = rawValues.length - filledValues.length;
+        const valueCounts = filledValues.reduce<Record<string, number>>((acc, value) => {
+          const key = value.toLowerCase();
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        const duplicateCount = Object.values(valueCounts).reduce((total, count) => total + Math.max(count - 1, 0), 0);
+        const inferredType = inferFieldType(header, filledValues);
+        const idBase = normalizeFieldId(header);
         const id = fields.some(field => field.id === idBase) ? `${idBase}_${Date.now()}_${index}` : idBase;
 
         return {
           id,
           label: header,
-          type: "text",
-          required: false,
-          unique: false,
-          placeholder: `Enter ${header}`,
-          audience: "ALL"
+          type: inferredType,
+          required: nullableCount === 0 && rawValues.length > 0,
+          unique: filledValues.length > 0 && duplicateCount === 0,
+          placeholder: `Enter ${header.toLowerCase()}`,
+          options: inferredType === "select" ? buildOptions(filledValues) : undefined,
+          dataSource: inferredType === "select" ? "MANUAL" : undefined,
+          sourceColumn: header,
+          nullableCount,
+          duplicateCount,
+          sampleValues: Array.from(new Set(filledValues)).slice(0, 5),
         } satisfies FormField;
       });
 
@@ -574,15 +536,8 @@ export default function FormConfigurationPage() {
     }
   };
 
-  const filteredPreviewFields = fields.filter(field => {
-    if (previewAudience === "ALL") return true;
-    const aud = field.audience || "ALL";
-    return aud === "ALL" || aud === previewAudience;
-  });
-
   return (
-    <SuperAdminGuard>
-      <div className="space-y-6">
+    <div className="space-y-6">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-1">
@@ -590,7 +545,7 @@ export default function FormConfigurationPage() {
             <Settings2 className="h-3.5 w-3.5" /> Portal Configuration
           </div>
           <h1 className="text-4xl font-black text-black tracking-tighter">Form Designer</h1>
-          <p className="text-gray-500 font-medium text-base">Customize dynamic registration fields for Individual and Corporate members.</p>
+          <p className="text-gray-500 font-medium text-base">Customize the registration flow for volunteers and members.</p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -635,10 +590,7 @@ export default function FormConfigurationPage() {
         <div className="space-y-4">
           <div className="bg-white rounded-[32px] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
             <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-              <div className="flex items-center gap-3">
-                <h3 className="font-black text-black uppercase tracking-widest text-xs">Form Fields ({fields.length})</h3>
-                <span className="text-[10px] font-bold text-gray-400">Drag to reorder • Configure audience per field</span>
-              </div>
+              <h3 className="font-black text-black uppercase tracking-widest text-xs">Form Fields</h3>
               <Button onClick={addField} size="sm" className="bg-[#ED1C24] hover:bg-black rounded-xl h-9 px-4 text-xs font-black">
                 <Plus className="h-3.5 w-3.5 mr-1" /> Add Field
               </Button>
@@ -680,84 +632,34 @@ export default function FormConfigurationPage() {
           <div className="bg-gray-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden h-fit sticky top-24">
             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-[60px] rounded-full pointer-events-none" />
             
-            <div className="relative z-10 space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Layout className="h-4 w-4 text-[#ED1C24]" />
-                  <h3 className="font-black text-xs uppercase tracking-[0.2em] text-[#ED1C24]">Real-time Preview</h3>
-                </div>
-              </div>
-
-              {/* Preview Audience Switcher */}
-              <div className="grid grid-cols-3 gap-1 bg-white/10 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setPreviewAudience("ALL")}
-                  className={cn(
-                    "py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
-                    previewAudience === "ALL" ? "bg-white text-black shadow-sm" : "text-white/60 hover:text-white"
-                  )}
-                >
-                  All Fields
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewAudience("INDIVIDUAL")}
-                  className={cn(
-                    "py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
-                    previewAudience === "INDIVIDUAL" ? "bg-[#ED1C24] text-white shadow-sm" : "text-white/60 hover:text-white"
-                  )}
-                >
-                  Individual
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewAudience("CORPORATE")}
-                  className={cn(
-                    "py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all",
-                    previewAudience === "CORPORATE" ? "bg-purple-600 text-white shadow-sm" : "text-white/60 hover:text-white"
-                  )}
-                >
-                  Corporate
-                </button>
+            <div className="relative z-10 space-y-8">
+              <div className="flex items-center gap-3">
+                <Layout className="h-5 w-5 text-[#ED1C24]" />
+                <h3 className="font-black text-xs uppercase tracking-[0.2em] text-[#ED1C24]">Real-time Preview</h3>
               </div>
               
-              <div className="space-y-4">
-                <div className="space-y-0.5">
-                    <h4 className="text-xl font-black tracking-tighter">
-                      {previewAudience === "CORPORATE" ? "Corporate Registration" : 
-                       previewAudience === "INDIVIDUAL" ? "Individual Registration" : "Full Form View"}
-                    </h4>
-                    <p className="text-gray-400 text-xs font-medium">
-                      Showing {filteredPreviewFields.length} active fields for {previewAudience.toLowerCase()}.
-                    </p>
+              <div className="space-y-6">
+                <div className="space-y-1">
+                    <h4 className="text-2xl font-black tracking-tighter">Registration Page</h4>
+                    <p className="text-gray-400 text-sm font-medium">This is how the {formType.toLowerCase()} will see it.</p>
                 </div>
                 
-                <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
-                  {filteredPreviewFields.map(field => (
-                    <div key={`prev_${field.id}`} className="space-y-1">
+                <div className="space-y-4">
+                  {fields.map(field => (
+                    <div key={`prev_${field.id}`} className="space-y-2">
                         <div className="flex justify-between items-center px-1">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1.5">
-                              {field.id === "name" && previewAudience === "CORPORATE" ? "Organization Name" : 
-                               field.id === "phone" && previewAudience === "CORPORATE" ? "Organization Mobile" : field.label}
-                              {field.audience && field.audience !== "ALL" && (
-                                <span className="text-[7px] px-1 py-0.2 rounded bg-white/10 text-white/70">
-                                  {field.audience}
-                                </span>
-                              )}
-                            </span>
+                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">{field.label}</span>
                             {field.required && <span className="text-[8px] font-bold text-red-500">REQUIRED</span>}
                         </div>
-                        <div className="h-9 w-full bg-white/5 border border-white/10 rounded-xl px-3 flex items-center text-xs text-white/40 font-medium overflow-hidden">
-                            {field.id === "name" && previewAudience === "CORPORATE" ? "e.g. Commercial Bank of Ethiopia" :
-                             field.id === "phone" && previewAudience === "CORPORATE" ? "0911..." : field.placeholder}
+                        <div className="h-10 w-full bg-white/5 border border-white/10 rounded-xl px-4 flex items-center text-xs text-white/30 font-bold overflow-hidden">
+                            {field.placeholder}
                         </div>
                     </div>
                   ))}
                   
-                  <div className="pt-2">
-                    <div className="h-11 w-full bg-[#ED1C24] rounded-xl flex items-center justify-center font-black text-xs text-white shadow-lg shadow-red-500/20">
-                      Sign Up & Continue <ChevronRight className="h-4 w-4 ml-1" />
+                  <div className="pt-4">
+                    <div className="h-12 w-full bg-[#ED1C24] rounded-xl flex items-center justify-center font-black text-sm text-white shadow-lg shadow-red-500/20">
+                      Sign Up <ChevronRight className="h-4 w-4 ml-1" />
                     </div>
                   </div>
                 </div>
@@ -767,6 +669,5 @@ export default function FormConfigurationPage() {
         </div>
       </div>
     </div>
-    </SuperAdminGuard>
   );
 }

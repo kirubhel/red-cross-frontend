@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect } from "react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
@@ -112,8 +110,6 @@ const itemVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };
 
-import { getUserScope } from "@/lib/auth-scope";
-
 export default function AnalyticsDashboard() {
   const [totalVolunteers, setTotalVolunteers] = useState(12450);
   const [activeVolunteers, setActiveVolunteers] = useState(8745);
@@ -122,17 +118,9 @@ export default function AnalyticsDashboard() {
   useEffect(() => {
     const fetchTotals = async () => {
       try {
-        const scope = getUserScope();
-        let mUrl = `/person?page=1&page_size=1`;
-        let vUrl = `/volunteers?page=1&page_size=1`;
-        if (!scope.isSuperAdmin && scope.regionId) {
-          mUrl += `&region=${scope.regionId}`;
-          vUrl += `&region=${scope.regionId}`;
-        }
-
         const [membersRes, volunteersRes] = await Promise.all([
-          api.get(mUrl),
-          api.get(vUrl),
+          api.get("/person?page=1&page_size=1"),
+          api.get("/volunteers?page=1&page_size=1"),
         ]);
         
         const mCount = membersRes.data.pagination?.total_items || 0;
@@ -221,7 +209,7 @@ export default function AnalyticsDashboard() {
             </select>
           </div>
           <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={MOCK_GROWTH} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dy={10} />
@@ -245,7 +233,7 @@ export default function AnalyticsDashboard() {
             </select>
           </div>
           <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={MOCK_REGISTRATIONS} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dy={10} />
@@ -268,7 +256,7 @@ export default function AnalyticsDashboard() {
           <h3 className="text-base font-bold text-gray-900 mb-4">Volunteers by Region</h3>
           <div className="flex items-center justify-between">
             <div className="h-[180px] w-[180px] relative">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={MOCK_REGIONS}
@@ -312,7 +300,7 @@ export default function AnalyticsDashboard() {
           <h3 className="text-base font-bold text-gray-900 mb-4">Active Campaigns by Status</h3>
           <div className="flex items-center justify-between">
             <div className="h-[180px] w-[180px] relative">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={MOCK_CAMPAIGNS_STATUS}
@@ -367,7 +355,7 @@ export default function AnalyticsDashboard() {
           </div>
 
           <div className="h-[140px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={MOCK_USER_ACTIVITY} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} dy={10} />
