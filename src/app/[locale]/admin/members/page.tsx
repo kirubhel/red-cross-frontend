@@ -130,30 +130,37 @@ export default function MembersPage() {
     }
   };
 
-  const exportToCSV = () => {
+  const exportToExcel = async () => {
     if (members.length === 0) {
-        toast.error("No data to export");
-        return;
+      toast.error("No data to export");
+      return;
     }
+    try {
+      toast.loading("Exporting members directory to Excel...", { id: "export-members" });
+      const { exportMembersReport } = await import("@/lib/report-export");
+      // Export all available members or active view
+      await exportMembersReport(members, "xlsx");
+      toast.success("Members Excel report generated successfully", { id: "export-members" });
+    } catch (err) {
+      console.error("Excel export error:", err);
+      toast.error("Failed to export Excel report", { id: "export-members" });
+    }
+  };
 
-    const headers = ["ERCS ID", "First Name", "Father Name", "Region", "Type", "Status"];
-    const rows = members.map(m => [
-        m.ercs_id,
-        m.first_name,
-        m.father_name,
-        (regions || DEFAULT_REGIONS).find(r => String(r.id) === String(m.region))?.name || String(m.region),
-        m.membership_type || "N/A",
-        m.status || "Active"
-    ]);
-
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `ercs_members_${new Date().toISOString().split('T')[0]}.csv`);
-    link.click();
-    toast.success("CSV Report Generated");
+  const exportToCSV = async () => {
+    if (members.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+    try {
+      toast.loading("Exporting members CSV...", { id: "export-members" });
+      const { exportMembersReport } = await import("@/lib/report-export");
+      await exportMembersReport(members, "csv");
+      toast.success("CSV Report Generated", { id: "export-members" });
+    } catch (err) {
+      console.error("CSV export error:", err);
+      toast.error("Failed to export CSV", { id: "export-members" });
+    }
   };
   
   const downloadTemplate = async () => {
@@ -435,9 +442,16 @@ export default function MembersPage() {
                 <Download className="h-4 w-4" /> Template
             </Button>
             <Button 
+                onClick={exportToExcel}
+                variant="outline" 
+                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest text-[#ED1C24] hover:bg-red-50 cursor-pointer"
+            >
+                <Download className="h-4 w-4" /> Excel
+            </Button>
+            <Button 
                 onClick={exportToCSV}
                 variant="outline" 
-                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest"
+                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest cursor-pointer"
             >
                 <TableIcon className="h-4 w-4" /> CSV
             </Button>

@@ -18,6 +18,8 @@ import {
   MapPin, 
   Star,
   Plus,
+  Minus,
+  ChevronDown,
   ChevronRight,
   Eye,
   EyeOff,
@@ -25,6 +27,8 @@ import {
   Globe
 } from "lucide-react";
 import PhoneNumberInput, { buildFullPhoneNumber, ALL_COUNTRIES } from "@/components/ui/phone-number-input";
+import DateOfBirthPicker from "@/components/ui/date-of-birth-picker";
+import RegistrationDateDisplay from "@/components/ui/registration-date-display";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { REGIONS, REGION_MAP_VALUE_TO_ID, GENDER_OPTIONS, ETHIOPIA_LOCATION_DATA, ZONE_WOREDA_DATA, getWoredasForZone } from "@/lib/constants";
@@ -67,9 +71,11 @@ export default function VolunteerJoinPage() {
     country: "ET",
     phoneNumber: "",
     internationalAddress: "",
+    registrationDate: new Date().toISOString().split("T")[0],
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [checkingPhone, setCheckingPhone] = useState(false);
   const [phoneExists, setPhoneExists] = useState(false);
   const [zones, setZones] = useState<any[]>([]);
@@ -189,6 +195,51 @@ export default function VolunteerJoinPage() {
     }
   };
 
+  const isOptionalVolunteerField = (field: any) => {
+    const fid = (field.id || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    if (
+        fid.includes("phone") ||
+        fid.includes("first") ||
+        fid.includes("father") ||
+        fid.includes("grand") ||
+        fid === "name" ||
+        fid.includes("gender") ||
+        fid.includes("registration") ||
+        fid.includes("birth") ||
+        fid.includes("dob") ||
+        fid.includes("password") ||
+        fid.includes("region") ||
+        fid.includes("country") ||
+        fid.includes("zone") ||
+        fid.includes("woreda")
+    ) {
+        return false;
+    }
+
+    if (
+        fid.includes("occupation") ||
+        fid.includes("profession") ||
+        fid.includes("education") ||
+        fid.includes("kebele") ||
+        fid.includes("house") ||
+        fid.includes("area") ||
+        fid.includes("language") ||
+        fid.includes("email") ||
+        fid.includes("classification") ||
+        fid.includes("general") ||
+        fid.includes("youth") ||
+        fid.includes("leadership") ||
+        fid.includes("professional") ||
+        fid.includes("organization") ||
+        fid.includes("orgname")
+    ) {
+        return true;
+    }
+
+    return !field.required;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -200,6 +251,9 @@ export default function VolunteerJoinPage() {
         }
 
         const missingFields = formConfig.filter(f => {
+            // Fields in "Add More Details (Optional)" never block progression
+            if (isOptionalVolunteerField(f)) return false;
+
             if (f.required && !formData[f.id] && f.type !== 'tel') {
                 // If country is not Ethiopia, don't require region fields
                 if (formData.country !== 'ET' && (f.dataSource === 'REGIONS' || f.id === 'region')) {
@@ -274,6 +328,16 @@ export default function VolunteerJoinPage() {
             if (formData.organizationName) interests.push(`OrgName:${formData.organizationName}`);
             if (formData.organizationType) interests.push(`OrgType:${formData.organizationType}`);
 
+            const dobField = formConfig.find((f: any) => {
+                const fid = (f.id || "").toLowerCase();
+                const flab = (f.label || "").toLowerCase();
+                return fid.includes("birth") || fid.includes("dob") || flab.includes("birth") || flab.includes("dob") || f.type === "date";
+            });
+            const extractedDOB = dobField ? (formData[dobField.id] || "") : (formData.dateOfBirth || formData.dob || "");
+            const regDate = formData.registrationDate || new Date().toISOString().split("T")[0];
+            metadataObj.registration_date = regDate;
+            metadataObj.date_of_birth = extractedDOB;
+
             // Register User
             const res = await api.post("/auth/register/volunteer", {
                 first_name: formData.firstName,
@@ -288,7 +352,8 @@ export default function VolunteerJoinPage() {
                 interests: interests,
                 engagement_areas: finalAreas,
                 gender: formData.gender,
-                date_of_birth: formData.dateOfBirth || "",
+                date_of_birth: extractedDOB,
+                registration_date: regDate,
                 profession: formData.occupation || "",
                 address: formData.kebele || "",
                 country: formData.country === "ET" ? "Ethiopia" : (formData.country || ""),
@@ -381,207 +446,324 @@ export default function VolunteerJoinPage() {
 
                              <form onSubmit={handleSubmit} className="space-y-6 text-left">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                      {formConfig.map((field: any) => {
-                                          if (
-                                              field.id === 'password' || 
-                                              field.id === 'confirmPassword' || 
-                                              field.id === 'country' || 
-                                              field.id === 'zone' || 
-                                              field.id === 'woreda' || 
-                                              field.dataSource === 'COUNTRIES'
-                                          ) return null;
+                                      {(() => {
+                                          const validFields = formConfig.filter((field: any) => 
+                                              field.id !== 'password' && 
+                                              field.id !== 'confirmPassword' && 
+                                              field.id !== 'country' && 
+                                              field.id !== 'zone' && 
+                                              field.id !== 'woreda' && 
+                                              field.dataSource !== 'COUNTRIES'
+                                          );
 
-                                          if (field.type === 'tel') {
-                                              return (
-                                                  <div key={field.id} className="space-y-1 group md:col-span-1">
-                                                      <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
-                                                      <div className="relative">
-                                                          <PhoneNumberInput
-                                                              countryCode={formData.country || "ET"}
-                                                              onCountryChange={(code) =>
-                                                                  setFormData((prev: any) => ({ ...prev, country: code, phoneNumber: "" }))
-                                                              }
-                                                              localNumber={formData.phoneNumber}
-                                                              onLocalNumberChange={(val) => {
-                                                                  setFormData((prev: any) => ({ ...prev, phoneNumber: val }));
-                                                                  if (phoneExists) setPhoneExists(false);
-                                                              }}
-                                                              onBlur={handlePhoneBlur}
-                                                              required={field.required}
-                                                          />
-                                                          {checkingPhone && (
-                                                              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                                                                  <span className="text-[9px] font-bold text-black/40">Checking...</span>
-                                                                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-[#ED1C24] border-t-transparent" />
+                                          const primaryFields = validFields.filter(f => !isOptionalVolunteerField(f));
+                                          const optionalFields = validFields.filter(f => isOptionalVolunteerField(f));
+
+                                          const renderVolunteerFormField = (field: any) => {
+                                              if (field.type === 'tel') {
+                                                  return (
+                                                      <div key={field.id} className="space-y-1 group md:col-span-1">
+                                                          <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-[#ED1C24] text-xs">*</span>}</Label>
+                                                          <div className="relative">
+                                                              <PhoneNumberInput
+                                                                  countryCode={formData.country || "ET"}
+                                                                  onCountryChange={(code) =>
+                                                                      setFormData((prev: any) => ({ ...prev, country: code, phoneNumber: "" }))
+                                                                  }
+                                                                  localNumber={formData.phoneNumber}
+                                                                  onLocalNumberChange={(val) => {
+                                                                      setFormData((prev: any) => ({ ...prev, phoneNumber: val }));
+                                                                      if (phoneExists) setPhoneExists(false);
+                                                                  }}
+                                                                  onBlur={handlePhoneBlur}
+                                                                  required={field.required}
+                                                              />
+                                                              {checkingPhone && (
+                                                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                                                                      <span className="text-[9px] font-bold text-black/40">Checking...</span>
+                                                                      <div className="animate-spin rounded-full h-3 w-3 border-2 border-[#ED1C24] border-t-transparent" />
+                                                                  </div>
+                                                              )}
+                                                          </div>
+                                                          {phoneExists && (
+                                                              <div className="mt-1 flex flex-col gap-1.5 p-2.5 bg-red-50 rounded-lg border border-red-100 text-left">
+                                                                  <span className="text-[10px] font-bold text-[#ED1C24]">This phone number is already registered.</span>
+                                                                  <button
+                                                                      type="button"
+                                                                      onClick={() => router.push("/login")}
+                                                                      className="text-left text-[9px] font-black text-black hover:text-[#ED1C24] uppercase tracking-wider underline transition-colors"
+                                                                  >
+                                                                      Log In to Portal Now
+                                                                  </button>
                                                               </div>
                                                           )}
                                                       </div>
-                                                      {phoneExists && (
-                                                          <div className="mt-1 flex flex-col gap-1.5 p-2.5 bg-red-50 rounded-lg border border-red-100 text-left">
-                                                              <span className="text-[10px] font-bold text-[#ED1C24]">This phone number is already registered.</span>
-                                                              <button
-                                                                  type="button"
-                                                                  onClick={() => router.push("/login")}
-                                                                  className="text-left text-[9px] font-black text-black hover:text-[#ED1C24] uppercase tracking-wider underline transition-colors"
-                                                              >
-                                                                  Log In to Portal Now
-                                                              </button>
-                                                          </div>
-                                                      )}
-                                                  </div>
-                                              );
-                                          }
+                                                  );
+                                              }
 
-                                          if (field.dataSource === 'REGIONS') {
-                                              return (
-                                                  <>
-                                                      <div key={`${field.id}-country`} className="space-y-1 group md:col-span-1">
-                                                          <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Country <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                                          <div className="relative">
-                                                              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#ED1C24] transition-colors">
-                                                                  <Globe className="h-4 w-4" />
-                                                              </div>
-                                                              <select 
-                                                                  id="country" 
-                                                                  className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-12 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
-                                                                  value={formData.country}
-                                                                  onChange={handleChange}
-                                                              >
-                                                                  {ALL_COUNTRIES.map(c => (
-                                                                      <option key={c.code} value={c.code}>{c.name}</option>
-                                                                  ))}
-                                                              </select>
-                                                          </div>
-                                                      </div>
-                                                      
-                                                      {formData.country === 'ET' && (
-                                                          <div key={`${field.id}-region`} className="space-y-1 group md:col-span-1">
-                                                              <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
+                                              if (field.dataSource === 'REGIONS') {
+                                                  return (
+                                                      <>
+                                                          <div key={`${field.id}-country`} className="space-y-1 group md:col-span-1">
+                                                              <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Country <span className="text-[#ED1C24] text-xs">*</span></Label>
                                                               <div className="relative">
+                                                                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-[#ED1C24] transition-colors">
+                                                                      <Globe className="h-4 w-4" />
+                                                                  </div>
                                                                   <select 
-                                                                      id={field.id} 
-                                                                      required={field.required} 
-                                                                      className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
-                                                                      value={formData[field.id] || ""}
+                                                                      id="country" 
+                                                                      className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-12 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                      value={formData.country}
                                                                       onChange={handleChange}
                                                                   >
-                                                                      <option value="" disabled>{field.placeholder}</option>
-                                                                      {REGIONS.map(r => (
-                                                                          <option key={r.value} value={r.value}>{r.name}</option>
+                                                                      {ALL_COUNTRIES.map(c => (
+                                                                          <option key={c.code} value={c.code}>{c.name}</option>
                                                                       ))}
                                                                   </select>
                                                               </div>
                                                           </div>
-                                                      )}
-                                                      {formData.country === 'ET' && !formData.region && <div className="hidden md:block" />}
+                                                          
+                                                          {formData.country === 'ET' && (
+                                                              <div key={`${field.id}-region`} className="space-y-1 group md:col-span-1">
+                                                                  <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
+                                                                  <div className="relative">
+                                                                      <select 
+                                                                          id={field.id} 
+                                                                          required={field.required} 
+                                                                          className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
+                                                                          value={formData.region}
+                                                                          onChange={handleChange}
+                                                                      >
+                                                                          <option value="" disabled>{field.placeholder}</option>
+                                                                          {REGIONS.map(r => (
+                                                                              <option key={r.value} value={r.value}>{r.name}</option>
+                                                                          ))}
+                                                                      </select>
+                                                                  </div>
+                                                              </div>
+                                                          )}
+                                                          {formData.country === 'ET' && !formData.region && <div className="hidden md:block" />}
 
-                                                      {formData.country === 'ET' && formData.region && (
-                                                          <motion.div key={`${field.id}-zone`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-1 group md:col-span-1">
-                                                              <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Zone <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                          {formData.country === 'ET' && formData.region && (
+                                                              <motion.div key={`${field.id}-zone`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-1 group md:col-span-1">
+                                                                  <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Zone <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                                  <select 
+                                                                      id="zone" 
+                                                                      required
+                                                                      className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                      value={formData.zone}
+                                                                      onChange={handleChange}
+                                                                  >
+                                                                      <option value="">Select Zone</option>
+                                                                      {zones.map(z => (
+                                                                          <option key={z.id} value={z.id}>{z.name}</option>
+                                                                      ))}
+                                                                  </select>
+                                                              </motion.div>
+                                                          )}
+                                                          {formData.country === 'ET' && formData.region && !formData.zone && <div className="hidden md:block" />}
+
+                                                          {formData.country === 'ET' && formData.zone && (
+                                                              <motion.div key={`${field.id}-woreda`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-1 group md:col-span-1">
+                                                                  <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Woreda / Sub-City <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                                  <select 
+                                                                      id="woreda" 
+                                                                      required
+                                                                      className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
+                                                                      value={formData.woreda}
+                                                                      onChange={handleChange}
+                                                                  >
+                                                                      <option value="">Select Woreda</option>
+                                                                      {woredas.map(w => (
+                                                                          <option key={w.id} value={w.id}>{w.name}</option>
+                                                                      ))}
+                                                                  </select>
+                                                              </motion.div>
+                                                          )}
+
+                                                          {formData.country !== 'ET' && (
+                                                              <div key={`${field.id}-intl`} className="space-y-1 group md:col-span-1">
+                                                                  <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Address <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                                  <Input 
+                                                                      id="internationalAddress" 
+                                                                      className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-xs" 
+                                                                      placeholder="Enter your address" 
+                                                                      value={formData.internationalAddress} 
+                                                                      onChange={handleChange} 
+                                                                      required
+                                                                  />
+                                                              </div>
+                                                          )}
+                                                      </>
+                                                  );
+                                              }
+
+                                              const fieldIdLower = (field.id || "").toLowerCase();
+                                              const fieldLabelLower = (field.label || "").toLowerCase();
+
+                                              // Registration Date (Auto-captured, read-only)
+                                              if (fieldIdLower.includes("registration") || fieldLabelLower.includes("registration")) {
+                                                  return (
+                                                      <RegistrationDateDisplay 
+                                                          key={field.id} 
+                                                          label={field.label} 
+                                                          dateStr={formData.registrationDate || new Date().toISOString().split("T")[0]} 
+                                                      />
+                                                  );
+                                              }
+
+                                              // Date of Birth (Day, Month, Year Date Picker)
+                                              if (
+                                                  fieldIdLower.includes("birth") || 
+                                                  fieldIdLower.includes("dob") || 
+                                                  fieldLabelLower.includes("birth") || 
+                                                  fieldLabelLower.includes("dob") || 
+                                                  field.type === "date"
+                                              ) {
+                                                  return (
+                                                      <div key={field.id} className="space-y-1 group md:col-span-1">
+                                                          <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">
+                                                              {field.label} {field.required && <span className="text-red-500">*</span>}
+                                                          </Label>
+                                                          <DateOfBirthPicker 
+                                                              id={field.id} 
+                                                              value={formData[field.id] || ""} 
+                                                              required={field.required} 
+                                                              onChange={(val) => setFormData((prev: any) => ({ ...prev, [field.id]: val }))} 
+                                                          />
+                                                      </div>
+                                                  );
+                                              }
+
+                                              return (
+                                                  <div key={field.id} className="space-y-1 group md:col-span-1">
+                                                      <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
+                                                      <div className="relative">
+                                                          {field.type === 'select' ? (
                                                               <select 
-                                                                  id="zone" 
-                                                                  required
-                                                                  className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
-                                                                  value={formData.zone}
+                                                                  id={field.id} 
+                                                                  required={field.required} 
+                                                                  className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
+                                                                  value={formData[field.id] || ""}
                                                                   onChange={handleChange}
                                                               >
-                                                                  <option value="">Select Zone</option>
-                                                                  {zones.map(z => (
-                                                                      <option key={z.id} value={z.id}>{z.name}</option>
+                                                                  <option value="" disabled>{field.placeholder}</option>
+                                                                  {(
+                                                                      field.dataSource === 'GENDER'
+                                                                          ? GENDER_OPTIONS :
+                                                                      (field.options || [])
+                                                                  ).map((opt: any, i: number) => (
+                                                                      <option key={i} value={opt.value}>{opt.label}</option>
                                                                   ))}
                                                               </select>
-                                                          </motion.div>
-                                                      )}
-                                                      {formData.country === 'ET' && formData.region && !formData.zone && <div className="hidden md:block" />}
-
-                                                      {formData.country === 'ET' && formData.zone && (
-                                                          <motion.div key={`${field.id}-woreda`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-1 group md:col-span-1">
-                                                              <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Woreda / Sub-City <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                                              <select 
-                                                                  id="woreda" 
-                                                                  required
-                                                                  className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none text-black"
-                                                                  value={formData.woreda}
-                                                                  onChange={handleChange}
-                                                              >
-                                                                  <option value="">Select Woreda</option>
-                                                                  {woredas.map(w => (
-                                                                      <option key={w.id} value={w.id}>{w.name}</option>
-                                                                  ))}
-                                                              </select>
-                                                          </motion.div>
-                                                      )}
-
-                                                      {formData.country !== 'ET' && (
-                                                          <div key={`${field.id}-intl`} className="space-y-1 group md:col-span-1">
-                                                              <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Address <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                          ) : (
                                                               <Input 
-                                                                 id="internationalAddress" 
-                                                                 className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-xs" 
-                                                                 placeholder="Enter your address" 
-                                                                 value={formData.internationalAddress} 
-                                                                 onChange={handleChange} 
-                                                                 required
+                                                                  id={field.id} 
+                                                                  type={field.type} 
+                                                                  required={field.required} 
+                                                                  className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-left text-xs" 
+                                                                  placeholder={field.placeholder} 
+                                                                  value={formData[field.id] || ""} 
+                                                                  onChange={handleChange} 
                                                               />
-                                                          </div>
-                                                      )}
-                                                  </>
+                                                          )}
+                                                      </div>
+                                                  </div>
                                               );
-                                          }
+                                          };
 
                                           return (
-                                              <div key={field.id} className="space-y-1 group md:col-span-1">
-                                                   <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
-                                                  <div className="relative">
-                                                       {field.type === 'select' ? (
-                                                            <select 
-                                                                id={field.id} 
-                                                                required={field.required} 
-                                                                className="flex h-10 w-full rounded-lg bg-gray-50 border-none px-6 py-2 text-xs font-bold focus:ring-2 focus:ring-[#ED1C24]/10 appearance-none relative text-black"
-                                                               value={formData[field.id] || ""}
-                                                               onChange={handleChange}
-                                                           >
-                                                               <option value="" disabled>{field.placeholder}</option>
-                                                               {(
-                                                                 field.dataSource === 'GENDER'
-                                                                   ? GENDER_OPTIONS :
-                                                                 (field.options || [])
-                                                               ).map((opt: any, i: number) => (
-                                                                   <option key={i} value={opt.value}>{opt.label}</option>
-                                                               ))}
-                                                           </select>
-                                                       ) : (
-                                                            <Input 
-                                                               id={field.id} 
-                                                               type={field.type} 
-                                                               required={field.required} 
-                                                               className="h-10 rounded-lg bg-gray-50 border-none font-bold placeholder:text-black/30 text-black focus:ring-2 focus:ring-[#ED1C24]/10 px-6 transition-all text-left text-xs" 
-                                                              placeholder={field.placeholder} 
-                                                              value={formData[field.id] || ""} 
-                                                              onChange={handleChange} 
-                                                           />
-                                                       )}
+                                              <>
+                                                  {/* Primary Fields */}
+                                                  {primaryFields.map(renderVolunteerFormField)}
+
+                                                  {/* Always display auto-captured Registration Date if not already in formConfig */}
+                                                  {!formConfig.some((f: any) => 
+                                                      (f.id || "").toLowerCase().includes("registration") || 
+                                                      (f.label || "").toLowerCase().includes("registration")
+                                                  ) && (
+                                                      <RegistrationDateDisplay 
+                                                          dateStr={formData.registrationDate || new Date().toISOString().split("T")[0]} 
+                                                      />
+                                                  )}
+
+                                                  {/* Explicit Password Fields */}
+                                                  <div className="space-y-1 group md:col-span-1">
+                                                      <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Create Password <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                      <div className="relative">
+                                                          <Input id="password" type={showPassword ? "text" : "password"} required className="h-10 rounded-lg bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-xs" placeholder="••••••••" value={formData.password} onChange={handleChange} />
+                                                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                                                      </div>
                                                   </div>
-                                              </div>
+
+                                                  <div className="space-y-1 group md:col-span-1">
+                                                      <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Confirm Password <span className="text-[#ED1C24] text-xs">*</span></Label>
+                                                      <div className="relative">
+                                                          <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} required className="h-10 rounded-lg bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-xs" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
+                                                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+                                                      </div>
+                                                  </div>
+
+                                                  {/* Collapsible Additional Details for Volunteers */}
+                                                  {optionalFields.length > 0 && (
+                                                      <div className="md:col-span-2 pt-2">
+                                                          <button
+                                                              type="button"
+                                                              onClick={() => setShowMoreDetails(!showMoreDetails)}
+                                                              className={cn(
+                                                                  "w-full flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 text-left cursor-pointer",
+                                                                  showMoreDetails
+                                                                      ? "bg-red-50/50 border-[#ED1C24]/30 shadow-sm"
+                                                                      : "bg-white border-gray-200 hover:border-[#ED1C24]/40 hover:bg-gray-50/60"
+                                                              )}
+                                                          >
+                                                              <div className="flex items-center gap-3">
+                                                                  <div className={cn(
+                                                                      "w-7 h-7 rounded-lg flex items-center justify-center transition-colors shrink-0",
+                                                                      showMoreDetails ? "bg-[#ED1C24] text-white" : "bg-gray-100 text-gray-600"
+                                                                  )}>
+                                                                      {showMoreDetails ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                                                                  </div>
+                                                                  <div>
+                                                                      <div className="flex items-center gap-2">
+                                                                          <span className="text-xs font-black uppercase tracking-wider text-black block">
+                                                                              {showMoreDetails ? "Hide Additional Details" : "Add More Details (Optional)"}
+                                                                          </span>
+                                                                          {!showMoreDetails && optionalFields.some(f => formData[f.id]) && (
+                                                                              <span className="text-[9px] font-black uppercase bg-red-100 text-[#ED1C24] px-2 py-0.5 rounded-full">
+                                                                                  Details Entered
+                                                                              </span>
+                                                                          )}
+                                                                      </div>
+                                                                      <span className="text-[10px] text-gray-500 font-medium">
+                                                                          Occupation, Education, Kebele, Area, Languages, Email &amp; Classifications
+                                                                      </span>
+                                                                  </div>
+                                                              </div>
+                                                              <ChevronDown className={cn(
+                                                                  "h-4 w-4 text-gray-400 transition-transform duration-200 shrink-0",
+                                                                  showMoreDetails && "rotate-180 text-[#ED1C24]"
+                                                              )} />
+                                                          </button>
+
+                                                          <AnimatePresence>
+                                                              {showMoreDetails && (
+                                                                  <motion.div
+                                                                      initial={{ opacity: 0, height: 0 }}
+                                                                      animate={{ opacity: 1, height: "auto" }}
+                                                                      exit={{ opacity: 0, height: 0 }}
+                                                                      transition={{ duration: 0.25 }}
+                                                                      className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pt-4 overflow-hidden"
+                                                                  >
+                                                                      {optionalFields.map(renderVolunteerFormField)}
+                                                                  </motion.div>
+                                                              )}
+                                                          </AnimatePresence>
+                                                      </div>
+                                                  )}
+                                              </>
                                           );
-                                      })}
-
-                                      {/* Explicit Password Fields */}
-                                       <div className="space-y-1 group md:col-span-1">
-                                           <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Create Password <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                           <div className="relative">
-                                               <Input id="password" type={showPassword ? "text" : "password"} required className="h-10 rounded-lg bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-xs" placeholder="••••••••" value={formData.password} onChange={handleChange} />
-                                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
-                                          </div>
-                                      </div>
-
-                                      <div className="space-y-1 group md:col-span-1">
-                                           <Label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">Confirm Password <span className="text-[#ED1C24] text-xs">*</span></Label>
-                                           <div className="relative">
-                                               <Input id="confirmPassword" type={showConfirmPassword ? "text" : "password"} required className="h-10 rounded-lg bg-gray-50 border-none font-bold text-black px-6 pr-12 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all text-xs" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
-                                              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20 hover:text-black transition-colors">{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
-                                          </div>
-                                      </div>
+                                      })()}
                                   </div>
 
                                   {error && <div className="bg-red-50 text-[#ED1C24] p-2 rounded-lg text-[10px] font-bold text-center border border-red-100 italic">{error}</div>}

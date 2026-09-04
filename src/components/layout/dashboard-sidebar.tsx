@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/i18n/routing";
 import Image from "next/image";
 import { 
   LayoutDashboard, 
@@ -29,6 +28,11 @@ export function DashboardSidebar() {
   const { t } = useLanguage();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [user, setUser] = useState<any>(null);
+
+  // Normalize pathname: strip any leading locale prefix if present and remove trailing slashes
+  const cleanPath = (pathname || "")
+    .replace(/^\/(?:en|am|om)(?=\/|$)/, "")
+    .replace(/\/$/, "") || "/";
 
   const menuItems = [
     { href: "/dashboard", label: t.dashboard.dashboard, icon: LayoutDashboard },
@@ -128,7 +132,9 @@ export function DashboardSidebar() {
         </h4>
         
         {filteredMenuItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = item.href === "/dashboard"
+            ? cleanPath === "/dashboard"
+            : cleanPath === item.href || cleanPath.startsWith(`${item.href}/`);
 
           return (
             <Link

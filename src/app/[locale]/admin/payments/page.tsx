@@ -50,6 +50,22 @@ export default function PaymentsPage() {
   };
 
 
+  const handleExport = async () => {
+    if (payments.length === 0) {
+      toast.error("No payment records available to export");
+      return;
+    }
+    try {
+      toast.loading("Exporting financial report...", { id: "payment-export" });
+      const { exportFinancialReport } = await import("@/lib/report-export");
+      await exportFinancialReport(payments, "xlsx");
+      toast.success("Financial report downloaded successfully", { id: "payment-export" });
+    } catch (err) {
+      console.error("Failed to export payments:", err);
+      toast.error("Failed to export financial report", { id: "payment-export" });
+    }
+  };
+
   return (
     <div className="space-y-6 w-full max-w-full pb-10">
       {/* Header Section */}
@@ -62,7 +78,10 @@ export default function PaymentsPage() {
           <p className="text-gray-500 font-medium text-sm">Monitor all membership transactions, donations, and event fees.</p>
         </div>
 
-        <Button className="bg-[#ED1C24] hover:bg-black text-white rounded-xl h-10 px-6 font-black shadow-sm transition-all flex items-center gap-2 text-xs">
+        <Button 
+          onClick={handleExport}
+          className="bg-[#ED1C24] hover:bg-black text-white rounded-xl h-10 px-6 font-black shadow-sm transition-all flex items-center gap-2 text-xs cursor-pointer"
+        >
             <Download className="h-4 w-4" /> Export Report
         </Button>
       </div>

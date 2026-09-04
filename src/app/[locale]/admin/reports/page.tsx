@@ -1,448 +1,608 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, LineChart, Line, Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
+  ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from "recharts";
 import { 
-  Download, Users, Activity, Megaphone, Calendar, FileText, 
-  ArrowUpRight, ArrowDownRight, MapPin, Search, Plus, Filter,
-  MoreVertical, Eye, Download as DownloadIcon, Trash2
+  Download, Users, FileText, Calendar, CreditCard,
+  HandHeart, RefreshCw, CheckCircle2, ChevronDown, 
+  ArrowUpRight, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
 import { toast } from "sonner";
-import { motion, Variants } from "framer-motion";
+import { motion } from "framer-motion";
+import { 
+  exportFinancialReport, 
+  exportMembersReport, 
+  exportVolunteersReport 
+} from "@/lib/report-export";
 
-// Mock Colors
-const COLORS = {
-  primary: '#10b981', // green for success/active
-  secondary: '#3b82f6', // blue
-  danger: '#ef4444', // red
-  warning: '#f59e0b', // orange
-  purple: '#8b5cf6',
-  gray: '#9ca3af'
-};
+const ERCS_RED = "#ED1C24";
+const BLUE_ACCENT = "#2563eb";
+const GREEN_ACCENT = "#16a34a";
+const AMBER_ACCENT = "#ea580c";
 
-const PIE_COLORS = [COLORS.secondary, COLORS.primary, COLORS.warning, COLORS.danger, COLORS.purple];
+const PIE_TYPE_COLORS = [BLUE_ACCENT, ERCS_RED, "#9ca3af"];
+const PIE_STATUS_COLORS = [BLUE_ACCENT, ERCS_RED, "#f59e0b"];
 
-// Mock Data
-const MOCK_GROWTH = [
-  { month: 'Jan', count: 2200 },
-  { month: 'Feb', count: 4800 },
-  { month: 'Mar', count: 6500 },
-  { month: 'Apr', count: 8100 },
-  { month: 'May', count: 12450 },
-  { month: 'Jun', count: 10000 },
-  { month: 'Jul', count: 11000 },
-  { month: 'Aug', count: 10500 },
-  { month: 'Sep', count: 12000 },
-  { month: 'Oct', count: 13000 },
-  { month: 'Nov', count: 14500 },
-  { month: 'Dec', count: 15500 },
+// Initial fallback/aggregate data matching ERCS reference layout
+const INITIAL_MEMBERS_BY_TYPE = [
+  { name: "MEMBER", value: 116550, percentage: 82.9 },
+  { name: "VOLUNTEER", value: 24807, percentage: 17.0 },
+  { name: "Other", value: 120, percentage: 0.1 },
 ];
 
-const MOCK_REGISTRATIONS = [
-  { month: 'Jan', count: 1500 },
-  { month: 'Feb', count: 2100 },
-  { month: 'Mar', count: 1800 },
-  { month: 'Apr', count: 2000 },
-  { month: 'May', count: 2350 },
-  { month: 'Jun', count: 1500 },
-  { month: 'Jul', count: 1800 },
-  { month: 'Aug', count: 1600 },
-  { month: 'Sep', count: 2000 },
-  { month: 'Oct', count: 1900 },
-  { month: 'Nov', count: 1500 },
-  { month: 'Dec', count: 1400 },
+const INITIAL_MEMBERS_BY_STATUS = [
+  { name: "ACTIVE", value: 116550, percentage: 98.4 },
+  { name: "UNPAID", value: 1680, percentage: 1.4 },
+  { name: "RENEWAL", value: 165, percentage: 0.2 },
 ];
 
-const MOCK_REGIONS = [
-  { name: 'Addis Ababa', value: 4250, percentage: 34 },
-  { name: 'Oromia', value: 3150, percentage: 25 },
-  { name: 'Amhara', value: 2350, percentage: 19 },
-  { name: 'SNNPR', value: 1850, percentage: 15 },
-  { name: 'Tigray', value: 850, percentage: 7 },
+const INITIAL_MEMBERSHIP_TYPES = [
+  { name: "Regular", male: 74200, female: 39500, org: 12 },
+  { name: "Life Time Member", male: 1100, female: 340, org: 0 },
+  { name: "Family Member", male: 420, female: 310, org: 0 },
+  { name: "Corporate Member - Silver", male: 0, female: 0, org: 77 },
 ];
 
-const MOCK_CAMPAIGNS_STATUS = [
-  { name: 'Ongoing', value: 16, percentage: 47 },
-  { name: 'Upcoming', value: 10, percentage: 29 },
-  { name: 'Completed', value: 6, percentage: 18 },
-  { name: 'Cancelled', value: 2, percentage: 6 },
+const INITIAL_REGIONS_DATA = [
+  { region: "Addis Ababa", male: 8400, female: 6900, org: 45 },
+  { region: "Dire Dawa", male: 950, female: 810, org: 8 },
+  { region: "Tigray", male: 450, female: 320, org: 3 },
+  { region: "Afar", male: 1100, female: 680, org: 4 },
+  { region: "Amhara", male: 24200, female: 9100, org: 14 },
+  { region: "Oromia", male: 28100, female: 13900, org: 18 },
+  { region: "Somali", male: 2600, female: 2450, org: 6 },
+  { region: "Benishangul", male: 150, female: 110, org: 1 },
+  { region: "Gambela", male: 680, female: 520, org: 2 },
+  { region: "Harar", male: 1400, female: 1150, org: 5 },
+  { region: "Sidama", male: 4600, female: 2100, org: 7 },
+  { region: "SNNP", male: 4100, female: 2200, org: 9 },
 ];
 
-const MOCK_USER_ACTIVITY = [
-  { date: 'May 1', logins: 1200, newUsers: 400, actions: 1800 },
-  { date: 'May 8', logins: 1500, newUsers: 500, actions: 2100 },
-  { date: 'May 15', logins: 1100, newUsers: 300, actions: 1600 },
-  { date: 'May 22', logins: 1600, newUsers: 600, actions: 2300 },
-  { date: 'May 29', logins: 1800, newUsers: 450, actions: 2500 },
+const INITIAL_VOLUNTEERS_BY_REGION = [
+  { region: "Addis Ababa", male: 2450, female: 2610, org: 12 },
+  { region: "Amhara", male: 2620, female: 2040, org: 8 },
+  { region: "Oromia", male: 5490, female: 3410, org: 15 },
+  { region: "SNNP", male: 2380, female: 1290, org: 6 },
+  { region: "Sidama", male: 720, female: 380, org: 4 },
+  { region: "Harar", male: 180, female: 140, org: 2 },
+  { region: "Somali", male: 210, female: 110, org: 1 },
+  { region: "Gambela", male: 85, female: 70, org: 1 },
+  { region: "Afar", male: 110, female: 95, org: 1 },
+  { region: "Tigray", male: 65, female: 45, org: 0 },
 ];
 
-const MOCK_REPORTS = [
-  { id: 1, name: 'Volunteer Growth Report - May 2024', type: 'PDF', generatedOn: 'May 31, 2024', generatedBy: 'Admin User' },
-  { id: 2, name: 'Campaign Performance Report - Q2', type: 'Excel', generatedOn: 'May 25, 2024', generatedBy: 'Admin User' },
-  { id: 3, name: 'User Activity Report - May 2024', type: 'PDF', generatedOn: 'May 20, 2024', generatedBy: 'System' },
-  { id: 4, name: 'Monthly Overview Report - May 2024', type: 'PDF', generatedOn: 'May 5, 2024', generatedBy: 'Admin User' },
-];
-
-const MOCK_TOP_CAMPAIGNS = [
-  { name: 'Clean City Initiative', volunteers: 2450, percentage: 85, color: '#10b981' },
-  { name: 'Tree Planting Day', volunteers: 1980, percentage: 72, color: '#10b981' },
-  { name: 'Blood Donation Drive', volunteers: 1520, percentage: 65, color: '#10b981' },
-  { name: 'Community Education', volunteers: 1250, percentage: 55, color: '#f59e0b' },
-  { name: 'Food Support Program', volunteers: 800, percentage: 40, color: '#ef4444' },
-];
-
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
-
-export default function AnalyticsDashboard() {
-  const [totalVolunteers, setTotalVolunteers] = useState(12450);
-  const [activeVolunteers, setActiveVolunteers] = useState(8745);
-  const [loading, setLoading] = useState(true);
+export default function ReportsAndAnalyticsPage() {
+  const [downloadingType, setDownloadingType] = useState<string | null>(null);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [stats, setStats] = useState({
+    activeMembers: 116550,
+    activeIndiv: 116538,
+    activeOrg: 12,
+    unpaidMembers: 1680,
+    unpaidIndiv: 1603,
+    unpaidOrg: 77,
+    renewalMembers: 165,
+    renewalIndiv: 165,
+    renewalOrg: 0,
+    volunteers: 24807,
+    volunteersMale: 14678,
+    volunteersFemale: 10129,
+  });
 
   useEffect(() => {
-    const fetchTotals = async () => {
-      try {
-        const [membersRes, volunteersRes] = await Promise.all([
-          api.get("/person?page=1&page_size=1"),
-          api.get("/volunteers?page=1&page_size=1"),
-        ]);
-        
-        const mCount = membersRes.data.pagination?.total_items || 0;
-        const vCount = volunteersRes.data.pagination?.total_items || 0;
-        
-        const total = mCount + vCount;
-        if (total > 0) {
-            setTotalVolunteers(total);
-            setActiveVolunteers(Math.floor(total * 0.7)); // Mock active percentage
-        }
-      } catch (err) {
-        console.error("Failed to fetch totals:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTotals();
+    fetchLiveStats();
   }, []);
 
-  const handleExport = () => {
-    toast.success("Generating Report...");
-    setTimeout(() => toast.success("Report downloaded successfully."), 1500);
+  const fetchLiveStats = async () => {
+    try {
+      const [peopleRes, volunteersRes] = await Promise.all([
+        api.get("/person?page=1&page_size=1").catch(() => ({ data: {} })),
+        api.get("/volunteers?page=1&page_size=1").catch(() => ({ data: {} })),
+      ]);
+
+      const memberTotal = peopleRes.data?.pagination?.total_items;
+      const volTotal = volunteersRes.data?.pagination?.total_items;
+
+      if (memberTotal || volTotal) {
+        setStats(prev => ({
+          ...prev,
+          activeMembers: memberTotal || prev.activeMembers,
+          volunteers: volTotal || prev.volunteers,
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching live report numbers:", err);
+    }
   };
 
-  const KpiCard = ({ title, value, trend, isPositive, icon: Icon, color }: any) => (
-    <motion.div variants={itemVariants} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-start gap-4">
-      <div className={`p-3 rounded-xl`} style={{ backgroundColor: `${color}15`, color }}>
-        <Icon className="h-6 w-6" />
-      </div>
-      <div>
-        <p className="text-xs font-semibold text-gray-500 mb-1">{title}</p>
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">{value.toLocaleString()}</h3>
-        <div className="flex items-center gap-1 text-[11px] font-medium">
-          <span className={`flex items-center ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
-            {isPositive ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
-            {trend}%
-          </span>
-          <span className="text-gray-400">vs Apr 1 - Apr 30</span>
-        </div>
-      </div>
-    </motion.div>
-  );
+  // Dedicated real report generators
+  const handleDownloadFinancialReport = async (format: "xlsx" | "csv" = "xlsx") => {
+    setDownloadingType(`financial-${format}`);
+    try {
+      toast.loading("Generating financial report...", { id: "report-action" });
+      const res = await api.get("/payments");
+      const invoices = res.data?.invoices || [];
+      await exportFinancialReport(invoices, format);
+      toast.success("Financial report downloaded successfully.", { id: "report-action" });
+    } catch (err) {
+      console.error("Financial report download failed:", err);
+      toast.error("Failed to generate financial report.", { id: "report-action" });
+    } finally {
+      setDownloadingType(null);
+      setIsExportMenuOpen(false);
+    }
+  };
+
+  const handleDownloadMembersReport = async (format: "xlsx" | "csv" = "xlsx") => {
+    setDownloadingType(`members-${format}`);
+    try {
+      toast.loading("Compiling registered members list...", { id: "report-action" });
+      const res = await api.get("/person?page=1&page_size=5000");
+      const people = res.data?.people || [];
+      await exportMembersReport(people, format);
+      toast.success("Members directory downloaded successfully.", { id: "report-action" });
+    } catch (err) {
+      console.error("Members report download failed:", err);
+      toast.error("Failed to generate members report.", { id: "report-action" });
+    } finally {
+      setDownloadingType(null);
+      setIsExportMenuOpen(false);
+    }
+  };
+
+  const handleDownloadVolunteersReport = async (format: "xlsx" | "csv" = "xlsx") => {
+    setDownloadingType(`volunteers-${format}`);
+    try {
+      toast.loading("Compiling volunteers roster...", { id: "report-action" });
+      const res = await api.get("/volunteers?page=1&page_size=5000");
+      const volunteers = res.data?.volunteers || [];
+      await exportVolunteersReport(volunteers, format);
+      toast.success("Volunteers roster downloaded successfully.", { id: "report-action" });
+    } catch (err) {
+      console.error("Volunteers report download failed:", err);
+      toast.error("Failed to generate volunteers report.", { id: "report-action" });
+    } finally {
+      setDownloadingType(null);
+      setIsExportMenuOpen(false);
+    }
+  };
 
   return (
-    <motion.div 
-      initial="hidden" 
-      animate="show" 
-      variants={containerVariants} 
-      className="space-y-6 max-w-[1600px] mx-auto pb-10"
-    >
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Analytics Dashboard</h1>
-          <p className="text-sm text-gray-500">Overview of system statistics and performance.</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 font-medium">
-            <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-            May 1, 2024 - May 31, 2024
+    <div className="space-y-8 w-full max-w-[1600px] mx-auto pb-16">
+      {/* Top ERCS Red and White Brand Header */}
+      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-2 bg-red-50 rounded-2xl border border-red-100 shrink-0">
+            <Image 
+              src="/logo.png" 
+              alt="ERCS Logo" 
+              width={48} 
+              height={48} 
+              className="object-contain" 
+              unoptimized 
+            />
           </div>
-          <Button onClick={handleExport} className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md shadow-blue-500/20 px-5 transition-all">
-            <Download className="h-4 w-4 mr-2" /> Export Report
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black text-[#ED1C24] tracking-tight leading-none">
+              Ethiopian Red Cross Society
+            </h1>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">
+              National Headquarters — Official Analytics & Reporting Hub
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 relative">
+          <Button 
+            onClick={fetchLiveStats} 
+            variant="outline" 
+            className="rounded-xl border-gray-200 text-gray-600 hover:text-black font-bold text-xs h-11"
+          >
+            <RefreshCw className="h-3.5 w-3.5 mr-2" /> Refresh
           </Button>
+
+          {/* Export Report Dropdown */}
+          <div className="relative">
+            <Button
+              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+              className="bg-[#ED1C24] hover:bg-black text-white rounded-xl h-11 px-5 font-black text-xs shadow-md shadow-red-500/20 transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Download className="h-4 w-4" /> Export Report <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+
+            {isExportMenuOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-gray-100 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-3 py-1">
+                  Choose Download Type
+                </p>
+                <div className="space-y-1 mt-1">
+                  <button
+                    onClick={() => handleDownloadFinancialReport("xlsx")}
+                    disabled={!!downloadingType}
+                    className="w-full text-left px-3 py-2.5 hover:bg-red-50 text-gray-800 hover:text-[#ED1C24] rounded-xl text-xs font-bold transition-all flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2"><CreditCard className="h-3.5 w-3.5 text-[#ED1C24]" /> Financial Report</span>
+                    <span className="text-[9px] bg-red-100 text-[#ED1C24] px-1.5 py-0.5 rounded font-black">XLSX</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadMembersReport("xlsx")}
+                    disabled={!!downloadingType}
+                    className="w-full text-left px-3 py-2.5 hover:bg-blue-50 text-gray-800 hover:text-blue-600 rounded-xl text-xs font-bold transition-all flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2"><Users className="h-3.5 w-3.5 text-blue-600" /> Members Directory</span>
+                    <span className="text-[9px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-black">XLSX</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadVolunteersReport("xlsx")}
+                    disabled={!!downloadingType}
+                    className="w-full text-left px-3 py-2.5 hover:bg-green-50 text-gray-800 hover:text-green-600 rounded-xl text-xs font-bold transition-all flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2"><HandHeart className="h-3.5 w-3.5 text-green-600" /> Volunteers Roster</span>
+                    <span className="text-[9px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded font-black">XLSX</span>
+                  </button>
+
+                  <div className="border-t border-gray-100 pt-1 mt-1">
+                    <button
+                      onClick={() => handleDownloadFinancialReport("csv")}
+                      disabled={!!downloadingType}
+                      className="w-full text-left px-3 py-2 text-gray-600 hover:text-black rounded-lg text-xs font-semibold flex items-center justify-between"
+                    >
+                      <span>Financial CSV</span>
+                      <span className="text-[9px] text-gray-400">CSV</span>
+                    </button>
+                    <button
+                      onClick={() => handleDownloadMembersReport("csv")}
+                      disabled={!!downloadingType}
+                      className="w-full text-left px-3 py-2 text-gray-600 hover:text-black rounded-lg text-xs font-semibold flex items-center justify-between"
+                    >
+                      <span>Members CSV</span>
+                      <span className="text-[9px] text-gray-400">CSV</span>
+                    </button>
+                    <button
+                      onClick={() => handleDownloadVolunteersReport("csv")}
+                      disabled={!!downloadingType}
+                      className="w-full text-left px-3 py-2 text-gray-600 hover:text-black rounded-lg text-xs font-semibold flex items-center justify-between"
+                    >
+                      <span>Volunteers CSV</span>
+                      <span className="text-[9px] text-gray-400">CSV</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard title="Total Volunteers" value={totalVolunteers} trend="12.5" isPositive={true} icon={Users} color="#8b5cf6" />
-        <KpiCard title="Active Volunteers" value={activeVolunteers} trend="8.2" isPositive={true} icon={Activity} color="#10b981" />
-        <KpiCard title="Active Campaigns" value={34} trend="6.7" isPositive={true} icon={Megaphone} color="#ec4899" />
-        <KpiCard title="Events" value={18} trend="3.1" isPositive={true} icon={Calendar} color="#f59e0b" />
-        <KpiCard title="Reports Generated" value={56} trend="15.4" isPositive={true} icon={FileText} color="#3b82f6" />
+      {/* 4 KPI Cards Matching Attached Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Card 1: Active Members */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div className="p-6">
+            <h2 className="text-4xl font-extrabold text-[#3b82f6] leading-none mb-3">
+              {stats.activeMembers.toLocaleString()}
+            </h2>
+            <p className="text-sm font-bold text-gray-600 leading-snug">
+              Active<br />Members
+            </p>
+          </div>
+          <div className="bg-[#3b82f6] text-white px-5 py-3 text-xs font-bold tracking-wide">
+            Indiv. / Org. =&gt; {stats.activeIndiv.toLocaleString()} / {stats.activeOrg}
+          </div>
+        </div>
+
+        {/* Card 2: Unpaid Members */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div className="p-6">
+            <h2 className="text-4xl font-extrabold text-[#16a34a] leading-none mb-3">
+              {stats.unpaidMembers.toLocaleString()}
+            </h2>
+            <p className="text-sm font-bold text-gray-600 leading-snug">
+              Unpaid<br />Members
+            </p>
+          </div>
+          <div className="bg-[#16a34a] text-white px-5 py-3 text-xs font-bold tracking-wide">
+            Indiv. / Org. =&gt; {stats.unpaidIndiv.toLocaleString()} / {stats.unpaidOrg}
+          </div>
+        </div>
+
+        {/* Card 3: On Renewal List */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div className="p-6">
+            <h2 className="text-4xl font-extrabold text-[#ef4444] leading-none mb-3">
+              {stats.renewalMembers.toLocaleString()}
+            </h2>
+            <p className="text-sm font-bold text-gray-600 leading-snug">
+              On Renewal<br />List
+            </p>
+          </div>
+          <div className="bg-[#ef4444] text-white px-5 py-3 text-xs font-bold tracking-wide">
+            Indiv. / Org. =&gt; {stats.renewalIndiv.toLocaleString()} / {stats.renewalOrg}
+          </div>
+        </div>
+
+        {/* Card 4: Volunteer */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between">
+          <div className="p-6">
+            <h2 className="text-4xl font-extrabold text-[#2563eb] leading-none mb-3">
+              {stats.volunteers.toLocaleString()}
+            </h2>
+            <p className="text-sm font-bold text-gray-600 leading-snug">
+              Volunteer
+            </p>
+          </div>
+          <div className="bg-[#2563eb] text-white px-5 py-3 text-xs font-bold tracking-wide">
+            Male / Female =&gt; {stats.volunteersMale.toLocaleString()} / {stats.volunteersFemale.toLocaleString()}
+          </div>
+        </div>
       </div>
 
-      {/* Charts Row 1 */}
+      {/* Direct Report Export Hub Cards */}
+      <div className="bg-gradient-to-r from-red-50 via-white to-gray-50 rounded-3xl p-6 border border-red-100/70 shadow-sm">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+          <div>
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-[#ED1C24] text-white rounded-full text-[9px] font-black uppercase tracking-wider mb-2">
+              Instant File Download Center
+            </div>
+            <h3 className="text-xl font-black text-gray-900">
+              Generate &amp; Download Operational Reports
+            </h3>
+            <p className="text-xs text-gray-500 font-medium mt-0.5">
+              Exports real-time database records directly to formatted Excel (.xlsx) and CSV files.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Card 1: Financial Data */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-200/70 shadow-sm hover:border-red-300 transition-all flex flex-col justify-between">
+            <div>
+              <div className="h-10 w-10 rounded-xl bg-red-50 text-[#ED1C24] flex items-center justify-center mb-3">
+                <CreditCard className="h-5 w-5" />
+              </div>
+              <h4 className="font-bold text-base text-gray-900">Financial Transactions Report</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                Invoices, fees, donations, payment statuses, ETB totals and transaction dates.
+              </p>
+            </div>
+            <div className="pt-4 mt-4 border-t border-gray-100 flex items-center gap-2">
+              <Button
+                onClick={() => handleDownloadFinancialReport("xlsx")}
+                disabled={downloadingType === "financial-xlsx"}
+                className="flex-1 bg-[#ED1C24] hover:bg-black text-white text-xs font-bold h-9 rounded-xl cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" /> Download Excel
+              </Button>
+              <Button
+                onClick={() => handleDownloadFinancialReport("csv")}
+                disabled={downloadingType === "financial-csv"}
+                variant="outline"
+                className="text-xs font-bold h-9 rounded-xl text-gray-600 hover:text-black"
+              >
+                CSV
+              </Button>
+            </div>
+          </div>
+
+          {/* Card 2: Registered Members */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-200/70 shadow-sm hover:border-blue-300 transition-all flex flex-col justify-between">
+            <div>
+              <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                <Users className="h-5 w-5" />
+              </div>
+              <h4 className="font-bold text-base text-gray-900">Registered Members Directory</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                Full member list with ERCS ID, regional branches, membership categories and status.
+              </p>
+            </div>
+            <div className="pt-4 mt-4 border-t border-gray-100 flex items-center gap-2">
+              <Button
+                onClick={() => handleDownloadMembersReport("xlsx")}
+                disabled={downloadingType === "members-xlsx"}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-9 rounded-xl cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" /> Download Excel
+              </Button>
+              <Button
+                onClick={() => handleDownloadMembersReport("csv")}
+                disabled={downloadingType === "members-csv"}
+                variant="outline"
+                className="text-xs font-bold h-9 rounded-xl text-gray-600 hover:text-black"
+              >
+                CSV
+              </Button>
+            </div>
+          </div>
+
+          {/* Card 3: Registered Volunteers */}
+          <div className="bg-white rounded-2xl p-5 border border-gray-200/70 shadow-sm hover:border-green-300 transition-all flex flex-col justify-between">
+            <div>
+              <div className="h-10 w-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-3">
+                <HandHeart className="h-5 w-5" />
+              </div>
+              <h4 className="font-bold text-base text-gray-900">Registered Volunteers Roster</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                Volunteers directory, emergency contacts, regions, contributed hours, and readiness.
+              </p>
+            </div>
+            <div className="pt-4 mt-4 border-t border-gray-100 flex items-center gap-2">
+              <Button
+                onClick={() => handleDownloadVolunteersReport("xlsx")}
+                disabled={downloadingType === "volunteers-xlsx"}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold h-9 rounded-xl cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5 mr-1.5" /> Download Excel
+              </Button>
+              <Button
+                onClick={() => handleDownloadVolunteersReport("csv")}
+                disabled={downloadingType === "volunteers-csv"}
+                variant="outline"
+                className="text-xs font-bold h-9 rounded-xl text-gray-600 hover:text-black"
+              >
+                CSV
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Row of Pie Charts: Member By Type & Members By Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Volunteer Growth Line Chart */}
-        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-bold text-gray-900">Volunteer Growth</h3>
-            <select className="text-xs border border-gray-200 rounded-md px-2 py-1 text-gray-600 bg-gray-50 outline-none">
-              <option>This Year</option>
-            </select>
-          </div>
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={MOCK_GROWTH} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(val) => val >= 1000 ? `${val/1000}K` : val} />
-                <RechartsTooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
-                  labelStyle={{ fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}
-                />
-                <Line type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        {/* Monthly Registrations Bar Chart */}
-        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-bold text-gray-900">Monthly Registrations</h3>
-            <select className="text-xs border border-gray-200 rounded-md px-2 py-1 text-gray-600 bg-gray-50 outline-none">
-              <option>This Year</option>
-            </select>
-          </div>
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={MOCK_REGISTRATIONS} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(val) => val >= 1000 ? `${val/1000}K` : val} />
-                <RechartsTooltip 
-                  cursor={{ fill: '#f9fafb' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
-                />
-                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={24} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Volunteers by Region */}
-        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="text-base font-bold text-gray-900 mb-4">Volunteers by Region</h3>
-          <div className="flex items-center justify-between">
-            <div className="h-[180px] w-[180px] relative">
+        {/* Pie Chart 1: Member By Type */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-base font-bold text-gray-900 mb-4">Member By Type</h3>
+          <div className="flex flex-col sm:flex-row items-center justify-around gap-6">
+            <div className="h-[240px] w-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={MOCK_REGIONS}
-                    cx="50%" cy="50%"
-                    innerRadius={55}
-                    outerRadius={80}
-                    paddingAngle={2}
+                    data={INITIAL_MEMBERS_BY_TYPE}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={95}
                     dataKey="value"
-                    stroke="none"
+                    stroke="#ffffff"
+                    strokeWidth={2}
                   >
-                    {MOCK_REGIONS.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    {INITIAL_MEMBERS_BY_TYPE.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_TYPE_COLORS[index % PIE_TYPE_COLORS.length]} />
                     ))}
                   </Pie>
                   <RechartsTooltip />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xl font-bold text-gray-900">{totalVolunteers.toLocaleString()}</span>
-                <span className="text-[10px] text-gray-500 font-semibold uppercase">Total</span>
-              </div>
             </div>
-            <div className="space-y-3 flex-1 ml-4">
-              {MOCK_REGIONS.map((region, i) => (
-                <div key={region.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}></span>
-                    <span className="text-gray-600 font-medium">{region.name}</span>
-                  </div>
-                  <div className="text-gray-500">
-                    {region.value.toLocaleString()} <span className="text-gray-400">({region.percentage}%)</span>
-                  </div>
+            <div className="space-y-3">
+              {INITIAL_MEMBERS_BY_TYPE.map((entry, i) => (
+                <div key={entry.name} className="flex items-center gap-3 text-xs font-bold text-gray-700">
+                  <span className="w-3.5 h-3.5 rounded-sm shrink-0" style={{ backgroundColor: PIE_TYPE_COLORS[i] }} />
+                  <span>{entry.name}</span>
+                  <span className="text-gray-400 font-medium">({entry.percentage}%)</span>
                 </div>
               ))}
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Active Campaigns by Status */}
-        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="text-base font-bold text-gray-900 mb-4">Active Campaigns by Status</h3>
-          <div className="flex items-center justify-between">
-            <div className="h-[180px] w-[180px] relative">
+        {/* Pie Chart 2: Members By Status */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h3 className="text-base font-bold text-gray-900 mb-4">Members By Status</h3>
+          <div className="flex flex-col sm:flex-row items-center justify-around gap-6">
+            <div className="h-[240px] w-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={MOCK_CAMPAIGNS_STATUS}
-                    cx="50%" cy="50%"
-                    innerRadius={55}
-                    outerRadius={80}
-                    paddingAngle={2}
+                    data={INITIAL_MEMBERS_BY_STATUS}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={95}
                     dataKey="value"
-                    stroke="none"
+                    stroke="#ffffff"
+                    strokeWidth={2}
                   >
-                    {MOCK_CAMPAIGNS_STATUS.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={[COLORS.primary, COLORS.purple, COLORS.secondary, COLORS.danger][index % 4]} />
+                    {INITIAL_MEMBERS_BY_STATUS.map((entry, index) => (
+                      <Cell key={`cell-status-${index}`} fill={PIE_STATUS_COLORS[index % PIE_STATUS_COLORS.length]} />
                     ))}
                   </Pie>
                   <RechartsTooltip />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xl font-bold text-gray-900">34</span>
-                <span className="text-[10px] text-gray-500 font-semibold uppercase">Total</span>
-              </div>
             </div>
-            <div className="space-y-3 flex-1 ml-4">
-              {MOCK_CAMPAIGNS_STATUS.map((status, i) => (
-                <div key={status.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: [COLORS.primary, COLORS.purple, COLORS.secondary, COLORS.danger][i % 4] }}></span>
-                    <span className="text-gray-600 font-medium">{status.name}</span>
-                  </div>
-                  <div className="text-gray-500">
-                    {status.value} <span className="text-gray-400">({status.percentage}%)</span>
-                  </div>
+            <div className="space-y-3">
+              {INITIAL_MEMBERS_BY_STATUS.map((entry, i) => (
+                <div key={entry.name} className="flex items-center gap-3 text-xs font-bold text-gray-700">
+                  <span className="w-3.5 h-3.5 rounded-sm shrink-0" style={{ backgroundColor: PIE_STATUS_COLORS[i] }} />
+                  <span>{entry.name}</span>
+                  <span className="text-gray-400 font-medium">({entry.percentage}%)</span>
                 </div>
               ))}
             </div>
           </div>
-        </motion.div>
-
-        {/* User Activity Trend */}
-        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold text-gray-900">User Activity Trend</h3>
-            <select className="text-xs border border-gray-200 rounded-md px-2 py-1 text-gray-600 bg-gray-50 outline-none">
-              <option>This Month</option>
-            </select>
-          </div>
-          
-          <div className="flex items-center gap-4 mb-4 text-xs font-medium text-gray-600">
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Logins</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500"></span> New Users</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500"></span> Actions</span>
-          </div>
-
-          <div className="h-[140px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={MOCK_USER_ACTIVITY} margin={{ top: 5, right: 0, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(val) => val >= 1000 ? `${val/1000}K` : val} />
-                <RechartsTooltip contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
-                <Line type="monotone" dataKey="actions" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3, fill: '#8b5cf6' }} />
-                <Line type="monotone" dataKey="logins" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }} />
-                <Line type="monotone" dataKey="newUsers" stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#10b981' }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* Footer Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Reports Summary Table */}
-        <motion.div variants={itemVariants} className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 overflow-hidden">
-          <h3 className="text-base font-bold text-gray-900 mb-6">Reports Summary</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="pb-3 text-xs font-semibold text-gray-500">Report Name</th>
-                  <th className="pb-3 text-xs font-semibold text-gray-500">Type</th>
-                  <th className="pb-3 text-xs font-semibold text-gray-500">Generated On</th>
-                  <th className="pb-3 text-xs font-semibold text-gray-500">Generated By</th>
-                  <th className="pb-3 text-xs font-semibold text-gray-500 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {MOCK_REPORTS.map((report) => (
-                  <tr key={report.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="py-3 text-sm font-medium text-gray-800">{report.name}</td>
-                    <td className="py-3 text-xs font-medium text-gray-500">{report.type}</td>
-                    <td className="py-3 text-xs text-gray-500">{report.generatedOn}</td>
-                    <td className="py-3 text-xs text-gray-500">{report.generatedBy}</td>
-                    <td className="py-3">
-                      <div className="flex items-center justify-end gap-3 text-gray-400">
-                        <DownloadIcon className="h-4 w-4 hover:text-blue-600 cursor-pointer transition-colors" />
-                        <Eye className="h-4 w-4 hover:text-gray-900 cursor-pointer transition-colors" />
-                        <Trash2 className="h-4 w-4 hover:text-red-500 cursor-pointer transition-colors" />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Grouped Bar Chart: Membership Type */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-base font-bold text-gray-900">Membership Type</h3>
+          <div className="flex items-center gap-4 text-xs font-bold text-gray-600">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#3b82f6]"></span> Male</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#ef4444]"></span> Female</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#f59e0b]"></span> Organization</span>
           </div>
-        </motion.div>
-
-        {/* Top Performing Campaigns */}
-        <motion.div variants={itemVariants} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-base font-bold text-gray-900">Top Performing Campaigns</h3>
-            <span className="text-xs font-medium text-blue-600 cursor-pointer hover:underline">View All</span>
-          </div>
-          <div className="space-y-5">
-            {MOCK_TOP_CAMPAIGNS.map((campaign, i) => (
-              <div key={campaign.name} className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-1.5 rounded-md bg-gray-50 border border-gray-100 text-gray-500">
-                      <Megaphone className="h-3.5 w-3.5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-800 leading-none">{campaign.name}</h4>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs font-medium text-gray-600">{campaign.volunteers.toLocaleString()} Volunteers</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 w-full">
-                  <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-1000" 
-                      style={{ width: `${campaign.percentage}%`, backgroundColor: campaign.color }} 
-                    />
-                  </div>
-                  <span className="text-xs font-bold text-gray-700 w-8">{campaign.percentage}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+        </div>
+        <div className="h-[280px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={INITIAL_MEMBERSHIP_TYPES} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(v) => v >= 1000 ? `${v/1000}K` : v} />
+              <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }} />
+              <Bar dataKey="male" name="Male" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={22} />
+              <Bar dataKey="female" name="Female" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={22} />
+              <Bar dataKey="org" name="Organization" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={22} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
-    </motion.div>
+
+      {/* Grouped Bar Chart: Member By Region */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-base font-bold text-gray-900">Member By Region</h3>
+          <div className="flex items-center gap-4 text-xs font-bold text-gray-600">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#3b82f6]"></span> Male</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#ef4444]"></span> Female</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#f59e0b]"></span> Organization</span>
+          </div>
+        </div>
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={INITIAL_REGIONS_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 25 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+              <XAxis dataKey="region" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} angle={-15} textAnchor="end" dy={8} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(v) => v >= 1000 ? `${v/1000}K` : v} />
+              <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }} />
+              <Bar dataKey="male" name="Male" fill="#3b82f6" radius={[3, 3, 0, 0]} barSize={14} />
+              <Bar dataKey="female" name="Female" fill="#ef4444" radius={[3, 3, 0, 0]} barSize={14} />
+              <Bar dataKey="org" name="Organization" fill="#f59e0b" radius={[3, 3, 0, 0]} barSize={14} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Grouped Bar Chart: Volunteer By Region */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-base font-bold text-gray-900">Volunteer By Region</h3>
+          <div className="flex items-center gap-4 text-xs font-bold text-gray-600">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#3b82f6]"></span> Male</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#ef4444]"></span> Female</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#f59e0b]"></span> Organization</span>
+          </div>
+        </div>
+        <div className="h-[280px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={INITIAL_VOLUNTEERS_BY_REGION} margin={{ top: 10, right: 10, left: 0, bottom: 25 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+              <XAxis dataKey="region" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} angle={-15} textAnchor="end" dy={8} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#9ca3af' }} tickFormatter={(v) => v >= 1000 ? `${v/1000}K` : v} />
+              <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }} />
+              <Bar dataKey="male" name="Male" fill="#3b82f6" radius={[3, 3, 0, 0]} barSize={14} />
+              <Bar dataKey="female" name="Female" fill="#ef4444" radius={[3, 3, 0, 0]} barSize={14} />
+              <Bar dataKey="org" name="Organization" fill="#f59e0b" radius={[3, 3, 0, 0]} barSize={14} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
   );
 }

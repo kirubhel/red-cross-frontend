@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/i18n/routing";
 import Image from "next/image";
 import { 
   LayoutDashboard, 
@@ -64,6 +63,11 @@ const navigationSections = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Normalize pathname: strip any leading locale prefix if present and remove trailing slashes
+  const cleanPath = (pathname || "")
+    .replace(/^\/(?:en|am|om)(?=\/|$)/, "")
+    .replace(/\/$/, "") || "/";
 
   return (
     <div className={cn(
@@ -127,8 +131,8 @@ export function Sidebar() {
             <div className="space-y-1">
               {section.items.map((item) => {
                 const isActive = item.href === "/admin" 
-                  ? pathname === "/admin"
-                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                  ? cleanPath === "/admin"
+                  : cleanPath === item.href || cleanPath.startsWith(`${item.href}/`);
 
                 return (
                   <Link
@@ -139,7 +143,7 @@ export function Sidebar() {
                       "group flex items-center rounded-xl transition-all duration-200",
                       isCollapsed ? "justify-center p-3" : "justify-between px-3 py-2.5",
                       isActive
-                        ? "bg-[#ED1C24] text-white shadow-sm shadow-[#ED1C24]/10"
+                        ? "bg-[#ED1C24] text-white shadow-sm shadow-[#ED1C24]/10 font-bold"
                         : "text-gray-500 hover:bg-red-50/40 hover:text-[#ED1C24]"
                     )}
                   >
@@ -150,6 +154,7 @@ export function Sidebar() {
                       )} />
                       <span className={cn(
                         "text-xs font-bold whitespace-nowrap overflow-hidden transition-all duration-300",
+                        isActive ? "text-white font-black" : "text-gray-600 group-hover:text-[#ED1C24]",
                         isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
                       )}>
                         {item.label}
@@ -159,7 +164,7 @@ export function Sidebar() {
                       "overflow-hidden transition-all duration-200 shrink-0",
                       isCollapsed ? "w-0 opacity-0" : "w-4 opacity-100"
                     )}>
-                      {isActive && <ChevronRight className="h-3.5 w-3.5 opacity-70" />}
+                      {isActive && <ChevronRight className="h-3.5 w-3.5 text-white/90" />}
                     </div>
                   </Link>
                 );

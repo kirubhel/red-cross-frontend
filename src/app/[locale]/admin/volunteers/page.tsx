@@ -31,6 +31,7 @@ import {
     Briefcase,
     Home,
     Upload,
+    Download,
     Loader2,
     CheckCircle2,
     AlertCircle
@@ -306,31 +307,36 @@ export default function VolunteersPage() {
     }
   };
 
-  const exportToCSV = () => {
+  const exportToExcel = async () => {
+    if (volunteers.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+    try {
+      toast.loading("Exporting volunteers roster to Excel...", { id: "export-volunteers" });
+      const { exportVolunteersReport } = await import("@/lib/report-export");
+      await exportVolunteersReport(volunteers, "xlsx");
+      toast.success("Volunteers Excel roster generated successfully", { id: "export-volunteers" });
+    } catch (err) {
+      console.error("Excel export error:", err);
+      toast.error("Failed to export volunteers roster", { id: "export-volunteers" });
+    }
+  };
+
+  const exportToCSV = async () => {
     if (volunteers.length === 0) {
         toast.error("No data to export");
         return;
     }
-
-    const headers = ["Name", "Phone", "Region", "Country", "Address", "Hours Spent", "Status"];
-    const rows = volunteers.map(v => [
-        `${v.first_name} ${v.last_name}`,
-        v.phone_number,
-        v.region,
-        v.country || "Ethiopia",
-        v.address || "---",
-        v.hoursSpent,
-        v.status
-    ]);
-
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `ercs_volunteers_${new Date().toISOString().split('T')[0]}.csv`);
-    link.click();
-    toast.success("CSV Report Generated");
+    try {
+      toast.loading("Exporting volunteers CSV...", { id: "export-volunteers" });
+      const { exportVolunteersReport } = await import("@/lib/report-export");
+      await exportVolunteersReport(volunteers, "csv");
+      toast.success("CSV Report Generated", { id: "export-volunteers" });
+    } catch (err) {
+      console.error("CSV export error:", err);
+      toast.error("Failed to export CSV", { id: "export-volunteers" });
+    }
   };
 
   const exportToPDF = () => {
@@ -882,9 +888,16 @@ export default function VolunteersPage() {
                 <X className="h-4 w-4" /> Clear Registry
             </Button>
             <Button 
+                onClick={exportToExcel}
+                variant="outline" 
+                className="rounded-xl h-10 px-6 font-black border-gray-200 text-[#ED1C24] hover:bg-red-50 cursor-pointer"
+            >
+                <Download className="h-4 w-4 mr-2" /> Export Excel
+            </Button>
+            <Button 
                 onClick={exportToCSV}
                 variant="outline" 
-                className="rounded-xl h-10 px-6 font-black border-gray-200"
+                className="rounded-xl h-10 px-6 font-black border-gray-200 cursor-pointer"
             >
                 <TableIcon className="h-4 w-4 mr-2" /> Export CSV
             </Button>
