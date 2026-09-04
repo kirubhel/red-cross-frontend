@@ -11,11 +11,17 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  transpilePackages: ['lucide-react', 'framer-motion'],
   eslint: {
     ignoreDuringBuilds: true,
   },
   images: {
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'member.redcrosseth.org',
+        pathname: '/**',
+      },
       {
         protocol: 'https',
         hostname: 'redcrosseth.org',

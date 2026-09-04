@@ -1,6 +1,6 @@
-
-
 "use client";
+
+export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { getUserScope, UserScope } from "@/lib/auth-scope";
 
 const ERCS_RED = "#ED1C24";
 const CHART_COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', ERCS_RED];
@@ -36,8 +37,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const getAvatarStyles = (firstName: string, lastName: string) => {
-  const char = (firstName?.[0] || "") + (lastName?.[0] || "");
+const getAvatarStyles = (firstName?: string, lastName?: string) => {
+  const fName = typeof firstName === "string" ? firstName : "";
+  const lName = typeof lastName === "string" ? lastName : "";
+  const char = (fName[0] || "") + (lName[0] || "");
   const chars = char.toUpperCase() || "?";
   const gradients = [
     "from-blue-500 to-indigo-600",
@@ -46,7 +49,9 @@ const getAvatarStyles = (firstName: string, lastName: string) => {
     "from-amber-400 to-orange-600",
     "from-rose-500 to-pink-600",
   ];
-  const index = (firstName.charCodeAt(0) + (lastName.charCodeAt(0) || 0)) % gradients.length;
+  const charCode1 = fName.length > 0 && typeof fName.charCodeAt === "function" ? fName.charCodeAt(0) : 0;
+  const charCode2 = lName.length > 0 && typeof lName.charCodeAt === "function" ? lName.charCodeAt(0) : 0;
+  const index = (charCode1 + charCode2) % gradients.length;
   return { chars, gradient: gradients[index] };
 };
 
@@ -270,6 +275,16 @@ export default function DashboardPage() {
     { value: 14, label: "South Ethiopia" }
   ];
 
+  const [scope, setScope] = useState<UserScope>(getUserScope());
+
+  useEffect(() => {
+    const userScope = getUserScope();
+    setScope(userScope);
+    if (!userScope.isSuperAdmin && userScope.regionId) {
+      setSelectedRegion(userScope.regionId);
+    }
+  }, []);
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -277,19 +292,42 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
+      const userScope = getUserScope();
+      let personUrl = `/person?page=1&page_size=1000`;
+      let volUrl = `/volunteers`;
+
+      if (!userScope.isSuperAdmin) {
+        if (userScope.regionId) {
+          personUrl += `&region=${userScope.regionId}`;
+          volUrl += `${volUrl.includes("?") ? "&" : "?"}region=${userScope.regionId}`;
+        }
+        if (userScope.zoneId) {
+          personUrl += `&zone=${userScope.zoneId}`;
+          volUrl += `${volUrl.includes("?") ? "&" : "?"}zone=${userScope.zoneId}`;
+        }
+        if (userScope.woredaId) {
+          personUrl += `&woreda=${userScope.woredaId}`;
+          volUrl += `${volUrl.includes("?") ? "&" : "?"}woreda=${userScope.woredaId}`;
+        }
+        if (userScope.branchId) {
+          personUrl += `&branch_id=${userScope.branchId}`;
+          volUrl += `${volUrl.includes("?") ? "&" : "?"}branch_id=${userScope.branchId}`;
+        }
+      }
+
       const [peopleRes, volunteersRes] = await Promise.all([
-        api.get('/person?page=1&page_size=1000').catch(() => ({ data: { people: [] }})),
-        api.get('/volunteers').catch(() => ({ data: { volunteers: [] }}))
+        api.get(personUrl).catch(() => ({ data: { people: [] }})),
+        api.get(volUrl).catch(() => ({ data: { volunteers: [] }}))
       ]);
       
       const people = peopleRes.data?.people || [];
       const volunteers = volunteersRes.data?.volunteers || [];
 
       // Merge backend entries
-      const merged = [
+      let merged = [
         ...people.map((p: any) => ({
           id: p.id || p.ercs_id || `mem-${Math.random()}`,
-          first_name: p.first_name,
+          first_name: p.first_name || p.name || "",
           father_name: p.father_name || p.last_name || "",
           email: p.email || "member@ercs.org",
           phone_number: p.phone_number || "N/A",
@@ -301,7 +339,7 @@ export default function DashboardPage() {
         })),
         ...volunteers.map((v: any) => ({
           id: v.id || v.person_id || `vol-${Math.random()}`,
-          first_name: v.first_name,
+          first_name: v.first_name || v.name || "",
           father_name: v.last_name || v.father_name || "",
           email: v.email || "volunteer@ercs.org",
           phone_number: v.phone_number || "N/A",
@@ -312,6 +350,11 @@ export default function DashboardPage() {
           role: "VOLUNTEER"
         }))
       ];
+
+      if (!userScope.isSuperAdmin && userScope.regionId) {
+        merged = merged.filter(m => m.region === userScope.regionId);
+      }
+
       setAllRegistry(merged);
 
     } catch (error) {
@@ -525,22 +568,29 @@ export default function DashboardPage() {
             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
               Region:
             </span>
-            <select
-              value={selectedRegion}
-              onChange={(e) => setSelectedRegion(e.target.value)}
-              className={cn(
-                "h-9 px-3 text-xs font-bold text-black border border-gray-200",
-                "rounded-xl bg-gray-50 focus:outline-none focus:border-[#ED1C24]",
-                "transition-all cursor-pointer shadow-sm"
-              )}
-            >
-              <option value="">All Regions</option>
-              {REGIONS_LIST.map(r => (
-                <option key={r.value} value={r.value.toString()}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
+            {scope.isSuperAdmin ? (
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                className={cn(
+                  "h-9 px-3 text-xs font-bold text-black border border-gray-200",
+                  "rounded-xl bg-gray-50 focus:outline-none focus:border-[#ED1C24]",
+                  "transition-all cursor-pointer shadow-sm"
+                )}
+              >
+                <option value="">All Regions</option>
+                {REGIONS_LIST.map(r => (
+                  <option key={r.value} value={r.value.toString()}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="h-9 px-3 text-xs font-extrabold text-[#ED1C24] border border-red-100 rounded-xl bg-red-50/60 flex items-center gap-1.5 shadow-sm">
+                <span>{scope.regionName}</span>
+                <span className="text-[9px] uppercase font-bold text-red-400">(Jurisdiction)</span>
+              </div>
+            )}
           </div>
 
           {/* Gender Selection */}
@@ -614,7 +664,7 @@ export default function DashboardPage() {
             </Button>
           </div>
           <div className="flex-1 min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <AreaChart data={getGrowthChartData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -699,7 +749,7 @@ export default function DashboardPage() {
             Branch Distribution
           </h3>
           <div className="flex-1 min-h-[250px] relative">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie 
                   data={getGeographicChartData()} 
@@ -749,7 +799,7 @@ export default function DashboardPage() {
             </Button>
           </div>
           <div className="flex-1 min-h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={campaignPerformance} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis 
