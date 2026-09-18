@@ -216,14 +216,32 @@ export default function SystemSettingsPage() {
     try {
       setSetupLoading(true);
       const res = await api.post("/auth/setup-mfa");
-      setMfaSetup({
+      const setupData = {
         secret: res.data.secret,
         qrCodeUrl: res.data.qr_code_url
-      });
+      };
+      setMfaSetup(setupData);
       if (res.data.phone_number) {
         setUserPhone(res.data.phone_number);
       }
       setSmsSent(false);
+
+      // Auto-dispatch OTP for SMS method so user receives it immediately on modal open
+      if (mfaMethod === "SMS" && setupData.secret) {
+        try {
+          setSendingSmsOtp(true);
+          await api.post("/auth/mfa/send-otp", {
+            user_id: currentUserId,
+            secret: setupData.secret
+          });
+          setSmsSent(true);
+        } catch (smsErr: any) {
+          // Non-fatal: user can retry using the "Resend" button
+          console.warn("Auto SMS OTP dispatch failed:", smsErr?.response?.data || smsErr.message);
+        } finally {
+          setSendingSmsOtp(false);
+        }
+      }
     } catch (err) {
       console.error("MFA Setup failed", err);
       alert("Failed to initialize 2FA setup.");
