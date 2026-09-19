@@ -12,7 +12,7 @@ type LanguageContextType = {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-const SUPPORTED_LOCALES: Language[] = ['en', 'am'];
+const SUPPORTED_LOCALES: Language[] = ['en', 'am', 'om'];
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   // Read locale from URL params — safe during SSR, requires no provider context

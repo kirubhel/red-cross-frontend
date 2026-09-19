@@ -1,0 +1,11 @@
+{
+  "Navigation": {
+    "home": "Mana",
+    "dashboard": "Daashboordii",
+    "login": "Seeni",
+    "logout": "Ba'i"
+  },
+  "Index": {
+    "title": "Baga gara ERCS VMBS nagaan dhuftan"
+  }
+}

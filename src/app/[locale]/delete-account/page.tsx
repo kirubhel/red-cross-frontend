@@ -7,8 +7,11 @@ import { AlertTriangle, Trash2, Loader2, ArrowLeft, ShieldOff, Eye, EyeOff, User
 import api from "@/lib/api";
 import { toast } from "sonner";
 
+import { useLanguage } from "@/context/LanguageContext";
+
 export default function DeleteAccountPage() {
   const router = useRouter();
+  const { lang } = useLanguage();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +34,6 @@ export default function DeleteAccountPage() {
       localStorage.removeItem("user_role");
       localStorage.removeItem("ercs_id");
       setDeleted(true);
-      setTimeout(() => router.push("/"), 4000);
     } catch (err: any) {
       const raw = err?.response?.data;
       const msg = typeof raw === "string" ? raw : raw?.error ?? "Please check your credentials and try again.";
@@ -44,15 +46,34 @@ export default function DeleteAccountPage() {
   if (deleted) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-6">
-        <div className="text-center space-y-6 max-w-md">
+        <div className="text-center space-y-6 max-w-md bg-gray-900 border border-gray-800 p-8 rounded-3xl">
           <div className="h-20 w-20 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto">
             <ShieldOff className="h-9 w-9 text-green-400" />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tighter">Account Deleted</h1>
-          <p className="text-gray-400 font-medium leading-relaxed">
-            Your account and all associated personal data have been permanently removed. You will be redirected to the home page shortly.
+          <p className="text-gray-400 font-medium text-sm leading-relaxed">
+            Your account credentials and personal profile records have been permanently purged. If you wish to rejoin the society in the future, your phone number and email are now eligible for fresh registration.
           </p>
-          <p className="text-xs font-black uppercase tracking-widest text-gray-600">Redirecting…</p>
+          <div className="pt-2 flex flex-col gap-3">
+            <Link
+              href={`/${lang}/join/member`}
+              className="w-full py-3 px-4 rounded-xl bg-[#ED1C24] hover:bg-red-700 text-white font-black text-xs uppercase tracking-widest transition-colors"
+            >
+              Re-register as Member
+            </Link>
+            <Link
+              href={`/${lang}/join/volunteer`}
+              className="w-full py-3 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-black text-xs uppercase tracking-widest transition-colors"
+            >
+              Re-register as Volunteer
+            </Link>
+            <Link
+              href={`/${lang}`}
+              className="w-full py-2 px-4 text-gray-500 hover:text-white font-bold text-xs transition-colors"
+            >
+              Back to Home
+            </Link>
+          </div>
         </div>
       </div>
     );

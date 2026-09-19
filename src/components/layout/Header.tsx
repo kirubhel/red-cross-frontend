@@ -11,6 +11,7 @@ import {
   X as CloseIcon
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { Button } from "@/components/ui/button";
 
@@ -21,8 +22,10 @@ interface HeaderProps {
 
 export default function Header({ showBackToHome = false, minimal = false }: HeaderProps) {
   const { lang, setLang, t } = useLanguage();
+  const pathname = usePathname();
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>("");
   const langRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,11 +48,33 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
     return () => { document.body.style.overflow = 'unset'; }
   }, [isMobileMenuOpen]);
 
+  // Track active section on scroll
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleScroll = () => {
+      const sections = ["news", "impact", "services", "about"];
+      const scrollPos = window.scrollY + 200;
+      for (const sectionId of sections) {
+        const el = document.getElementById(sectionId);
+        if (el && el.offsetTop <= scrollPos) {
+          setActiveSection(sectionId);
+          return;
+        }
+      }
+      if (window.scrollY < 200) {
+        setActiveSection("");
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [pathname]);
+
   const navLinks = [
-    { label: t.nav.about, href: "/#about" },
-    { label: t.nav.services, href: "/#services" },
-    { label: t.nav.impact, href: "/#impact" },
-    { label: t.nav.news, href: "/#news" },
+    { id: "about", label: t.nav.about, href: `/${lang}#about` },
+    { id: "services", label: t.nav.services, href: `/${lang}#services` },
+    { id: "impact", label: t.nav.impact, href: `/${lang}#impact` },
+    { id: "news", label: t.nav.news, href: `/${lang}#news` },
   ];
 
   return (
@@ -59,7 +84,7 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
       className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md"
     >
       <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 sm:gap-3 group cursor-pointer shrink-0">
+        <Link href={`/${lang}`} className="flex items-center gap-2 sm:gap-3 group cursor-pointer shrink-0">
           <div className="relative overflow-hidden rounded-md border border-gray-100 shadow-sm">
             <Image 
               src="/logo.jpg" 
@@ -80,19 +105,28 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
           <div className="flex-1" />
         ) : !showBackToHome ? (
           <nav className="hidden lg:flex items-center gap-8">
-            {navLinks.map((item) => (
-              <Link 
-                key={item.label} 
-                href={item.href}
-                className={`${lang === 'en' ? 'text-sm' : 'text-xs'} font-bold text-black hover:text-[#ED1C24] transition-colors relative group`}
-              >
-                {item.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#ED1C24] transition-all duration-300 group-hover:w-full" />
-              </Link>
-            ))}
+            {navLinks.map((item) => {
+              const isActive = activeSection === item.id;
+              return (
+                <Link 
+                  key={item.label} 
+                  href={item.href}
+                  className={`${lang === 'en' ? 'text-sm' : 'text-xs'} font-bold transition-colors relative group ${
+                    isActive ? "text-[#ED1C24] font-black" : "text-black hover:text-[#ED1C24]"
+                  }`}
+                >
+                  {item.label}
+                  <span
+                    className={`absolute -bottom-1 left-0 h-0.5 bg-[#ED1C24] transition-all duration-300 ${
+                      isActive ? "w-full" : "w-0 group-hover:w-full"
+                    }`}
+                  />
+                </Link>
+              );
+            })}
           </nav>
         ) : (
-          <Link href="/" className="text-sm font-bold text-black hover:text-[#ED1C24] transition-colors flex items-center gap-2">
+          <Link href={`/${lang}`} className="text-sm font-bold text-black hover:text-[#ED1C24] transition-colors flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" /> {t.nav.backToHome}
           </Link>
         )}
@@ -147,7 +181,7 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
             <>
               <div className="h-4 w-px bg-gray-200 hidden lg:block" />
               <Link 
-                href="/login" 
+                href={`/${lang}/login`} 
                 className={`hidden lg:block ${
                   lang === "en" ? "text-sm" : "text-xs"
                 } font-bold text-black hover:text-[#ED1C24] transition-colors`}
@@ -156,7 +190,7 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
               </Link>
               <div className="h-8 w-px bg-gray-200 hidden lg:block" />
               
-              <Link href="/organizations" className="hidden lg:block">
+              <Link href={`/${lang}/organizations`} className="hidden lg:block">
                 <Button
                   size="sm"
                   className="bg-[#ED1C24] text-white border-2 border-[#ED1C24]
@@ -168,7 +202,7 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
                 </Button>
               </Link>
 
-              <Link href="/join/volunteer" className="hidden lg:block">
+              <Link href={`/${lang}/join/volunteer`} className="hidden lg:block">
                 <Button
                   size="sm"
                   className="bg-[#ED1C24] text-white border-2 border-[#ED1C24]
@@ -180,7 +214,7 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
                 </Button>
               </Link>
 
-              <Link href="/join/member" className="hidden lg:block">
+              <Link href={`/${lang}/join/member`} className="hidden lg:block">
                 <Button
                   size="sm"
                   className="bg-[#ED1C24] text-white border-2 border-[#ED1C24]
@@ -227,14 +261,14 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
 
               <div className="h-px bg-gray-100 my-2" />
               <Link 
-                href="/login" 
+                href={`/${lang}/login`} 
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-xl font-bold text-black"
               >
                 {t.nav.portal}
               </Link>
 
-              <Link href="/organizations" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link href={`/${lang}/organizations`} onClick={() => setIsMobileMenuOpen(false)}>
                 <Button
                   className="w-full bg-[#ED1C24] text-white border-2
                     border-[#ED1C24] h-14 rounded-2xl text-lg font-black
@@ -244,7 +278,7 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
                 </Button>
               </Link>
 
-              <Link href="/join/volunteer" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link href={`/${lang}/join/volunteer`} onClick={() => setIsMobileMenuOpen(false)}>
                 <Button
                   className="w-full bg-[#ED1C24] text-white border-2
                     border-[#ED1C24] h-14 rounded-2xl text-lg font-black
@@ -254,7 +288,7 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
                 </Button>
               </Link>
 
-              <Link href="/join/member" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link href={`/${lang}/join/member`} onClick={() => setIsMobileMenuOpen(false)}>
                 <Button
                   className="w-full bg-[#ED1C24] text-white border-2
                     border-[#ED1C24] h-14 rounded-2xl text-lg font-black

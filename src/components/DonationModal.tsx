@@ -42,6 +42,8 @@ interface DonationModalProps {
 export default function DonationModal({ isOpen, onClose, initialAmount = "100" }: DonationModalProps) {
   const [amount, setAmount] = useState("100");
   const [customAmount, setCustomAmount] = useState("");
+  const [activeTab, setActiveTab] = useState<"online" | "bank">("online");
+  const [copiedAccount, setCopiedAccount] = useState<string>("");
   const [provider, setProvider] = useState("ARIFPAY");
   const [countryCode, setCountryCode] = useState("ET");
   const [localNumber, setLocalNumber] = useState("");
@@ -210,65 +212,135 @@ export default function DonationModal({ isOpen, onClose, initialAmount = "100" }
                         <div className="relative group/input">
                             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold tracking-widest text-[8px] z-10 group-focus-within/input:text-black transition-colors uppercase">Custom (ETB)</span>
                             <Input 
+                                type="text"
+                                inputMode="decimal"
                                 placeholder="0.00" 
                                 className="h-12 pl-24 pr-4 rounded-xl bg-gray-50 border-none font-black text-base text-black focus-visible:ring-1 focus-visible:ring-red-500/20 transition-all text-right placeholder:text-gray-200"
                                 value={customAmount}
-                                onChange={(e) => setCustomAmount(e.target.value)}
+                                onChange={(e) => {
+                                  const raw = e.target.value.replace(/[^0-9.]/g, '');
+                                  const parts = raw.split('.');
+                                  const clean = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : raw;
+                                  setCustomAmount(clean);
+                                }}
                                 onFocus={() => setAmount("")}
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-black/30 ml-1">Phone Number</Label>
-                      <PhoneNumberInput
-                        countryCode={countryCode}
-                        onCountryChange={setCountryCode}
-                        localNumber={localNumber}
-                        onLocalNumberChange={setLocalNumber}
+                    {/* Method Selector Tabs */}
+                    <div className="flex rounded-xl bg-gray-100 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("online")}
                         className={cn(
-                          "h-12 rounded-xl bg-gray-50 border-none font-bold transition-all",
-                          isPhoneInvalid && "border border-red-500 bg-red-50/50"
+                          "flex-1 py-2 text-xs font-black rounded-lg transition-all",
+                          activeTab === "online" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"
                         )}
-                        inputClassName="text-sm font-bold text-black placeholder:text-gray-300"
-                      />
+                      >
+                        Digital Gateway
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("bank")}
+                        className={cn(
+                          "flex-1 py-2 text-xs font-black rounded-lg transition-all",
+                          activeTab === "bank" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"
+                        )}
+                      >
+                        Direct Bank Transfer
+                      </button>
                     </div>
 
-                    {/* Provider Selection */}
-                    <div className="space-y-3">
-                        <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-black/30 ml-1">Payment Merchant</Label>
-                        <div className="grid grid-cols-1 gap-2">
-                            {PAYMENT_METHODS.map((method) => (
-                                <div 
-                                    key={method.id}
-                                    onClick={() => setProvider(method.id)}
-                                    className={cn(
-                                        "cursor-pointer group relative rounded-xl p-3 border-2 transition-all flex items-center gap-3",
-                                        provider === method.id 
-                                          ? "bg-white border-black shadow-sm" 
-                                          : "bg-gray-50 border-transparent hover:border-gray-100"
-                                    )}
-                                >
-                                    {method.logo ? (
-                                        <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 shadow-sm border border-gray-100 bg-white">
-                                            <img src={method.logo} alt={method.name} className="w-full h-full object-contain p-1" />
-                                        </div>
-                                    ) : (
-                                        <div className="w-8 h-8 rounded-lg bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 shadow-sm border border-red-100 text-[10px] font-black">
-                                            AP
-                                        </div>
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className={cn(
-                                          "font-black text-[13px] tracking-tight leading-none mb-0.5 truncate",
-                                          provider === method.id ? "text-black" : "text-gray-600"
-                                        )}>{method.name}</h3>
-                                        <p className="text-[7px] text-gray-400 font-bold uppercase tracking-widest truncate">{method.description.split(' ')[0]} Payment</p>
-                                    </div>
-                                </div>
-                            ))}
+                    {activeTab === "bank" ? (
+                      <div className="space-y-3 py-1">
+                        <p className="text-[11px] text-gray-500 font-medium">
+                          Transfer directly to official Ethiopian Red Cross Society verified accounts:
+                        </p>
+                        <div className="space-y-2">
+                          {[
+                            { bank: "Commercial Bank of Ethiopia (CBE)", account: "1000000983173", branch: "Finfine" },
+                            { bank: "Telebirr Merchant Shortcode", account: "1935", branch: "ERCS Official" },
+                            { bank: "Awash Bank", account: "01304000005400", branch: "Head Office" },
+                            { bank: "Dashen Bank", account: "001100001001", branch: "Main" }
+                          ].map((b, i) => (
+                            <div key={i} className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+                              <div>
+                                <span className="font-bold text-xs text-black block">{b.bank}</span>
+                                <span className="text-xs font-mono font-black text-[#ED1C24]">{b.account}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(b.account);
+                                  setCopiedAccount(b.account);
+                                  setTimeout(() => setCopiedAccount(""), 2000);
+                                }}
+                                className="px-2.5 py-1 text-[10px] font-black uppercase rounded-lg bg-white border border-gray-200 hover:border-black transition-colors"
+                              >
+                                {copiedAccount === b.account ? "Copied!" : "Copy"}
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                    </div>
+                        <p className="text-[10px] text-gray-400 leading-tight">
+                          Please email your deposit slip or transaction reference to <span className="font-bold text-black">info@redcrosseth.org</span> for an official electronic receipt.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-black/30 ml-1">Phone Number</Label>
+                          <PhoneNumberInput
+                            countryCode={countryCode}
+                            onCountryChange={setCountryCode}
+                            localNumber={localNumber}
+                            onLocalNumberChange={setLocalNumber}
+                            className={cn(
+                              "h-12 rounded-xl bg-gray-50 border-none font-bold transition-all",
+                              isPhoneInvalid && "border border-red-500 bg-red-50/50"
+                            )}
+                            inputClassName="text-sm font-bold text-black placeholder:text-gray-300"
+                          />
+                        </div>
+
+                        {/* Provider Selection */}
+                        <div className="space-y-3">
+                            <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-black/30 ml-1">Payment Merchant</Label>
+                            <div className="grid grid-cols-1 gap-2">
+                                {PAYMENT_METHODS.map((method) => (
+                                    <div 
+                                        key={method.id}
+                                        onClick={() => setProvider(method.id)}
+                                        className={cn(
+                                            "cursor-pointer group relative rounded-xl p-3 border-2 transition-all flex items-center gap-3",
+                                            provider === method.id 
+                                              ? "bg-white border-black shadow-sm" 
+                                              : "bg-gray-50 border-transparent hover:border-gray-100"
+                                        )}
+                                    >
+                                        {method.logo ? (
+                                            <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 shadow-sm border border-gray-100 bg-white">
+                                                <img src={method.logo} alt={method.name} className="w-full h-full object-contain p-1" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-lg bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0 shadow-sm border border-red-100 text-[10px] font-black">
+                                                AP
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className={cn(
+                                              "font-black text-[13px] tracking-tight leading-none mb-0.5 truncate",
+                                              provider === method.id ? "text-black" : "text-gray-600"
+                                            )}>{method.name}</h3>
+                                            <p className="text-[7px] text-gray-400 font-bold uppercase tracking-widest truncate">{method.description.split(' ')[0]} Payment</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                      </>
+                    )}
 
                     {/* Summary and Pay */}
                     <div className="space-y-4 pt-2">

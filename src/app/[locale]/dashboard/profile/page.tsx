@@ -17,7 +17,8 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
-  Upload
+  Upload,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -295,6 +296,21 @@ export default function ProfilePage() {
       meta.last_name = formData.grandfatherName;
       const metaString = JSON.stringify(meta);
 
+      const formatDOBForBackend = (dobStr: string): string => {
+        if (!dobStr) return "";
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dobStr)) return dobStr;
+        const parts = dobStr.split(/[\/\-]/);
+        if (parts.length === 3) {
+          const part0 = parts[0].trim();
+          const part1 = parts[1].trim();
+          const part2 = parts[2].trim();
+          if (part0.length <= 2 && part1.length <= 2 && part2.length === 4) {
+            return `${part2}-${part1.padStart(2, '0')}-${part0.padStart(2, '0')}`;
+          }
+        }
+        return dobStr;
+      };
+
       const fullPhone = buildFullPhoneNumber(countryIso, formData.phone);
 
       await api.put("/person/profile", {
@@ -306,7 +322,7 @@ export default function ProfilePage() {
         email: formData.email,
         phone_number: fullPhone,
         gender: formData.gender,
-        date_of_birth: formData.dateOfBirth,
+        date_of_birth: formatDOBForBackend(formData.dateOfBirth),
         profession: formData.occupation,
         region: Number(formData.region),
         zone_id: formData.zone,
@@ -858,6 +874,35 @@ export default function ProfilePage() {
                   <p className="text-[10px] text-gray-500 font-medium mt-0.5">Choose an image from files</p>
                 </div>
               </button>
+
+              {/* Remove Photo Option */}
+              {user?.photo_url && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsPhotoMenuOpen(false);
+                    try {
+                      await api.put("/person/profile", {
+                        id: user?.id,
+                        photo_url: ""
+                      });
+                      setUser((prev: any) => ({ ...prev, photo_url: "" }));
+                      toast.success("Profile photo removed successfully!");
+                    } catch (err) {
+                      toast.error("Failed to remove profile photo.");
+                    }
+                  }}
+                  className="w-full flex items-center gap-3.5 p-4 rounded-2xl bg-red-50/50 border border-red-100 hover:bg-red-100/70 active:scale-[0.98] transition-all text-left group cursor-pointer"
+                >
+                  <div className="h-11 w-11 rounded-xl bg-red-600 text-white flex items-center justify-center shadow-md shadow-red-500/20 group-hover:scale-105 transition-transform">
+                    <Trash2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-red-600">Remove Photo</p>
+                    <p className="text-[10px] text-gray-500 font-medium mt-0.5">Revert to default initials</p>
+                  </div>
+                </button>
+              )}
             </div>
 
             <Button

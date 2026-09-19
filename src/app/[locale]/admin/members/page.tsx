@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin } from "lucide-react";
+import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin, Info } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
@@ -634,7 +634,18 @@ export default function MembersPage() {
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Full Identity</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Region</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Category</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Status</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">
+                <div className="flex items-center gap-1.5 group relative cursor-help">
+                  <span>Status</span>
+                  <Info className="w-3.5 h-3.5 text-gray-400 group-hover:text-red-600 transition-colors" />
+                  <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-3 bg-gray-900 text-white text-[11px] font-medium rounded-xl shadow-xl border border-gray-800 pointer-events-none normal-case tracking-normal">
+                    <p className="font-bold text-white mb-1">ERCS Membership Status:</p>
+                    <p className="text-gray-300 mb-1"><span className="text-emerald-400 font-semibold">ACTIVE:</span> Annual membership contribution fee paid for current cycle & identity verified.</p>
+                    <p className="text-gray-300 mb-1"><span className="text-amber-400 font-semibold">INACTIVE:</span> Annual renewal overdue (over 12 months) or explicitly marked inactive.</p>
+                    <p className="text-gray-300"><span className="text-blue-400 font-semibold">PENDING:</span> New registration undergoing branch review or pending initial payment.</p>
+                  </div>
+                </div>
+              </TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40 text-right print:hidden">Audit</TableHead>
             </TableRow>
           </TableHeader>

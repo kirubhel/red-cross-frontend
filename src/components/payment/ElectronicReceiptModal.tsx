@@ -42,8 +42,24 @@ export function ElectronicReceiptModal({
   const verifyUrl = `https://member.redcrosseth.org/verify/receipt/${receipt.invoiceNumber || receipt.id}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm print:p-0 print:bg-white">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:w-full">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm print:p-0 print:bg-white print:fixed print:inset-0 print:z-[9999]">
+      <style jsx global>{`
+        @media print {
+          body {
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          header, footer, nav, aside {
+            display: none !important;
+          }
+          @page {
+            size: auto;
+            margin: 15mm;
+          }
+        }
+      `}</style>
+      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[92vh] print:max-h-none print:shadow-none print:border-none print:w-full print:rounded-none">
         {/* Action Header (Hidden in Print) */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/80 print:hidden">
           <div className="flex items-center gap-2">

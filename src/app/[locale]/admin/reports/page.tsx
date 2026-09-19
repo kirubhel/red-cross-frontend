@@ -233,6 +233,39 @@ export default function ReportsAndAnalyticsPage() {
     }
   };
 
+  const liveTotalMembers = (stats.activeMembers || 0) + (stats.volunteers || 0);
+  const liveMembersByType = liveTotalMembers > 0 ? [
+    { 
+      name: "MEMBER", 
+      value: stats.activeMembers, 
+      percentage: Number(((stats.activeMembers / liveTotalMembers) * 100).toFixed(1)) 
+    },
+    { 
+      name: "VOLUNTEER", 
+      value: stats.volunteers, 
+      percentage: Number(((stats.volunteers / liveTotalMembers) * 100).toFixed(1)) 
+    },
+  ] : INITIAL_MEMBERS_BY_TYPE;
+
+  const liveStatusTotal = (stats.activeMembers || 0) + (stats.unpaidMembers || 0) + (stats.renewalMembers || 0);
+  const liveMembersByStatus = liveStatusTotal > 0 ? [
+    { 
+      name: "ACTIVE", 
+      value: stats.activeMembers, 
+      percentage: Number(((stats.activeMembers / liveStatusTotal) * 100).toFixed(1)) 
+    },
+    { 
+      name: "UNPAID", 
+      value: stats.unpaidMembers, 
+      percentage: Number(((stats.unpaidMembers / liveStatusTotal) * 100).toFixed(1)) 
+    },
+    { 
+      name: "RENEWAL", 
+      value: stats.renewalMembers, 
+      percentage: Number(((stats.renewalMembers / liveStatusTotal) * 100).toFixed(1)) 
+    },
+  ] : INITIAL_MEMBERS_BY_STATUS;
+
   const resetFilters = () => {
     setSearch("");
     setMainCategory("");
@@ -833,7 +866,7 @@ export default function ReportsAndAnalyticsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={INITIAL_MEMBERS_BY_TYPE}
+                    data={liveMembersByType}
                     cx="50%"
                     cy="50%"
                     outerRadius={68}
@@ -841,7 +874,7 @@ export default function ReportsAndAnalyticsPage() {
                     stroke="#ffffff"
                     strokeWidth={2}
                   >
-                    {INITIAL_MEMBERS_BY_TYPE.map((entry, index) => (
+                    {liveMembersByType.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={PIE_TYPE_COLORS[index % PIE_TYPE_COLORS.length]} />
                     ))}
                   </Pie>
@@ -850,7 +883,7 @@ export default function ReportsAndAnalyticsPage() {
               </ResponsiveContainer>
             </div>
             <div className="space-y-1.5">
-              {INITIAL_MEMBERS_BY_TYPE.map((entry, i) => (
+              {liveMembersByType.map((entry, i) => (
                 <div key={entry.name} className="flex items-center gap-2.5 text-[11px] font-bold text-gray-700">
                   <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: PIE_TYPE_COLORS[i] }} />
                   <span>{entry.name}</span>
@@ -869,7 +902,7 @@ export default function ReportsAndAnalyticsPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={INITIAL_MEMBERS_BY_STATUS}
+                    data={liveMembersByStatus}
                     cx="50%"
                     cy="50%"
                     outerRadius={68}
@@ -877,7 +910,7 @@ export default function ReportsAndAnalyticsPage() {
                     stroke="#ffffff"
                     strokeWidth={2}
                   >
-                    {INITIAL_MEMBERS_BY_STATUS.map((entry, index) => (
+                    {liveMembersByStatus.map((entry, index) => (
                       <Cell key={`cell-status-${index}`} fill={PIE_STATUS_COLORS[index % PIE_STATUS_COLORS.length]} />
                     ))}
                   </Pie>
@@ -886,7 +919,7 @@ export default function ReportsAndAnalyticsPage() {
               </ResponsiveContainer>
             </div>
             <div className="space-y-1.5">
-              {INITIAL_MEMBERS_BY_STATUS.map((entry, i) => (
+              {liveMembersByStatus.map((entry, i) => (
                 <div key={entry.name} className="flex items-center gap-2.5 text-[11px] font-bold text-gray-700">
                   <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: PIE_STATUS_COLORS[i] }} />
                   <span>{entry.name}</span>

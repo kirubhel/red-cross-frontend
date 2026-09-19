@@ -72,10 +72,10 @@ export const footerSocialIconOptions: Array<{ value: FooterSocialIcon; label: st
 ];
 
 export const defaultFooterSocialLinks: FooterSocialLink[] = [
-  { label: "Facebook", url: "https://facebook.com", icon: "facebook" },
-  { label: "Twitter / X", url: "https://twitter.com", icon: "twitter" },
-  { label: "Instagram", url: "https://instagram.com", icon: "instagram" },
-  { label: "LinkedIn", url: "https://linkedin.com", icon: "linkedin" },
+  { label: "Facebook", url: "https://www.facebook.com/EthiopianRedCrossSociety", icon: "facebook" },
+  { label: "Twitter / X", url: "https://twitter.com/EthioRedCross", icon: "twitter" },
+  { label: "Telegram", url: "https://t.me/ethiopianredcross", icon: "telegram" },
+  { label: "LinkedIn", url: "https://www.linkedin.com/company/ethiopian-red-cross-society", icon: "linkedin" },
 ];
 
 export const defaultFooterMissionLinks: FooterRouteLink[] = [

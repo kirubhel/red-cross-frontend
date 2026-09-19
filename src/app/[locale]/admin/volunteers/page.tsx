@@ -34,7 +34,8 @@ import {
     Download,
     Loader2,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    Info
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
@@ -1223,7 +1224,18 @@ export default function VolunteersPage() {
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contact</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Location</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contribution</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500 text-right">Status</TableHead>
+              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500 text-right">
+                <div className="flex items-center justify-end gap-1.5 group relative cursor-help">
+                  <span>Status</span>
+                  <Info className="w-3.5 h-3.5 text-gray-400 group-hover:text-red-600 transition-colors" />
+                  <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-3 bg-gray-900 text-white text-[11px] font-medium rounded-xl shadow-xl border border-gray-800 pointer-events-none normal-case tracking-normal text-left">
+                    <p className="font-bold text-white mb-1">ERCS Volunteer Status:</p>
+                    <p className="text-gray-300 mb-1"><span className="text-emerald-400 font-semibold">ACTIVE:</span> Induction complete; logged volunteer hours or emergency response within past 12 months.</p>
+                    <p className="text-gray-300 mb-1"><span className="text-amber-400 font-semibold">INACTIVE:</span> No service or logged activity for over 12 months.</p>
+                    <p className="text-gray-300"><span className="text-blue-400 font-semibold">PENDING:</span> Application submitted; awaiting branch vetting or orientation.</p>
+                  </div>
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

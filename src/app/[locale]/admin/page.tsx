@@ -4,13 +4,14 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend
 } from 'recharts';
 import { 
   Users, CheckCircle, Megaphone, Calendar, ChevronDown, 
-  UserPlus, Edit3, ShieldAlert, TrendingUp, Search, X
+  UserPlus, Edit3, ShieldAlert, TrendingUp, Search, X, ArrowRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
@@ -247,9 +248,16 @@ export default function DashboardPage() {
   const [growthData, setGrowthData] = useState<any[]>([]);
 
   // Filter States
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const [selectedGender, setSelectedGender] = useState("");
-  const [selectedRole, setSelectedRole] = useState(""); // "" (All), "VOLUNTEER", "MEMBER"
+  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [selectedRegion, setSelectedRegion] = useState<string>("");
+  const [selectedGender, setSelectedGender] = useState<string>("");
+  const [dateRange, setDateRange] = useState<string>("ALL");
+  const [customStartDate, setCustomStartDate] = useState<string>("");
+  const [customEndDate, setCustomEndDate] = useState<string>("");
+  const [trendPeriod, setTrendPeriod] = useState<string>("30d");
+  const [quickSearch, setQuickSearch] = useState<string>("");
+  const [showSearchDropdown, setShowSearchDropdown] = useState<boolean>(false);
+  const router = useRouter();
 
   const [kpis, setKpis] = useState({
     totalCount: 0,
@@ -422,6 +430,29 @@ export default function DashboardPage() {
       list = list.filter(item => item.gender?.toUpperCase() === selectedGender.toUpperCase());
     }
 
+    // Filter by Date Range
+    if (dateRange !== "ALL") {
+      const now = new Date().getTime();
+      list = list.filter(item => {
+        if (!item.created_at) return true;
+        const itemTime = new Date(item.created_at).getTime();
+        if (dateRange === "TODAY") {
+          return now - itemTime <= 24 * 60 * 60 * 1000;
+        } else if (dateRange === "7D") {
+          return now - itemTime <= 7 * 24 * 60 * 60 * 1000;
+        } else if (dateRange === "30D") {
+          return now - itemTime <= 30 * 24 * 60 * 60 * 1000;
+        } else if (dateRange === "90D") {
+          return now - itemTime <= 90 * 24 * 60 * 60 * 1000;
+        } else if (dateRange === "CUSTOM") {
+          const start = customStartDate ? new Date(customStartDate).getTime() : 0;
+          const end = customEndDate ? new Date(customEndDate).getTime() + 86400000 : Infinity;
+          return itemTime >= start && itemTime <= end;
+        }
+        return true;
+      });
+    }
+
     return list;
   };
 
@@ -437,16 +468,16 @@ export default function DashboardPage() {
   const activeCampaignsCount = Math.max(2, Math.floor(totalCount * 0.15)) || 34;
   const upcomingEventsCount = Math.max(1, Math.floor(totalCount * 0.08)) || 18;
 
-  // Dynamically compute Growth Chart Data
+  // Dynamically compute Growth Chart Data according to trend period
   const getGrowthChartData = () => {
     if (filteredList.length === 0) {
       return [
-        { date: 'May 1', value: 0 },
-        { date: 'May 7', value: 0 },
-        { date: 'May 14', value: 0 },
-        { date: 'May 21', value: 0 },
-        { date: 'May 28', value: 0 },
-        { date: 'May 31', value: 0 }
+        { date: 'Day 1', value: 0 },
+        { date: 'Day 2', value: 0 },
+        { date: 'Day 3', value: 0 },
+        { date: 'Day 4', value: 0 },
+        { date: 'Day 5', value: 0 },
+        { date: 'Day 6', value: 0 }
       ];
     }
 
@@ -464,9 +495,9 @@ export default function DashboardPage() {
       datePoints[label] = accumulated;
     });
 
-    return Object.entries(datePoints)
-      .map(([date, value]) => ({ date, value }))
-      .slice(-6);
+    const entries = Object.entries(datePoints).map(([date, value]) => ({ date, value }));
+    const sliceCount = trendPeriod === "7d" ? 7 : trendPeriod === "30d" ? 14 : trendPeriod === "90d" ? 30 : entries.length;
+    return entries.slice(-sliceCount);
   };
 
   // Dynamically compute Pie Chart Data
@@ -518,17 +549,71 @@ export default function DashboardPage() {
             <input 
               type="text" 
               placeholder="Search anything..." 
+              value={quickSearch}
+              onChange={(e) => {
+                setQuickSearch(e.target.value);
+                setShowSearchDropdown(e.target.value.trim().length > 0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && quickSearch.trim()) {
+                  router.push(`/admin/members?search=${encodeURIComponent(quickSearch.trim())}`);
+                }
+              }}
+              onFocus={() => {
+                if (quickSearch.trim().length > 0) setShowSearchDropdown(true);
+              }}
               className={cn(
                 "h-11 pl-10 pr-12 rounded-xl border border-gray-200 text-sm",
-                "focus:outline-none focus:border-[#ED1C24] transition-colors w-[250px]"
+                "focus:outline-none focus:border-[#ED1C24] transition-colors w-[280px]"
               )}
             />
-            <div className={cn(
-              "absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold",
-              "text-gray-400 border border-gray-200 rounded px-1.5 py-0.5"
-            )}>
-              Ctrl + /
-            </div>
+            {quickSearch ? (
+              <button 
+                onClick={() => { setQuickSearch(""); setShowSearchDropdown(false); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 hover:text-black"
+              >
+                ✕
+              </button>
+            ) : (
+              <div className={cn(
+                "absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold",
+                "text-gray-400 border border-gray-200 rounded px-1.5 py-0.5"
+              )}>
+                Enter
+              </div>
+            )}
+
+            {/* Quick Search Dropdown */}
+            {showSearchDropdown && quickSearch.trim() && (
+              <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 p-3 z-50 space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 px-2 block">
+                  Quick Search Results
+                </span>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => router.push(`/admin/members?search=${encodeURIComponent(quickSearch.trim())}`)}
+                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-50 text-xs font-bold text-black hover:text-[#ED1C24] flex items-center justify-between"
+                  >
+                    <span>Search Members for "{quickSearch}"</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => router.push(`/admin/volunteers?search=${encodeURIComponent(quickSearch.trim())}`)}
+                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-50 text-xs font-bold text-black hover:text-[#ED1C24] flex items-center justify-between"
+                  >
+                    <span>Search Volunteers for "{quickSearch}"</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                  <button
+                    onClick={() => router.push(`/admin/payments?search=${encodeURIComponent(quickSearch.trim())}`)}
+                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-50 text-xs font-bold text-black hover:text-[#ED1C24] flex items-center justify-between"
+                  >
+                    <span>Search Payments for "{quickSearch}"</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -612,6 +697,47 @@ export default function DashboardPage() {
               <option value="FEMALE">Female</option>
             </select>
           </div>
+
+          {/* Date Filter Selection */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              Date:
+            </span>
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className={cn(
+                "h-9 px-3 text-xs font-bold text-black border border-gray-200",
+                "rounded-xl bg-gray-50 focus:outline-none focus:border-[#ED1C24]",
+                "transition-all cursor-pointer shadow-sm"
+              )}
+            >
+              <option value="ALL">All Time</option>
+              <option value="TODAY">Today (24h)</option>
+              <option value="7D">Past 7 Days</option>
+              <option value="30D">Past 30 Days</option>
+              <option value="90D">Past 90 Days</option>
+              <option value="CUSTOM">Custom Date Range</option>
+            </select>
+          </div>
+
+          {dateRange === "CUSTOM" && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="h-9 px-2 text-xs font-bold rounded-xl border border-gray-200 bg-gray-50"
+              />
+              <span className="text-xs text-gray-400">to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="h-9 px-2 text-xs font-bold rounded-xl border border-gray-200 bg-gray-50"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -659,9 +785,16 @@ export default function DashboardPage() {
             <h3 className="text-sm font-black text-black uppercase tracking-widest">
               Registration Dynamic Trend
             </h3>
-            <Button variant="outline" className="h-8 text-[10px] font-bold px-3 rounded-lg border-gray-200">
-              This Month <ChevronDown className="h-3 w-3 ml-1" />
-            </Button>
+            <select
+              value={trendPeriod}
+              onChange={(e) => setTrendPeriod(e.target.value)}
+              className="h-8 text-[11px] font-black px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-black cursor-pointer focus:border-[#ED1C24]"
+            >
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="90d">Last 90 Days</option>
+              <option value="1y">Past Year</option>
+            </select>
           </div>
           <div className="flex-1 min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>

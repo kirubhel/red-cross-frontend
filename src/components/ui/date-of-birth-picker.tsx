@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useId, useMemo } from "react";
+import React, { useId, useMemo, useRef } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -125,6 +125,8 @@ export default function DateOfBirthPicker({
     }
   };
 
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
   return (
     <div className={cn("space-y-1.5", className)}>
       <div className="grid grid-cols-3 gap-2">
@@ -195,25 +197,41 @@ export default function DateOfBirthPicker({
         </div>
       </div>
 
-      {/* Helper & Quick Native Calendar trigger */}
+      {/* Helper & Graphical Calendar trigger */}
       <div className="flex items-center justify-between px-1 text-[10px] text-black/50">
         <span className="flex items-center gap-1 font-semibold text-black/40">
           <CalendarIcon className="h-3 w-3 text-[#ED1C24]" />
-          Select Day, Month & Year
+          Select Day, Month &amp; Year
         </span>
-        <label className="relative flex items-center gap-1 font-bold text-black/60 hover:text-[#ED1C24] cursor-pointer transition-colors">
-          <span>Calendar</span>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              if (dateInputRef.current) {
+                if (typeof dateInputRef.current.showPicker === "function") {
+                  dateInputRef.current.showPicker();
+                } else {
+                  dateInputRef.current.focus();
+                }
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 hover:bg-red-100 text-[#ED1C24] font-black text-[10px] uppercase tracking-wider transition-colors cursor-pointer"
+          >
+            <CalendarIcon className="h-3 w-3" />
+            <span>Open Calendar</span>
+          </button>
           <input
+            ref={dateInputRef}
             type="date"
             value={value && value.length === 10 && !value.includes("--") ? value : ""}
             onChange={handleNativePicker}
             max={`${maxYear}-12-31`}
             min={`${minYear}-01-01`}
-            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            className="absolute inset-0 opacity-0 pointer-events-none w-full h-full"
             tabIndex={-1}
             aria-label="Pick date from calendar"
           />
-        </label>
+        </div>
       </div>
     </div>
   );

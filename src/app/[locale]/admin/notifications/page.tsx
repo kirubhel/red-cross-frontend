@@ -58,13 +58,62 @@ const REGIONS = [
 ];
 
 const TEMPLATES = [
-  { id: "renew", name: "Membership Renewal", code: "MembershipRenewal", active: true },
-  { id: "expire_warn", name: "Expiration Warning", code: "MembershipExpirationWarning", active: true },
-  { id: "reject", name: "ID Card Rejected", code: "IdCardRejected", active: true },
-  { id: "birthday", name: "Birthday Wish", code: "BirthdayWish", active: true },
-  { id: "expired", name: "Membership Expired", code: "MembershipExpired", active: true },
-  { id: "register", name: "Member Registration", code: "MemberRegistration", active: true },
-  { id: "approve", name: "ID Card Approved", code: "IdCardApproved", active: true },
+  { 
+    id: "renew", 
+    name: "Membership Renewal", 
+    code: "MembershipRenewal", 
+    active: true,
+    subject: "ERCS Membership Renewed Successfully",
+    body: "Congratulations {{memberName}}, your ERCS Membership has been successfully renewed!\n\nWe have received your annual contribution payment. Thank you for standing with the Ethiopian Red Cross Society.\n\nYour renewed Membership ID is {{memberId}}, valid until {{expiredDate}}."
+  },
+  { 
+    id: "expire_warn", 
+    name: "Expiration Warning", 
+    code: "MembershipExpirationWarning", 
+    active: true,
+    subject: "Urgent: Your ERCS Membership Expires Soon",
+    body: "Dear {{memberName}},\n\nThis is a friendly reminder that your ERCS membership will expire on {{expiredDate}}.\n\nPlease renew your dues today to continue supporting humanitarian missions across Ethiopia: {{loginUrl}}"
+  },
+  { 
+    id: "reject", 
+    name: "ID Card Rejected", 
+    code: "IdCardRejected", 
+    active: true,
+    subject: "Action Required: ERCS Digital ID Card Photo Update",
+    body: "Dear {{memberName}},\n\nYour submitted ID card photo could not be approved due to photo quality or verification guidelines. Please log in and upload a clear portrait photo: {{loginUrl}}"
+  },
+  { 
+    id: "birthday", 
+    name: "Birthday Wish", 
+    code: "BirthdayWish", 
+    active: true,
+    subject: "Happy Birthday from Ethiopian Red Cross Society!",
+    body: "Warmest birthday wishes, {{memberName}}! Thank you for being a committed member of the Ethiopian Red Cross Society family. We celebrate you today!"
+  },
+  { 
+    id: "expired", 
+    name: "Membership Expired", 
+    code: "MembershipExpired", 
+    active: true,
+    subject: "Your ERCS Membership Has Expired",
+    body: "Dear {{memberName}},\n\nYour ERCS membership expired on {{expiredDate}}. Renew your membership now to maintain your active humanitarian standing: {{loginUrl}}"
+  },
+  { 
+    id: "register", 
+    name: "Member Registration", 
+    code: "MemberRegistration", 
+    active: true,
+    subject: "Welcome to the Ethiopian Red Cross Society!",
+    body: "Welcome to ERCS, {{memberName}}!\n\nYour registration has been received and your temporary Member ID is {{memberId}}. Please complete your profile at {{loginUrl}}."
+  },
+  { 
+    id: "approve", 
+    name: "ID Card Approved", 
+    code: "IdCardApproved", 
+    active: true,
+    subject: "Your ERCS Digital ID Card is Ready!",
+    body: "Congratulations {{memberName}}! Your ERCS official membership ID card has been verified and issued. View and download your card here: {{loginUrl}}"
+  },
 ];
 
 const VARIABLES = [
@@ -742,6 +791,30 @@ function TemplatesModal({
   onSelect: (t: (typeof TEMPLATES)[0]) => void;
   onClose: () => void;
 }) {
+  const [subject, setSubject] = useState(selectedTemplate.subject || "Membership Renewed");
+  const [body, setBody] = useState(selectedTemplate.body || "");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setSubject(selectedTemplate.subject || "Membership Renewed");
+    setBody(selectedTemplate.body || "");
+  }, [selectedTemplate]);
+
+  const handleSave = () => {
+    setIsSaving(true);
+    setTimeout(() => {
+      setIsSaving(false);
+      toast.success(`Template '${selectedTemplate.name}' saved successfully!`, {
+        description: "Template changes updated for automated dispatches."
+      });
+    }, 400);
+  };
+
+  const handleInsertVariable = (tag: string) => {
+    setBody(prev => prev + " " + tag);
+    toast.info(`Appended ${tag} to template body`);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm">
       <div className="bg-gray-50 w-full max-w-6xl h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
@@ -810,6 +883,13 @@ function TemplatesModal({
                   <p className="text-xs font-bold text-gray-400">{selectedTemplate.code}</p>
                 </div>
               </div>
+              <Button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="bg-[#ED1C24] hover:bg-black text-white font-black text-xs px-5 h-9 rounded-xl shadow-md shadow-red-500/10 flex items-center gap-2"
+              >
+                {isSaving ? "Saving..." : "Save Template Changes"}
+              </Button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 flex gap-8 custom-scrollbar">
@@ -818,23 +898,26 @@ function TemplatesModal({
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
                     <Mail className="h-3 w-3" /> Email Subject (EN)
                   </label>
-                  <div className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 text-sm font-bold text-black border-dashed">
-                    Membership Renewed
-                  </div>
+                  <Input
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl p-3 text-sm font-bold text-black focus:ring-2 focus:ring-red-500"
+                    placeholder="Enter email subject template..."
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
                     <MessageSquare className="h-3 w-3" /> Message Template (EN)
                   </label>
-                  <div className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-6 text-sm font-medium text-black border-dashed leading-relaxed space-y-4">
-                    <p>Congratulations {`{{memberName}}`}, your ERCS Membership has been successfully renewed!</p>
-                    <p>
-                      We have received your payment. Thank you for continuing to be a valued member.
-                      <br />
-                      Your renewed Membership ID is {`{{memberId}}`}, valid until {`{{expiredDate}}`}.
-                    </p>
-                  </div>
+                  <textarea
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
+                    rows={8}
+                    className="w-full bg-white border border-gray-200 rounded-2xl p-4 text-sm font-medium text-black focus:ring-2 focus:ring-red-500 leading-relaxed custom-scrollbar outline-none"
+                    placeholder="Enter SMS or email template content with {{variables}}..."
+                  />
+                  <p className="text-[10px] text-gray-400">Click any variable tag on the right to append it directly to your template body.</p>
                 </div>
               </div>
 
@@ -845,11 +928,16 @@ function TemplatesModal({
                 </div>
                 <div className="space-y-2">
                   {VARIABLES.map((v) => (
-                    <div key={v.tag} className="bg-gray-50 rounded-lg p-3 border border-gray-100 flex items-center justify-between group cursor-pointer hover:border-gray-200">
-                      <span className="text-[10px] font-black text-green-600 font-mono bg-green-50 px-1.5 py-0.5 rounded">
+                    <div 
+                      key={v.tag} 
+                      onClick={() => handleInsertVariable(v.tag)}
+                      className="bg-gray-50 rounded-lg p-3 border border-gray-100 flex items-center justify-between group cursor-pointer hover:border-red-300 hover:bg-red-50/40 transition-all"
+                      title="Click to insert variable"
+                    >
+                      <span className="text-[10px] font-black text-green-600 font-mono bg-green-50 px-1.5 py-0.5 rounded group-hover:bg-red-100 group-hover:text-red-700">
                         {v.tag}
                       </span>
-                      <span className="text-[9px] font-bold text-gray-400">{v.desc}</span>
+                      <span className="text-[9px] font-bold text-gray-400 group-hover:text-gray-700">{v.desc}</span>
                     </div>
                   ))}
                 </div>

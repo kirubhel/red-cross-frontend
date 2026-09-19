@@ -45,11 +45,7 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
 
   const text1 = local.storyText1 || "";
   const text2 = local.storyText2 || "";
-  const isLong = text1.length > 280 || (text1.length + text2.length) > 280;
-
-  const showText1 = (isLong && !isExpanded && text1.length > 280)
-    ? text1.slice(0, 277) + "..."
-    : text1;
+  const hasExtraText = Boolean(text2 && text2.trim().length > 0);
 
   return (
     <section id="about" className="py-24 md:py-32 bg-[#F9FAFB] relative overflow-hidden">
@@ -73,7 +69,7 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
                   <Info className="h-3.5 w-3.5" />
                   {local.badge}
                 </div>
-                <h3 className={`${lang === 'en' ? 'text-5xl md:text-7xl' : 'text-4xl md:text-5xl'} font-black text-black leading-[0.85] tracking-tighter`}>
+                <h3 className={`${lang === 'en' ? 'text-4xl md:text-6xl' : 'text-3xl md:text-5xl'} font-black text-black leading-tight tracking-tight pt-1`}>
                   {local.title}
                 </h3>
               </div>
@@ -85,10 +81,10 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
                    </div>
                    <h4 className="text-lg font-black text-black">{local.storyTitle}</h4>
                 </div>
-                <div className="space-y-6 text-black/60 font-medium text-sm leading-relaxed max-w-xl">
-                  <p>{isExpanded ? text1 : showText1}</p>
+                <div className="space-y-6 text-black/70 font-medium text-sm leading-relaxed max-w-xl">
+                  <p>{text1}</p>
                   <AnimatePresence initial={false}>
-                    {(isExpanded || !isLong) && text2 && (
+                    {isExpanded && text2 && (
                       <motion.p
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
@@ -102,22 +98,26 @@ export default function WhoWeAre({ lang, content }: WhoWeAreProps) {
                   </AnimatePresence>
                 </div>
  
-                {isLong && (
-                  <motion.div variants={itemVariants} className="pt-4">
+                <div className="flex items-center gap-3 pt-4 flex-wrap">
+                  {hasExtraText && (
                     <button 
                       onClick={() => setIsExpanded(!isExpanded)}
-                      className="group inline-flex items-center gap-3 px-6 py-3 bg-white hover:bg-black text-black hover:text-white rounded-2xl font-black text-sm uppercase tracking-widest border border-black/10 transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+                      className="group inline-flex items-center gap-2.5 px-5 py-2.5 bg-white hover:bg-black text-black hover:text-white rounded-xl font-bold text-xs uppercase tracking-wider border border-black/10 transition-all duration-300 shadow-xs hover:shadow-md cursor-pointer"
                     >
                       {isExpanded 
                         ? (local.showLess || t.whoWeAre.showLess || "Show Less") 
-                        : (local.historyLinkLabel || "Read Full History")
+                        : (lang === 'am' ? "ተጨማሪ ያንብቡ" : lang === 'om' ? "Dabalata Dubbisi" : "Read More")
                       }
-                      <div className="w-8 h-8 rounded-full bg-ercs-red/10 flex items-center justify-center group-hover:bg-ercs-red transition-colors">
-                        <ChevronDown className={`h-4 w-4 text-ercs-red group-hover:text-white transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
-                      </div>
+                      <ChevronDown className={`h-3.5 w-3.5 text-ercs-red group-hover:text-white transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                     </button>
-                  </motion.div>
-                )}
+                  )}
+                  <Link
+                    href={`/${lang}/history`}
+                    className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-ercs-red hover:bg-black text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-md shadow-red-500/20 hover:shadow-lg cursor-pointer"
+                  >
+                    {local.historyLinkLabel || (lang === 'am' ? "ሙሉ ታሪኩን ያንብቡ" : lang === 'om' ? "Seenaa Guutuu Dubbisi" : "Read Full History")}
+                  </Link>
+                </div>
               </div>
             </motion.div>
 

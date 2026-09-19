@@ -50,13 +50,13 @@ const MotionHeart = motion.create(Heart);
 
 function CountUp({ value, suffix = "", decimals = 0 }: { value: number; suffix?: string; decimals?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const isInView = useInView(ref, { once: true, margin: "0px" });
   const motionValue = useMotionValue(0);
   const springValue = useSpring(motionValue, {
     damping: 30,
     stiffness: 100,
   });
-  const [count, setCount] = useState<string>("0");
+  const [count, setCount] = useState<string>(decimals > 0 ? value.toFixed(decimals) : String(value));
 
   useEffect(() => {
     if (isInView) {
@@ -1172,8 +1172,8 @@ export default function LandingPage() {
         <div className="container mx-auto px-6 relative z-10 mb-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-white p-1 rounded-lg">
+              <Link href={`/${lang}`} className="flex items-center gap-3 group cursor-pointer w-fit">
+                <div className="bg-white p-1 rounded-lg group-hover:scale-105 transition-transform">
                   <Image 
                     src="/logo.png" 
                     alt="ERCS Logo" 
@@ -1184,14 +1184,14 @@ export default function LandingPage() {
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xl font-black tracking-tighter uppercase leading-none">
+                  <span className="text-xl font-black tracking-tighter uppercase leading-none text-white group-hover:text-[#ED1C24] transition-colors">
                     ERCS
                   </span>
                   <span className="text-[9px] font-black text-[#ED1C24] uppercase tracking-[0.2em]">
                     Ethiopia
                   </span>
                 </div>
-              </div>
+              </Link>
               <p className="text-gray-400 text-sm leading-relaxed font-medium">
                 {mergedT.footer.desc}
               </p>
@@ -1283,9 +1283,12 @@ export default function LandingPage() {
                       flex items-center justify-center shrink-0">
                       <Mail className="h-4.5 w-4.5 text-[#ED1C24]" />
                     </div>
-                    <div className="text-gray-400 font-bold hover:text-white transition-colors text-xs">
-                      {mergedT.footer.email || mergedT.contactSection.email?.split(" or ")[0] || "geremew.ashenafi@redcrosseth.org"}
-                    </div>
+                    <a 
+                      href={`mailto:${mergedT.footer.email || "info@redcrosseth.org"}`}
+                      className="text-gray-400 font-bold hover:text-white transition-colors text-xs"
+                    >
+                      {mergedT.footer.email || "info@redcrosseth.org"}
+                    </a>
                   </div>
                 </div>
               </div>
@@ -1301,10 +1304,9 @@ export default function LandingPage() {
               <span className="hidden md:inline"> · </span> {mergedT.footer.rights}
             </div>
             <div className="flex gap-10 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-               <Link href="/privacy" className="hover:text-[#ED1C24] transition-colors">Privacy</Link>
-               <Link href="/privacy#terms" className="hover:text-[#ED1C24] transition-colors">Terms</Link>
-               <Link href="/privacy#cookies" className="hover:text-[#ED1C24] transition-colors">Cookies</Link>
-               <Link href="/delete-account" className="hover:text-[#ED1C24] transition-colors">Delete Account</Link>
+               <Link href={`/${lang}/privacy`} className="hover:text-[#ED1C24] transition-colors">Privacy</Link>
+               <Link href={`/${lang}/terms`} className="hover:text-[#ED1C24] transition-colors">Terms</Link>
+               <Link href={`/${lang}/cookies`} className="hover:text-[#ED1C24] transition-colors">Cookies</Link>
             </div>
           </div>
         </div>

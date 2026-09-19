@@ -16,6 +16,30 @@ export const translations = {
       becomeMember: "Become a Member",
       backToHome: "Back to Home"
     },
+    auth: {
+      backToHome: "Back to home",
+      brandTitle: "Be a Member, Volunteer and Red Cross Family",
+      brandSubtitle: "Access the Ethiopian Red Cross Society portal to manage memberships, volunteer assignments, and humanitarian impact.",
+      secureAccess: "Secure Access",
+      secureAccessDesc: "Industry standard encryption for all data.",
+      internalPortal: "Internal Portal",
+      internalPortalDesc: "Authorized personnel and volunteers only.",
+      welcomeBack: "Welcome back.",
+      signInSubtitle: "Sign in to your account",
+      identifierLabel: "Phone number, email, or member ID",
+      passwordLabel: "Password",
+      noPasswordLabel: "Login without password (requires Member ID)",
+      forgotPassword: "Forgot?",
+      signInButton: "Sign In",
+      signingIn: "Signing in...",
+      noAccount: "Don't have an account?",
+      joinMember: "Join as Member",
+      joinVolunteer: "Join as Volunteer",
+      enterOtp: "Two-Factor Authentication",
+      otpSubtitle: "Enter the 6-digit verification code sent to your phone",
+      verifyOtp: "Verify & Continue",
+      resendOtp: "Resend SMS Code"
+    },
     hero: {
       tagline: "75 Years of Service",
       title1: "Saving Lives",
@@ -190,12 +214,12 @@ export const translations = {
       socialLinks: defaultFooterSocialLinks,
       missionLinks: defaultFooterMissionLinks,
       involvedLinks: defaultFooterInvolvedLinks,
-      facebook: "https://facebook.com",
-      twitter: "https://twitter.com",
+      facebook: "https://www.facebook.com/EthiopianRedCrossSociety",
+      twitter: "https://twitter.com/EthioRedCross",
       instagram: "https://instagram.com",
-      linkedin: "https://linkedin.com",
+      linkedin: "https://www.linkedin.com/company/ethiopian-red-cross-society",
       phone: "+251-115-18-01-80",
-      email: "geremew.ashenafi@redcrosseth.org"
+      email: "info@redcrosseth.org"
     },
     programsSection: {
       title: "Membership and Donation Payments",
@@ -215,7 +239,7 @@ export const translations = {
     contactSection: {
       title: "Contact Us",
       address: "Stadium Addis Ababa, ETHIOPIA",
-      email: "geremew.ashenafi@redcrosseth.org or kassahun.alemu@redcrosseth.org",
+      email: "info@redcrosseth.org",
       tel: "+251-115-18-01-80, +251-115-18-01-82",
       mobile: "+251-911-90-79-78, +251-913-79-88-80",
       fax: "+251-115-15-00-99"
@@ -263,9 +287,33 @@ export const translations = {
       organizations: "የበጎ ፈቃድ ጥያቄ",
       portal: "የፖርታል መግቢያ",
       join: "አባል ይሁኑ",
-      joinVolunteer: "በጎ ፈቃደኛ ይሁኑ",
+      joinVolunteer: "በበጎ ፈቃደኝነት ይመዝገቡ",
       becomeMember: "አባል ይሁኑ",
-      backToHome: "ወደ ዋናው ገጽ"
+      backToHome: "ወደ ዋና ገጽ ተመለስ"
+    },
+    auth: {
+      backToHome: "ወደ ዋና ገጽ ተመለስ",
+      brandTitle: "አባል፣ በጎ ፈቃደኛ እና የቀይ መስቀል ቤተሰብ ይሁኑ",
+      brandSubtitle: "የአባልነት፣ የበጎ ፈቃድ አገልግሎቶችን እና የሰብአዊ ድጋፍ ስራዎችን ለማስተዳደር የኢትዮጵያ ቀይ መስቀል ማህበር ፖርታል ይግቡ።",
+      secureAccess: "ደህንነቱ የተጠበቀ መዳረሻ",
+      secureAccessDesc: "ለሁሉም መረጃዎች ደረጃውን የጠበቀ ምስጠራ።",
+      internalPortal: "የውስጥ ፖርታል",
+      internalPortalDesc: "ለተፈቀደላቸው ሰራተኞች እና በጎ ፈቃደኞች ብቻ።",
+      welcomeBack: "እንኳን ደህና መጡ።",
+      signInSubtitle: "ወደ መለያዎ ይግቡ",
+      identifierLabel: "ስልክ ቁጥር፣ ኢሜይል ወይም የአባል መለያ (ID)",
+      passwordLabel: "የይለፍ ቃል",
+      noPasswordLabel: "ያለይለፍ ቃል ይግቡ (የአባል መለያ ቁጥር ያስፈልጋል)",
+      forgotPassword: "ረሱት?",
+      signInButton: "ይግቡ",
+      signingIn: "በመግባት ላይ...",
+      noAccount: "መለያ የለዎትም?",
+      joinMember: "በአባልነት ይመዝገቡ",
+      joinVolunteer: "በበጎ ፈቃደኝነት ይመዝገቡ",
+      enterOtp: "ባለሁለት ደረጃ ማረጋገጫ (2FA)",
+      otpSubtitle: "ወደ ስልክዎ የተላከውን ባለ 6 አሃዝ ማረጋገጫ ኮድ ያስገቡ",
+      verifyOtp: "አረጋግጥ እና ቀጥል",
+      resendOtp: "የኤስኤምኤስ ኮድ በድጋሚ ላክ"
     },
     hero: {
       tagline: "የ75 ዓመት አገልግሎት",
@@ -450,7 +498,7 @@ export const translations = {
     contactSection: {
       title: "ያግኙን",
       address: "ስታዲየም አዲስ አበባ ፣ ኢትዮጵያ",
-      email: "geremew.ashenafi@redcrosseth.org ወይም kassahun.alemu@redcrosseth.org",
+      email: "info@redcrosseth.org",
       tel: "+251-115-18-01-80, +251-115-18-01-82",
       mobile: "+251-911-90-79-78, +251-913-79-88-80",
       fax: "+251-115-15-00-99"
@@ -486,12 +534,12 @@ export const translations = {
       socialLinks: defaultFooterSocialLinks,
       missionLinks: defaultFooterMissionLinks,
       involvedLinks: defaultFooterInvolvedLinks,
-      facebook: "https://facebook.com",
-      twitter: "https://twitter.com",
+      facebook: "https://www.facebook.com/EthiopianRedCrossSociety",
+      twitter: "https://twitter.com/EthioRedCross",
       instagram: "https://instagram.com",
-      linkedin: "https://linkedin.com",
+      linkedin: "https://www.linkedin.com/company/ethiopian-red-cross-society",
       phone: "+251-115-18-01-80",
-      email: "geremew.ashenafi@redcrosseth.org"
+      email: "info@redcrosseth.org"
     },
     dashboard: {
       mainMenu: "ዋና ማውጫ",
@@ -514,9 +562,33 @@ export const translations = {
       organizations: "Gaaffii Tajaajilaa",
       portal: "Galfata Poortaalii",
       join: "Miseensa Ta'aa",
-      joinVolunteer: "Fedheen Hojjedhu",
+      joinVolunteer: "Fedhaan-Hojjataa Ta'aa",
       becomeMember: "Miseensa Ta'aa",
-      backToHome: "Gara Manaa"
+      backToHome: "Gara Fuula Jalqabaatti Deebi'aa"
+    },
+    auth: {
+      backToHome: "Gara Fuula Jalqabaatti Deebi'aa",
+      brandTitle: "Miseensa, Fedhaan-Hojjataa fi Maatii Fannoo Diimaa Ta'aa",
+      brandSubtitle: "Miseensummaa, ergama fedhaan-laattummaa fi dhiibbaa namoomaa bulchuuf poortaalii Waldaa Fannoo Diimaa Itoophiyaa seenaa.",
+      secureAccess: "Seensa Eegumsa Qabu",
+      secureAccessDesc: "Odeeffannoo hundaaf eegumsa sadarkaa olaanaa.",
+      internalPortal: "Poortaalii Keessaa",
+      internalPortalDesc: "Hojjettoota fi fedhaan-laattota hayyamameef qofa.",
+      welcomeBack: "Baga Nagaan Dhuftan.",
+      signInSubtitle: "Gara herrega keessaniitti seenaa",
+      identifierLabel: "Lakkoofsa bilbilaa, e-meeyilii ykn adda-baasaa miseensaa",
+      passwordLabel: "Jecha Iccitii",
+      noPasswordLabel: "Jecha iccitii malee seenaa (ID Miseensaa barbaada)",
+      forgotPassword: "Dagattanii?",
+      signInButton: "Seenaa",
+      signingIn: "Seenaa jira...",
+      noAccount: "Herrega hin qabdanii?",
+      joinMember: "Miseensa Ta'aa",
+      joinVolunteer: "Fedhaan-Hojjataa Ta'aa",
+      enterOtp: "Mirkaneessa Sadarkaa Lammaffaa (2FA)",
+      otpSubtitle: "Koodii mirkaneessaa dijiitii 6 bilbila keessanitti ergame galchaa",
+      verifyOtp: "Mirkaneessi & Itti Fufi",
+      resendOtp: "Koodii SMS Irra Deebi'ii Ergi"
     },
     hero: {
       tagline: "Waggaa 75 Tajaajilaa",
@@ -701,7 +773,7 @@ export const translations = {
     contactSection: {
       title: "Nu Quunnamaa",
       address: "Istadiyeemii Finfinnee, ITOOPHIYAA",
-      email: "geremew.ashenafi@redcrosseth.org yookiin kassahun.alemu@redcrosseth.org",
+      email: "info@redcrosseth.org",
       tel: "+251-115-18-01-80, +251-115-18-01-82",
       mobile: "+251-911-90-79-78, +251-913-79-88-80",
       fax: "+251-115-15-00-99"
@@ -737,12 +809,12 @@ export const translations = {
       socialLinks: defaultFooterSocialLinks,
       missionLinks: defaultFooterMissionLinks,
       involvedLinks: defaultFooterInvolvedLinks,
-      facebook: "https://facebook.com",
-      twitter: "https://twitter.com",
+      facebook: "https://www.facebook.com/EthiopianRedCrossSociety",
+      twitter: "https://twitter.com/EthioRedCross",
       instagram: "https://instagram.com",
-      linkedin: "https://linkedin.com",
+      linkedin: "https://www.linkedin.com/company/ethiopian-red-cross-society",
       phone: "+251-115-18-01-80",
-      email: "geremew.ashenafi@redcrosseth.org"
+      email: "info@redcrosseth.org"
     },
     dashboard: {
       mainMenu: "Baafata Guddaa",

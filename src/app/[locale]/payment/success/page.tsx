@@ -193,11 +193,12 @@ function PaymentDetails() {
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex flex-col sm:flex-row gap-3.5 justify-center pt-1">
-            <Link href="/" className="w-full sm:w-auto">
-              <Button className="w-full sm:w-auto bg-[#ED1C24] hover:bg-black text-white rounded-2xl px-7 h-13 font-black uppercase text-xs tracking-widest cursor-pointer transition-all shadow-lg shadow-red-500/10 flex items-center justify-center gap-2 group">
-                Back to Portal
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 print:hidden">
+            <Link href="/dashboard" className="w-full sm:w-auto">
+              <Button 
+                className="w-full sm:w-auto bg-black hover:bg-[#ED1C24] text-white rounded-2xl px-8 h-13 font-black uppercase text-xs tracking-widest shadow-xl shadow-black/10 flex items-center justify-center gap-2 group transition"
+              >  Back to Portal
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
@@ -231,13 +232,13 @@ function PaymentDetails() {
 
 export default function PaymentSuccessPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans justify-between relative overflow-hidden">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans justify-between relative overflow-hidden print:bg-white print:min-h-0">
       {/* Decorative radial gradients */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-green-500/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 -z-10" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 -z-10" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-green-500/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 -z-10 print:hidden" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 -z-10 print:hidden" />
 
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 print:hidden">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <Image 
@@ -264,7 +265,7 @@ export default function PaymentSuccessPage() {
       </Suspense>
 
       {/* Footer */}
-      <footer className="bg-slate-950 text-white py-12 border-t border-slate-900">
+      <footer className="bg-slate-950 text-white py-12 border-t border-slate-900 print:hidden">
         <div className="container mx-auto px-6 max-w-2xl flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-500">
           <span>ERCS Core Services</span>
           <span>© {new Date().getFullYear()} Ethiopian Red Cross Society</span>

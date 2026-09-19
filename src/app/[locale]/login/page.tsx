@@ -22,10 +22,12 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import Header from "@/components/layout/Header";
+import { useLanguage } from "@/context/LanguageContext";
 import { ALL_COUNTRIES, getFlagEmoji } from "@/components/ui/phone-number-input";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { lang, t } = useLanguage();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -247,8 +249,8 @@ export default function LoginPage() {
           transition={{ duration: 0.8 }}
           className="hidden lg:flex flex-col flex-1 space-y-12"
         >
-          <Link href="/" className="inline-flex items-center gap-1.5 group text-black/40 hover:text-black transition-colors font-black uppercase tracking-widest text-[10px]">
-            <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" /> Back to home
+          <Link href={`/${lang}`} className="inline-flex items-center gap-1.5 group text-black/40 hover:text-black transition-colors font-black uppercase tracking-widest text-[10px]">
+            <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" /> {t.auth?.backToHome || "Back to home"}
           </Link>
           
           <div className="space-y-4">
@@ -262,24 +264,23 @@ export default function LoginPage() {
               />
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-black leading-[1.05] tracking-tighter">
-              Be a Member, Volunteer and <br />
-              <span className="text-[#ED1C24]">Red Cross Family</span>
+              {t.auth?.brandTitle || "Be a Member, Volunteer and Red Cross Family"}
             </h1>
             <p className="text-sm sm:text-base text-black/60 font-medium max-w-sm">
-              Access the Ethiopian Red Cross Society portal to manage memberships, volunteer assignments, and humanitarian impact.
+              {t.auth?.brandSubtitle || "Access the Ethiopian Red Cross Society portal to manage memberships, volunteer assignments, and humanitarian impact."}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-8 pt-8">
             <div className="space-y-3">
               <ShieldCheck className="h-8 w-8 text-[#ED1C24]" />
-              <h4 className="font-black uppercase tracking-widest text-[#ED1C24] text-xs">Secure Access</h4>
-              <p className="text-sm text-black/60 font-bold">Industry standard encryption for all data.</p>
+              <h4 className="font-black uppercase tracking-widest text-[#ED1C24] text-xs">{t.auth?.secureAccess || "Secure Access"}</h4>
+              <p className="text-sm text-black/60 font-bold">{t.auth?.secureAccessDesc || "Industry standard encryption for all data."}</p>
             </div>
             <div className="space-y-3">
               <Lock className="h-8 w-8 text-[#ED1C24]" />
-              <h4 className="font-black uppercase tracking-widest text-[#ED1C24] text-xs">Internal Portal</h4>
-              <p className="text-sm text-black/60 font-bold">Authorized personnel and volunteers only.</p>
+              <h4 className="font-black uppercase tracking-widest text-[#ED1C24] text-xs">{t.auth?.internalPortal || "Internal Portal"}</h4>
+              <p className="text-sm text-black/60 font-bold">{t.auth?.internalPortalDesc || "Authorized personnel and volunteers only."}</p>
             </div>
           </div>
         </motion.div>
@@ -297,8 +298,8 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1 mb-8 text-center lg:text-left">
-              <h2 className="text-3xl font-black text-black tracking-tighter">Welcome back.</h2>
-              <p className="text-black/60 font-black text-[10px] uppercase tracking-widest">Sign in to your account</p>
+              <h2 className="text-3xl font-black text-black tracking-tighter">{t.auth?.welcomeBack || "Welcome back."}</h2>
+              <p className="text-black/60 font-black text-[10px] uppercase tracking-widest">{t.auth?.signInSubtitle || "Sign in to your account"}</p>
             </div>
 
             {!isMultiProfile ? (
@@ -306,7 +307,7 @@ export default function LoginPage() {
                 <form onSubmit={handleLogin} className="space-y-8">
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label htmlFor="identifier" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">Phone number, email, or member ID</Label>
+                      <Label htmlFor="identifier" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">{t.auth?.identifierLabel || "Phone number, email, or member ID"}</Label>
                       <div className="relative">
                         {showCountrySelector ? (
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-gray-100/80 hover:bg-gray-100 rounded-lg p-1.5 border border-gray-200/50 z-20 transition-all shrink-0">
@@ -353,14 +354,14 @@ export default function LoginPage() {
                       className="h-4 w-4 rounded border-gray-300 text-[#ED1C24] focus:ring-[#ED1C24]"
                     />
                     <Label htmlFor="noPassword" className="text-xs font-bold text-black/60 cursor-pointer">
-                      Login without password (requires Member ID)
+                      {t.auth?.noPasswordLabel || "Login without password (requires Member ID)"}
                     </Label>
                   </div>
 
                   <div className={`space-y-2 transition-opacity duration-300 ${noPassword ? 'opacity-30 pointer-events-none' : ''}`}>
                     <div className="flex justify-between items-center ml-1">
-                      <Label htmlFor="password" className="text-[9px] font-black uppercase tracking-widest text-black/60">Password</Label>
-                      <Link href="/forgot-password" className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">Forgot?</Link>
+                      <Label htmlFor="password" className="text-[9px] font-black uppercase tracking-widest text-black/60">{t.auth?.passwordLabel || "Password"}</Label>
+                      <Link href={`/${lang}/forgot-password`} className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">{t.auth?.forgotPassword || "Forgot?"}</Link>
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
@@ -406,11 +407,11 @@ export default function LoginPage() {
                       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
                         <Plus className="h-4 w-4" />
                       </motion.div>
-                      Authenticating...
+                      {t.auth?.signingIn || "Authenticating..."}
                     </span>
                   ) : (
                     <span className="flex items-center justify-center gap-2">
-                      Sign In <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      {t.auth?.signInButton || "Sign In"} <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </span>
                   )}
                 </Button>
@@ -421,7 +422,7 @@ export default function LoginPage() {
                   <div className="h-16 w-16 bg-red-50 text-[#ED1C24] rounded-3xl flex items-center justify-center mx-auto mb-2 shadow-lg shadow-red-500/10">
                     <ShieldCheck className="h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-black text-black tracking-tight uppercase">Two-Factor Authentication</h3>
+                  <h3 className="text-xl font-black text-black tracking-tight uppercase">{t.auth?.enterOtp || "Two-Factor Authentication"}</h3>
                   <p className="text-xs text-black/60 font-bold leading-relaxed max-w-xs mx-auto">
                     {otpSentPhone 
                       ? `We sent a 6-digit verification code via SMS to ${otpSentPhone}. You can also use your Authenticator app.`
@@ -552,10 +553,19 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+            <div className="mt-8 pt-6 border-t border-gray-100 text-center space-y-2">
               <p className="text-xs font-bold text-black/40">
-                New to the system? <Link href="/join" className="text-[#ED1C24] hover:underline font-black">Join as a volunteer</Link>
+                {t.auth?.noAccount || "Don't have an account?"}
               </p>
+              <div className="flex items-center justify-center gap-3 text-xs">
+                <Link href={`/${lang}/join/member`} className="text-[#ED1C24] hover:underline font-black">
+                  {t.auth?.joinMember || "Join as Member"}
+                </Link>
+                <span className="text-gray-300">·</span>
+                <Link href={`/${lang}/join/volunteer`} className="text-[#ED1C24] hover:underline font-black">
+                  {t.auth?.joinVolunteer || "Join as Volunteer"}
+                </Link>
+              </div>
             </div>
           </div>
         </motion.div>

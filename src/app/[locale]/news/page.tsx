@@ -15,12 +15,13 @@ import {
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { DEFAULT_NEWS_ARTICLES } from "@/components/NewsSection";
 
 const CATEGORIES = ["All", "EMERGENCY", "HEALTH", "YOUTH", "DEVELOPMENT"];
 
 export default function NewsPage() {
-  const [news, setNews] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [news, setNews] = useState<any[]>(DEFAULT_NEWS_ARTICLES);
+  const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -33,11 +34,20 @@ export default function NewsPage() {
     try {
       const categoryParam = selectedCategory === "All" ? "" : selectedCategory;
       const res = await api.get(`/news?only_published=true&category=${categoryParam}`);
-      if (res.data?.articles) {
+      if (res.data?.articles && res.data.articles.length > 0) {
         setNews(res.data.articles);
+      } else {
+        const filtered = selectedCategory === "All" 
+          ? DEFAULT_NEWS_ARTICLES 
+          : DEFAULT_NEWS_ARTICLES.filter(a => a.category === selectedCategory);
+        setNews(filtered);
       }
     } catch (error) {
-      console.error("Failed to fetch news:", error);
+      console.error("Failed to fetch news, using curated stories:", error);
+      const filtered = selectedCategory === "All" 
+        ? DEFAULT_NEWS_ARTICLES 
+        : DEFAULT_NEWS_ARTICLES.filter(a => a.category === selectedCategory);
+      setNews(filtered);
     } finally {
       setLoading(false);
     }

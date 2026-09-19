@@ -26,13 +26,20 @@ export interface FinancialRecord {
 
 export interface MemberRecord {
   ercs_id?: string;
+  national_id?: string;
   first_name: string;
   father_name?: string;
   grandfather_name?: string;
+  date_of_birth?: string;
+  dob?: string;
   email?: string;
   phone_number?: string;
   gender?: string;
   region?: string | number;
+  zone?: string;
+  zone_id?: string;
+  woreda?: string;
+  woreda_id?: string;
   membership_type?: string;
   status?: string;
   created_at?: string;
@@ -40,16 +47,34 @@ export interface MemberRecord {
 
 export interface VolunteerRecord {
   id: string;
+  ercs_id?: string;
+  national_id?: string;
   first_name: string;
   father_name?: string;
+  grandfather_name?: string;
+  date_of_birth?: string;
+  dob?: string;
   email?: string;
   phone_number?: string;
   gender?: string;
   region?: string | number;
+  zone?: string;
+  zone_id?: string;
+  woreda?: string;
+  woreda_id?: string;
   role?: string;
   status?: string;
   hoursSpent?: number;
   created_at?: string;
+}
+
+function calculateAge(dob?: string): string {
+  if (!dob) return "N/A";
+  const birth = new Date(dob);
+  if (isNaN(birth.getTime())) return "N/A";
+  const diff = Date.now() - birth.getTime();
+  const age = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+  return age >= 0 && age < 120 ? String(age) : "N/A";
 }
 
 const REGIONS: Record<string, string> = {
@@ -220,26 +245,36 @@ export async function exportMembersReport(
   if (format === "csv") {
     const headers = [
       "ERCS ID",
+      "National ID",
       "First Name",
       "Father Name",
       "Grandfather Name",
+      "Date of Birth",
+      "Age",
+      "Gender",
       "Email",
       "Phone",
-      "Gender",
       "Region",
+      "Zone",
+      "Woreda",
       "Membership Type",
       "Status",
       "Registration Date"
     ];
     const rows = members.map(m => [
       m.ercs_id || "N/A",
+      m.national_id || "N/A",
       m.first_name || "",
       m.father_name || "",
       m.grandfather_name || "",
+      m.date_of_birth || m.dob || "N/A",
+      calculateAge(m.date_of_birth || m.dob),
+      m.gender || "",
       m.email || "",
       m.phone_number || "",
-      m.gender || "",
       REGIONS[String(m.region)] || m.region || "",
+      m.zone || m.zone_id || "N/A",
+      m.woreda || m.woreda_id || "N/A",
       m.membership_type || "Regular",
       m.status || "Active",
       m.created_at || ""
@@ -255,7 +290,7 @@ export async function exportMembersReport(
     views: [{ showGridLines: true }]
   });
 
-  worksheet.mergeCells("A1:K1");
+  worksheet.mergeCells("A1:P1");
   const titleCell = worksheet.getCell("A1");
   titleCell.value = "ETHIOPIAN RED CROSS SOCIETY — REGISTERED MEMBERS DIRECTORY";
   titleCell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 14 };
@@ -263,7 +298,7 @@ export async function exportMembersReport(
   titleCell.alignment = { horizontal: "center", vertical: "middle" };
   worksheet.getRow(1).height = 35;
 
-  worksheet.mergeCells("A2:K2");
+  worksheet.mergeCells("A2:P2");
   const metaCell = worksheet.getCell("A2");
   metaCell.value = `Official Registry Export | Date: ${new Date().toLocaleDateString()} | Total Members: ${members.length}`;
   metaCell.font = { italic: true, size: 10, color: { argb: "FF555555" } };
@@ -274,13 +309,18 @@ export async function exportMembersReport(
 
   const headerRow = worksheet.addRow([
     "ERCS ID",
+    "National ID",
     "First Name",
     "Father Name",
     "Grandfather Name",
+    "Date of Birth",
+    "Age",
+    "Gender",
     "Email Address",
     "Phone Number",
-    "Gender",
     "Region",
+    "Zone",
+    "Woreda",
     "Membership Type",
     "Status",
     "Joined Date"
@@ -292,13 +332,18 @@ export async function exportMembersReport(
   members.forEach((m, idx) => {
     const row = worksheet.addRow([
       m.ercs_id || `ERCS-${10000 + idx}`,
+      m.national_id || "N/A",
       m.first_name || "",
       m.father_name || "",
       m.grandfather_name || "",
+      m.date_of_birth || m.dob || "N/A",
+      calculateAge(m.date_of_birth || m.dob),
+      (m.gender || "MALE").toUpperCase(),
       m.email || "N/A",
       m.phone_number || "N/A",
-      (m.gender || "MALE").toUpperCase(),
       REGIONS[String(m.region)] || m.region || "Addis Ababa",
+      m.zone || m.zone_id || "N/A",
+      m.woreda || m.woreda_id || "N/A",
       m.membership_type || "Regular",
       (m.status || "ACTIVE").toUpperCase(),
       m.created_at ? new Date(m.created_at).toLocaleDateString() : "N/A"
@@ -315,9 +360,10 @@ export async function exportMembersReport(
   });
 
   worksheet.columns = [
-    { width: 18 }, { width: 16 }, { width: 16 }, { width: 18 },
-    { width: 26 }, { width: 18 }, { width: 12 }, { width: 20 },
-    { width: 20 }, { width: 14 }, { width: 16 }
+    { width: 18 }, { width: 18 }, { width: 16 }, { width: 16 }, { width: 18 },
+    { width: 16 }, { width: 10 }, { width: 12 }, { width: 26 }, { width: 18 },
+    { width: 20 }, { width: 16 }, { width: 16 }, { width: 20 }, { width: 14 },
+    { width: 16 }
   ];
 
   const buffer = await workbook.xlsx.writeBuffer();
@@ -340,12 +386,19 @@ export async function exportVolunteersReport(
   if (format === "csv") {
     const headers = [
       "Volunteer ID",
+      "ERCS ID",
+      "National ID",
       "First Name",
       "Father Name",
+      "Grandfather Name",
+      "Date of Birth",
+      "Age",
+      "Gender",
       "Email",
       "Phone",
-      "Gender",
       "Region",
+      "Zone",
+      "Woreda",
       "Role",
       "Hours Spent",
       "Status",
@@ -353,12 +406,19 @@ export async function exportVolunteersReport(
     ];
     const rows = volunteers.map(v => [
       v.id || "",
+      v.ercs_id || "N/A",
+      v.national_id || "N/A",
       v.first_name || "",
       v.father_name || "",
+      v.grandfather_name || "",
+      v.date_of_birth || v.dob || "N/A",
+      calculateAge(v.date_of_birth || v.dob),
+      v.gender || "",
       v.email || "",
       v.phone_number || "",
-      v.gender || "",
       REGIONS[String(v.region)] || v.region || "",
+      v.zone || v.zone_id || "N/A",
+      v.woreda || v.woreda_id || "N/A",
       v.role || "Volunteer",
       v.hoursSpent ?? 0,
       v.status || "Active",
@@ -375,7 +435,7 @@ export async function exportVolunteersReport(
     views: [{ showGridLines: true }]
   });
 
-  worksheet.mergeCells("A1:J1");
+  worksheet.mergeCells("A1:R1");
   const titleCell = worksheet.getCell("A1");
   titleCell.value = "ETHIOPIAN RED CROSS SOCIETY — VOLUNTEERS ROSTER";
   titleCell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 14 };
@@ -383,7 +443,7 @@ export async function exportVolunteersReport(
   titleCell.alignment = { horizontal: "center", vertical: "middle" };
   worksheet.getRow(1).height = 35;
 
-  worksheet.mergeCells("A2:J2");
+  worksheet.mergeCells("A2:R2");
   const metaCell = worksheet.getCell("A2");
   metaCell.value = `Official Volunteer Roster | Exported: ${new Date().toLocaleString()} | Total Active: ${volunteers.length}`;
   metaCell.font = { italic: true, size: 10, color: { argb: "FF555555" } };
@@ -394,12 +454,20 @@ export async function exportVolunteersReport(
 
   const headerRow = worksheet.addRow([
     "ID",
+    "ERCS ID",
+    "National ID",
     "First Name",
     "Father Name",
+    "Grandfather Name",
+    "Date of Birth",
+    "Age",
+    "Gender",
     "Email Address",
     "Phone Number",
-    "Gender",
     "Region",
+    "Zone",
+    "Woreda",
+    "Role",
     "Hours Contributed",
     "Status",
     "Joined Date"
@@ -411,12 +479,20 @@ export async function exportVolunteersReport(
   volunteers.forEach((v, idx) => {
     const row = worksheet.addRow([
       v.id ? `VOL-${v.id.slice(0, 8)}` : `VOL-${20000 + idx}`,
+      v.ercs_id || "N/A",
+      v.national_id || "N/A",
       v.first_name || "",
       v.father_name || "",
+      v.grandfather_name || "",
+      v.date_of_birth || v.dob || "N/A",
+      calculateAge(v.date_of_birth || v.dob),
+      (v.gender || "MALE").toUpperCase(),
       v.email || "N/A",
       v.phone_number || "N/A",
-      (v.gender || "MALE").toUpperCase(),
       REGIONS[String(v.region)] || v.region || "Addis Ababa",
+      v.zone || v.zone_id || "N/A",
+      v.woreda || v.woreda_id || "N/A",
+      v.role || "Volunteer",
       v.hoursSpent || 0,
       (v.status || "ACTIVE").toUpperCase(),
       v.created_at ? new Date(v.created_at).toLocaleDateString() : "N/A"
@@ -433,9 +509,10 @@ export async function exportVolunteersReport(
   });
 
   worksheet.columns = [
-    { width: 18 }, { width: 16 }, { width: 16 }, { width: 26 },
-    { width: 18 }, { width: 12 }, { width: 20 }, { width: 18 },
-    { width: 14 }, { width: 16 }
+    { width: 18 }, { width: 16 }, { width: 18 }, { width: 16 }, { width: 16 },
+    { width: 16 }, { width: 16 }, { width: 10 }, { width: 12 }, { width: 26 },
+    { width: 18 }, { width: 20 }, { width: 16 }, { width: 16 }, { width: 18 },
+    { width: 18 }, { width: 14 }, { width: 16 }
   ];
 
   const buffer = await workbook.xlsx.writeBuffer();
