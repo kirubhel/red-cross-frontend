@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin, Info, Copy, Check, Printer } from "lucide-react";
+import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin, Info, Copy, Check, Printer, Lock } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
+import { getUserScope, type UserScope } from "@/lib/auth-scope";
 
 type Member = {
   id: string;
@@ -79,6 +80,8 @@ export default function MembersPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [userScope, setUserScope] = useState<UserScope | null>(null);
+  const [isRegionLocked, setIsRegionLocked] = useState(false);
   const pageSize = 10;
 
   const copyToClipboard = (text: string, label: string = "Member ID", e?: React.MouseEvent) => {
@@ -92,15 +95,22 @@ export default function MembersPage() {
     }, 2000);
   };
 
-  const isAllSelected = members.length > 0 && members.every(m => selectedMemberIds.has(m.id));
-  const isSomeSelected = members.some(m => selectedMemberIds.has(m.id)) && !isAllSelected;
+  const displayedMembers = useMemo(() => {
+    if (userScope && !userScope.isSuperAdmin && userScope.regionNumber > 0) {
+      return members.filter(m => !m.region || Number(m.region) === userScope.regionNumber);
+    }
+    return members;
+  }, [members, userScope]);
+
+  const isAllSelected = displayedMembers.length > 0 && displayedMembers.every(m => selectedMemberIds.has(m.id));
+  const isSomeSelected = displayedMembers.some(m => selectedMemberIds.has(m.id)) && !isAllSelected;
 
   const toggleSelectAll = () => {
     const next = new Set(selectedMemberIds);
     if (isAllSelected) {
-      members.forEach(m => next.delete(m.id));
+      displayedMembers.forEach(m => next.delete(m.id));
     } else {
-      members.forEach(m => next.add(m.id));
+      displayedMembers.forEach(m => next.add(m.id));
     }
     setSelectedMemberIds(next);
   };
@@ -118,7 +128,7 @@ export default function MembersPage() {
 
   const copySelectedIDs = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const ids = members
+    const ids = displayedMembers
       .filter(m => selectedMemberIds.has(m.id))
       .map(m => m.ercs_id)
       .filter(Boolean)
@@ -133,7 +143,7 @@ export default function MembersPage() {
 
   const copySelectedPhones = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const phones = members
+    const phones = displayedMembers
       .filter(m => selectedMemberIds.has(m.id))
       .map(m => m.phone_number)
       .filter(Boolean)
@@ -147,7 +157,7 @@ export default function MembersPage() {
   };
 
   const exportSelected = async (format: "xlsx" | "csv" = "xlsx") => {
-    const selectedList = members.filter(m => selectedMemberIds.has(m.id));
+    const selectedList = displayedMembers.filter(m => selectedMemberIds.has(m.id));
     if (selectedList.length === 0) {
       toast.error("No members selected for export");
       return;
@@ -165,6 +175,15 @@ export default function MembersPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    const scope = getUserScope();
+    setUserScope(scope);
+
+    const hasRegionalLock = !scope.isSuperAdmin && Boolean(scope.regionId);
+    setIsRegionLocked(hasRegionalLock);
+    if (hasRegionalLock && scope.regionId) {
+      setRegionFilter(scope.regionId);
+    }
+
     fetchRegions();
   }, []);
 
@@ -182,7 +201,7 @@ export default function MembersPage() {
         fetchMembers();
     }, 500); // Debounce search
     return () => clearTimeout(timer);
-  }, [search, page, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory]);
+  }, [search, page, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, userScope]);
 
   const fetchRegions = async () => {
     try {
@@ -201,7 +220,9 @@ export default function MembersPage() {
   const fetchMembers = async () => {
     setLoading(true);
     try {
-      const url = `/person?page=${page}&page_size=${pageSize}&search=${search}&region=${regionFilter}&status=${statusFilter}&type=${typeFilter}&zone=${zoneFilter}&woreda=${woredaFilter}&category=${mainCategory}`;
+      const scope = userScope || getUserScope();
+      const effectiveRegion = (!scope.isSuperAdmin && scope.regionId) ? scope.regionId : regionFilter;
+      const url = `/person?page=${page}&page_size=${pageSize}&search=${search}&region=${effectiveRegion}&status=${statusFilter}&type=${typeFilter}&zone=${zoneFilter}&woreda=${woredaFilter}&category=${mainCategory}`;
       const res = await api.get(url);
       setMembers(res.data.people || []);
       setTotalItems(res.data.pagination?.total_items || 0);
@@ -215,7 +236,7 @@ export default function MembersPage() {
   };
 
   const exportToExcel = async () => {
-    if (members.length === 0) {
+    if (displayedMembers.length === 0) {
       toast.error("No data to export");
       return;
     }
@@ -223,7 +244,7 @@ export default function MembersPage() {
       toast.loading("Exporting members directory to Excel...", { id: "export-members" });
       const { exportMembersReport } = await import("@/lib/report-export");
       // Export all available members or active view
-      await exportMembersReport(members, "xlsx");
+      await exportMembersReport(displayedMembers, "xlsx");
       toast.success("Members Excel report generated successfully", { id: "export-members" });
     } catch (err) {
       console.error("Excel export error:", err);
@@ -232,14 +253,14 @@ export default function MembersPage() {
   };
 
   const exportToCSV = async () => {
-    if (members.length === 0) {
+    if (displayedMembers.length === 0) {
       toast.error("No data to export");
       return;
     }
     try {
       toast.loading("Exporting members CSV...", { id: "export-members" });
       const { exportMembersReport } = await import("@/lib/report-export");
-      await exportMembersReport(members, "csv");
+      await exportMembersReport(displayedMembers, "csv");
       toast.success("CSV Report Generated", { id: "export-members" });
     } catch (err) {
       console.error("CSV export error:", err);
@@ -653,16 +674,26 @@ export default function MembersPage() {
                 {/* Regional Hierarchy Row */}
                 <div className="grid md:grid-cols-4 gap-4 items-end">
                     <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Region</label>
+                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 flex items-center gap-1">
+                            {isRegionLocked && <Lock className="w-2.5 h-2.5 text-[#ED1C24]" />}
+                            Region
+                        </label>
                         <select 
                             value={regionFilter}
                             onChange={(e) => { setRegionFilter(e.target.value); setZoneFilter(""); setWoredaFilter(""); }}
-                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
+                            disabled={isRegionLocked}
+                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                             <option value="" className="bg-white text-black">All Regions</option>
-                             {regions.map(r => (
-                                 <option key={r.id} value={r.id} className="bg-white text-black">{r.name}</option>
-                             ))}
+                             {isRegionLocked ? (
+                                 <option value={regionFilter}>{userScope?.regionName} (Locked)</option>
+                             ) : (
+                                 <>
+                                     <option value="" className="bg-white text-black">All Regions</option>
+                                     {regions.map(r => (
+                                         <option key={r.id} value={r.id} className="bg-white text-black">{r.name}</option>
+                                     ))}
+                                 </>
+                             )}
                         </select>
                     </div>
 
@@ -817,14 +848,14 @@ export default function MembersPage() {
                   </div>
                 </TableCell>
               </TableRow>
-            ) : members.length === 0 ? (
+            ) : displayedMembers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-64 text-center">
                    <p className="text-sm font-bold text-gray-400">No members found matching your search.</p>
                 </TableCell>
               </TableRow>
             ) : (
-              members.map((member) => (
+              displayedMembers.map((member) => (
                 <TableRow 
                   key={member.id} 
                   className={cn(
@@ -1141,6 +1172,8 @@ export default function MembersPage() {
                 fetchMembers();
             }}
             regions={regions}
+            defaultRegion={userScope?.regionId}
+            isRegionLocked={isRegionLocked}
         />
       )}
     </div>
