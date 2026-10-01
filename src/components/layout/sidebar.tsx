@@ -21,7 +21,8 @@ import {
   Building2,
   BarChart3,
   Sparkles,
-  Mail
+  Mail,
+  Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +58,7 @@ const navigationSections = [
       { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList },
       { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard },
       { href: "/admin/settings", label: "Settings", icon: Settings },
+      { href: "/status", label: "System Health", icon: Activity },
     ]
   }
 ];
