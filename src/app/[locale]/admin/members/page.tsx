@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin, Info } from "lucide-react";
+import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin, Info, Copy, Check, Printer } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
@@ -77,7 +77,91 @@ export default function MembersPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const pageSize = 10;
+
+  const copyToClipboard = (text: string, label: string = "Member ID", e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedId(text);
+    toast.success(`Copied ${label}: ${text}`);
+    setTimeout(() => {
+      setCopiedId(prev => (prev === text ? null : prev));
+    }, 2000);
+  };
+
+  const isAllSelected = members.length > 0 && members.every(m => selectedMemberIds.has(m.id));
+  const isSomeSelected = members.some(m => selectedMemberIds.has(m.id)) && !isAllSelected;
+
+  const toggleSelectAll = () => {
+    const next = new Set(selectedMemberIds);
+    if (isAllSelected) {
+      members.forEach(m => next.delete(m.id));
+    } else {
+      members.forEach(m => next.add(m.id));
+    }
+    setSelectedMemberIds(next);
+  };
+
+  const toggleSelectMember = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const next = new Set(selectedMemberIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedMemberIds(next);
+  };
+
+  const copySelectedIDs = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const ids = members
+      .filter(m => selectedMemberIds.has(m.id))
+      .map(m => m.ercs_id)
+      .filter(Boolean)
+      .join("\n");
+    if (!ids) {
+      toast.error("No valid IDs selected");
+      return;
+    }
+    navigator.clipboard.writeText(ids);
+    toast.success(`Copied ${selectedMemberIds.size} Member IDs to clipboard`);
+  };
+
+  const copySelectedPhones = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const phones = members
+      .filter(m => selectedMemberIds.has(m.id))
+      .map(m => m.phone_number)
+      .filter(Boolean)
+      .join("\n");
+    if (!phones) {
+      toast.error("No phone numbers in selection");
+      return;
+    }
+    navigator.clipboard.writeText(phones);
+    toast.success(`Copied ${phones.split("\n").length} phone numbers to clipboard`);
+  };
+
+  const exportSelected = async (format: "xlsx" | "csv" = "xlsx") => {
+    const selectedList = members.filter(m => selectedMemberIds.has(m.id));
+    if (selectedList.length === 0) {
+      toast.error("No members selected for export");
+      return;
+    }
+    toast.loading(`Exporting ${selectedList.length} members...`, { id: "export-selected" });
+    try {
+      const { exportMembersReport } = await import("@/lib/report-export");
+      await exportMembersReport(selectedList, format);
+      toast.success(`Exported ${selectedList.length} members successfully`, { id: "export-selected" });
+    } catch (err) {
+      console.error("Export selected error:", err);
+      toast.error("Failed to export selected members", { id: "export-selected" });
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -626,10 +710,84 @@ export default function MembersPage() {
         )}
       </div>
 
+      {/* Bulk Actions Toolbar */}
+      {selectedMemberIds.size > 0 && (
+        <div className="bg-white border-2 border-[#ED1C24] rounded-2xl px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 shadow-lg shadow-red-500/10 animate-in fade-in slide-in-from-top-2 duration-200 print:hidden">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center justify-center px-3 py-1 bg-[#ED1C24] text-white rounded-full text-[10px] font-black tracking-wider uppercase shadow-sm">
+              {selectedMemberIds.size} Selected
+            </span>
+            <p className="text-xs font-bold text-gray-700 hidden sm:block">
+              Perform bulk actions on selected members:
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={copySelectedIDs}
+              size="sm"
+              variant="outline"
+              className="h-8 px-3 rounded-xl bg-white border-gray-200 text-black font-black text-[10px] uppercase tracking-wider hover:bg-gray-50 flex items-center gap-1.5 shadow-sm"
+            >
+              <Copy className="h-3.5 w-3.5 text-gray-600" /> Copy IDs
+            </Button>
+            <Button
+              onClick={copySelectedPhones}
+              size="sm"
+              variant="outline"
+              className="h-8 px-3 rounded-xl bg-white border-gray-200 text-black font-black text-[10px] uppercase tracking-wider hover:bg-gray-50 flex items-center gap-1.5 shadow-sm"
+            >
+              <Phone className="h-3.5 w-3.5 text-gray-600" /> Copy Phones
+            </Button>
+            <Button
+              onClick={() => exportSelected("xlsx")}
+              size="sm"
+              variant="outline"
+              className="h-8 px-3 rounded-xl bg-white border-gray-200 text-[#ED1C24] font-black text-[10px] uppercase tracking-wider hover:bg-red-50 flex items-center gap-1.5 shadow-sm"
+            >
+              <Download className="h-3.5 w-3.5" /> Export Excel
+            </Button>
+            <Button
+              onClick={() => exportSelected("csv")}
+              size="sm"
+              variant="outline"
+              className="h-8 px-3 rounded-xl bg-white border-gray-200 text-gray-700 font-black text-[10px] uppercase tracking-wider hover:bg-gray-50 flex items-center gap-1.5 shadow-sm"
+            >
+              <FileText className="h-3.5 w-3.5" /> Export CSV
+            </Button>
+            <Button
+              onClick={() => setSelectedMemberIds(new Set())}
+              size="sm"
+              variant="ghost"
+              className="h-8 px-2.5 rounded-xl text-gray-400 hover:text-black font-black text-[10px] uppercase tracking-wider"
+            >
+              <X className="h-3.5 w-3.5 mr-1" /> Deselect All
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-[32px] border border-gray-100 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.03)] overflow-hidden print:shadow-none print:border-none print:rounded-none">
         <Table>
           <TableHeader className="bg-gray-50/50 print:bg-transparent">
             <TableRow className="hover:bg-transparent border-gray-50">
+              <TableHead className="w-12 px-4 py-4 print:hidden">
+                <button
+                  type="button"
+                  onClick={toggleSelectAll}
+                  aria-label="Select all members"
+                  className={cn(
+                    "h-5 w-5 rounded-md border flex items-center justify-center transition-all cursor-pointer",
+                    isAllSelected
+                      ? "bg-[#ED1C24] border-[#ED1C24] text-white shadow-sm"
+                      : isSomeSelected
+                      ? "bg-red-50 border-[#ED1C24] text-[#ED1C24]"
+                      : "border-gray-300 bg-white hover:border-gray-400"
+                  )}
+                >
+                  {isAllSelected && <Check className="h-3.5 w-3.5 text-white stroke-[3]" />}
+                  {isSomeSelected && <div className="h-2 w-2 rounded-sm bg-[#ED1C24]" />}
+                </button>
+              </TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">ID</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Full Identity</TableHead>
               <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Region</TableHead>
@@ -652,7 +810,7 @@ export default function MembersPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-48 text-center">
+                <TableCell colSpan={7} className="h-48 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                      <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
                      <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Syncing Registry...</p>
@@ -661,14 +819,59 @@ export default function MembersPage() {
               </TableRow>
             ) : members.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-64 text-center">
+                <TableCell colSpan={7} className="h-64 text-center">
                    <p className="text-sm font-bold text-gray-400">No members found matching your search.</p>
                 </TableCell>
               </TableRow>
             ) : (
               members.map((member) => (
-                <TableRow key={member.id} className="hover:bg-[#ED1C24]/5 transition-colors border-gray-50">
-                  <TableCell className="px-6 py-4 font-black text-black text-[11px]">{member.ercs_id}</TableCell>
+                <TableRow 
+                  key={member.id} 
+                  className={cn(
+                    "transition-colors border-gray-50",
+                    selectedMemberIds.has(member.id) 
+                      ? "bg-red-50/40 hover:bg-red-50/60" 
+                      : "hover:bg-[#ED1C24]/5"
+                  )}
+                >
+                  <TableCell className="w-12 px-4 py-4 print:hidden">
+                    <button
+                      type="button"
+                      onClick={(e) => toggleSelectMember(member.id, e)}
+                      aria-label={`Select member ${member.ercs_id}`}
+                      className={cn(
+                        "h-5 w-5 rounded-md border flex items-center justify-center transition-all cursor-pointer",
+                        selectedMemberIds.has(member.id)
+                          ? "bg-[#ED1C24] border-[#ED1C24] text-white shadow-sm"
+                          : "border-gray-300 bg-white hover:border-gray-400"
+                      )}
+                    >
+                      {selectedMemberIds.has(member.id) && <Check className="h-3.5 w-3.5 text-white stroke-[3]" />}
+                    </button>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 font-black text-black text-[11px]">
+                    <div className="flex items-center gap-2 group">
+                      <span 
+                        onClick={(e) => copyToClipboard(member.ercs_id, "Member ID", e)}
+                        className="cursor-pointer hover:text-[#ED1C24] transition-colors"
+                        title="Click to copy ID"
+                      >
+                        {member.ercs_id}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => copyToClipboard(member.ercs_id, "Member ID", e)}
+                        className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-black transition-colors"
+                        title="Copy Member ID"
+                      >
+                        {copiedId === member.ercs_id ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </TableCell>
                   <TableCell className="px-6 py-4">
                     <div className="flex flex-col">
                         <span className="font-bold text-gray-900 text-xs">{member.first_name} {member.father_name}</span>
@@ -698,12 +901,28 @@ export default function MembersPage() {
                     </span>
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right print:hidden">
-                    <button 
+                    <div className="flex items-center justify-end gap-1">
+                      <button 
+                        type="button"
+                        onClick={(e) => copyToClipboard(member.ercs_id, "Member ID", e)}
+                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-black transition-colors"
+                        title="Copy ID"
+                      >
+                        {copiedId === member.ercs_id ? (
+                          <Check className="h-4 w-4 text-emerald-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </button>
+                      <button 
+                        type="button"
                         onClick={() => { setSelectedMember(member); setShowModal(true); }}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
-                    >
-                        <ArrowUpRight className="h-4 w-4 ml-auto text-gray-300 group-hover:text-[#ED1C24] transition-colors" />
-                    </button>
+                        className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#ED1C24] transition-colors group"
+                        title="View Audit Details"
+                      >
+                        <ArrowUpRight className="h-4 w-4" />
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -725,7 +944,21 @@ export default function MembersPage() {
                             <h2 className="text-2xl font-black tracking-tight text-black">
                                 {selectedMember.first_name} {selectedMember.father_name} {selectedMember.grandfather_name}
                             </h2>
-                            <p className="text-xs font-bold text-gray-400">{selectedMember.ercs_id}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-xs font-bold text-gray-400">{selectedMember.ercs_id}</p>
+                                <button
+                                    type="button"
+                                    onClick={(e) => copyToClipboard(selectedMember.ercs_id, "Member ID", e)}
+                                    className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-black transition-colors"
+                                    title="Copy Member ID"
+                                >
+                                    {copiedId === selectedMember.ercs_id ? (
+                                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                    ) : (
+                                        <Copy className="h-3.5 w-3.5" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
                         <button 
                             onClick={() => setShowModal(false)}
@@ -771,19 +1004,51 @@ export default function MembersPage() {
                             <div>
                                 <h4 className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-3">Contact & Location</h4>
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Phone className="h-4 w-4 text-gray-400" /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase">Phone</p>
-                                            <p className="text-xs font-bold text-black">{selectedMember.phone_number || "No Phone"}</p>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Phone className="h-4 w-4 text-gray-400" /></div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-gray-400 uppercase">Phone</p>
+                                                <p className="text-xs font-bold text-black">{selectedMember.phone_number || "No Phone"}</p>
+                                            </div>
                                         </div>
+                                        {selectedMember.phone_number && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => copyToClipboard(selectedMember.phone_number!, "Phone Number", e)}
+                                                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black transition-colors"
+                                                title="Copy Phone Number"
+                                            >
+                                                {copiedId === selectedMember.phone_number ? (
+                                                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                                ) : (
+                                                    <Copy className="h-3.5 w-3.5" />
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Mail className="h-4 w-4 text-gray-400" /></div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase">Email</p>
-                                            <p className="text-xs font-bold text-black">{selectedMember.email || "No Email"}</p>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><Mail className="h-4 w-4 text-gray-400" /></div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-gray-400 uppercase">Email</p>
+                                                <p className="text-xs font-bold text-black">{selectedMember.email || "No Email"}</p>
+                                            </div>
                                         </div>
+                                        {selectedMember.email && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => copyToClipboard(selectedMember.email!, "Email", e)}
+                                                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black transition-colors"
+                                                title="Copy Email"
+                                            >
+                                                {copiedId === selectedMember.email ? (
+                                                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                                ) : (
+                                                    <Copy className="h-3.5 w-3.5" />
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><MapPin className="h-4 w-4 text-gray-400" /></div>
