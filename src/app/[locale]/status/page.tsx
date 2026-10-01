@@ -228,16 +228,31 @@ export default function SystemStatusPage() {
           details: "SMS dispatch engine & OTP limiter active",
         } : s));
       } else if (serviceId === "scoping") {
-        const res = await api.get("/person?page=1&page_size=1&region=2");
-        const lat = Math.round(performance.now() - start);
-        const count = res.data?.pagination?.total_items || 0;
-        setServices(prev => prev.map(s => s.id === serviceId ? {
-          ...s,
-          status: "OPERATIONAL",
-          latencyMs: lat,
-          lastChecked: new Date().toLocaleTimeString(),
-          details: `Geographic isolation verified • ${count} Dire Dawa records isolated`,
-        } : s));
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        if (token) {
+          const res = await api.get("/person?page=1&page_size=1&region=2");
+          const lat = Math.round(performance.now() - start);
+          const count = res.data?.pagination?.total_items || 0;
+          setServices(prev => prev.map(s => s.id === serviceId ? {
+            ...s,
+            status: "OPERATIONAL",
+            latencyMs: lat,
+            lastChecked: new Date().toLocaleTimeString(),
+            details: `Geographic isolation verified • ${count} Dire Dawa records isolated`,
+          } : s));
+        } else {
+          // Public ping verifying geographic partition routing
+          const res = await api.get("/location/branches?region_id=2");
+          const lat = Math.round(performance.now() - start);
+          const branchCount = res.data?.branches?.length || 0;
+          setServices(prev => prev.map(s => s.id === serviceId ? {
+            ...s,
+            status: "OPERATIONAL",
+            latencyMs: lat,
+            lastChecked: new Date().toLocaleTimeString(),
+            details: `Geographic routing active • Dire Dawa partition online (${branchCount} branches)`,
+          } : s));
+        }
       }
     } catch {
       const lat = Math.round(performance.now() - start);

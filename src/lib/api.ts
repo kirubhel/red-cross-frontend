@@ -21,9 +21,23 @@ api.interceptors.request.use((config) => {
 // Interceptor to handle 401 (Unauthorized)
 api.interceptors.response.use((response) => response, (error) => {
   if (error.response && error.response.status === 401) {
-    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    if (typeof window !== 'undefined') {
+      const pathname = window.location.pathname;
+      // Do not redirect to login if user is on public pages or already on login
+      const isPublicOrLogin = 
+        pathname.includes('/login') || 
+        pathname.includes('/status') || 
+        pathname.includes('/join') || 
+        pathname.includes('/verify') || 
+        pathname.includes('/forgot-password') ||
+        pathname === '/' || 
+        /^\/[a-z]{2}\/?$/.test(pathname);
+
+      if (!isPublicOrLogin) {
         localStorage.removeItem('token');
-        window.location.href = '/login';
+        const lang = pathname.split('/')[1] || 'en';
+        window.location.href = `/${lang}/login`;
+      }
     }
   }
   return Promise.reject(error);
