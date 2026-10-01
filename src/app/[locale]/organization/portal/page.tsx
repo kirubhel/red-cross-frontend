@@ -20,14 +20,14 @@ import {
   Briefcase,
   MessageSquare,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import api from "@/lib/api";
-import Image from "next/image";
 
 type VolunteerRequest = {
   id: string;
@@ -48,6 +48,9 @@ type VolunteerRequest = {
   description?: string;
   start_date?: string;
   end_date?: string;
+  duration_days?: number;
+  mou_url?: string;
+  other_services?: string;
 };
 
 type Assignment = {
@@ -126,6 +129,9 @@ export default function OrganizationPortal() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [otherServicesText, setOtherServicesText] = useState<string>("");
+  const [mouUrl, setMouUrl] = useState<string>("");
+  const [mouFileName, setMouFileName] = useState<string>("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [tempPayload, setTempPayload] = useState<any>(null);
   
@@ -287,21 +293,27 @@ export default function OrganizationPortal() {
     const ratePerDay = profile?.rate_per_volunteer || 500;
     const totalCost = Number(headcount) * ratePerDay * durationDays;
 
+    const combinedActivities = selectedAreas.includes("Other Services") && otherServicesText.trim()
+      ? [...selectedAreas.filter(a => a !== "Other Services"), `Other Services: ${otherServicesText.trim()}`].join(", ")
+      : selectedAreas.join(", ");
+
     const payload = {
       headcount: Number(headcount),
-      activities_skills: selectedAreas.join(", "),
+      activities_skills: combinedActivities,
+      other_services: otherServicesText.trim(),
       men_count: Number(menCount),
       women_count: Number(womenCount),
       min_experience: Number(minExperience),
       qualifications,
       activities,
       volunteer_type: volunteerType,
-      title,
+      title: title || combinedActivities || "Volunteer Mission",
       description,
       start_date: startDate,
       end_date: endDate,
       duration_days: durationDays,
-      payment_amount: totalCost
+      payment_amount: totalCost,
+      mou_url: mouUrl
     };
 
     setTempPayload(payload);
@@ -328,6 +340,9 @@ export default function OrganizationPortal() {
       setVolunteerType("General Volunteer");
       setActivities([{ name: "", count: 1 }]);
       setSelectedAreas([]);
+      setOtherServicesText("");
+      setMouUrl("");
+      setMouFileName("");
       setTitle("");
       setDescription("");
       
@@ -1185,6 +1200,20 @@ export default function OrganizationPortal() {
                         </label>
                       ))}
                     </div>
+                    {selectedAreas.includes("Other Services") && (
+                      <div className="mt-2 space-y-1 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200">
+                        <Label className="text-[11px] font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1">
+                          Specify Other Services *
+                        </Label>
+                        <Input 
+                          placeholder="Describe the other specific services required..."
+                          value={otherServicesText}
+                          onChange={(e) => setOtherServicesText(e.target.value)}
+                          className="h-8 bg-white border-amber-300 rounded-lg text-xs font-semibold text-slate-900"
+                          required={selectedAreas.includes("Other Services")}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -1237,6 +1266,61 @@ export default function OrganizationPortal() {
                        </div>
                      ))}
                    </div>
+                </div>
+
+                {/* MoU Attachment Section */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-[#ED1C24] flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5" /> Memorandum of Understanding (MoU) Attachment (Optional)
+                    </Label>
+                    <span className="text-[9px] font-bold uppercase text-slate-400">PDF / Image / Doc</span>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-3 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-600">Upload MoU Document</span>
+                      <input 
+                        type="file" 
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setMouFileName(file.name);
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              setMouUrl(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#ED1C24]/10 file:text-[#ED1C24] hover:file:bg-[#ED1C24]/20 cursor-pointer"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-600">Or Enter Document URL</span>
+                      <Input 
+                        type="url"
+                        placeholder="https://..."
+                        value={mouUrl.startsWith("data:") ? "" : mouUrl}
+                        onChange={(e) => {
+                          setMouUrl(e.target.value);
+                          setMouFileName("");
+                        }}
+                        className="h-8 bg-white border-slate-200 rounded-lg text-xs font-semibold text-slate-900"
+                      />
+                    </div>
+                  </div>
+                  {mouUrl && (
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>MoU Document Ready: {mouFileName || "Attached"}</span>
+                      {!mouUrl.startsWith("data:") && (
+                        <a href={mouUrl} target="_blank" rel="noopener noreferrer" className="ml-auto text-[#ED1C24] underline text-[11px]">
+                          Open Link
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Footer */}
@@ -1345,6 +1429,20 @@ export default function OrganizationPortal() {
                         )}
                       </div>
                     )}
+
+                    {selectedRequest.mou_url && (
+                      <div className="pt-3 border-t border-slate-200 mt-3 space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Memorandum of Understanding (MoU)</span>
+                        <a 
+                          href={selectedRequest.mou_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-[#ED1C24] border border-red-200 text-xs font-bold hover:bg-red-100 transition"
+                        >
+                          <FileText className="h-3.5 w-3.5" /> View Attached MoU
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1430,6 +1528,20 @@ export default function OrganizationPortal() {
                   <span>Rate per Volunteer</span>
                   <span className="text-slate-900 font-bold">{profile?.rate_per_volunteer || 500} ETB / Day</span>
                 </div>
+                {tempPayload.other_services && (
+                  <div className="flex justify-between items-center text-xs font-semibold text-slate-500">
+                    <span>Other Services</span>
+                    <span className="text-slate-900 font-bold truncate max-w-[200px]">{tempPayload.other_services}</span>
+                  </div>
+                )}
+                {tempPayload.mou_url && (
+                  <div className="flex justify-between items-center text-xs font-semibold text-slate-500">
+                    <span>MoU Document</span>
+                    <span className="text-emerald-600 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> Attached
+                    </span>
+                  </div>
+                )}
                 <div className="h-px bg-slate-200" />
                 <div className="flex justify-between items-center text-xs font-bold text-[#ED1C24]">
                   <span>Total Estimated Cost</span>

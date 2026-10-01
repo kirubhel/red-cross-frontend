@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { 
   Users, CheckCircle, Megaphone, Calendar, ChevronDown, 
-  UserPlus, Edit3, ShieldAlert, TrendingUp, TrendingDown, Search, X, ArrowRight
+  UserPlus, Edit3, ShieldAlert, TrendingUp, TrendingDown, Search, X, ArrowRight, HandHeart
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
@@ -584,6 +584,63 @@ export default function DashboardPage() {
     return data;
   };
 
+  // Dynamically compute real recent activities from all registered members & volunteers
+  const getRecentActivities = (limit = 10) => {
+    const REGION_NAMES: Record<string, string> = {
+      "1": "Addis Ababa", "2": "Dire Dawa", "3": "Tigray", "4": "Afar", 
+      "5": "Amhara", "6": "Oromia", "7": "Somali", "8": "Benishangul Gumz", 
+      "9": "Central Ethiopia", "10": "Gambela", "11": "Harari", "12": "Sidama", 
+      "13": "South West Ethiopia", "14": "South Ethiopia"
+    };
+
+    const sorted = [...allRegistry].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    const now = Date.now();
+    const formatRelativeTime = (dateStr: string) => {
+      const diffMs = now - new Date(dateStr).getTime();
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    };
+
+    if (sorted.length === 0) {
+      return [
+        { 
+          icon: ShieldAlert, 
+          title: "System ready", 
+          desc: "Awaiting new member and volunteer registrations.", 
+          time: "Just now", 
+          color: "text-blue-500", 
+          bg: "bg-blue-50" 
+        }
+      ];
+    }
+
+    return sorted.slice(0, limit).map(item => {
+      const fullName = `${item.first_name || ""} ${item.father_name || ""}`.trim() || "ERCS Member";
+      const regName = REGION_NAMES[item.region] || `Region ${item.region}`;
+      const isVol = item.role === "VOLUNTEER";
+
+      return {
+        icon: isVol ? HandHeart : UserPlus,
+        title: isVol ? "New volunteer registered" : "New member registered",
+        desc: `${fullName} joined (${regName} Branch).`,
+        time: formatRelativeTime(item.created_at),
+        color: isVol ? "text-purple-500" : "text-emerald-500",
+        bg: isVol ? "bg-purple-50" : "bg-emerald-50"
+      };
+    });
+  };
+
   const campaignPerformance = [
     { name: 'Clean City', value: 3200 },
     { name: 'Plant Trees', value: 2700 },
@@ -592,7 +649,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 p-6 md:p-8 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -601,8 +658,8 @@ export default function DashboardPage() {
             Welcome back, Admin! Here's what's happening today.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input 
               type="text" 
@@ -622,7 +679,7 @@ export default function DashboardPage() {
               }}
               className={cn(
                 "h-11 pl-10 pr-12 rounded-xl border border-gray-200 text-sm",
-                "focus:outline-none focus:border-[#ED1C24] transition-colors w-[280px]"
+                "focus:outline-none focus:border-[#ED1C24] transition-colors w-full sm:w-[240px] md:w-[280px]"
               )}
             />
             {quickSearch ? (
@@ -910,13 +967,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar-small flex-1 max-h-[300px]">
-            {[
-              { icon: UserPlus, title: "New volunteer registered", desc: "Sara Ahmed joined as a volunteer.", time: "2m ago", color: "text-green-500", bg: "bg-green-50" },
-              { icon: Megaphone, title: "Campaign updated", desc: "'Clean City Initiative' was updated.", time: "15m ago", color: "text-blue-500", bg: "bg-blue-50" },
-              { icon: Calendar, title: "New event created", desc: "'Tree Planting Day' created successfully.", time: "1h ago", color: "text-orange-500", bg: "bg-orange-50" },
-              { icon: Edit3, title: "User role changed", desc: "John Doe's role changed to Manager.", time: "2h ago", color: "text-purple-500", bg: "bg-purple-50" },
-              { icon: ShieldAlert, title: "Login from new device", desc: "Login detected from Chrome on Windows.", time: "3h ago", color: "text-red-500", bg: "bg-red-50" },
-            ].map((act, i) => (
+            {getRecentActivities(5).map((act, i) => (
               <div key={i} className="flex gap-4">
                 <div className={cn(
                   "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
@@ -1134,15 +1185,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                {[
-                  { icon: UserPlus, title: "New volunteer registered", desc: "Sara Ahmed joined as a volunteer.", time: "2m ago", color: "text-green-500", bg: "bg-green-50" },
-                  { icon: Megaphone, title: "Campaign updated", desc: "'Clean City Initiative' was updated.", time: "15m ago", color: "text-blue-500", bg: "bg-blue-50" },
-                  { icon: Calendar, title: "New event created", desc: "'Tree Planting Day' created successfully.", time: "1h ago", color: "text-orange-500", bg: "bg-orange-50" },
-                  { icon: Edit3, title: "User role changed", desc: "John Doe's role changed to Manager.", time: "2h ago", color: "text-purple-500", bg: "bg-purple-50" },
-                  { icon: ShieldAlert, title: "Login from new device", desc: "Login detected from Chrome on Windows.", time: "3h ago", color: "text-red-500", bg: "bg-red-50" },
-                  { icon: UserPlus, title: "New member registered", desc: "Abebe Kebede joined as a member.", time: "1d ago", color: "text-green-500", bg: "bg-green-50" },
-                  { icon: Megaphone, title: "Donation goal achieved", desc: "Water project raised 50k ETB.", time: "2d ago", color: "text-blue-500", bg: "bg-blue-50" },
-                ].map((act, i) => (
+                {getRecentActivities(25).map((act, i) => (
                   <div key={i} className="flex gap-4 p-2.5 rounded-2xl hover:bg-gray-50/50 transition-colors">
                     <div className={cn(
                       "h-10 w-10 rounded-full flex items-center justify-center shrink-0",

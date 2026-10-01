@@ -538,7 +538,7 @@ export default function MembersPage() {
           <p className="text-gray-500 font-medium text-sm">Manage hierarchy and status across all regions.</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 justify-start md:justify-end">
             <Button 
                 onClick={downloadTemplate}
                 variant="outline" 

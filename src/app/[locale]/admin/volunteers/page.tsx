@@ -35,12 +35,27 @@ import {
     Loader2,
     CheckCircle2,
     AlertCircle,
-    Info
+    Info,
+    Shield,
+    Package
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { Cell, CellValue } from "exceljs";
+
+type VolunteerBenefitRecord = {
+  id?: string;
+  volunteer_id: string;
+  benefit_type: string;
+  item_name: string;
+  quantity: number;
+  provided_date: string;
+  provided_by?: string;
+  branch_id?: string;
+  region_id?: number;
+  remarks?: string;
+};
 
 type Volunteer = {
   id: string;
@@ -197,7 +212,17 @@ export default function VolunteersPage() {
   const [tierFilter, setTierFilter] = useState<string>("ALL");
   const [volunteerEvaluations, setVolunteerEvaluations] = useState<VolunteerEvaluation[]>([]);
   const [loadingEvaluations, setLoadingEvaluations] = useState(false);
-  const [activeDetailsTab, setActiveDetailsTab] = useState<"profile" | "performance">("profile");
+  const [activeDetailsTab, setActiveDetailsTab] = useState<"profile" | "performance" | "benefits">("profile");
+
+  // Volunteer Benefits & Safety Kits Tracking States
+  const [volunteerBenefits, setVolunteerBenefits] = useState<VolunteerBenefitRecord[]>([]);
+  const [loadingBenefits, setLoadingBenefits] = useState(false);
+  const [benefitType, setBenefitType] = useState("Safety Kit");
+  const [benefitItemName, setBenefitItemName] = useState("");
+  const [benefitQuantity, setBenefitQuantity] = useState(1);
+  const [benefitDate, setBenefitDate] = useState(new Date().toISOString().split("T")[0]);
+  const [benefitRemarks, setBenefitRemarks] = useState("");
+  const [submittingBenefit, setSubmittingBenefit] = useState(false);
 
   // New Upgrade States
   const [occupationFilter, setOccupationFilter] = useState("");
@@ -291,11 +316,58 @@ export default function VolunteersPage() {
     }
   };
 
+  const fetchVolunteerBenefits = async (v: Volunteer) => {
+    setLoadingBenefits(true);
+    try {
+      const id = v.id || v.person_id;
+      const res = await api.get(`/volunteers/benefits?volunteer_id=${id}`);
+      setVolunteerBenefits(res.data?.benefits || []);
+    } catch (err) {
+      console.error("Failed to fetch volunteer benefits:", err);
+      setVolunteerBenefits([]);
+    } finally {
+      setLoadingBenefits(false);
+    }
+  };
+
+  const handleRecordBenefit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVolunteer || !benefitItemName.trim()) {
+      toast.error("Please enter the benefit/item name");
+      return;
+    }
+    setSubmittingBenefit(true);
+    try {
+      const volId = selectedVolunteer.id || selectedVolunteer.person_id;
+      const regionId = Number(selectedVolunteer.region) || 1;
+      await api.post("/volunteers/benefits", {
+        volunteer_id: volId,
+        benefit_type: benefitType,
+        item_name: benefitItemName.trim(),
+        quantity: Number(benefitQuantity) || 1,
+        provided_date: benefitDate,
+        region_id: regionId,
+        remarks: benefitRemarks.trim()
+      });
+      toast.success("Safety kit / benefit recorded successfully!");
+      setBenefitItemName("");
+      setBenefitQuantity(1);
+      setBenefitRemarks("");
+      fetchVolunteerBenefits(selectedVolunteer);
+    } catch (err) {
+      console.error("Failed to record benefit:", err);
+      toast.error("Failed to record benefit/safety kit");
+    } finally {
+      setSubmittingBenefit(false);
+    }
+  };
+
   const handleSelectVolunteer = async (v: Volunteer) => {
     setSelectedVolunteer(v);
     setActiveDetailsTab("profile");
     setShowModal(true);
     setLoadingEvaluations(true);
+    fetchVolunteerBenefits(v);
     try {
       const id = v.person_id || v.id;
       const res = await api.get(`/volunteers/evaluations?volunteer_id=${id}`);
@@ -873,45 +945,45 @@ export default function VolunteersPage() {
           <p className="text-gray-500 font-medium text-sm">Manage all field volunteers, track hours, and coordinate field activities.</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 justify-start md:justify-end">
             <Button 
                 onClick={downloadTemplate}
                 variant="outline" 
-                className="rounded-xl h-10 px-6 font-black border-gray-200 flex items-center gap-2"
+                className="rounded-xl h-9 px-3 text-xs font-black border-gray-200 flex items-center gap-1.5 shadow-xs"
             >
-                <Upload className="h-4 w-4 rotate-180" /> Download Template
+                <Upload className="h-3.5 w-3.5 rotate-180" /> Template
             </Button>
             <Button 
                 onClick={() => setShowClearConfirm(true)}
                 variant="destructive" 
-                className="rounded-xl h-10 px-6 font-black bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+                className="rounded-xl h-9 px-3 text-xs font-black bg-red-600 hover:bg-red-700 text-white flex items-center gap-1.5 shadow-xs"
             >
-                <X className="h-4 w-4" /> Clear Registry
+                <X className="h-3.5 w-3.5" /> Clear
             </Button>
             <Button 
                 onClick={exportToExcel}
                 variant="outline" 
-                className="rounded-xl h-10 px-6 font-black border-gray-200 text-[#ED1C24] hover:bg-red-50 cursor-pointer"
+                className="rounded-xl h-9 px-3 text-xs font-black border-gray-200 text-[#ED1C24] hover:bg-red-50 cursor-pointer flex items-center gap-1.5 shadow-xs"
             >
-                <Download className="h-4 w-4 mr-2" /> Export Excel
+                <Download className="h-3.5 w-3.5" /> Excel
             </Button>
             <Button 
                 onClick={exportToCSV}
                 variant="outline" 
-                className="rounded-xl h-10 px-6 font-black border-gray-200 cursor-pointer"
+                className="rounded-xl h-9 px-3 text-xs font-black border-gray-200 cursor-pointer flex items-center gap-1.5 shadow-xs"
             >
-                <TableIcon className="h-4 w-4 mr-2" /> Export CSV
+                <TableIcon className="h-3.5 w-3.5" /> CSV
             </Button>
             <Button 
                 onClick={exportToPDF}
                 variant="outline" 
-                className="rounded-xl h-10 px-6 font-black border-gray-200"
+                className="rounded-xl h-9 px-3 text-xs font-black border-gray-200 flex items-center gap-1.5 shadow-xs"
             >
-                <FileText className="h-4 w-4 mr-2" /> Export PDF
+                <FileText className="h-3.5 w-3.5" /> PDF
             </Button>
             <Link href="/admin/user-management?create=true">
-              <Button className="rounded-xl h-10 px-6 font-black shadow-lg shadow-red-500/10 flex items-center gap-2">
-                  <Plus className="h-4 w-4" /> Add Volunteer
+              <Button className="rounded-xl h-9 px-4 text-xs font-black bg-[#ED1C24] hover:bg-black text-white shadow-lg shadow-red-500/10 flex items-center gap-1.5">
+                  <Plus className="h-3.5 w-3.5" /> Add Volunteer
               </Button>
             </Link>
         </div>
@@ -1477,6 +1549,21 @@ export default function VolunteersPage() {
                       {volunteerEvaluations.length}
                     </span>
                   </button>
+                  <button
+                    onClick={() => setActiveDetailsTab("benefits")}
+                    className={cn(
+                      "px-4 py-2.5 rounded-t-xl text-xs font-black uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5",
+                      activeDetailsTab === "benefits"
+                        ? "border-[#ED1C24] text-[#ED1C24] bg-white shadow-sm"
+                        : "border-transparent text-gray-500 hover:text-black"
+                    )}
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    <span>Benefits & Safety Kits</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-black">
+                      {volunteerBenefits.length}
+                    </span>
+                  </button>
                 </div>
 
                 {activeDetailsTab === "profile" ? (
@@ -1730,6 +1817,167 @@ export default function VolunteersPage() {
                                 <div>Skills: <strong className="text-slate-800">{evalItem.skills}★</strong></div>
                                 <div>Teamwork: <strong className="text-slate-800">{evalItem.teamwork}★</strong></div>
                                 <div>Conduct: <strong className="text-slate-800">{evalItem.conduct}★</strong></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {activeDetailsTab === "benefits" && (
+                  <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    {/* Header Summary */}
+                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white shadow-lg space-y-3">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] flex items-center gap-1.5">
+                            <Shield className="h-3.5 w-3.5" /> Safety Kits & Benefits Tracking
+                          </p>
+                          <h3 className="text-xl font-black text-white mt-1">
+                            {selectedVolunteer.first_name} {selectedVolunteer.last_name}
+                          </h3>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Total Items Issued</span>
+                          <span className="text-2xl font-extrabold text-emerald-400">
+                            {volunteerBenefits.reduce((acc, b) => acc + (b.quantity || 1), 0)}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-300">
+                        Record and audit all official ERCS field gear, safety kits, uniform items, per diem stipends, and insurance benefits provided to this volunteer.
+                      </p>
+                    </div>
+
+                    {/* Issue / Record New Benefit Form */}
+                    <form onSubmit={handleRecordBenefit} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                        <Package className="h-4 w-4 text-[#ED1C24]" /> Record Issued Benefit / Safety Gear
+                      </h4>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Benefit Type *</label>
+                          <select
+                            value={benefitType}
+                            onChange={(e) => setBenefitType(e.target.value)}
+                            className="w-full h-9 px-2.5 rounded-xl bg-white border border-slate-200 font-bold text-xs text-slate-900 outline-none focus:border-[#ED1C24]"
+                          >
+                            <option value="Safety Kit">Safety Kit</option>
+                            <option value="Uniform & Gear">Uniform & Gear</option>
+                            <option value="Stipend / Allowance">Stipend / Allowance</option>
+                            <option value="Training Certificate">Training Certificate</option>
+                            <option value="Medical Aid / Insurance">Medical Aid / Insurance</option>
+                            <option value="Other Benefit">Other Benefit</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1 sm:col-span-1 md:col-span-2">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Item / Benefit Name *</label>
+                          <Input 
+                            value={benefitItemName}
+                            onChange={(e) => setBenefitItemName(e.target.value)}
+                            placeholder="e.g. ERCS First Aid Kit, Boots, Vest, Cap..."
+                            className="h-9 bg-white border-slate-200 rounded-xl font-bold text-xs text-slate-900"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Quantity *</label>
+                          <Input 
+                            type="number"
+                            min={1}
+                            value={benefitQuantity}
+                            onChange={(e) => setBenefitQuantity(Math.max(1, Number(e.target.value)))}
+                            className="h-9 bg-white border-slate-200 rounded-xl font-bold text-xs text-center text-slate-900"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date Provided *</label>
+                          <Input 
+                            type="date"
+                            value={benefitDate}
+                            onChange={(e) => setBenefitDate(e.target.value)}
+                            className="h-9 bg-white border-slate-200 rounded-xl font-bold text-xs text-slate-900"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Remarks / Notes (Optional)</label>
+                          <Input 
+                            value={benefitRemarks}
+                            onChange={(e) => setBenefitRemarks(e.target.value)}
+                            placeholder="Serial #, condition, branch notes..."
+                            className="h-9 bg-white border-slate-200 rounded-xl font-medium text-xs text-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <Button
+                          type="submit"
+                          disabled={submittingBenefit}
+                          className="h-9 px-5 bg-[#ED1C24] hover:bg-black text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-sm flex items-center gap-1.5"
+                        >
+                          {submittingBenefit && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                          Record Benefit
+                        </Button>
+                      </div>
+                    </form>
+
+                    {/* Historical Benefits Log */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-slate-700">
+                        Issued Equipment & Benefits History
+                      </h4>
+
+                      {loadingBenefits ? (
+                        <div className="p-8 text-center text-slate-400 font-bold text-xs animate-pulse">
+                          Loading benefits log...
+                        </div>
+                      ) : volunteerBenefits.length === 0 ? (
+                        <div className="bg-slate-50 p-8 rounded-2xl text-center border border-slate-100">
+                          <p className="text-slate-400 font-medium text-xs">
+                            No benefits or safety gear recorded for this volunteer yet. Use the form above to record items issued.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {volunteerBenefits.map((item, idx) => (
+                            <div key={item.id || idx} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="h-9 w-9 rounded-xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0">
+                                  <Shield className="h-4 w-4" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-extrabold text-slate-900 text-xs truncate">
+                                    {item.item_name}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
+                                    <span className="font-bold text-slate-600">{item.benefit_type}</span>
+                                    <span>•</span>
+                                    <span>Qty: {item.quantity || 1}</span>
+                                    {item.remarks && (
+                                      <>
+                                        <span>•</span>
+                                        <span className="truncate max-w-[200px] italic">&ldquo;{item.remarks}&rdquo;</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                  {item.provided_date ? new Date(item.provided_date).toLocaleDateString() : "Recorded"}
+                                </span>
                               </div>
                             </div>
                           ))}
