@@ -14,7 +14,13 @@ const SUBHEADER_FILL: ExcelJS.Fill = {
 
 export interface FinancialRecord {
   id: string;
+  invoice_number?: string;
   person_id?: string;
+  payer_name?: string;
+  payer_phone?: string;
+  payer_email?: string;
+  region_id?: number;
+  region_name?: string;
   amount: number;
   currency?: string;
   status: string;
@@ -173,8 +179,13 @@ export async function exportFinancialReport(
 
   // Table Headers
   const headerRow = worksheet.addRow([
+    "Invoice #",
     "Transaction ID",
+    "Payer Name",
+    "Payer Email / Contact",
+    "Region",
     "Description",
+    "Payment Method",
     "Amount",
     "Currency",
     "Payment Status",
@@ -197,12 +208,17 @@ export async function exportFinancialReport(
   // Table Data
   invoices.forEach((inv, index) => {
     const row = worksheet.addRow([
+      inv.invoice_number || "N/A",
       inv.id || "N/A",
+      inv.payer_name || "N/A",
+      inv.payer_email || inv.payer_phone || inv.person_id || "N/A",
+      inv.region_name || (inv.region_id ? `Region ${inv.region_id}` : "National"),
       inv.description || "Membership / Donation",
+      inv.payment_method || "ONLINE",
       Number(inv.amount) || 0,
       inv.currency || "ETB",
       (inv.status || "PENDING").toUpperCase(),
-      inv.created_at ? new Date(inv.created_at).toLocaleDateString() : "N/A"
+      inv.created_at ? new Date(inv.created_at).toLocaleString() : "N/A"
     ]);
 
     row.height = 20;
@@ -217,12 +233,17 @@ export async function exportFinancialReport(
 
   // Auto column widths
   worksheet.columns = [
+    { key: "inv_num", width: 22 },
     { key: "id", width: 28 },
-    { key: "desc", width: 35 },
+    { key: "payer_name", width: 24 },
+    { key: "payer_contact", width: 26 },
+    { key: "region", width: 18 },
+    { key: "desc", width: 32 },
+    { key: "method", width: 16 },
     { key: "amount", width: 16 },
-    { key: "currency", width: 12 },
-    { key: "status", width: 18 },
-    { key: "date", width: 20 }
+    { key: "currency", width: 10 },
+    { key: "status", width: 16 },
+    { key: "date", width: 22 }
   ];
 
   const buffer = await workbook.xlsx.writeBuffer();
