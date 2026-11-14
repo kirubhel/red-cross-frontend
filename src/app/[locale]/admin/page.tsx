@@ -1,1222 +1,248 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, AreaChart, Area, Legend
-} from 'recharts';
-import { 
-  Users, CheckCircle, Megaphone, Calendar, ChevronDown, 
-  UserPlus, Edit3, ShieldAlert, TrendingUp, TrendingDown, Search, X, ArrowRight, HandHeart
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import api from "@/lib/api";
+import { Users, HandHeart, UserPlus, MapPinned, Search, RefreshCw, Bell, Newspaper, BarChart3, ArrowRight, AlertTriangle, IdCard } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { getUserScope, UserScope } from "@/lib/auth-scope";
+import { getUserScope } from "@/lib/auth-scope";
+import { REGIONS } from "@/lib/constants";
+import { REGION_NAME, SERIES, byRegion, formatNumber, loadRegistry, recentWindow, type RegistryLoad, type RegistryRecord } from "@/lib/registry-analytics";
+import { RegistryInsights } from "@/components/admin/analytics/RegistryInsights";
+import { Card, Empty, StatTile } from "@/components/admin/analytics/widgets";
 
-const ERCS_RED = "#ED1C24";
-const CHART_COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', ERCS_RED];
+const DAY = 24 * 3600 * 1000;
+const DATE_RANGES = [
+  { value: "ALL", label: "All time" },
+  { value: "7", label: "Last 7 days" },
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 90 days" },
+];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4">
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-          {label}
-        </p>
-        <p className="text-sm font-black text-black">
-          {payload[0].value.toLocaleString()}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
+const selectClass =
+  "h-9 rounded-lg border border-gray-200 bg-white px-3 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:bg-gray-50 disabled:text-gray-500";
 
-const getAvatarStyles = (firstName?: string, lastName?: string) => {
-  const fName = typeof firstName === "string" ? firstName : "";
-  const lName = typeof lastName === "string" ? lastName : "";
-  const char = (fName[0] || "") + (lName[0] || "");
-  const chars = char.toUpperCase() || "?";
-  const gradients = [
-    "from-blue-500 to-indigo-600",
-    "from-emerald-400 to-teal-600",
-    "from-violet-500 to-purple-700",
-    "from-amber-400 to-orange-600",
-    "from-rose-500 to-pink-600",
-  ];
-  const charCode1 = fName.length > 0 && typeof fName.charCodeAt === "function" ? fName.charCodeAt(0) : 0;
-  const charCode2 = lName.length > 0 && typeof lName.charCodeAt === "function" ? lName.charCodeAt(0) : 0;
-  const index = (charCode1 + charCode2) % gradients.length;
-  return { chars, gradient: gradients[index] };
-};
+const QUICK_ACTIONS = [
+  { href: "/admin/user-management?create=true", label: "Add volunteer", icon: UserPlus },
+  { href: "/admin/notifications", label: "Send notification", icon: Bell },
+  { href: "/admin/news", label: "Publish news", icon: Newspaper },
+  { href: "/admin/reports", label: "Reports & exports", icon: BarChart3 },
+];
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return "N/A";
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric"
-    });
-  } catch {
-    return dateStr;
-  }
-};
-
-const normalizeRegionId = (region: any): string => {
-  if (region === null || region === undefined) return "";
-  const str = String(region).trim();
-  if (/^\d+$/.test(str)) return str;
-  const match = str.match(/\d+/);
-  if (match) return match[0];
-  const lower = str.toLowerCase().replace(/^region_/, "");
-  const regionMap: Record<string, string> = {
-    "addis_ababa": "1",
-    "dire_dawa": "2",
-    "tigray": "3",
-    "afar": "4",
-    "amhara": "5",
-    "oromia": "6",
-    "somali": "7",
-    "benishangul_gumz": "8",
-    "central_ethiopia": "9",
-    "gambela": "10",
-    "harari": "11",
-    "sidama": "12",
-    "south_west_ethiopia": "13",
-    "south_ethiopia": "14"
-  };
-  return regionMap[lower] || "";
-};
-
-interface KpiCardProps {
-  icon: any;
-  title: string;
-  value: string | number;
-  change: string;
-  isPositive?: boolean;
-  subText?: string;
-  bgColor: string;
-  iconColor: string;
-}
-
-function KpiCard({ 
-  icon: Icon, 
-  title, 
-  value, 
-  change, 
-  isPositive = true,
-  subText = "from last month",
-  bgColor, 
-  iconColor 
-}: KpiCardProps) {
-  const isNegative = change.startsWith("-");
-  return (
-    <motion.div 
-      whileHover={{ y: -4 }} 
-      className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center gap-4"
-    >
-      <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0", bgColor, iconColor)}>
-        <Icon className="h-6 w-6" />
-      </div>
-      <div>
-        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">
-          {title}
-        </p>
-        <h3 className="text-xl font-black text-black leading-none mb-1.5">
-          {value}
-        </h3>
-        <p className={cn(
-          "text-[10px] font-bold flex items-center gap-1",
-          isNegative ? "text-red-500" : change === "0%" ? "text-gray-500" : "text-green-500"
-        )}>
-          {isNegative ? (
-            <TrendingDown className="h-3 w-3" />
-          ) : (
-            <TrendingUp className="h-3 w-3" />
-          )} {change}
-          <span className="text-gray-400 font-medium">{subText}</span>
-        </p>
-      </div>
-    </motion.div>
-  );
-}
-
-interface Volunteer {
-  id: string;
-  first_name: string;
-  father_name: string;
-  email: string;
-  phone_number: string;
-  region: string;
-  created_at: string;
-  status: string;
-  gender?: string;
-  role?: string;
-}
-
-function RecentVolunteersTable({ volunteers }: { volunteers: Volunteer[] }) {
-  const REGIONS: Record<string, string> = {
-    "1": "Addis Ababa", "2": "Dire Dawa", "3": "Tigray", "4": "Afar", 
-    "5": "Amhara", "6": "Oromia", "7": "Somali", "8": "Benishangul Gumz", 
-    "9": "Central Ethiopia", "10": "Gambela", "11": "Harari", "12": "Sidama", 
-    "13": "South West Ethiopia", "14": "South Ethiopia"
-  };
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden w-full">
-      <div className="flex items-center justify-between p-6 border-b border-gray-50">
-        <div>
-          <h3 className="text-sm font-black text-black uppercase tracking-widest">
-            Recent Volunteers & Members
-          </h3>
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
-            Displaying live entries matching the selected filters
-          </p>
-        </div>
-        <button className="text-[10px] font-black text-blue-500 hover:underline uppercase tracking-widest">
-          View All
-        </button>
-      </div>
-
-      <div className="overflow-x-auto w-full">
-        {volunteers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center">
-            <p className="text-sm font-bold text-gray-400">
-              No records found matching the active filters.
-            </p>
-          </div>
-        ) : (
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="bg-gray-50/50">
-                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.15em] text-gray-400 border-b border-gray-50">
-                  Name
-                </th>
-                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.15em] text-gray-400 border-b border-gray-50">
-                  Role
-                </th>
-                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.15em] text-gray-400 border-b border-gray-50">
-                  Email
-                </th>
-                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.15em] text-gray-400 border-b border-gray-50">
-                  Phone
-                </th>
-                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.15em] text-gray-400 border-b border-gray-50">
-                  Location
-                </th>
-                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.15em] text-gray-400 border-b border-gray-50">
-                  Registered On
-                </th>
-                <th className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.15em] text-gray-400 border-b border-gray-50">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {volunteers.map((vol) => {
-                const avatar = getAvatarStyles(vol.first_name, vol.father_name);
-                const isPending = vol.status?.toUpperCase() === "PENDING";
-                return (
-                  <tr key={vol.id} className="hover:bg-gray-50/30 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className={cn(
-                          "h-8 w-8 rounded-full bg-gradient-to-br flex items-center justify-center",
-                          "text-[10px] font-black text-white shadow-sm shrink-0",
-                          avatar.gradient
-                        )}>
-                          {avatar.chars}
-                        </div>
-                        <span className="text-xs font-bold text-gray-900">
-                          {vol.first_name} {vol.father_name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={cn(
-                        "inline-flex items-center rounded px-1.5 py-0.5 text-[8px] font-bold tracking-wider",
-                        vol.role === "VOLUNTEER" 
-                          ? "bg-blue-50 text-blue-600 border border-blue-100" 
-                          : "bg-purple-50 text-purple-600 border border-purple-100"
-                      )}>
-                        {vol.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">
-                      {vol.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">
-                      {vol.phone_number}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">
-                      {REGIONS[vol.region] || vol.region || "Addis Ababa"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500 font-medium">
-                      {formatDate(vol.created_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={cn(
-                        "inline-flex items-center rounded-md px-2.5 py-1 text-[9px] font-black uppercase tracking-widest border",
-                        isPending
-                          ? "bg-amber-50 text-amber-600 border-amber-200/50"
-                          : "bg-green-50 text-green-600 border-green-200/50"
-                      )}>
-                        {vol.status || "Active"}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  );
+function relativeTime(t: number | null) {
+  if (t === null) return "Date not recorded";
+  const diff = Date.now() - t;
+  if (diff < 3600 * 1000) return `${Math.max(1, Math.floor(diff / 60000))}m ago`;
+  if (diff < DAY) return `${Math.floor(diff / (3600 * 1000))}h ago`;
+  if (diff < 7 * DAY) return `${Math.floor(diff / DAY)}d ago`;
+  return new Date(t).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true);
-  const [showActivitiesModal, setShowActivitiesModal] = useState(false);
-
-  // States
-  const [allRegistry, setAllRegistry] = useState<any[]>([]);
-  const [geographicData, setGeographicData] = useState<any[]>([]);
-  const [growthData, setGrowthData] = useState<any[]>([]);
-
-  // Filter States
-  const [selectedRole, setSelectedRole] = useState<string>("");
-  const [selectedRegion, setSelectedRegion] = useState<string>("");
-  const [selectedGender, setSelectedGender] = useState<string>("");
-  const [dateRange, setDateRange] = useState<string>("ALL");
-  const [customStartDate, setCustomStartDate] = useState<string>("");
-  const [customEndDate, setCustomEndDate] = useState<string>("");
-  const [trendPeriod, setTrendPeriod] = useState<string>("30d");
-  const [quickSearch, setQuickSearch] = useState<string>("");
-  const [showSearchDropdown, setShowSearchDropdown] = useState<boolean>(false);
   const router = useRouter();
+  const [data, setData] = useState<RegistryLoad | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const [kpis, setKpis] = useState({
-    totalCount: 0,
-    activeCount: 0,
-    activeCampaigns: 34,
-    upcomingEvents: 18
-  });
+  const [role, setRole] = useState("");
+  const [gender, setGender] = useState("");
+  const [range, setRange] = useState("ALL");
+  const [regionId, setRegionId] = useState<number | null>(null);
+  const [regionLocked, setRegionLocked] = useState(false);
+  const [scopeLabel, setScopeLabel] = useState("");
+  const [quickSearch, setQuickSearch] = useState("");
 
-  const REGIONS_LIST = [
-    { value: 1, label: "Addis Ababa" },
-    { value: 2, label: "Dire Dawa" },
-    { value: 3, label: "Tigray" },
-    { value: 4, label: "Afar" },
-    { value: 5, label: "Amhara" },
-    { value: 6, label: "Oromia" },
-    { value: 7, label: "Somali" },
-    { value: 8, label: "Benishangul Gumz" },
-    { value: 9, label: "Central Ethiopia" },
-    { value: 10, label: "Gambela" },
-    { value: 11, label: "Harari" },
-    { value: 12, label: "Sidama" },
-    { value: 13, label: "South West Ethiopia" },
-    { value: 14, label: "South Ethiopia" }
-  ];
-
-  const [scope, setScope] = useState<UserScope>(getUserScope());
-
-  useEffect(() => {
-    const userScope = getUserScope();
-    setScope(userScope);
-    if (!userScope.isSuperAdmin && userScope.regionId) {
-      setSelectedRegion(userScope.regionId);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const load = async () => {
     setLoading(true);
+    setError(false);
     try {
-      const userScope = getUserScope();
-      let personUrl = `/person?page=1&page_size=1000`;
-      let volUrl = `/volunteers?page=1&page_size=1000`;
-
-      if (!userScope.isSuperAdmin) {
-        if (userScope.regionId) {
-          personUrl += `&region=${userScope.regionId}`;
-          volUrl += `&region=${userScope.regionId}`;
-        }
-        if (userScope.zoneId) {
-          personUrl += `&zone=${userScope.zoneId}`;
-          volUrl += `&zone=${userScope.zoneId}`;
-        }
-        if (userScope.woredaId) {
-          personUrl += `&woreda=${userScope.woredaId}`;
-          volUrl += `&woreda=${userScope.woredaId}`;
-        }
-        if (userScope.branchId) {
-          personUrl += `&branch_id=${userScope.branchId}`;
-          volUrl += `&branch_id=${userScope.branchId}`;
-        }
-      }
-
-      const [peopleRes, volunteersRes] = await Promise.all([
-        api.get(personUrl).catch(() => ({ data: { people: [] } })),
-        api.get(volUrl).catch(() => 
-          api.get(volUrl.replace('/volunteers', '/volunteer')).catch(() => ({ data: { volunteers: [] } }))
+      const scope = getUserScope();
+      const scoped = !scope.isSuperAdmin;
+      setRegionLocked(scoped && Boolean(scope.regionId));
+      if (scoped && scope.regionNumber) setRegionId(scope.regionNumber);
+      setScopeLabel(scope.isSuperAdmin ? "National view" : scope.regionName || "Regional view");
+      setData(
+        await loadRegistry(
+          scoped ? { region: scope.regionId || undefined, zone: scope.zoneId || undefined, woreda: scope.woredaId || undefined, branchId: scope.branchId || undefined } : {}
         )
-      ]);
-      
-      const people = peopleRes.data?.people || [];
-      const volunteers = volunteersRes.data?.volunteers || [];
-
-      // Merge backend entries with region normalization
-      let merged = [
-        ...people.map((p: any) => {
-          const rawReg = normalizeRegionId(p.region) || normalizeRegionId(p.region_id);
-          const fallbackReg = !userScope.isSuperAdmin && userScope.regionId ? userScope.regionId : "1";
-          return {
-            id: p.id || p.ercs_id || `mem-${Math.random()}`,
-            first_name: p.first_name || p.name || "",
-            father_name: p.father_name || p.last_name || "",
-            email: p.email || "member@ercs.org",
-            phone_number: p.phone_number || "N/A",
-            region: rawReg || fallbackReg,
-            gender: p.gender?.toUpperCase() || "MALE",
-            created_at: p.created_at || new Date().toISOString(),
-            status: p.status || "ACTIVE",
-            role: "MEMBER"
-          };
-        }),
-        ...volunteers.map((v: any) => {
-          const rawReg = normalizeRegionId(v.region);
-          const fallbackReg = !userScope.isSuperAdmin && userScope.regionId ? userScope.regionId : "1";
-          return {
-            id: v.id || v.person_id || `vol-${Math.random()}`,
-            first_name: v.first_name || v.name || "",
-            father_name: v.last_name || v.father_name || "",
-            email: v.email || "volunteer@ercs.org",
-            phone_number: v.phone_number || "N/A",
-            region: rawReg || fallbackReg,
-            gender: v.gender?.toUpperCase() || "MALE",
-            created_at: v.created_at || new Date().toISOString(),
-            status: v.status || "ACTIVE",
-            role: "VOLUNTEER"
-          };
-        })
-      ];
-
-      if (!userScope.isSuperAdmin && userScope.regionId) {
-        merged = merged.filter(m => {
-          const r = normalizeRegionId(m.region);
-          return !r || r === userScope.regionId;
-        });
-      }
-
-      setAllRegistry(merged);
-
-    } catch (error) {
-      console.error("Failed to fetch dashboard data", error);
+      );
+    } catch (e) {
+      console.error("Failed to load dashboard data", e);
+      setError(true);
     } finally {
       setLoading(false);
     }
   };
 
-  // Get active filtered list
-  const getFilteredList = () => {
-    let list = allRegistry;
+  useEffect(() => {
+    load();
+  }, []);
 
-    // Filter by Role
-    if (selectedRole) {
-      list = list.filter(item => item.role === selectedRole);
-    }
-
-    // Filter by Region
-    if (selectedRegion) {
-      const normSelected = normalizeRegionId(selectedRegion);
-      list = list.filter(item => {
-        const itemReg = normalizeRegionId(item.region);
-        return !itemReg || itemReg === normSelected;
-      });
-    }
-
-    // Filter by Gender
-    if (selectedGender) {
-      list = list.filter(item => item.gender?.toUpperCase() === selectedGender.toUpperCase());
-    }
-
-    // Filter by Date Range
-    if (dateRange !== "ALL") {
-      const now = new Date().getTime();
-      list = list.filter(item => {
-        if (!item.created_at) return true;
-        const itemTime = new Date(item.created_at).getTime();
-        if (dateRange === "TODAY") {
-          return now - itemTime <= 24 * 60 * 60 * 1000;
-        } else if (dateRange === "7D") {
-          return now - itemTime <= 7 * 24 * 60 * 60 * 1000;
-        } else if (dateRange === "30D") {
-          return now - itemTime <= 30 * 24 * 60 * 60 * 1000;
-        } else if (dateRange === "90D") {
-          return now - itemTime <= 90 * 24 * 60 * 60 * 1000;
-        } else if (dateRange === "CUSTOM") {
-          const start = customStartDate ? new Date(customStartDate).getTime() : 0;
-          const end = customEndDate ? new Date(customEndDate).getTime() + 86400000 : Infinity;
-          return itemTime >= start && itemTime <= end;
-        }
-        return true;
-      });
-    }
-
-    return list;
-  };
-
-  const filteredList = getFilteredList();
-
-  // Dynamically compute KPIs
-  const totalCount = filteredList.length;
-  const activeCount = filteredList.filter(p => 
-    p.status?.toUpperCase() === 'ACTIVE'
-  ).length;
-
-  // Month-over-Month calculation based on created_at (rolling 30-day window)
-  const now = new Date().getTime();
-  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-  const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
-
-  const currentWindowItems = filteredList.filter(item => {
-    if (!item.created_at) return true;
-    const time = new Date(item.created_at).getTime();
-    return !isNaN(time) && (now - time <= thirtyDaysMs);
-  });
-
-  const previousWindowItems = filteredList.filter(item => {
-    if (!item.created_at) return false;
-    const time = new Date(item.created_at).getTime();
-    return !isNaN(time) && (now - time > thirtyDaysMs && now - time <= sixtyDaysMs);
-  });
-
-  const calculateChange = (currentCount: number, prevCount: number) => {
-    if (prevCount === 0) {
-      if (currentCount === 0) return { change: "0%", isPositive: true };
-      return { change: `+${currentCount > 0 ? "100" : "0"}%`, isPositive: true };
-    }
-    const diffPct = Math.round(((currentCount - prevCount) / prevCount) * 100);
-    return {
-      change: diffPct >= 0 ? `+${diffPct}%` : `${diffPct}%`,
-      isPositive: diffPct >= 0
-    };
-  };
-
-  const totalRegistryGrowth = calculateChange(currentWindowItems.length, previousWindowItems.length);
-  
-  const currentActiveCount = currentWindowItems.filter(p => p.status?.toUpperCase() === 'ACTIVE').length;
-  const prevActiveCount = previousWindowItems.filter(p => p.status?.toUpperCase() === 'ACTIVE').length;
-  const activeGrowth = calculateChange(currentActiveCount, prevActiveCount);
-
-  // Scaling Campaigns & Events to active scope
-  const activeCampaignsCount = Math.max(2, Math.floor(totalCount * 0.15)) || 2;
-  const upcomingEventsCount = Math.max(1, Math.floor(totalCount * 0.08)) || 1;
-
-  // Dynamically compute Growth Chart Data according to trend period
-  const getGrowthChartData = () => {
-    if (filteredList.length === 0) {
-      return [
-        { date: 'Day 1', value: 0 },
-        { date: 'Day 2', value: 0 },
-        { date: 'Day 3', value: 0 },
-        { date: 'Day 4', value: 0 },
-        { date: 'Day 5', value: 0 },
-        { date: 'Day 6', value: 0 }
-      ];
-    }
-
-    const sorted = [...filteredList].sort((a, b) => 
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-
-    const datePoints: Record<string, number> = {};
-    let accumulated = 0;
-
-    sorted.forEach(item => {
-      const d = new Date(item.created_at);
-      const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      accumulated += 1;
-      datePoints[label] = accumulated;
-    });
-
-    const entries = Object.entries(datePoints).map(([date, value]) => ({ date, value }));
-    const sliceCount = trendPeriod === "7d" ? 7 : trendPeriod === "30d" ? 14 : trendPeriod === "90d" ? 30 : entries.length;
-    return entries.slice(-sliceCount);
-  };
-
-  // Dynamically compute Pie Chart Data
-  const getGeographicChartData = () => {
-    const REGIONS: Record<string, string> = {
-      "1": "Addis Ababa", "2": "Dire Dawa", "3": "Tigray", "4": "Afar", 
-      "5": "Amhara", "6": "Oromia", "7": "Somali", "8": "Benishangul Gumz", 
-      "9": "Central Ethiopia", "10": "Gambela", "11": "Harari", "12": "Sidama", 
-      "13": "South West Ethiopia", "14": "South Ethiopia"
-    };
-
-    const regionsMap = filteredList.reduce((acc: any, p: any) => {
-      const r = normalizeRegionId(p.region) || '1';
-      acc[r] = (acc[r] || 0) + 1;
-      return acc;
-    }, {});
-
-    const data = Object.keys(regionsMap)
-      .map(k => ({ name: REGIONS[k] || `Region ${k}`, value: regionsMap[k] }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-
-    if (data.length === 0) {
-      return [{ name: "No data", value: 0 }];
-    }
-    return data;
-  };
-
-  // Dynamically compute real recent activities from all registered members & volunteers
-  const getRecentActivities = (limit = 10) => {
-    const REGION_NAMES: Record<string, string> = {
-      "1": "Addis Ababa", "2": "Dire Dawa", "3": "Tigray", "4": "Afar", 
-      "5": "Amhara", "6": "Oromia", "7": "Somali", "8": "Benishangul Gumz", 
-      "9": "Central Ethiopia", "10": "Gambela", "11": "Harari", "12": "Sidama", 
-      "13": "South West Ethiopia", "14": "South Ethiopia"
-    };
-
-    const sorted = [...allRegistry].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-
+  // everything except region: the map needs the whole country
+  const filtered = useMemo(() => {
     const now = Date.now();
-    const formatRelativeTime = (dateStr: string) => {
-      const diffMs = now - new Date(dateStr).getTime();
-      const diffMins = Math.floor(diffMs / (1000 * 60));
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-      if (diffMins < 1) return "Just now";
-      if (diffMins < 60) return `${diffMins}m ago`;
-      if (diffHours < 24) return `${diffHours}h ago`;
-      if (diffDays === 1) return "Yesterday";
-      if (diffDays < 7) return `${diffDays}d ago`;
-      return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    };
-
-    if (sorted.length === 0) {
-      return [
-        { 
-          icon: ShieldAlert, 
-          title: "System ready", 
-          desc: "Awaiting new member and volunteer registrations.", 
-          time: "Just now", 
-          color: "text-blue-500", 
-          bg: "bg-blue-50" 
-        }
-      ];
-    }
-
-    return sorted.slice(0, limit).map(item => {
-      const fullName = `${item.first_name || ""} ${item.father_name || ""}`.trim() || "ERCS Member";
-      const regName = REGION_NAMES[item.region] || `Region ${item.region}`;
-      const isVol = item.role === "VOLUNTEER";
-
-      return {
-        icon: isVol ? HandHeart : UserPlus,
-        title: isVol ? "New volunteer registered" : "New member registered",
-        desc: `${fullName} joined (${regName} Branch).`,
-        time: formatRelativeTime(item.created_at),
-        color: isVol ? "text-purple-500" : "text-emerald-500",
-        bg: isVol ? "bg-purple-50" : "bg-emerald-50"
-      };
+    return (data?.records || []).filter((r) => {
+      if (role && r.role !== role) return false;
+      if (gender && r.gender !== gender) return false;
+      if (range !== "ALL" && (r.createdAt === null || now - r.createdAt > Number(range) * DAY)) return false;
+      return true;
     });
-  };
+  }, [data, role, gender, range]);
 
-  const campaignPerformance = [
-    { name: 'Clean City', value: 3200 },
-    { name: 'Plant Trees', value: 2700 },
-    { name: 'Blood Drive', value: 1800 },
-    { name: 'Food Donation', value: 1200 },
-  ];
+  const scoped = useMemo(() => (regionId ? filtered.filter((r) => r.regionId === regionId) : filtered), [filtered, regionId]);
+  const members = scoped.filter((r) => r.role === "MEMBER").length;
+  const volunteers = scoped.length - members;
+  const window30 = recentWindow(scoped);
+  const regionsCovered = byRegion(filtered).filter((r) => r.total > 0).length;
+  const recent = useMemo(() => [...scoped].filter((r) => r.createdAt !== null).sort((a, b) => b.createdAt! - a.createdAt!).slice(0, 8), [scoped]);
+
+  const submitSearch = (target: "members" | "volunteers" | "payments") => {
+    if (quickSearch.trim()) router.push(`/admin/${target}?search=${encodeURIComponent(quickSearch.trim())}`);
+  };
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full">
+    <div className="mx-auto w-full max-w-[1600px] space-y-4 pb-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-black tracking-tight">Dashboard</h1>
-          <p className="text-sm font-medium text-gray-500">
-            Welcome back, Admin! Here's what's happening today.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative w-full md:w-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search anything..." 
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#B5121B] via-[#ED1C24] to-[#F0484F] p-6 text-white shadow-sm">
+        <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/10" aria-hidden />
+        <div className="absolute -bottom-20 right-32 h-44 w-44 rounded-full bg-white/5" aria-hidden />
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white">Ethiopian Red Cross Society · {scopeLabel}</p>
+            <h1 className="mt-1 text-3xl font-black tracking-tight">Dashboard</h1>
+            <p className="mt-1 text-sm text-white">
+              {loading ? "Loading the registry…" : `${formatNumber(scoped.length)} people in ${regionId ? REGION_NAME[regionId] : `${regionsCovered} of 14 regions`}.`}
+            </p>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitSearch("members");
+            }}
+            className="flex w-full max-w-md items-center gap-2 rounded-xl bg-white p-1.5 shadow-sm"
+          >
+            <Search className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
+            <input
               value={quickSearch}
-              onChange={(e) => {
-                setQuickSearch(e.target.value);
-                setShowSearchDropdown(e.target.value.trim().length > 0);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && quickSearch.trim()) {
-                  router.push(`/admin/members?search=${encodeURIComponent(quickSearch.trim())}`);
-                }
-              }}
-              onFocus={() => {
-                if (quickSearch.trim().length > 0) setShowSearchDropdown(true);
-              }}
-              className={cn(
-                "h-11 pl-10 pr-12 rounded-xl border border-gray-200 text-sm",
-                "focus:outline-none focus:border-[#ED1C24] transition-colors w-full sm:w-[240px] md:w-[280px]"
-              )}
+              onChange={(e) => setQuickSearch(e.target.value)}
+              placeholder="Search by name, phone or ID"
+              aria-label="Search the registry"
+              className="h-8 min-w-0 flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
             />
-            {quickSearch ? (
-              <button 
-                onClick={() => { setQuickSearch(""); setShowSearchDropdown(false); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 hover:text-black"
-              >
-                ✕
-              </button>
-            ) : (
-              <div className={cn(
-                "absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold",
-                "text-gray-400 border border-gray-200 rounded px-1.5 py-0.5"
-              )}>
-                Enter
-              </div>
-            )}
-
-            {/* Quick Search Dropdown */}
-            {showSearchDropdown && quickSearch.trim() && (
-              <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 p-3 z-50 space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400 px-2 block">
-                  Quick Search Results
-                </span>
-                <div className="space-y-1">
-                  <button
-                    onClick={() => router.push(`/admin/members?search=${encodeURIComponent(quickSearch.trim())}`)}
-                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-50 text-xs font-bold text-black hover:text-[#ED1C24] flex items-center justify-between"
-                  >
-                    <span>Search Members for "{quickSearch}"</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
-                  <button
-                    onClick={() => router.push(`/admin/volunteers?search=${encodeURIComponent(quickSearch.trim())}`)}
-                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-50 text-xs font-bold text-black hover:text-[#ED1C24] flex items-center justify-between"
-                  >
-                    <span>Search Volunteers for "{quickSearch}"</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
-                  <button
-                    onClick={() => router.push(`/admin/payments?search=${encodeURIComponent(quickSearch.trim())}`)}
-                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-50 text-xs font-bold text-black hover:text-[#ED1C24] flex items-center justify-between"
-                  >
-                    <span>Search Payments for "{quickSearch}"</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+            <button type="submit" className="h-8 rounded-lg bg-gray-900 px-3 text-xs font-bold text-white hover:bg-gray-700">
+              Members
+            </button>
+            <button type="button" onClick={() => submitSearch("volunteers")} className="h-8 rounded-lg bg-gray-100 px-3 text-xs font-bold text-gray-800 hover:bg-gray-200">
+              Volunteers
+            </button>
+          </form>
         </div>
       </div>
 
-      {/* Global Filter Panel */}
-      <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-[#ED1C24] animate-pulse" />
-          <span className="text-xs font-black text-black uppercase tracking-wider">
-            Portal Control:
-          </span>
+      {/* Filters: one row, scoping everything below */}
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
+        <select aria-label="Registry type" className={selectClass} value={role} onChange={(e) => setRole(e.target.value)}>
+          <option value="">Members & volunteers</option>
+          <option value="MEMBER">Members only</option>
+          <option value="VOLUNTEER">Volunteers only</option>
+        </select>
+        <select aria-label="Region" className={selectClass} value={regionId ?? ""} disabled={regionLocked} onChange={(e) => setRegionId(e.target.value ? Number(e.target.value) : null)}>
+          <option value="">All regions</option>
+          {REGIONS.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+        <select aria-label="Gender" className={selectClass} value={gender} onChange={(e) => setGender(e.target.value)}>
+          <option value="">All genders</option>
+          <option value="FEMALE">Female</option>
+          <option value="MALE">Male</option>
+          <option value="UNKNOWN">Not recorded</option>
+        </select>
+        <select aria-label="Registered" className={selectClass} value={range} onChange={(e) => setRange(e.target.value)}>
+          {DATE_RANGES.map((d) => (
+            <option key={d.value} value={d.value}>
+              {d.label}
+            </option>
+          ))}
+        </select>
+        <button onClick={load} disabled={loading} className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 px-3 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-60">
+          <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> {loading ? "Loading" : "Refresh"}
+        </button>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">
+          <AlertTriangle className="h-4 w-4" /> Could not load the registry. Check your connection and press Refresh.
         </div>
+      )}
+      {data?.truncated && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+          <AlertTriangle className="h-4 w-4" /> Showing the first {formatNumber(data.records.length)} of {formatNumber(data.memberTotal + data.volunteerTotal)} records, so totals on this page are incomplete.
+        </div>
+      )}
 
-        <div className="flex flex-wrap items-center gap-5">
-          {/* Registry Type Selection (Role Filter) */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-              Focus:
-            </span>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className={cn(
-                "h-9 px-3 text-xs font-bold text-black border border-gray-200",
-                "rounded-xl bg-gray-50 focus:outline-none focus:border-[#ED1C24]",
-                "transition-all cursor-pointer shadow-sm"
-              )}
-            >
-              <option value="">All Registry (Members & Volunteers)</option>
-              <option value="VOLUNTEER">Volunteers Only</option>
-              <option value="MEMBER">Members Only</option>
-            </select>
-          </div>
+      {/* Headline numbers */}
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <StatTile label="Total registry" value={loading ? "…" : formatNumber(scoped.length)} icon={Users} hint="Members and volunteers" />
+        <StatTile label="Members" value={loading ? "…" : formatNumber(members)} icon={IdCard} hint={scoped.length ? `${Math.round((members / scoped.length) * 100)}% of the registry` : ""} />
+        <StatTile label="Volunteers" value={loading ? "…" : formatNumber(volunteers)} icon={HandHeart} hint={scoped.length ? `${Math.round((volunteers / scoped.length) * 100)}% of the registry` : ""} />
+        <StatTile label="New in the last 30 days" value={loading ? "…" : formatNumber(window30.current)} icon={UserPlus} delta={loading ? undefined : window30} />
+      </div>
 
-          {/* Region Selection */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-              Region:
-            </span>
-            {scope.isSuperAdmin ? (
-              <select
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
-                className={cn(
-                  "h-9 px-3 text-xs font-bold text-black border border-gray-200",
-                  "rounded-xl bg-gray-50 focus:outline-none focus:border-[#ED1C24]",
-                  "transition-all cursor-pointer shadow-sm"
-                )}
-              >
-                <option value="">All Regions</option>
-                {REGIONS_LIST.map(r => (
-                  <option key={r.value} value={r.value.toString()}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <div className="h-9 px-3 text-xs font-extrabold text-[#ED1C24] border border-red-100 rounded-xl bg-red-50/60 flex items-center gap-1.5 shadow-sm">
-                <span>{scope.regionName}</span>
-                <span className="text-[9px] uppercase font-bold text-red-400">(Jurisdiction)</span>
-              </div>
-            )}
-          </div>
+      <RegistryInsights records={filtered} regionId={regionId} onRegionChange={setRegionId} regionLocked={regionLocked} />
 
-          {/* Gender Selection */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-              Gender:
-            </span>
-            <select
-              value={selectedGender}
-              onChange={(e) => setSelectedGender(e.target.value)}
-              className={cn(
-                "h-9 px-3 text-xs font-bold text-black border border-gray-200",
-                "rounded-xl bg-gray-50 focus:outline-none focus:border-[#ED1C24]",
-                "transition-all cursor-pointer shadow-sm"
-              )}
-            >
-              <option value="">All Genders</option>
-              <option value="MALE">Male</option>
-              <option value="FEMALE">Female</option>
-            </select>
-          </div>
-
-          {/* Date Filter Selection */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-              Date:
-            </span>
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className={cn(
-                "h-9 px-3 text-xs font-bold text-black border border-gray-200",
-                "rounded-xl bg-gray-50 focus:outline-none focus:border-[#ED1C24]",
-                "transition-all cursor-pointer shadow-sm"
-              )}
-            >
-              <option value="ALL">All Time</option>
-              <option value="TODAY">Today (24h)</option>
-              <option value="7D">Past 7 Days</option>
-              <option value="30D">Past 30 Days</option>
-              <option value="90D">Past 90 Days</option>
-              <option value="CUSTOM">Custom Date Range</option>
-            </select>
-          </div>
-
-          {dateRange === "CUSTOM" && (
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                className="h-9 px-2 text-xs font-bold rounded-xl border border-gray-200 bg-gray-50"
-              />
-              <span className="text-xs text-gray-400">to</span>
-              <input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                className="h-9 px-2 text-xs font-bold rounded-xl border border-gray-200 bg-gray-50"
-              />
-            </div>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+        <Card
+          className="xl:col-span-3"
+          title="Latest registrations"
+          subtitle={regionId ? REGION_NAME[regionId] : "All regions"}
+          action={
+            <Link href="/admin/members" className="inline-flex items-center gap-1 text-xs font-bold text-[#B5121B] hover:underline">
+              Open members <ArrowRight className="h-3 w-3" />
+            </Link>
+          }
+        >
+          {recent.length === 0 ? (
+            <Empty>{loading ? "Loading…" : "No dated registrations for the current filters."}</Empty>
+          ) : (
+            <ul className="divide-y divide-gray-50">
+              {recent.map((r: RegistryRecord) => (
+                <li key={`${r.role}-${r.id}`} className="flex items-center gap-3 py-2.5">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: SERIES[r.role] }} aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-gray-900">{r.name}</p>
+                    <p className="truncate text-xs text-gray-500">
+                      {r.role === "MEMBER" ? "Member" : "Volunteer"} · {r.regionId ? REGION_NAME[r.regionId] : "No region"}
+                      {r.phone ? ` · ${r.phone}` : ""}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs tabular-nums text-gray-500">{relativeTime(r.createdAt)}</span>
+                </li>
+              ))}
+            </ul>
           )}
-        </div>
-      </div>
+        </Card>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard 
-          icon={Users} 
-          title={selectedRole === "MEMBER" ? "Total Members" : selectedRole === "VOLUNTEER" ? "Total Volunteers" : "Total Registry"} 
-          value={totalCount.toLocaleString()} 
-          change={totalRegistryGrowth.change}
-          isPositive={totalRegistryGrowth.isPositive}
-          bgColor="bg-blue-50" 
-          iconColor="text-blue-500" 
-        />
-        <KpiCard 
-          icon={CheckCircle} 
-          title="Active Count" 
-          value={activeCount.toLocaleString()} 
-          change={activeGrowth.change}
-          isPositive={activeGrowth.isPositive}
-          bgColor="bg-green-50" 
-          iconColor="text-green-500" 
-        />
-        <KpiCard 
-          icon={Megaphone} 
-          title="Active Campaigns" 
-          value={activeCampaignsCount} 
-          change="+0%" 
-          isPositive={true}
-          subText="active"
-          bgColor="bg-purple-50" 
-          iconColor="text-purple-500" 
-        />
-        <KpiCard 
-          icon={Calendar} 
-          title="Upcoming Events" 
-          value={upcomingEventsCount} 
-          change="+0%" 
-          isPositive={true}
-          subText="scheduled"
-          bgColor="bg-orange-50" 
-          iconColor="text-orange-500" 
-        />
-      </div>
-
-      {/* Middle Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Growth Area Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-black uppercase tracking-widest">
-              Registration Dynamic Trend
-            </h3>
-            <select
-              value={trendPeriod}
-              onChange={(e) => setTrendPeriod(e.target.value)}
-              className="h-8 text-[11px] font-black px-2.5 rounded-lg border border-gray-200 bg-gray-50 text-black cursor-pointer focus:border-[#ED1C24]"
-            >
-              <option value="7d">Last 7 Days</option>
-              <option value="30d">Last 30 Days</option>
-              <option value="90d">Last 90 Days</option>
-              <option value="1y">Past Year</option>
-            </select>
-          </div>
-          <div className="flex-1 min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <AreaChart data={getGrowthChartData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis 
-                  dataKey="date" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 'bold' }} 
-                  dy={10} 
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 'bold' }} 
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Area 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#3b82f6" 
-                  strokeWidth={3} 
-                  fillOpacity={1} 
-                  fill="url(#colorValue)" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Recent Activities */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-black uppercase tracking-widest">
-              Recent Activities
-            </h3>
-            <span 
-              onClick={() => setShowActivitiesModal(true)}
-              className="text-[10px] font-bold text-blue-500 cursor-pointer hover:underline"
-            >
-              View All
-            </span>
-          </div>
-          <div className="flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar-small flex-1 max-h-[300px]">
-            {getRecentActivities(5).map((act, i) => (
-              <div key={i} className="flex gap-4">
-                <div className={cn(
-                  "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
-                  act.bg,
-                  act.color
-                )}>
-                  <act.icon className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-black text-black truncate">{act.title}</p>
-                  <p className="text-[10px] font-medium text-gray-500 truncate">{act.desc}</p>
-                </div>
-                <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">
-                  {act.time}
+        <Card className="xl:col-span-2" title="Quick actions" subtitle="Common tasks">
+          <div className="grid grid-cols-2 gap-3">
+            {QUICK_ACTIONS.map((a) => (
+              <Link key={a.href} href={a.href} className="group flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3 transition hover:border-red-200 hover:bg-red-50">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[#ED1C24] shadow-sm">
+                  <a.icon className="h-4 w-4" />
                 </span>
-              </div>
+                <span className="text-xs font-bold text-gray-800 group-hover:text-[#B5121B]">{a.label}</span>
+              </Link>
             ))}
           </div>
-        </div>
+          <p className="mt-4 flex items-center gap-2 rounded-xl bg-gray-50 p-3 text-[11px] text-gray-500">
+            <MapPinned className="h-4 w-4 shrink-0 text-gray-400" /> Every number on this page is counted from the live registry. Campaign and event figures were removed because the system does not track them yet.
+          </p>
+        </Card>
       </div>
-
-      {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Volunteers By Region */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col">
-          <h3 className="text-sm font-black text-black uppercase tracking-widest mb-6">
-            Branch Distribution
-          </h3>
-          <div className="flex-1 min-h-[250px] relative">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <PieChart>
-                <Pie 
-                  data={getGeographicChartData()} 
-                  cx="35%" 
-                  cy="50%" 
-                  innerRadius={50} 
-                  outerRadius={70} 
-                  paddingAngle={2} 
-                  dataKey="value"
-                >
-                  {getGeographicChartData().map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend 
-                  layout="vertical" 
-                  verticalAlign="middle" 
-                  align="right" 
-                  iconType="circle" 
-                  wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} 
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className={cn(
-              "absolute top-1/2 left-[35%] -translate-x-1/2 -translate-y-1/2",
-              "text-center pointer-events-none"
-            )}>
-              <p className="text-xl font-black text-black leading-none">
-                {totalCount}
-              </p>
-              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1">
-                Active
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Campaign Performance */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-black uppercase tracking-widest">
-              Campaign Performance
-            </h3>
-            <Button variant="outline" className="h-8 text-[10px] font-bold px-3 rounded-lg border-gray-200">
-              This Month <ChevronDown className="h-3 w-3 ml-1" />
-            </Button>
-          </div>
-          <div className="flex-1 min-h-[250px]">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-              <BarChart data={campaignPerformance} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 'bold' }} 
-                  dy={10} 
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 'bold' }} 
-                />
-                <Tooltip cursor={{ fill: '#fef2f2' }} content={<CustomTooltip />} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={30}>
-                  {campaignPerformance.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col">
-          <h3 className="text-sm font-black text-black uppercase tracking-widest mb-6">
-            Quick Actions
-          </h3>
-          <div className="grid grid-cols-2 gap-4 flex-1">
-            <Link href="/admin/user-management?create=true" className="flex">
-              <button className={cn(
-                "w-full flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
-                "bg-gray-50 hover:bg-blue-50 hover:border-blue-100 transition-colors group cursor-pointer"
-              )}>
-                <div className={cn(
-                  "h-10 w-10 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center",
-                  "group-hover:scale-110 transition-transform"
-                )}>
-                  <UserPlus className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-black">
-                  Add Volunteer
-                </span>
-              </button>
-            </Link>
-            <Link href="/admin/notifications" className="flex">
-              <button className={cn(
-                "w-full flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
-                "bg-gray-50 hover:bg-green-50 hover:border-green-100 transition-colors group cursor-pointer"
-              )}>
-                <div className={cn(
-                  "h-10 w-10 rounded-full bg-green-100 text-green-500 flex items-center justify-center",
-                  "group-hover:scale-110 transition-transform"
-                )}>
-                  <Megaphone className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-black">
-                  Create Campaign
-                </span>
-              </button>
-            </Link>
-            <Link href="/admin/news" className="flex">
-              <button className={cn(
-                "w-full flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
-                "bg-gray-50 hover:bg-orange-50 hover:border-orange-100 transition-colors group cursor-pointer"
-              )}>
-                <div className={cn(
-                  "h-10 w-10 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center",
-                  "group-hover:scale-110 transition-transform"
-                )}>
-                  <Calendar className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-black">
-                  Create Event
-                </span>
-              </button>
-            </Link>
-            <Link href="/admin/reports" className="flex">
-              <button className={cn(
-                "w-full flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100",
-                "bg-gray-50 hover:bg-purple-50 hover:border-purple-100 transition-colors group cursor-pointer"
-              )}>
-                <div className={cn(
-                  "h-10 w-10 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center",
-                  "group-hover:scale-110 transition-transform"
-                )}>
-                  <Edit3 className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-black">
-                  Generate Report
-                </span>
-              </button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Volunteers Section */}
-      <RecentVolunteersTable volunteers={filteredList.slice(0, 5)} />
-
-      {/* Recent Activities Modal */}
-      <AnimatePresence>
-        {showActivitiesModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowActivitiesModal(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-white rounded-[32px] p-8 max-w-lg w-full shadow-2xl overflow-hidden z-10"
-            >
-              <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
-                <div>
-                  <h3 className="text-xl font-black text-black tracking-tight uppercase">
-                    All Recent Activities
-                  </h3>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
-                    System activity log
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowActivitiesModal(false)}
-                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors text-gray-500 hover:text-black cursor-pointer"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                {getRecentActivities(25).map((act, i) => (
-                  <div key={i} className="flex gap-4 p-2.5 rounded-2xl hover:bg-gray-50/50 transition-colors">
-                    <div className={cn(
-                      "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
-                      act.bg,
-                      act.color
-                    )}>
-                      <act.icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-black text-black leading-snug">{act.title}</p>
-                      <p className="text-[10px] font-medium text-gray-500 leading-normal mt-0.5">{act.desc}</p>
-                    </div>
-                    <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap pt-0.5">
-                      {act.time}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
-                <Button 
-                  onClick={() => setShowActivitiesModal(false)}
-                  className="bg-black hover:bg-[#ED1C24] text-white rounded-xl h-11 px-6 font-bold text-xs"
-                >
-                  Close Log
-                </Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

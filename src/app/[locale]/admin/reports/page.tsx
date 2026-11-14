@@ -1,11 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
-  ResponsiveContainer, PieChart, Pie, Cell, Legend
-} from "recharts";
 import { 
   Download, Users, FileText, Calendar, CreditCard,
   HandHeart, RefreshCw, CheckCircle2, ChevronDown, 
@@ -23,14 +19,9 @@ import {
   exportVolunteersReport 
 } from "@/lib/report-export";
 import { getUserScope, REGION_NAMES, type UserScope } from "@/lib/auth-scope";
-
-const ERCS_RED = "#ED1C24";
-const BLUE_ACCENT = "#2563eb";
-const GREEN_ACCENT = "#16a34a";
-const AMBER_ACCENT = "#ea580c";
-
-const PIE_TYPE_COLORS = [BLUE_ACCENT, ERCS_RED, "#9ca3af"];
-const PIE_STATUS_COLORS = [BLUE_ACCENT, ERCS_RED, "#f59e0b"];
+import { formatNumber, genderSplit, loadRegistry, percent, type RegistryLoad } from "@/lib/registry-analytics";
+import { RegistryInsights } from "@/components/admin/analytics/RegistryInsights";
+import { StatTile } from "@/components/admin/analytics/widgets";
 
 interface RegionOption {
   id: number;
@@ -55,54 +46,6 @@ const DEFAULT_REGIONS: RegionOption[] = [
   { id: 14, name: "South Ethiopia", code: "SE" }
 ];
 
-// Initial fallback/aggregate data matching ERCS reference layout
-const INITIAL_MEMBERS_BY_TYPE = [
-  { name: "MEMBER", value: 116550, percentage: 82.9 },
-  { name: "VOLUNTEER", value: 24807, percentage: 17.0 },
-  { name: "Other", value: 120, percentage: 0.1 },
-];
-
-const INITIAL_MEMBERS_BY_STATUS = [
-  { name: "ACTIVE", value: 116550, percentage: 98.4 },
-  { name: "UNPAID", value: 1680, percentage: 1.4 },
-  { name: "RENEWAL", value: 165, percentage: 0.2 },
-];
-
-const INITIAL_MEMBERSHIP_TYPES = [
-  { name: "Regular", male: 74200, female: 39500, org: 12 },
-  { name: "Life Time Member", male: 1100, female: 340, org: 0 },
-  { name: "Family Member", male: 420, female: 310, org: 0 },
-  { name: "Corporate Member - Silver", male: 0, female: 0, org: 77 },
-];
-
-const INITIAL_REGIONS_DATA = [
-  { region: "Addis Ababa", male: 8400, female: 6900, org: 45 },
-  { region: "Dire Dawa", male: 950, female: 810, org: 8 },
-  { region: "Tigray", male: 450, female: 320, org: 3 },
-  { region: "Afar", male: 1100, female: 680, org: 4 },
-  { region: "Amhara", male: 24200, female: 9100, org: 14 },
-  { region: "Oromia", male: 28100, female: 13900, org: 18 },
-  { region: "Somali", male: 2600, female: 2450, org: 6 },
-  { region: "Benishangul", male: 150, female: 110, org: 1 },
-  { region: "Gambela", male: 680, female: 520, org: 2 },
-  { region: "Harar", male: 1400, female: 1150, org: 5 },
-  { region: "Sidama", male: 4600, female: 2100, org: 7 },
-  { region: "SNNP", male: 4100, female: 2200, org: 9 },
-];
-
-const INITIAL_VOLUNTEERS_BY_REGION = [
-  { region: "Addis Ababa", male: 2450, female: 2610, org: 12 },
-  { region: "Amhara", male: 2620, female: 2040, org: 8 },
-  { region: "Oromia", male: 5490, female: 3410, org: 15 },
-  { region: "SNNP", male: 2380, female: 1290, org: 6 },
-  { region: "Sidama", male: 720, female: 380, org: 4 },
-  { region: "Harar", male: 180, female: 140, org: 2 },
-  { region: "Somali", male: 210, female: 110, org: 1 },
-  { region: "Gambela", male: 85, female: 70, org: 1 },
-  { region: "Afar", male: 110, female: 95, org: 1 },
-  { region: "Tigray", male: 65, female: 45, org: 0 },
-];
-
 export default function ReportsAndAnalyticsPage() {
   const [downloadingType, setDownloadingType] = useState<string | null>(null);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -123,20 +66,9 @@ export default function ReportsAndAnalyticsPage() {
   const [woredaFilter, setWoredaFilter] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
 
-  const [stats, setStats] = useState({
-    activeMembers: 116550,
-    activeIndiv: 116538,
-    activeOrg: 12,
-    unpaidMembers: 1680,
-    unpaidIndiv: 1603,
-    unpaidOrg: 77,
-    renewalMembers: 165,
-    renewalIndiv: 165,
-    renewalOrg: 0,
-    volunteers: 24807,
-    volunteersMale: 14678,
-    volunteersFemale: 10129,
-  });
+  // Live registry behind every number and chart on this page
+  const [registry, setRegistry] = useState<RegistryLoad | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   // Initialize user scope and regions on mount
   useEffect(() => {
@@ -166,105 +98,46 @@ export default function ReportsAndAnalyticsPage() {
     }
   };
 
-  // Re-fetch stats whenever filters change
+  // Reload whenever a server-side filter changes. Region is applied on the client for
+  // national users so the map keeps showing the whole country.
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchLiveStats();
     }, 400);
     return () => clearTimeout(timer);
-  }, [regionFilter, statusFilter, mainCategory, typeFilter, zoneFilter, woredaFilter, search]);
+  }, [isRegionLocked, isRegionLocked ? regionFilter : "", statusFilter, mainCategory, typeFilter, zoneFilter, woredaFilter, search]);
 
   const fetchLiveStats = async () => {
     setLoadingStats(true);
+    setLoadError(false);
     try {
-      const memberParams = new URLSearchParams();
-      memberParams.set("page", "1");
-      memberParams.set("page_size", "1");
-      if (regionFilter) memberParams.set("region", regionFilter);
-      if (statusFilter) memberParams.set("status", statusFilter);
-      if (mainCategory) memberParams.set("category", mainCategory);
-      if (typeFilter) memberParams.set("type", typeFilter);
-      if (zoneFilter) memberParams.set("zone", zoneFilter);
-      if (woredaFilter) memberParams.set("woreda", woredaFilter);
-      if (search) memberParams.set("search", search);
-
-      const volunteerParams = new URLSearchParams();
-      volunteerParams.set("page", "1");
-      volunteerParams.set("page_size", "1");
-      if (regionFilter) volunteerParams.set("region", regionFilter);
-      if (statusFilter) volunteerParams.set("status", statusFilter);
-      if (search) volunteerParams.set("search", search);
-
-      const [peopleRes, volunteersRes, activePeopleRes, pendingPeopleRes, expiredPeopleRes, indivPeopleRes, corpPeopleRes] = await Promise.all([
-        api.get(`/person?${memberParams.toString()}`).catch(() => ({ data: {} })),
-        api.get(`/volunteers?${volunteerParams.toString()}`).catch(() => ({ data: {} })),
-        api.get(`/person?page=1&page_size=1&status=ACTIVE${regionFilter ? `&region=${regionFilter}` : ''}`).catch(() => ({ data: {} })),
-        api.get(`/person?page=1&page_size=1&status=PENDING${regionFilter ? `&region=${regionFilter}` : ''}`).catch(() => ({ data: {} })),
-        api.get(`/person?page=1&page_size=1&status=EXPIRED${regionFilter ? `&region=${regionFilter}` : ''}`).catch(() => ({ data: {} })),
-        api.get(`/person?page=1&page_size=1&category=INDIVIDUAL${regionFilter ? `&region=${regionFilter}` : ''}`).catch(() => ({ data: {} })),
-        api.get(`/person?page=1&page_size=1&category=CORPORATE${regionFilter ? `&region=${regionFilter}` : ''}`).catch(() => ({ data: {} })),
-      ]);
-
-      const memberTotal = peopleRes.data?.pagination?.total_items;
-      const volTotal = volunteersRes.data?.pagination?.total_items;
-      const activeTotal = activePeopleRes.data?.pagination?.total_items;
-      const pendingTotal = pendingPeopleRes.data?.pagination?.total_items;
-      const expiredTotal = expiredPeopleRes.data?.pagination?.total_items;
-      const indivTotal = indivPeopleRes.data?.pagination?.total_items;
-      const corpTotal = corpPeopleRes.data?.pagination?.total_items;
-
-      setStats(prev => ({
-        ...prev,
-        activeMembers: memberTotal !== undefined ? memberTotal : prev.activeMembers,
-        activeIndiv: indivTotal !== undefined ? indivTotal : prev.activeIndiv,
-        activeOrg: corpTotal !== undefined ? corpTotal : prev.activeOrg,
-        unpaidMembers: pendingTotal !== undefined ? pendingTotal : prev.unpaidMembers,
-        unpaidIndiv: pendingTotal !== undefined ? pendingTotal : prev.unpaidIndiv,
-        renewalMembers: expiredTotal !== undefined ? expiredTotal : prev.renewalMembers,
-        renewalIndiv: expiredTotal !== undefined ? expiredTotal : prev.renewalIndiv,
-        volunteers: volTotal !== undefined ? volTotal : prev.volunteers,
-        volunteersMale: Math.round((volTotal || prev.volunteers) * 0.59),
-        volunteersFemale: Math.round((volTotal || prev.volunteers) * 0.41),
-      }));
+      setRegistry(
+        await loadRegistry({
+          region: isRegionLocked ? regionFilter : undefined,
+          status: statusFilter,
+          category: mainCategory,
+          type: typeFilter,
+          zone: zoneFilter,
+          woreda: woredaFilter,
+          search,
+        })
+      );
     } catch (err) {
-      console.error("Error fetching live report numbers:", err);
+      console.error("Error loading report data:", err);
+      setLoadError(true);
     } finally {
       setLoadingStats(false);
     }
   };
 
-  const liveTotalMembers = (stats.activeMembers || 0) + (stats.volunteers || 0);
-  const liveMembersByType = liveTotalMembers > 0 ? [
-    { 
-      name: "MEMBER", 
-      value: stats.activeMembers, 
-      percentage: Number(((stats.activeMembers / liveTotalMembers) * 100).toFixed(1)) 
-    },
-    { 
-      name: "VOLUNTEER", 
-      value: stats.volunteers, 
-      percentage: Number(((stats.volunteers / liveTotalMembers) * 100).toFixed(1)) 
-    },
-  ] : INITIAL_MEMBERS_BY_TYPE;
-
-  const liveStatusTotal = (stats.activeMembers || 0) + (stats.unpaidMembers || 0) + (stats.renewalMembers || 0);
-  const liveMembersByStatus = liveStatusTotal > 0 ? [
-    { 
-      name: "ACTIVE", 
-      value: stats.activeMembers, 
-      percentage: Number(((stats.activeMembers / liveStatusTotal) * 100).toFixed(1)) 
-    },
-    { 
-      name: "UNPAID", 
-      value: stats.unpaidMembers, 
-      percentage: Number(((stats.unpaidMembers / liveStatusTotal) * 100).toFixed(1)) 
-    },
-    { 
-      name: "RENEWAL", 
-      value: stats.renewalMembers, 
-      percentage: Number(((stats.renewalMembers / liveStatusTotal) * 100).toFixed(1)) 
-    },
-  ] : INITIAL_MEMBERS_BY_STATUS;
+  const regionId = regionFilter ? Number(regionFilter) : null;
+  const allRecords = registry?.records || [];
+  const scopedRecords = useMemo(() => (regionId ? allRecords.filter((r) => r.regionId === regionId) : allRecords), [allRecords, regionId]);
+  const memberRecords = scopedRecords.filter((r) => r.role === "MEMBER");
+  const volunteerRecords = scopedRecords.filter((r) => r.role === "VOLUNTEER");
+  const statusCount = (status: string) => memberRecords.filter((r) => r.status === status).length;
+  const volunteerGender = genderSplit(volunteerRecords);
+  const volunteerGenderKnown = volunteerGender.FEMALE + volunteerGender.MALE;
 
   const resetFilters = () => {
     setSearch("");
@@ -690,59 +563,33 @@ export default function ReportsAndAnalyticsPage() {
         )}
       </div>
 
-      {/* 4 KPI Cards - Compact */}
+      {loadError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-800">
+          Could not load report data. Check your connection and press Refresh.
+        </div>
+      )}
+      {registry?.truncated && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+          Showing the first {formatNumber(registry.records.length)} of {formatNumber(registry.memberTotal + registry.volunteerTotal)} matching records, so the charts are incomplete. Narrow the filters to see everything.
+        </div>
+      )}
+
+      {/* Headline numbers, counted from the loaded records */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Card 1: Active Members */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between">
-          <div className="p-3.5">
-            <div className="text-xs font-bold text-gray-500 mb-1">Active Members</div>
-            <h2 className="text-2xl font-black text-[#3b82f6] leading-none">
-              {stats.activeMembers.toLocaleString()}
-            </h2>
-          </div>
-          <div className="bg-[#3b82f6] text-white px-3.5 py-1.5 text-[10px] font-bold tracking-wide">
-            Indiv. / Org. =&gt; {stats.activeIndiv.toLocaleString()} / {stats.activeOrg}
-          </div>
-        </div>
-
-        {/* Card 2: Unpaid Members */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between">
-          <div className="p-3.5">
-            <div className="text-xs font-bold text-gray-500 mb-1">Unpaid Members</div>
-            <h2 className="text-2xl font-black text-[#16a34a] leading-none">
-              {stats.unpaidMembers.toLocaleString()}
-            </h2>
-          </div>
-          <div className="bg-[#16a34a] text-white px-3.5 py-1.5 text-[10px] font-bold tracking-wide">
-            Indiv. / Org. =&gt; {stats.unpaidIndiv.toLocaleString()} / {stats.unpaidOrg}
-          </div>
-        </div>
-
-        {/* Card 3: On Renewal List */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between">
-          <div className="p-3.5">
-            <div className="text-xs font-bold text-gray-500 mb-1">On Renewal List</div>
-            <h2 className="text-2xl font-black text-[#ef4444] leading-none">
-              {stats.renewalMembers.toLocaleString()}
-            </h2>
-          </div>
-          <div className="bg-[#ef4444] text-white px-3.5 py-1.5 text-[10px] font-bold tracking-wide">
-            Indiv. / Org. =&gt; {stats.renewalIndiv.toLocaleString()} / {stats.renewalOrg}
-          </div>
-        </div>
-
-        {/* Card 4: Volunteer */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between">
-          <div className="p-3.5">
-            <div className="text-xs font-bold text-gray-500 mb-1">Volunteers</div>
-            <h2 className="text-2xl font-black text-[#2563eb] leading-none">
-              {stats.volunteers.toLocaleString()}
-            </h2>
-          </div>
-          <div className="bg-[#2563eb] text-white px-3.5 py-1.5 text-[10px] font-bold tracking-wide">
-            Male / Female =&gt; {stats.volunteersMale.toLocaleString()} / {stats.volunteersFemale.toLocaleString()}
-          </div>
-        </div>
+        <StatTile
+          label="Members"
+          value={registry ? formatNumber(memberRecords.length) : "…"}
+          icon={Users}
+          hint={memberRecords.length ? `${formatNumber(statusCount("ACTIVE"))} active (${percent(statusCount("ACTIVE"), memberRecords.length)}%)` : currentRegionName}
+        />
+        <StatTile label="Pending members" value={registry ? formatNumber(statusCount("PENDING")) : "…"} icon={Clock} hint="Registered, not yet active" />
+        <StatTile label="Expired members" value={registry ? formatNumber(statusCount("EXPIRED")) : "…"} icon={RefreshCw} hint="Due for renewal" />
+        <StatTile
+          label="Volunteers"
+          value={registry ? formatNumber(volunteerRecords.length) : "…"}
+          icon={HandHeart}
+          hint={volunteerGenderKnown ? `${percent(volunteerGender.FEMALE, volunteerGenderKnown)}% female where gender is recorded` : "Gender not recorded"}
+        />
       </div>
 
       {/* Direct Report Export Hub Cards - Compact */}
@@ -856,172 +703,18 @@ export default function ReportsAndAnalyticsPage() {
         </div>
       </div>
 
-      {/* Row of Pie Charts: Member By Type & Members By Status - Compact */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-        {/* Pie Chart 1: Member By Type */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <h3 className="text-xs font-black uppercase tracking-wider text-gray-700 mb-2">Member By Type</h3>
-          <div className="flex flex-col sm:flex-row items-center justify-around gap-4">
-            <div className="h-[170px] w-[170px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={liveMembersByType}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={68}
-                    dataKey="value"
-                    stroke="#ffffff"
-                    strokeWidth={2}
-                  >
-                    {liveMembersByType.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_TYPE_COLORS[index % PIE_TYPE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-1.5">
-              {liveMembersByType.map((entry, i) => (
-                <div key={entry.name} className="flex items-center gap-2.5 text-[11px] font-bold text-gray-700">
-                  <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: PIE_TYPE_COLORS[i] }} />
-                  <span>{entry.name}</span>
-                  <span className="text-gray-400 font-medium">({entry.percentage}%)</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Pie Chart 2: Members By Status */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <h3 className="text-xs font-black uppercase tracking-wider text-gray-700 mb-2">Members By Status</h3>
-          <div className="flex flex-col sm:flex-row items-center justify-around gap-4">
-            <div className="h-[170px] w-[170px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={liveMembersByStatus}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={68}
-                    dataKey="value"
-                    stroke="#ffffff"
-                    strokeWidth={2}
-                  >
-                    {liveMembersByStatus.map((entry, index) => (
-                      <Cell key={`cell-status-${index}`} fill={PIE_STATUS_COLORS[index % PIE_STATUS_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-1.5">
-              {liveMembersByStatus.map((entry, i) => (
-                <div key={entry.name} className="flex items-center gap-2.5 text-[11px] font-bold text-gray-700">
-                  <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: PIE_STATUS_COLORS[i] }} />
-                  <span>{entry.name}</span>
-                  <span className="text-gray-400 font-medium">({entry.percentage}%)</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Grouped Bar Chart: Membership Type - Compact */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-black uppercase tracking-wider text-gray-700">Membership Type Breakdown</h3>
-          <div className="flex items-center gap-3 text-[11px] font-bold text-gray-600">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#3b82f6]"></span> Male</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#ef4444]"></span> Female</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#f59e0b]"></span> Organization</span>
-          </div>
-        </div>
-        <div className="h-[210px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={INITIAL_MEMBERSHIP_TYPES} margin={{ top: 5, right: 10, left: 0, bottom: 10 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6b7280' }} dy={5} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(v) => v >= 1000 ? `${v/1000}K` : v} />
-              <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: '11px' }} />
-              <Bar dataKey="male" name="Male" fill="#3b82f6" radius={[3, 3, 0, 0]} barSize={18} />
-              <Bar dataKey="female" name="Female" fill="#ef4444" radius={[3, 3, 0, 0]} barSize={18} />
-              <Bar dataKey="org" name="Organization" fill="#f59e0b" radius={[3, 3, 0, 0]} barSize={18} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Regional Charts Side-by-Side: Member By Region & Volunteer By Region */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-        {/* Grouped Bar Chart: Member By Region */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
-              <span>Member By Region</span>
-              {regionFilter && (
-                <span className="text-[9px] bg-red-50 text-[#ED1C24] border border-red-200 px-1.5 py-0.2 rounded font-black tracking-normal">
-                  {currentRegionName}
-                </span>
-              )}
-            </h3>
-            <div className="flex items-center gap-2.5 text-[10px] font-bold text-gray-500">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#3b82f6]"></span> M</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#ef4444]"></span> F</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#f59e0b]"></span> Org</span>
-            </div>
-          </div>
-          <div className="h-[210px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={INITIAL_REGIONS_DATA} margin={{ top: 5, right: 5, left: -15, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="region" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#6b7280' }} angle={-25} textAnchor="end" dy={6} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(v) => v >= 1000 ? `${v/1000}K` : v} />
-                <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: '11px' }} />
-                <Bar dataKey="male" name="Male" fill="#3b82f6" radius={[2, 2, 0, 0]} barSize={8} />
-                <Bar dataKey="female" name="Female" fill="#ef4444" radius={[2, 2, 0, 0]} barSize={8} />
-                <Bar dataKey="org" name="Organization" fill="#f59e0b" radius={[2, 2, 0, 0]} barSize={8} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Grouped Bar Chart: Volunteer By Region */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
-              <span>Volunteer By Region</span>
-              {regionFilter && (
-                <span className="text-[9px] bg-red-50 text-[#ED1C24] border border-red-200 px-1.5 py-0.2 rounded font-black tracking-normal">
-                  {currentRegionName}
-                </span>
-              )}
-            </h3>
-            <div className="flex items-center gap-2.5 text-[10px] font-bold text-gray-500">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#3b82f6]"></span> M</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#ef4444]"></span> F</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#f59e0b]"></span> Org</span>
-            </div>
-          </div>
-          <div className="h-[210px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={INITIAL_VOLUNTEERS_BY_REGION} margin={{ top: 5, right: 5, left: -15, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="region" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#6b7280' }} angle={-25} textAnchor="end" dy={6} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(v) => v >= 1000 ? `${v/1000}K` : v} />
-                <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: '11px' }} />
-                <Bar dataKey="male" name="Male" fill="#3b82f6" radius={[2, 2, 0, 0]} barSize={8} />
-                <Bar dataKey="female" name="Female" fill="#ef4444" radius={[2, 2, 0, 0]} barSize={8} />
-                <Bar dataKey="org" name="Organization" fill="#f59e0b" radius={[2, 2, 0, 0]} barSize={8} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
+      {/* Map, demography and trends from the same records */}
+      <RegistryInsights
+        records={allRecords}
+        regionId={regionId}
+        regionLocked={isRegionLocked}
+        showTable
+        onRegionChange={(id) => {
+          setRegionFilter(id ? String(id) : "");
+          setZoneFilter("");
+          setWoredaFilter("");
+        }}
+      />
     </div>
   );
 }
