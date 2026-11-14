@@ -94,6 +94,7 @@ export default function DonationModal({ isOpen, onClose, initialAmount = "100" }
         email: "donor@redcrosseth.org",
         first_name: "Anonymous",
         last_name: "Donor",
+        purpose: "DONATION",
       });
       if (res.data?.payment_url) {
         setSuccess(true);

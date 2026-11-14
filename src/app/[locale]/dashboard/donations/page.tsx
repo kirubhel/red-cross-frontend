@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
+import { getUserScope } from "@/lib/auth-scope";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -63,7 +64,11 @@ export default function DonationsPage() {
         currency: "ETB",
         email: "donor@redcrosseth.org",
         first_name: "ERCS",
-        last_name: "Donor"
+        last_name: "Donor",
+        // Donations go to the donor's own region account when known
+        region_id: getUserScope().regionNumber || 0,
+        branch_id: getUserScope().branchId || "",
+        purpose: "DONATION"
       });
       if (!payment.data?.payment_url) {
         throw new Error("ArifPay did not return a payment URL");

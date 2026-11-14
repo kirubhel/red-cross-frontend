@@ -22,7 +22,8 @@ import {
   BarChart3,
   Sparkles,
   Mail,
-  Activity
+  Activity,
+  Landmark
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +58,7 @@ const navigationSections = [
       { href: "/admin/active-sessions", label: "Active Sessions", icon: UserCheck },
       { href: "/admin/forms", label: "Form Configuration", icon: ClipboardList },
       { href: "/admin/membership-plans", label: "Membership Plans", icon: CreditCard },
+      { href: "/admin/payment-config", label: "Payment Configuration", icon: Landmark },
       { href: "/admin/settings", label: "Settings", icon: Settings },
       { href: "/status", label: "System Health", icon: Activity },
     ]

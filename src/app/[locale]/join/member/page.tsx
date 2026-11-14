@@ -477,18 +477,20 @@ function MemberRegistrationContent() {
         payer_phone: cleanPhone,
         email: formData.email || "member@redcrosseth.org",
         first_name: formData.name || "Member",
-        last_name: "Member"
-      }).catch(() => null);
+        last_name: "Member",
+        // Route the fee to the bank account/API key of the region being joined
+        region_id: REGION_MAP_VALUE_TO_ID[formData.region] || 0,
+        purpose: "MEMBERSHIP"
+      });
 
       if (payRes?.data?.payment_url) {
         window.location.href = payRes.data.payment_url;
         return;
       }
-
-      // If gateway direct simulation / success:
-      setStep(4); // Move to Step 4 (Verified Member ID Card reveal)
+      // No checkout URL means nothing was paid: never move on to the verified-member step.
+      setError("Could not start the payment. Please try again.");
     } catch (err: any) {
-      setError(err.message || "Failed to start ArifPay payment. Please try again.");
+      setError(err?.response?.data?.message || err?.response?.data?.error || err.message || "Failed to start ArifPay payment. Please try again.");
     } finally {
       setLoading(false);
     }
