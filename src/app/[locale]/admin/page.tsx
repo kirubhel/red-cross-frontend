@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import { 
   Users, CheckCircle, Megaphone, Calendar, ChevronDown, 
-  UserPlus, Edit3, ShieldAlert, TrendingUp, Search, X, ArrowRight
+  UserPlus, Edit3, ShieldAlert, TrendingUp, TrendingDown, Search, X, ArrowRight, HandHeart
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
@@ -70,16 +70,54 @@ const formatDate = (dateStr: string) => {
   }
 };
 
+const normalizeRegionId = (region: any): string => {
+  if (region === null || region === undefined) return "";
+  const str = String(region).trim();
+  if (/^\d+$/.test(str)) return str;
+  const match = str.match(/\d+/);
+  if (match) return match[0];
+  const lower = str.toLowerCase().replace(/^region_/, "");
+  const regionMap: Record<string, string> = {
+    "addis_ababa": "1",
+    "dire_dawa": "2",
+    "tigray": "3",
+    "afar": "4",
+    "amhara": "5",
+    "oromia": "6",
+    "somali": "7",
+    "benishangul_gumz": "8",
+    "central_ethiopia": "9",
+    "gambela": "10",
+    "harari": "11",
+    "sidama": "12",
+    "south_west_ethiopia": "13",
+    "south_ethiopia": "14"
+  };
+  return regionMap[lower] || "";
+};
+
 interface KpiCardProps {
   icon: any;
   title: string;
   value: string | number;
   change: string;
+  isPositive?: boolean;
+  subText?: string;
   bgColor: string;
   iconColor: string;
 }
 
-function KpiCard({ icon: Icon, title, value, change, bgColor, iconColor }: KpiCardProps) {
+function KpiCard({ 
+  icon: Icon, 
+  title, 
+  value, 
+  change, 
+  isPositive = true,
+  subText = "from last month",
+  bgColor, 
+  iconColor 
+}: KpiCardProps) {
+  const isNegative = change.startsWith("-");
   return (
     <motion.div 
       whileHover={{ y: -4 }} 
@@ -95,9 +133,16 @@ function KpiCard({ icon: Icon, title, value, change, bgColor, iconColor }: KpiCa
         <h3 className="text-xl font-black text-black leading-none mb-1.5">
           {value}
         </h3>
-        <p className="text-[10px] font-bold text-green-500 flex items-center gap-1">
-          <TrendingUp className="h-3 w-3" /> {change}
-          <span className="text-gray-400 font-medium">from last month</span>
+        <p className={cn(
+          "text-[10px] font-bold flex items-center gap-1",
+          isNegative ? "text-red-500" : change === "0%" ? "text-gray-500" : "text-green-500"
+        )}>
+          {isNegative ? (
+            <TrendingDown className="h-3 w-3" />
+          ) : (
+            <TrendingUp className="h-3 w-3" />
+          )} {change}
+          <span className="text-gray-400 font-medium">{subText}</span>
         </p>
       </div>
     </motion.div>
@@ -302,65 +347,78 @@ export default function DashboardPage() {
     try {
       const userScope = getUserScope();
       let personUrl = `/person?page=1&page_size=1000`;
-      let volUrl = `/volunteers`;
+      let volUrl = `/volunteers?page=1&page_size=1000`;
 
       if (!userScope.isSuperAdmin) {
         if (userScope.regionId) {
           personUrl += `&region=${userScope.regionId}`;
-          volUrl += `${volUrl.includes("?") ? "&" : "?"}region=${userScope.regionId}`;
+          volUrl += `&region=${userScope.regionId}`;
         }
         if (userScope.zoneId) {
           personUrl += `&zone=${userScope.zoneId}`;
-          volUrl += `${volUrl.includes("?") ? "&" : "?"}zone=${userScope.zoneId}`;
+          volUrl += `&zone=${userScope.zoneId}`;
         }
         if (userScope.woredaId) {
           personUrl += `&woreda=${userScope.woredaId}`;
-          volUrl += `${volUrl.includes("?") ? "&" : "?"}woreda=${userScope.woredaId}`;
+          volUrl += `&woreda=${userScope.woredaId}`;
         }
         if (userScope.branchId) {
           personUrl += `&branch_id=${userScope.branchId}`;
-          volUrl += `${volUrl.includes("?") ? "&" : "?"}branch_id=${userScope.branchId}`;
+          volUrl += `&branch_id=${userScope.branchId}`;
         }
       }
 
       const [peopleRes, volunteersRes] = await Promise.all([
-        api.get(personUrl).catch(() => ({ data: { people: [] }})),
-        api.get(volUrl).catch(() => ({ data: { volunteers: [] }}))
+        api.get(personUrl).catch(() => ({ data: { people: [] } })),
+        api.get(volUrl).catch(() => 
+          api.get(volUrl.replace('/volunteers', '/volunteer')).catch(() => ({ data: { volunteers: [] } }))
+        )
       ]);
       
       const people = peopleRes.data?.people || [];
       const volunteers = volunteersRes.data?.volunteers || [];
 
-      // Merge backend entries
+      // Merge backend entries with region normalization
       let merged = [
-        ...people.map((p: any) => ({
-          id: p.id || p.ercs_id || `mem-${Math.random()}`,
-          first_name: p.first_name || p.name || "",
-          father_name: p.father_name || p.last_name || "",
-          email: p.email || "member@ercs.org",
-          phone_number: p.phone_number || "N/A",
-          region: p.region?.toString() || p.region_id?.toString() || "1",
-          gender: p.gender?.toUpperCase() || "MALE",
-          created_at: p.created_at || new Date().toISOString(),
-          status: p.status || "Active",
-          role: "MEMBER"
-        })),
-        ...volunteers.map((v: any) => ({
-          id: v.id || v.person_id || `vol-${Math.random()}`,
-          first_name: v.first_name || v.name || "",
-          father_name: v.last_name || v.father_name || "",
-          email: v.email || "volunteer@ercs.org",
-          phone_number: v.phone_number || "N/A",
-          region: v.region?.toString() || "1",
-          gender: v.gender?.toUpperCase() || "MALE",
-          created_at: v.created_at || new Date().toISOString(),
-          status: v.status || "Active",
-          role: "VOLUNTEER"
-        }))
+        ...people.map((p: any) => {
+          const rawReg = normalizeRegionId(p.region) || normalizeRegionId(p.region_id);
+          const fallbackReg = !userScope.isSuperAdmin && userScope.regionId ? userScope.regionId : "1";
+          return {
+            id: p.id || p.ercs_id || `mem-${Math.random()}`,
+            first_name: p.first_name || p.name || "",
+            father_name: p.father_name || p.last_name || "",
+            email: p.email || "member@ercs.org",
+            phone_number: p.phone_number || "N/A",
+            region: rawReg || fallbackReg,
+            gender: p.gender?.toUpperCase() || "MALE",
+            created_at: p.created_at || new Date().toISOString(),
+            status: p.status || "ACTIVE",
+            role: "MEMBER"
+          };
+        }),
+        ...volunteers.map((v: any) => {
+          const rawReg = normalizeRegionId(v.region);
+          const fallbackReg = !userScope.isSuperAdmin && userScope.regionId ? userScope.regionId : "1";
+          return {
+            id: v.id || v.person_id || `vol-${Math.random()}`,
+            first_name: v.first_name || v.name || "",
+            father_name: v.last_name || v.father_name || "",
+            email: v.email || "volunteer@ercs.org",
+            phone_number: v.phone_number || "N/A",
+            region: rawReg || fallbackReg,
+            gender: v.gender?.toUpperCase() || "MALE",
+            created_at: v.created_at || new Date().toISOString(),
+            status: v.status || "ACTIVE",
+            role: "VOLUNTEER"
+          };
+        })
       ];
 
       if (!userScope.isSuperAdmin && userScope.regionId) {
-        merged = merged.filter(m => m.region === userScope.regionId);
+        merged = merged.filter(m => {
+          const r = normalizeRegionId(m.region);
+          return !r || r === userScope.regionId;
+        });
       }
 
       setAllRegistry(merged);
@@ -374,46 +432,7 @@ export default function DashboardPage() {
 
   // Get active filtered list
   const getFilteredList = () => {
-    const mockVolunteers = [
-      {
-        id: "mock-1",
-        first_name: "Sara",
-        father_name: "Ahmed",
-        email: "sara.ahmed@email.com",
-        phone_number: "+251 912 345 678",
-        region: "1",
-        gender: "FEMALE",
-        created_at: "2024-05-21T00:00:00.000Z",
-        status: "Active",
-        role: "VOLUNTEER"
-      },
-      {
-        id: "mock-2",
-        first_name: "Abebe",
-        father_name: "Kebede",
-        email: "abebe.kebede@email.com",
-        phone_number: "+251 923 456 789",
-        region: "5",
-        gender: "MALE",
-        created_at: "2024-05-20T00:00:00.000Z",
-        status: "Active",
-        role: "VOLUNTEER"
-      },
-      {
-        id: "mock-3",
-        first_name: "Hana",
-        father_name: "Mohammed",
-        email: "hana.mohammed@email.com",
-        phone_number: "+251 934 567 890",
-        region: "12",
-        gender: "FEMALE",
-        created_at: "2024-05-19T00:00:00.000Z",
-        status: "Pending",
-        role: "VOLUNTEER"
-      }
-    ];
-
-    let list = allRegistry.length === 0 ? mockVolunteers : allRegistry;
+    let list = allRegistry;
 
     // Filter by Role
     if (selectedRole) {
@@ -422,7 +441,11 @@ export default function DashboardPage() {
 
     // Filter by Region
     if (selectedRegion) {
-      list = list.filter(item => item.region.toString() === selectedRegion.toString());
+      const normSelected = normalizeRegionId(selectedRegion);
+      list = list.filter(item => {
+        const itemReg = normalizeRegionId(item.region);
+        return !itemReg || itemReg === normSelected;
+      });
     }
 
     // Filter by Gender
@@ -461,12 +484,47 @@ export default function DashboardPage() {
   // Dynamically compute KPIs
   const totalCount = filteredList.length;
   const activeCount = filteredList.filter(p => 
-    p.status?.toUpperCase() === 'ACTIVE' || p.status?.toUpperCase() === 'Active'
+    p.status?.toUpperCase() === 'ACTIVE'
   ).length;
 
-  // Scaling Mock Campaigns & Events to feel organic
-  const activeCampaignsCount = Math.max(2, Math.floor(totalCount * 0.15)) || 34;
-  const upcomingEventsCount = Math.max(1, Math.floor(totalCount * 0.08)) || 18;
+  // Month-over-Month calculation based on created_at (rolling 30-day window)
+  const now = new Date().getTime();
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+  const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
+
+  const currentWindowItems = filteredList.filter(item => {
+    if (!item.created_at) return true;
+    const time = new Date(item.created_at).getTime();
+    return !isNaN(time) && (now - time <= thirtyDaysMs);
+  });
+
+  const previousWindowItems = filteredList.filter(item => {
+    if (!item.created_at) return false;
+    const time = new Date(item.created_at).getTime();
+    return !isNaN(time) && (now - time > thirtyDaysMs && now - time <= sixtyDaysMs);
+  });
+
+  const calculateChange = (currentCount: number, prevCount: number) => {
+    if (prevCount === 0) {
+      if (currentCount === 0) return { change: "0%", isPositive: true };
+      return { change: `+${currentCount > 0 ? "100" : "0"}%`, isPositive: true };
+    }
+    const diffPct = Math.round(((currentCount - prevCount) / prevCount) * 100);
+    return {
+      change: diffPct >= 0 ? `+${diffPct}%` : `${diffPct}%`,
+      isPositive: diffPct >= 0
+    };
+  };
+
+  const totalRegistryGrowth = calculateChange(currentWindowItems.length, previousWindowItems.length);
+  
+  const currentActiveCount = currentWindowItems.filter(p => p.status?.toUpperCase() === 'ACTIVE').length;
+  const prevActiveCount = previousWindowItems.filter(p => p.status?.toUpperCase() === 'ACTIVE').length;
+  const activeGrowth = calculateChange(currentActiveCount, prevActiveCount);
+
+  // Scaling Campaigns & Events to active scope
+  const activeCampaignsCount = Math.max(2, Math.floor(totalCount * 0.15)) || 2;
+  const upcomingEventsCount = Math.max(1, Math.floor(totalCount * 0.08)) || 1;
 
   // Dynamically compute Growth Chart Data according to trend period
   const getGrowthChartData = () => {
@@ -510,7 +568,7 @@ export default function DashboardPage() {
     };
 
     const regionsMap = filteredList.reduce((acc: any, p: any) => {
-      const r = p.region?.toString() || '1';
+      const r = normalizeRegionId(p.region) || '1';
       acc[r] = (acc[r] || 0) + 1;
       return acc;
     }, {});
@@ -526,6 +584,63 @@ export default function DashboardPage() {
     return data;
   };
 
+  // Dynamically compute real recent activities from all registered members & volunteers
+  const getRecentActivities = (limit = 10) => {
+    const REGION_NAMES: Record<string, string> = {
+      "1": "Addis Ababa", "2": "Dire Dawa", "3": "Tigray", "4": "Afar", 
+      "5": "Amhara", "6": "Oromia", "7": "Somali", "8": "Benishangul Gumz", 
+      "9": "Central Ethiopia", "10": "Gambela", "11": "Harari", "12": "Sidama", 
+      "13": "South West Ethiopia", "14": "South Ethiopia"
+    };
+
+    const sorted = [...allRegistry].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    const now = Date.now();
+    const formatRelativeTime = (dateStr: string) => {
+      const diffMs = now - new Date(dateStr).getTime();
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    };
+
+    if (sorted.length === 0) {
+      return [
+        { 
+          icon: ShieldAlert, 
+          title: "System ready", 
+          desc: "Awaiting new member and volunteer registrations.", 
+          time: "Just now", 
+          color: "text-blue-500", 
+          bg: "bg-blue-50" 
+        }
+      ];
+    }
+
+    return sorted.slice(0, limit).map(item => {
+      const fullName = `${item.first_name || ""} ${item.father_name || ""}`.trim() || "ERCS Member";
+      const regName = REGION_NAMES[item.region] || `Region ${item.region}`;
+      const isVol = item.role === "VOLUNTEER";
+
+      return {
+        icon: isVol ? HandHeart : UserPlus,
+        title: isVol ? "New volunteer registered" : "New member registered",
+        desc: `${fullName} joined (${regName} Branch).`,
+        time: formatRelativeTime(item.created_at),
+        color: isVol ? "text-purple-500" : "text-emerald-500",
+        bg: isVol ? "bg-purple-50" : "bg-emerald-50"
+      };
+    });
+  };
+
   const campaignPerformance = [
     { name: 'Clean City', value: 3200 },
     { name: 'Plant Trees', value: 2700 },
@@ -534,7 +649,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 p-6 md:p-8 max-w-7xl mx-auto w-full">
+    <div className="flex flex-col gap-6 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -543,8 +658,8 @@ export default function DashboardPage() {
             Welcome back, Admin! Here's what's happening today.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input 
               type="text" 
@@ -564,7 +679,7 @@ export default function DashboardPage() {
               }}
               className={cn(
                 "h-11 pl-10 pr-12 rounded-xl border border-gray-200 text-sm",
-                "focus:outline-none focus:border-[#ED1C24] transition-colors w-[280px]"
+                "focus:outline-none focus:border-[#ED1C24] transition-colors w-full sm:w-[240px] md:w-[280px]"
               )}
             />
             {quickSearch ? (
@@ -747,7 +862,8 @@ export default function DashboardPage() {
           icon={Users} 
           title={selectedRole === "MEMBER" ? "Total Members" : selectedRole === "VOLUNTEER" ? "Total Volunteers" : "Total Registry"} 
           value={totalCount.toLocaleString()} 
-          change="+12.5%" 
+          change={totalRegistryGrowth.change}
+          isPositive={totalRegistryGrowth.isPositive}
           bgColor="bg-blue-50" 
           iconColor="text-blue-500" 
         />
@@ -755,7 +871,8 @@ export default function DashboardPage() {
           icon={CheckCircle} 
           title="Active Count" 
           value={activeCount.toLocaleString()} 
-          change="+8.2%" 
+          change={activeGrowth.change}
+          isPositive={activeGrowth.isPositive}
           bgColor="bg-green-50" 
           iconColor="text-green-500" 
         />
@@ -763,7 +880,9 @@ export default function DashboardPage() {
           icon={Megaphone} 
           title="Active Campaigns" 
           value={activeCampaignsCount} 
-          change="+6.7%" 
+          change="+0%" 
+          isPositive={true}
+          subText="active"
           bgColor="bg-purple-50" 
           iconColor="text-purple-500" 
         />
@@ -771,7 +890,9 @@ export default function DashboardPage() {
           icon={Calendar} 
           title="Upcoming Events" 
           value={upcomingEventsCount} 
-          change="+3.1%" 
+          change="+0%" 
+          isPositive={true}
+          subText="scheduled"
           bgColor="bg-orange-50" 
           iconColor="text-orange-500" 
         />
@@ -846,13 +967,7 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar-small flex-1 max-h-[300px]">
-            {[
-              { icon: UserPlus, title: "New volunteer registered", desc: "Sara Ahmed joined as a volunteer.", time: "2m ago", color: "text-green-500", bg: "bg-green-50" },
-              { icon: Megaphone, title: "Campaign updated", desc: "'Clean City Initiative' was updated.", time: "15m ago", color: "text-blue-500", bg: "bg-blue-50" },
-              { icon: Calendar, title: "New event created", desc: "'Tree Planting Day' created successfully.", time: "1h ago", color: "text-orange-500", bg: "bg-orange-50" },
-              { icon: Edit3, title: "User role changed", desc: "John Doe's role changed to Manager.", time: "2h ago", color: "text-purple-500", bg: "bg-purple-50" },
-              { icon: ShieldAlert, title: "Login from new device", desc: "Login detected from Chrome on Windows.", time: "3h ago", color: "text-red-500", bg: "bg-red-50" },
-            ].map((act, i) => (
+            {getRecentActivities(5).map((act, i) => (
               <div key={i} className="flex gap-4">
                 <div className={cn(
                   "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
@@ -1070,15 +1185,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                {[
-                  { icon: UserPlus, title: "New volunteer registered", desc: "Sara Ahmed joined as a volunteer.", time: "2m ago", color: "text-green-500", bg: "bg-green-50" },
-                  { icon: Megaphone, title: "Campaign updated", desc: "'Clean City Initiative' was updated.", time: "15m ago", color: "text-blue-500", bg: "bg-blue-50" },
-                  { icon: Calendar, title: "New event created", desc: "'Tree Planting Day' created successfully.", time: "1h ago", color: "text-orange-500", bg: "bg-orange-50" },
-                  { icon: Edit3, title: "User role changed", desc: "John Doe's role changed to Manager.", time: "2h ago", color: "text-purple-500", bg: "bg-purple-50" },
-                  { icon: ShieldAlert, title: "Login from new device", desc: "Login detected from Chrome on Windows.", time: "3h ago", color: "text-red-500", bg: "bg-red-50" },
-                  { icon: UserPlus, title: "New member registered", desc: "Abebe Kebede joined as a member.", time: "1d ago", color: "text-green-500", bg: "bg-green-50" },
-                  { icon: Megaphone, title: "Donation goal achieved", desc: "Water project raised 50k ETB.", time: "2d ago", color: "text-blue-500", bg: "bg-blue-50" },
-                ].map((act, i) => (
+                {getRecentActivities(25).map((act, i) => (
                   <div key={i} className="flex gap-4 p-2.5 rounded-2xl hover:bg-gray-50/50 transition-colors">
                     <div className={cn(
                       "h-10 w-10 rounded-full flex items-center justify-center shrink-0",

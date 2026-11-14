@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,7 +19,8 @@ import {
   Check, 
   QrCode,
   KeyRound,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import PhoneNumberInput, { buildFullPhoneNumber } from "@/components/ui/phone-number-input";
@@ -30,18 +31,29 @@ export default function ForgotPasswordPage() {
   const [step, setStep] = useState(1); // 1: Enter Phone, 2: Enter OTP & New Password, 3: Success Card
   const [country, setCountry] = useState("ET");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [otp, setOtp] = useState("123456");
+  const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [recoveredErcsId, setRecoveredErcsId] = useState("");
   const [copied, setCopied] = useState(false);
 
   const fullPhone = buildFullPhoneNumber(country, phoneNumber);
+
+  // Active cooldown countdown
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => (prev > 1 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
 
   // Step 1: Request OTP
   const handleRequestOTP = async (e: React.FormEvent) => {
@@ -60,15 +72,45 @@ export default function ForgotPasswordPage() {
 
       if (res.data?.success) {
         setSuccessMsg(res.data.message || "OTP code sent successfully!");
+        setResendCooldown(60);
         if (res.data?.ercs_id) {
           setRecoveredErcsId(res.data.ercs_id);
         }
         setStep(2);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.response?.data || "Account not found for this phone number.");
+      const data = err.response?.data;
+      if (data?.retry_after_seconds) {
+        setResendCooldown(data.retry_after_seconds);
+      }
+      setError(data?.message || data?.error || err.message || "Account not found for this phone number.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Resend OTP with cooldown
+  const handleResendOTP = async () => {
+    if (resendCooldown > 0 || resending) return;
+    setResending(true);
+    setError("");
+    try {
+      const res = await api.post("/public/forgot-password/request-otp", {
+        phone_number: fullPhone
+      });
+
+      if (res.data?.success) {
+        setSuccessMsg(res.data.message || "A new OTP code has been sent to your phone number.");
+        setResendCooldown(60);
+      }
+    } catch (err: any) {
+      const data = err.response?.data;
+      if (data?.retry_after_seconds) {
+        setResendCooldown(data.retry_after_seconds);
+      }
+      setError(data?.message || data?.error || err.message || "Failed to resend verification code.");
+    } finally {
+      setResending(false);
     }
   };
 
@@ -208,7 +250,7 @@ export default function ForgotPasswordPage() {
                     <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
                     <div>
                       <div>{successMsg}</div>
-                      <div className="text-[10px] opacity-75 mt-0.5">Use OTP code: <span className="font-black underline">123456</span></div>
+                      <div className="text-[10px] opacity-75 mt-0.5">Enter the 6-digit code received via SMS</div>
                     </div>
                   </div>
 
@@ -219,13 +261,35 @@ export default function ForgotPasswordPage() {
                     <Input
                       id="otp"
                       type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
                       maxLength={6}
-                      placeholder="123456"
+                      placeholder="000 000"
                       value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       className="h-14 text-center font-black text-xl tracking-[0.4em] bg-gray-50 border-none rounded-2xl text-black"
                       required
                     />
+                    <div className="flex items-center justify-between text-xs px-1 pt-1">
+                      <span className="text-black/50 font-bold text-[11px]">Didn't receive the code?</span>
+                      <button
+                        type="button"
+                        onClick={handleResendOTP}
+                        disabled={resendCooldown > 0 || resending}
+                        className={`inline-flex items-center gap-1.5 text-xs font-black transition-all ${
+                          resendCooldown > 0 || resending
+                            ? "text-black/30 cursor-not-allowed"
+                            : "text-[#ED1C24] hover:underline cursor-pointer active:scale-95"
+                        }`}
+                      >
+                        <RefreshCw className={`h-3 w-3 ${resending ? "animate-spin" : ""}`} />
+                        {resending
+                          ? "Sending..."
+                          : resendCooldown > 0
+                          ? `Resend in ${resendCooldown}s`
+                          : "Resend Code"}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -349,7 +349,7 @@ export default function UserManagementPage() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      let url = "/users?page=1&page_size=200";
+      let url = "/users?page=1&page_size=1000";
       
       if (!adminScope.isSuper) {
         if (adminScope.regionId > 0) url += `&region_id=${adminScope.regionId}`;

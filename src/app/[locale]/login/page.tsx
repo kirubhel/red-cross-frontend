@@ -18,7 +18,8 @@ import {
   Eye,
   EyeOff,
   Heart,
-  Award
+  Award,
+  Check
 } from "lucide-react";
 import api from "@/lib/api";
 import Header from "@/components/layout/Header";
@@ -45,6 +46,7 @@ export default function LoginPage() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [isMultiProfile, setIsMultiProfile] = useState(false);
   const showCountrySelector = /^[+0-9]/.test(identifier);
+  const isMemberId = /^ERCS-/i.test(identifier.trim());
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -157,7 +159,10 @@ export default function LoginPage() {
         }
       }
 
-      const res = await api.post("/auth/login", { identifier: finalIdentifier, password });
+      const res = await api.post("/auth/login", { 
+        identifier: finalIdentifier, 
+        password: (isMemberId && !password) ? "" : password 
+      });
       
       // Check for multi-profile response
       if (res.data.multi_profile) {
@@ -340,6 +345,12 @@ export default function LoginPage() {
                           required
                         />
                       </div>
+                      {isMemberId && (
+                        <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200">
+                          <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                          <span>Member ID detected — password is optional</span>
+                        </div>
+                      )}
                     </div>
 
                   <div className="flex items-center gap-2 ml-1">
@@ -372,7 +383,7 @@ export default function LoginPage() {
                         className="h-14 pl-12 pr-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        required={!noPassword}
+                        required={!noPassword && !isMemberId}
                         disabled={noPassword}
                       />
                       <button

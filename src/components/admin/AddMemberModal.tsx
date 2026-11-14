@@ -18,9 +18,11 @@ interface AddMemberModalProps {
   onClose: () => void;
   onSuccess: () => void;
   regions: Region[];
+  defaultRegion?: string;
+  isRegionLocked?: boolean;
 }
 
-export function AddMemberModal({ onClose, onSuccess, regions }: AddMemberModalProps) {
+export function AddMemberModal({ onClose, onSuccess, regions, defaultRegion, isRegionLocked }: AddMemberModalProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     first_name: "",
@@ -30,7 +32,7 @@ export function AddMemberModal({ onClose, onSuccess, regions }: AddMemberModalPr
     phone_number: "",
     national_id: "",
     gender: "MALE",
-    region: "1",
+    region: defaultRegion || "1",
     membership_type: "REGULAR",
   });
 
@@ -195,11 +197,18 @@ export function AddMemberModal({ onClose, onSuccess, regions }: AddMemberModalPr
                   name="region"
                   value={formData.region}
                   onChange={handleChange}
-                  className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-bold text-xs focus:border-[#ED1C24] transition-all outline-none appearance-none"
+                  disabled={isRegionLocked}
+                  className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-bold text-xs focus:border-[#ED1C24] transition-all outline-none appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {regions.map((r) => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
+                  {isRegionLocked ? (
+                    <option value={formData.region}>
+                      {regions.find(r => String(r.id) === String(formData.region))?.name || `Region ${formData.region}`} (Locked)
+                    </option>
+                  ) : (
+                    regions.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))
+                  )}
                 </select>
               </div>
               <div className="space-y-1">
