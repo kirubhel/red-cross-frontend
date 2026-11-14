@@ -205,6 +205,7 @@ export default function VolunteerJoinPage() {
         fid.includes("grand") ||
         fid === "name" ||
         fid.includes("gender") ||
+        fid.includes("education") ||
         fid.includes("registration") ||
         fid.includes("birth") ||
         fid.includes("dob") ||
@@ -220,7 +221,6 @@ export default function VolunteerJoinPage() {
     if (
         fid.includes("occupation") ||
         fid.includes("profession") ||
-        fid.includes("education") ||
         fid.includes("kebele") ||
         fid.includes("house") ||
         fid.includes("area") ||
@@ -525,7 +525,7 @@ export default function VolunteerJoinPage() {
                                                           
                                                           {formData.country === 'ET' && (
                                                               <div key={`${field.id}-region`} className="space-y-1 group md:col-span-1">
-                                                                  <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
+                                                                  <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && !isOptionalVolunteerField(field) && <span className="text-red-500">*</span>}</Label>
                                                                   <div className="relative">
                                                                       <select 
                                                                           id={field.id} 
@@ -637,7 +637,7 @@ export default function VolunteerJoinPage() {
 
                                               return (
                                                   <div key={field.id} className="space-y-1 group md:col-span-1">
-                                                      <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && <span className="text-red-500">*</span>}</Label>
+                                                      <Label htmlFor={field.id} className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 group-focus-within:text-[#ED1C24] transition-colors">{field.label} {field.required && !isOptionalVolunteerField(field) && <span className="text-red-500">*</span>}</Label>
                                                       <div className="relative">
                                                           {field.type === 'select' ? (
                                                               <select 
@@ -647,10 +647,12 @@ export default function VolunteerJoinPage() {
                                                                   value={formData[field.id] || ""}
                                                                   onChange={handleChange}
                                                               >
-                                                                  <option value="" disabled>{field.placeholder}</option>
+                                                                  <option value="" disabled>{field.placeholder || "Select"}</option>
                                                                   {(
-                                                                      field.dataSource === 'GENDER'
+                                                                      (field.dataSource === 'GENDER' || (field.id || '').toLowerCase() === 'gender')
                                                                           ? GENDER_OPTIONS :
+                                                                      ((field.id || '').toLowerCase() === 'area')
+                                                                          ? [{ label: "URBAN", value: "URBAN" }, { label: "RURAL", value: "RURAL" }] :
                                                                       (field.options || [])
                                                                   ).map((opt: any, i: number) => (
                                                                       <option key={i} value={opt.value}>{opt.label}</option>

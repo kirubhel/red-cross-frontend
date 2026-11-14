@@ -601,6 +601,7 @@ function MemberRegistrationContent() {
       fid.includes("grand") ||
       fid === "name" ||
       fid.includes("gender") ||
+      fid.includes("education") ||
       fid.includes("registration") ||
       fid.includes("birth") ||
       fid.includes("dob") ||
@@ -617,7 +618,6 @@ function MemberRegistrationContent() {
     if (
       fid.includes("occupation") ||
       fid.includes("profession") ||
-      fid.includes("education") ||
       fid.includes("kebele") ||
       fid.includes("house") ||
       fid.includes("area") ||
@@ -767,8 +767,10 @@ function MemberRegistrationContent() {
             >
               <option value="" disabled>{field.placeholder || "Select an option"}</option>
               {(
-                field.dataSource === 'GENDER'
+                (field.dataSource === 'GENDER' || (field.id || '').toLowerCase() === 'gender')
                   ? GENDER_OPTIONS :
+                ((field.id || '').toLowerCase() === 'area')
+                  ? [{ label: "URBAN", value: "URBAN" }, { label: "RURAL", value: "RURAL" }] :
                 (field.options || [])
               ).map((opt: any, i: number) => (
                 <option key={i} value={opt.value}>{opt.label}</option>

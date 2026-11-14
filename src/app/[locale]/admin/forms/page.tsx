@@ -353,7 +353,7 @@ const DEFAULT_VOLUNTEER_FIELDS: FormField[] = [
     { label: "Private", value: "Private" },
     { label: "Association", value: "Association" }
   ]},
-  { id: "educationLevel", label: "Education Level", type: "select", required: false, unique: false, placeholder: "Select Education Level", dataSource: "MANUAL", audience: "INDIVIDUAL", options: [
+  { id: "educationLevel", label: "Education Level", type: "select", required: true, unique: false, placeholder: "Select Education Level", dataSource: "MANUAL", audience: "INDIVIDUAL", options: [
     { label: "Below Primary School", value: "Below Primary School" },
     { label: "Primary School Completed", value: "Primary School Completed" },
     { label: "High School Completed", value: "High School Completed" },
@@ -412,7 +412,7 @@ const DEFAULT_MEMBER_FIELDS: FormField[] = [
     { label: "Others", value: "Others" }
   ]},
   { id: "organizationName", label: "Organization Name", type: "text", required: false, unique: false, placeholder: "Enter Organization Name", audience: "CORPORATE" },
-  { id: "educationLevel", label: "Education Level", type: "select", required: false, unique: false, placeholder: "Select Education Level", dataSource: "MANUAL", audience: "INDIVIDUAL", options: [
+  { id: "educationLevel", label: "Education Level", type: "select", required: true, unique: false, placeholder: "Select Education Level", dataSource: "MANUAL", audience: "INDIVIDUAL", options: [
     { label: "Below Primary School", value: "Below Primary School" },
     { label: "Primary School Completed", value: "Primary School Completed" },
     { label: "High School Completed", value: "High School Completed" },
