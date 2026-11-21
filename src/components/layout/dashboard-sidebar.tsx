@@ -17,16 +17,25 @@ import {
   PanelLeftOpen,
   History,
   Newspaper,
-  Heart
+  Heart,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { useLanguage } from "@/context/LanguageContext";
 
-export function DashboardSidebar() {
+export function DashboardSidebar({
+  mobileOpen = false,
+  onClose,
+}: {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
   const { t } = useLanguage();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Collapsing to icons is a desktop affordance; the phone drawer is always full width.
+  const [collapsedPref, setCollapsedPref] = useState(false);
+  const isCollapsed = collapsedPref;
   const [user, setUser] = useState<any>(null);
 
   // Normalize pathname: strip any leading locale prefix if present and remove trailing slashes
@@ -96,11 +105,18 @@ export function DashboardSidebar() {
   };
 
   return (
-    <div className={cn(
-      "flex h-full flex-col bg-white border-r border-gray-100 relative z-20 transition-all duration-300 shadow-[2px_0_10px_rgba(0,0,0,0.02)]",
-      isCollapsed ? "w-[88px]" : "w-[280px]"
-    )}>
-      
+    <aside
+      id="member-sidebar"
+      aria-label={t.dashboard.mainMenu}
+      className={cn(
+        "flex h-full flex-col bg-white border-r border-gray-100 transition-[transform,width] duration-300 ease-out shadow-[2px_0_10px_rgba(0,0,0,0.02)]",
+        // Phone: off-canvas drawer. Desktop: part of the layout.
+        "fixed inset-y-0 left-0 z-40 w-[280px] max-w-[85vw] lg:static lg:z-20 lg:max-w-none lg:translate-x-0",
+        mobileOpen ? "translate-x-0" : "-translate-x-full",
+        isCollapsed ? "lg:w-[88px]" : "lg:w-[280px]"
+      )}
+    >
+
       {/* Brand Header */}
       <div className={cn("flex h-24 items-center border-b border-gray-50 pb-2 pt-4 relative", isCollapsed ? "justify-center px-0" : "px-6 gap-4")}>
          <div className="bg-gray-50 border border-gray-100 p-1.5 rounded-xl shrink-0 shadow-sm">
@@ -114,14 +130,26 @@ export function DashboardSidebar() {
           </span>
          </div>
          
-         <button 
-           onClick={() => setIsCollapsed(!isCollapsed)}
+         <button
+           type="button"
+           onClick={() => setCollapsedPref(!collapsedPref)}
+           aria-label={isCollapsed ? "Expand menu" : "Collapse menu"}
+           aria-expanded={!isCollapsed}
+           aria-controls="member-sidebar"
            className={cn(
-             "absolute top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#ED1C24] transition-colors bg-white p-1.5 rounded-lg border border-gray-200 shadow-sm z-50",
-             isCollapsed ? "-right-3" : "right-4"
+             "hidden lg:flex absolute top-1/2 -translate-y-1/2 items-center justify-center h-9 w-9 text-gray-400 hover:text-[#ED1C24] transition-colors bg-white rounded-lg border border-gray-200 shadow-sm z-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ED1C24]",
+             isCollapsed ? "-right-4" : "right-4"
            )}
          >
            {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+         </button>
+         <button
+           type="button"
+           onClick={onClose}
+           aria-label="Close menu"
+           className="lg:hidden absolute top-1/2 -translate-y-1/2 right-4 flex items-center justify-center h-11 w-11 text-gray-500 rounded-xl hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-[#ED1C24]"
+         >
+           <X className="h-5 w-5" />
          </button>
       </div>
 
@@ -140,6 +168,8 @@ export function DashboardSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
+              aria-current={isActive ? "page" : undefined}
               title={isCollapsed ? item.label : undefined}
               className={cn(
                 "group flex items-center rounded-2xl transition-all duration-300",
@@ -195,6 +225,6 @@ export function DashboardSidebar() {
         </button>
       </div>
 
-    </div>
+    </aside>
   );
 }

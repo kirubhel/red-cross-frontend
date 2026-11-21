@@ -65,6 +65,8 @@ function MemberRegistrationContent() {
   const [showLoginCTA, setShowLoginCTA] = useState(false);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [registeredLoggedIn, setRegisteredLoggedIn] = useState(false);
+  // The member's own record id, needed to attach the membership fee to them.
+  const [personId, setPersonId] = useState<string>("");
   const [formConfig, setFormConfig] = useState<any[]>([]);
   const [membershipPlans, setMembershipPlans] = useState<any[]>([]);
   const [customPaymentAmount, setCustomPaymentAmount] = useState<string>("50");
@@ -358,6 +360,8 @@ function MemberRegistrationContent() {
 
         let tokenVal = "";
         let generatedId = "";
+        let registeredPersonId = "";
+        let feeStillDue = true;
 
         try {
             // Corporate uses hardcoded fields (firstName/fatherName);
@@ -404,6 +408,8 @@ function MemberRegistrationContent() {
 
             generatedId = res.data?.ercsId || res.data?.ercs_id || "";
             tokenVal = res.data?.access_token || res.data?.accessToken || "";
+            registeredPersonId = res.data?.person_id || "";
+            feeStillDue = res.data?.payment_required !== false;
         } catch (regErr: any) {
             const errMsg = regErr.response?.data?.message || regErr.response?.data?.error || regErr.message || "";
             const isDuplicate = /already|exist|duplicate|used|registered/i.test(errMsg) || regErr.response?.status === 409 || regErr.response?.status === 400;
@@ -420,6 +426,15 @@ function MemberRegistrationContent() {
                         localStorage.setItem("access_token", tokenVal);
                         localStorage.setItem("user_role", "MEMBER");
                         if (generatedId) localStorage.setItem("ercs_id", generatedId);
+                        // They registered before: find out whether the fee is still unpaid.
+                        try {
+                            const meRes = await api.get("/membership/me");
+                            registeredPersonId = meRes.data?.person_id || "";
+                            feeStillDue = !!meRes.data?.payment_required;
+                            generatedId = meRes.data?.ercs_id || generatedId;
+                        } catch {
+                            // Without it we cannot start a payment; fall through to the login hint.
+                        }
                     }
                 } catch (loginErr: any) {
                     setError("This phone number is already registered. If you need to complete payment or access your account, please log in with your password.");
@@ -443,7 +458,20 @@ function MemberRegistrationContent() {
             }
         }
 
-        // Set state to indicate registered & logged in, ready for ArifPay payment!
+        setPersonId(registeredPersonId);
+        if (!feeStillDue) {
+            // Nothing to pay (free plan, or the fee was already paid): they are a member now.
+            if (generatedId) setMemberId(generatedId);
+            setStep(4);
+            return;
+        }
+        if (!registeredPersonId) {
+            setError("We could not find your membership record. Please log in to complete your payment.");
+            setShowLoginCTA(true);
+            return;
+        }
+
+        // Registered & logged in, ready for ArifPay payment. The Member ID is issued once the fee is paid.
         setRegisteredLoggedIn(true);
     } catch (err: any) {
          console.error("Registration error:", err);
@@ -478,8 +506,8 @@ function MemberRegistrationContent() {
         email: formData.email || "member@redcrosseth.org",
         first_name: formData.name || "Member",
         last_name: "Member",
-        // Route the fee to the bank account/API key of the region being joined
-        region_id: REGION_MAP_VALUE_TO_ID[formData.region] || 0,
+        // The server routes the fee by the member's own record (region, fee), not by the browser.
+        person_id: personId,
         purpose: "MEMBERSHIP"
       });
 

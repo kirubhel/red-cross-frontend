@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import html2canvas from "html2canvas";
+import PendingMembershipBanner from "@/components/payment/PendingMembershipBanner";
 import { getRegionName, getZoneName, getWoredaName } from "@/lib/constants";
 
 export default function DashboardPage() {
@@ -199,7 +200,9 @@ export default function DashboardPage() {
         
         // Members who register / pay are immediately ACTIVE without manual approval blocker
         const isRejectedOrSuspended = rawStatus === "REJECTED" || rawStatus === "SUSPENDED";
-        const status = isRejectedOrSuspended ? rawStatus : "ACTIVE";
+        // An unpaid member has no Member ID yet: show that honestly instead of "ACTIVE".
+        const isPendingPayment = rawStatus === "PENDING_PAYMENT";
+        const status = isRejectedOrSuspended || isPendingPayment ? rawStatus : "ACTIVE";
         const isApproved = !isRejectedOrSuspended;
 
         const formattedIssueDate = issueDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -253,15 +256,16 @@ export default function DashboardPage() {
           fatherName: fatherName,
           grandfatherName: grandfatherName,
           fullName: fullName,
-          memberId: userData?.ercs_id || storedErcsId || "NOT_ASSIGNED",
+          memberId: userData?.ercs_id || (isPendingPayment ? "" : storedErcsId) || "NOT_ASSIGNED",
+          isPendingPayment,
           status: status,
           isApproved: isApproved,
           membershipType: membershipType,
           role: role || "MEMBER",
-          issueDate: isRejectedOrSuspended ? "PENDING" : formattedIssueDate,
-          expiryDate: isRejectedOrSuspended ? "PENDING" : formattedExpiryDate,
-          cardExpiry: isRejectedOrSuspended ? "PENDING" : formattedCardExpiry,
-          daysLeft: isApproved ? Math.max(1, diffDays > 0 ? diffDays : 365) : 0,
+          issueDate: isPendingPayment ? "—" : isRejectedOrSuspended ? "PENDING" : formattedIssueDate,
+          expiryDate: isPendingPayment ? "—" : isRejectedOrSuspended ? "PENDING" : formattedExpiryDate,
+          cardExpiry: isPendingPayment ? "—" : isRejectedOrSuspended ? "PENDING" : formattedCardExpiry,
+          daysLeft: isApproved && !isPendingPayment ? Math.max(1, diffDays > 0 ? diffDays : 365) : 0,
           region: regionName,
           phone: userData?.phone_number || userData?.phone || "+251...",
           email: userData?.email || "N/A",
@@ -428,6 +432,7 @@ export default function DashboardPage() {
   if (isMember) {
     return (
     <div className="p-6 md:p-10 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16 max-w-7xl mx-auto">
+      <PendingMembershipBanner />
       {/* Top Banner: Verification/Warning */}
       {!user?.isApproved && (
         <motion.div 
@@ -459,7 +464,7 @@ export default function DashboardPage() {
       {/* Main Dashboard Layout */}
       <div className="space-y-6">
         {/* Photo Upload Banner if Missing Photo */}
-        {!user?.photo && (
+        {!user?.photo && !user?.isPendingPayment && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -505,7 +510,9 @@ export default function DashboardPage() {
           {/* Membership Status */}
           <div className="bg-white rounded-[24px] p-5 border border-gray-100 shadow-xs flex flex-col justify-between min-h-[120px]">
             <div className="flex justify-between items-start">
-               <h3 className="text-xl font-black tracking-tighter text-[#ED1C24] uppercase">{user?.status}</h3>
+               <h3 className={cn("text-xl font-black tracking-tighter uppercase", user?.isPendingPayment ? "text-amber-600" : "text-[#ED1C24]")}>
+                 {user?.isPendingPayment ? "Payment due" : user?.status}
+               </h3>
                <div className="p-2 bg-gray-50 rounded-xl text-gray-400"><CreditCard className="h-4 w-4" /></div>
             </div>
             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Membership Status</p>
@@ -532,7 +539,11 @@ export default function DashboardPage() {
             </div>
             <div>
                <h3 className="text-lg font-black tracking-tighter text-gray-900">{user?.expiryDate}</h3>
-               <p className="text-[10px] font-black text-[#ED1C24] uppercase mt-0.5">{user?.daysLeft} Days Left</p>
+               {user?.isPendingPayment ? (
+                 <p className="text-[10px] font-bold text-gray-500 mt-0.5">Starts when you pay</p>
+               ) : (
+                 <p className="text-[10px] font-black text-[#ED1C24] uppercase mt-0.5">{user?.daysLeft} Days Left</p>
+               )}
             </div>
             <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Expired Date</p>
           </div>
@@ -547,9 +558,10 @@ export default function DashboardPage() {
              </div>
              <Button 
                 onClick={downloadIDCard}
-                className="bg-[#ED1C24] hover:bg-black text-white px-6 h-11 rounded-xl font-black tracking-widest uppercase text-[10px] shadow-lg shadow-red-500/20 transition-all flex items-center gap-2"
+                disabled={user?.isPendingPayment}
+                className="bg-[#ED1C24] hover:bg-black text-white px-6 h-11 rounded-xl font-black tracking-widest uppercase text-[10px] shadow-lg shadow-red-500/20 transition-all flex items-center gap-2 disabled:bg-gray-200 disabled:text-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
               >
-                <Download className="h-3.5 w-3.5" /> Download ID Card
+                <Download className="h-3.5 w-3.5" /> {user?.isPendingPayment ? "Available after payment" : "Download ID Card"}
              </Button>
           </div>
 
@@ -595,7 +607,7 @@ export default function DashboardPage() {
                       </div>
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                          {[
-                           { label: user?.role === "VOLUNTEER" ? "Volunteer ID" : "Member ID", val: user?.memberId },
+                           { label: user?.role === "VOLUNTEER" ? "Volunteer ID" : "Member ID", val: user?.isPendingPayment ? "Issued after payment" : user?.memberId },
                            { label: "Name", val: user?.fullName },
                            { label: user?.role === "VOLUNTEER" ? "Volunteer Type" : "Membership Type", val: user?.membershipType },
                            { label: "Mobile Number", val: user?.phone || "+251..." },
@@ -675,6 +687,11 @@ export default function DashboardPage() {
                          </div>
                          
                          <div style={{ width: '32%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                            {user?.isPendingPayment ? (
+                              <div style={{ width: '72px', height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #E5E7EB', borderRadius: '12px', padding: '6px', textAlign: 'center', fontSize: '6px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.08em', lineHeight: 1.4 }}>
+                                QR code after payment
+                              </div>
+                            ) : (<>
                             <div style={{ padding: '6px', backgroundColor: 'white', border: '2px solid #F3F4F6', borderRadius: '12px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' }}>
                                <QRCodeCanvas 
                                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${user?.memberId || 'NOT_ASSIGNED'}`}
@@ -692,6 +709,7 @@ export default function DashboardPage() {
                                />
                             </div>
                             <p style={{ fontSize: '5px', fontWeight: '900', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.15em', textAlign: 'center', margin: 0 }}>Scan to Verify<br />{user?.memberId}</p>
+                            </>)}
                          </div>
                       </div>
   

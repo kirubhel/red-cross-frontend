@@ -235,6 +235,24 @@ export default function MembersPage() {
     }
   };
 
+  // A member who registered but has not paid has no Member ID. An admin who received the
+  // fee in cash (or waives it) settles it here; the member then gets their ID and an SMS.
+  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
+  const markAsPaid = async (member: Member) => {
+    const name = `${member.first_name} ${member.father_name}`.trim();
+    if (!window.confirm(`Mark ${name}'s membership fee as paid (or waived)? They will get their Member ID and an SMS.`)) return;
+    setMarkingPaidId(member.id);
+    try {
+      const res = await api.post(`/admin/members/${member.id}/mark-paid`);
+      toast.success(`${name} is now a member${res.data?.ercs_id ? `: ${res.data.ercs_id}` : ""}`);
+      await fetchMembers();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.response?.data || "Could not mark this member as paid");
+    } finally {
+      setMarkingPaidId(null);
+    }
+  };
+
   const exportToExcel = async () => {
     if (displayedMembers.length === 0) {
       toast.error("No data to export");
@@ -667,6 +685,7 @@ export default function MembersPage() {
                             <option value="INACTIVE" className="bg-white text-black">Inactive</option>
                             <option value="EXPIRED" className="bg-white text-black">Expired</option>
                             <option value="PENDING" className="bg-white text-black">Pending</option>
+                            <option value="PENDING_PAYMENT" className="bg-white text-black">Unpaid (no Member ID yet)</option>
                         </select>
                     </div>
                 </div>
@@ -882,15 +901,20 @@ export default function MembersPage() {
                   </TableCell>
                   <TableCell className="px-6 py-4 font-black text-black text-[11px]">
                     <div className="flex items-center gap-2 group">
+                      {!member.ercs_id ? (
+                        <span className="text-[10px] font-bold text-gray-400 normal-case tracking-normal">Issued on payment</span>
+                      ) : null}
                       <span 
                         onClick={(e) => copyToClipboard(member.ercs_id, "Member ID", e)}
                         className="cursor-pointer hover:text-[#ED1C24] transition-colors"
                         title="Click to copy ID"
+                        hidden={!member.ercs_id}
                       >
                         {member.ercs_id}
                       </span>
                       <button
                         type="button"
+                        hidden={!member.ercs_id}
                         onClick={(e) => copyToClipboard(member.ercs_id, "Member ID", e)}
                         className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-black transition-colors"
                         title="Copy Member ID"
@@ -928,13 +952,25 @@ export default function MembersPage() {
                           : "bg-amber-50 text-amber-600 border border-amber-200"
                       )}
                     >
-                      {member.status || "ACTIVE"}
+                      {member.status === "PENDING_PAYMENT" ? "UNPAID" : member.status || "ACTIVE"}
                     </span>
                   </TableCell>
                   <TableCell className="px-6 py-4 text-right print:hidden">
                     <div className="flex items-center justify-end gap-1">
+                      {member.status === "PENDING_PAYMENT" ? (
+                        <button
+                          type="button"
+                          disabled={markingPaidId === member.id}
+                          onClick={() => markAsPaid(member)}
+                          className="mr-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
+                          title="Fee received or waived: issue the Member ID"
+                        >
+                          {markingPaidId === member.id ? "Saving…" : "Mark paid"}
+                        </button>
+                      ) : null}
                       <button 
                         type="button"
+                        hidden={!member.ercs_id}
                         onClick={(e) => copyToClipboard(member.ercs_id, "Member ID", e)}
                         className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-black transition-colors"
                         title="Copy ID"

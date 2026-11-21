@@ -20,14 +20,25 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ElectronicReceiptModal, ReceiptData } from "@/components/payment/ElectronicReceiptModal";
+import api from "@/lib/api";
+
+type CheckState = "checking" | "paid" | "pending" | "failed" | "notfound";
+
+// The redirect back from ArifPay proves nothing: ask the server, which asks ArifPay.
+const CHECK_EVERY_MS = 3000;
+const CHECK_FOR_MS = 60000;
 
 function PaymentDetails() {
   const searchParams = useSearchParams();
   
-  const [amount, setAmount] = useState("100.00");
+  const [amount, setAmount] = useState("0");
   const [currency, setCurrency] = useState("ETB");
-  const [email, setEmail] = useState("member@redcrosseth.org");
-  const [txRef, setTxRef] = useState("TX-MOCK-990812");
+  const [email, setEmail] = useState("");
+  const [txRef, setTxRef] = useState("");
+  const [check, setCheck] = useState<CheckState>("checking");
+  const [purpose, setPurpose] = useState("");
+  const [memberId, setMemberId] = useState("");
+  const [checkRound, setCheckRound] = useState(0);
   const [firstName, setFirstName] = useState("Contributor");
   const [lastName, setLastName] = useState("");
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
@@ -46,7 +57,46 @@ function PaymentDetails() {
     if (ref) setTxRef(ref);
     if (fn) setFirstName(fn);
     if (ln) setLastName(ln);
+    if (!ref) setCheck("notfound");
   }, [searchParams]);
+
+  // Confirm the payment with the server; keep checking for a minute while ArifPay settles.
+  useEffect(() => {
+    if (!txRef) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const startedAt = Date.now();
+    setCheck("checking");
+
+    const run = async () => {
+      let next: CheckState = "pending";
+      try {
+        const res = await api.get(`/payment/verify/${encodeURIComponent(txRef)}`);
+        const d = res.data || {};
+        if (d.amount) setAmount(String(d.amount));
+        if (d.currency) setCurrency(d.currency);
+        if (d.purpose) setPurpose(d.purpose);
+        if (d.ercs_id) setMemberId(d.ercs_id);
+        if (d.status === "SUCCESS") next = "paid";
+        else if (d.status === "FAILED") next = "failed";
+      } catch (err: any) {
+        if (err?.response?.status === 404) next = "notfound";
+      }
+      if (cancelled) return;
+      if (next === "pending" && Date.now() - startedAt < CHECK_FOR_MS) {
+        timer = setTimeout(run, CHECK_EVERY_MS);
+        return;
+      }
+      setCheck(next);
+    };
+    run();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [txRef, checkRound]);
+
+  const isMembership = purpose === "MEMBERSHIP";
 
   const receiptData: ReceiptData = {
     id: txRef,
@@ -67,6 +117,37 @@ function PaymentDetails() {
       setIsReceiptModalOpen(true);
     }
   };
+
+  if (check !== "paid") {
+    const copy: Record<Exclude<CheckState, "paid">, { title: string; body: string }> = {
+      checking: { title: "Confirming your payment…", body: "Please keep this page open while we confirm with ArifPay." },
+      pending: { title: "We're still confirming your payment", body: "This can take a few minutes. If you were charged, you'll get an SMS as soon as it is confirmed. You can check again below." },
+      failed: { title: "The payment was not completed", body: "You have not been charged for this attempt. You can go back and try again." },
+      notfound: { title: "We couldn't find this payment", body: "The payment link may be incomplete. If you were charged, please contact support with your receipt from ArifPay." },
+    };
+    const c = copy[check];
+    return (
+      <main className="flex-grow container mx-auto px-4 sm:px-6 py-12 flex items-center justify-center max-w-2xl relative z-10">
+        <div className="w-full bg-white p-8 sm:p-12 rounded-[40px] border border-gray-100 shadow-sm text-center space-y-5" role="status" aria-live="polite">
+          {check === "checking" ? (
+            <div className="mx-auto w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          ) : null}
+          <h2 className="text-2xl sm:text-3xl font-black text-black tracking-tight">{c.title}</h2>
+          <p className="text-gray-500 text-sm font-medium leading-relaxed max-w-md mx-auto">{c.body}</p>
+          {check === "pending" ? (
+            <Button onClick={() => setCheckRound((n) => n + 1)} className="bg-black hover:bg-[#ED1C24] text-white rounded-2xl px-8 h-12 font-black uppercase text-xs tracking-widest">
+              Check again
+            </Button>
+          ) : null}
+          {check === "failed" || check === "notfound" ? (
+            <Link href="/" className="inline-block text-xs font-black uppercase tracking-widest text-black hover:text-[#ED1C24] transition-colors">
+              Back to Home
+            </Link>
+          ) : null}
+        </div>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -127,7 +208,7 @@ function PaymentDetails() {
               Thank You for Your Support!
             </h2>
             <p className="text-gray-500 text-xs sm:text-sm font-medium leading-relaxed max-w-md mx-auto">
-              Your contribution fuels emergency relief, medical supplies, WASH programs, and volunteer mobilization across Ethiopia.
+              {isMembership ? "Welcome to the Ethiopian Red Cross Society. We've sent your Member ID to your phone by SMS. " : ""}Your contribution fuels emergency relief, medical supplies, WASH programs, and volunteer mobilization across Ethiopia.
             </p>
           </div>
 
@@ -153,6 +234,14 @@ function PaymentDetails() {
               </span>
             </div>
 
+            {isMembership && memberId ? (
+              <div className="flex justify-between items-center pb-3 border-b border-gray-200/50">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Your Member ID</span>
+                <span className="text-sm font-mono font-black text-[#ED1C24]">{memberId}</span>
+              </div>
+            ) : null}
+
+            {email ? (
             <div className="flex justify-between items-center pb-3 border-b border-gray-200/50">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Email</span>
               <span className="text-sm font-bold text-black flex items-center gap-1.5">
@@ -160,6 +249,7 @@ function PaymentDetails() {
                 {email}
               </span>
             </div>
+            ) : null}
 
             <div className="flex justify-between items-center pb-3 border-b border-gray-200/50">
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Transaction Reference</span>

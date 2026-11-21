@@ -364,6 +364,11 @@ export default function ProfilePage() {
     );
   }
 
+  // An unpaid member has no Member ID yet and is not a verified member.
+  const pendingPayment = (user?.membership_status || user?.status || "").toUpperCase() === "PENDING_PAYMENT";
+  const joinedLabel = user?.created_at && new Date(user.created_at).getFullYear() > 1
+    ? new Date(user.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+    : "—";
   const fullNameDisplay = [formData.firstName, formData.fatherName, formData.grandfatherName].filter(Boolean).join(" ");
 
   return (
@@ -382,10 +387,17 @@ export default function ProfilePage() {
             Manage your personal information and digital identity
           </p>
         </div>
-        <div className="bg-green-50 text-green-600 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 border border-green-100 shadow-xs">
-          <ShieldCheck className="h-3.5 w-3.5" />
-          <span className="text-[9px] font-black uppercase tracking-widest">Verified Account</span>
-        </div>
+        {pendingPayment ? (
+          <div className="bg-amber-50 text-amber-800 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 border border-amber-200 shadow-xs">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            <span className="text-[9px] font-black uppercase tracking-widest">Payment due</span>
+          </div>
+        ) : (
+          <div className="bg-green-50 text-green-700 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 border border-green-100 shadow-xs">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            <span className="text-[9px] font-black uppercase tracking-widest">Verified Account</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
@@ -426,17 +438,17 @@ export default function ProfilePage() {
             
             <div className="space-y-0.5">
               <h2 className="text-base font-black tracking-tight text-gray-900">{fullNameDisplay || "Valued Member"}</h2>
-              <p className="text-[9px] font-black text-[#ED1C24] uppercase tracking-widest">{user?.ercs_id || (user?.role === "VOLUNTEER" ? "ERCS VOLUNTEER" : "ERCS MEMBER")}</p>
+              <p className="text-[9px] font-black text-[#ED1C24] uppercase tracking-widest">{user?.ercs_id || (pendingPayment ? "ID ISSUED AFTER PAYMENT" : user?.role === "VOLUNTEER" ? "ERCS VOLUNTEER" : "ERCS MEMBER")}</p>
             </div>
 
             <div className="w-full pt-4 border-t border-gray-100 grid grid-cols-2 gap-2">
                <div className="text-center">
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</p>
-                  <p className="text-xs font-black text-green-500 uppercase mt-0.5">{user?.status || "ACTIVE"}</p>
+                  <p className={`text-xs font-black uppercase mt-0.5 ${pendingPayment ? "text-amber-700" : "text-green-600"}`}>{pendingPayment ? "Payment due" : user?.status || "ACTIVE"}</p>
                </div>
                <div className="text-center">
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Joined</p>
-                  <p className="text-xs font-black text-black mt-0.5">March 2024</p>
+                  <p className="text-xs font-black text-black mt-0.5">{joinedLabel}</p>
                </div>
             </div>
           </div>
@@ -451,11 +463,11 @@ export default function ProfilePage() {
                    <CheckCircle2 className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                   <h3 className="text-base font-black tracking-tight">Digital ID Ready</h3>
-                   <p className="text-[11px] font-medium opacity-60 mt-0.5">Your profile information is used to generate your official Digital ID card.</p>
+                   <h3 className="text-base font-black tracking-tight">{pendingPayment ? "Digital ID after payment" : "Digital ID Ready"}</h3>
+                   <p className="text-[11px] font-medium text-white/70 mt-0.5">{pendingPayment ? "Pay your membership fee to receive your Member ID and Digital ID card." : "Your profile information is used to generate your official Digital ID card."}</p>
                 </div>
                 <Link href="/dashboard" className="block text-center py-2.5 bg-white text-black rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-gray-100 transition-colors">
-                   View Digital ID
+                   {pendingPayment ? "Go to payment" : "View Digital ID"}
                 </Link>
              </div>
           </div>
