@@ -7,6 +7,8 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
+  // The dev build rewrites the tracked public/sw.js on every change; only build it for production.
+  disable: process.env.NODE_ENV === "development",
 });
 
 const nextConfig: NextConfig = {
