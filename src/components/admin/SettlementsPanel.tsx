@@ -4,16 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Play, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 type PayoutSettings = {
   enabled?: boolean;
-  dry_run?: boolean;
   interval_minutes?: number;
-  fee_percent?: number;
   start_at?: string;
   last_run_at?: string;
   last_run_summary?: string;
@@ -24,7 +21,6 @@ type Payout = {
   invoice_number: string;
   purpose: string;
   amount_gross: number;
-  fee_percent: number;
   amount_net: number;
   currency: string;
   bank_name: string;
@@ -38,6 +34,15 @@ type Payout = {
 };
 
 const INTERVALS = [5, 10, 15, 30, 60];
+const DAY = 24 * 60 * 60 * 1000;
+// Where payouts start from. "keep" leaves the saved start alone.
+const FROM_OPTIONS: { value: string; label: string; ms: number }[] = [
+  { value: "now", label: "From now", ms: 0 },
+  { value: "1d", label: "Last 24 hours", ms: DAY },
+  { value: "7d", label: "Last 7 days", ms: 7 * DAY },
+  { value: "30d", label: "Last 30 days", ms: 30 * DAY },
+];
+const toLocalInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 const PAGE = 25;
 const STATUSES = ["", "SUCCESS", "SUBMITTED", "PENDING", "FAILED", "UNKNOWN", "SKIPPED"];
 
@@ -83,6 +88,8 @@ export function SettlementsPanel() {
   const [total, setTotal] = useState(0);
   const [filter, setFilter] = useState("");
   const [busyId, setBusyId] = useState("");
+  const [from, setFrom] = useState("keep"); // keep | now | 1d | 7d | 30d | custom
+  const [customFrom, setCustomFrom] = useState("");
 
   const loadSettings = useCallback(async () => {
     try {
@@ -120,37 +127,45 @@ export function SettlementsPanel() {
   }, [loadPayouts]);
 
   const enabled = !!form.enabled;
-  const dryRun = form.dry_run !== false; // the server default is on
   const interval = form.interval_minutes || 10;
-  const fee = form.fee_percent || 0;
+  const customDate = customFrom ? new Date(customFrom) : null;
+  const customValid = from !== "custom" || (!!customDate && !isNaN(customDate.getTime()) && customDate.getTime() <= Date.now() && customDate.getTime() >= Date.now() - 90 * DAY);
+  // The start to send, or undefined to keep the saved one.
+  const startAt = (): Date | undefined => {
+    if (from === "keep") return undefined;
+    if (from === "custom") return customDate || undefined;
+    return new Date(Date.now() - (FROM_OPTIONS.find((o) => o.value === from)?.ms || 0));
+  };
   const dirty =
     !!form.enabled !== !!saved.enabled ||
-    (form.dry_run !== false) !== (saved.dry_run !== false) ||
     interval !== (saved.interval_minutes || 10) ||
-    fee !== (saved.fee_percent || 0);
-  const feeValid = Number.isFinite(fee) && fee >= 0 && fee <= 50;
-  const example = Math.floor(100 * (100 - fee)) / 100;
+    from !== "keep";
 
-  const mode = !saved.enabled ? "off" : saved.dry_run !== false ? "dry" : "live";
+  const live = !!saved.enabled;
 
   const save = async () => {
-    if (!feeValid) return;
-    // Switching to real transfers moves money, so make that a deliberate step.
-    const goingLive = enabled && !dryRun && (mode !== "live");
-    if (goingLive && !confirm(
-      `Turn on real payouts?\n\nFrom now on, every donation and membership payment confirmed after this moment is sent from the ArifPay wallet to its bank account every ${interval} minutes, minus ${fee}%.\n\nPayments received before now are never paid out automatically.\n\nTip: run in test mode first and check what it would pay.`
+    // Switching payouts on moves real money, so make that a deliberate step.
+    if (!customValid) return;
+    const turningOn = enabled && !saved.enabled;
+    const start = startAt();
+    const backfill = !!start && Date.now() - start.getTime() > 5 * 60 * 1000;
+    if (backfill && enabled && !confirm(
+      `Pay out payments from ${when(start!.toISOString())}?\n\nEvery donation and membership payment confirmed since then that has not been paid out yet is sent from the ArifPay wallet to its bank account. Payments from before payouts existed, or paid by split, are skipped.\n\nIf you already paid some of them by hand, they would be paid again. A payment this system already paid out is never paid twice.`
+    )) return;
+    if (turningOn && !backfill && !confirm(
+      `Turn on payouts?\n\nEvery donation and membership payment confirmed from ${start ? "the chosen start" : "this moment"} is sent from the ArifPay wallet to its bank account every ${interval} minutes.`
     )) return;
     setSaving(true);
     try {
       const res = await api.put("/payment/payout-settings", {
         enabled,
-        dry_run: dryRun,
         interval_minutes: interval,
-        fee_percent: fee,
+        ...(start ? { start_at: start.toISOString() } : {}),
       });
       const p: PayoutSettings = res.data?.settings || {};
       setSaved(p);
       setForm(p);
+      setFrom("keep");
       toast.success("Settlement settings saved");
     } catch (e: any) {
       toast.error(errMsg(e, "Could not save the settings"));
@@ -203,19 +218,15 @@ export function SettlementsPanel() {
           "rounded-xl border px-4 py-3 text-sm",
           loading
             ? "border-slate-200 bg-slate-50 text-slate-500"
-            : mode === "live"
+            : live
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : mode === "dry"
-                ? "border-amber-200 bg-amber-50 text-amber-800"
-                : "border-slate-200 bg-slate-50 text-slate-600"
+              : "border-slate-200 bg-slate-50 text-slate-600"
         )}
       >
         {loading ? (
           "Loading…"
-        ) : mode === "live" ? (
-          <>Payouts are <b>live</b>. Checked every {saved.interval_minutes || 10} minutes. Last run: {when(saved.last_run_at)}.</>
-        ) : mode === "dry" ? (
-          <>Test mode. Each run reports what <b>would</b> be paid and sends nothing. Last run: {when(saved.last_run_at)}.</>
+        ) : live ? (
+          <>Payouts are <b>on</b>. Checked every {saved.interval_minutes || 10} minutes. Last run: {when(saved.last_run_at)}.</>
         ) : (
           <>Payouts are <b>off</b>. Payments stay in the ArifPay wallet until you turn this on.</>
         )}
@@ -226,28 +237,21 @@ export function SettlementsPanel() {
         className="rounded-xl border border-slate-200 bg-white"
         onSubmit={(e) => {
           e.preventDefault();
-          if (dirty && !saving && feeValid) save();
+          if (dirty && !saving && customValid) save();
         }}
       >
         <div className="space-y-6 p-5 md:p-6">
           <p className="max-w-3xl text-sm text-slate-600">
             When a payment is confirmed, its money lands in the ArifPay wallet. Every few minutes the system sends each confirmed
-            payment from the wallet to the bank account that payment belongs to: one transfer per payment, minus ArifPay&apos;s fee.
+            payment from the wallet to the bank account that payment belongs to: one transfer per payment.
           </p>
 
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Payout settings">
+          <section className="grid gap-4 sm:grid-cols-2" aria-label="Payout settings">
             <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
               <input type="checkbox" className="mt-0.5 h-4 w-4" checked={enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
               <span>
                 <span className="block font-semibold text-slate-800">Send payouts automatically</span>
                 <span className="text-xs text-slate-500">Off means nothing is checked or sent.</span>
-              </span>
-            </label>
-            <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-              <input type="checkbox" className="mt-0.5 h-4 w-4" checked={dryRun} onChange={(e) => setForm({ ...form, dry_run: e.target.checked })} />
-              <span>
-                <span className="block font-semibold text-slate-800">Test mode</span>
-                <span className="text-xs text-slate-500">Report what would be paid. Sends nothing.</span>
               </span>
             </label>
             <div>
@@ -258,31 +262,34 @@ export function SettlementsPanel() {
                 ))}
               </select>
             </div>
-            <div>
-              <Label htmlFor="po-fee">ArifPay fee (%)</Label>
-              <Input
-                id="po-fee"
-                type="number"
-                inputMode="decimal"
-                min={0}
-                max={50}
-                step="0.01"
-                className="tabular-nums"
-                aria-invalid={!feeValid}
-                value={form.fee_percent ?? ""}
-                onChange={(e) => setForm({ ...form, fee_percent: e.target.value === "" ? 0 : Number(e.target.value) })}
-              />
-              <p className={cn("mt-1 text-xs", feeValid ? "text-slate-500" : "text-red-600")}>
-                {feeValid ? `A 100.00 payment sends ${example.toFixed(2)}.` : "Enter a number from 0 to 50."}
-              </p>
-            </div>
           </section>
 
-          <p className="text-xs text-slate-500">
-            {saved.start_at
-              ? <>Only payments confirmed after <b>{when(saved.start_at)}</b> are paid out. Earlier ones are left alone.</>
-              : "The first time you turn this on, that moment becomes the start: earlier payments are never paid out automatically."}
-          </p>
+          <div className="max-w-md">
+            <Label htmlFor="po-from">Pay out payments confirmed since</Label>
+            <select id="po-from" className={selectClass} value={from} onChange={(e) => setFrom(e.target.value)}>
+              <option value="keep">{saved.start_at ? `Keep current (${when(saved.start_at)})` : "Keep current (set when first turned on)"}</option>
+              {FROM_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+              <option value="custom">Pick a date…</option>
+            </select>
+            {from === "custom" && (
+              <input
+                type="datetime-local"
+                aria-label="Start date and time"
+                className={cn(selectClass, "mt-2")}
+                max={toLocalInput(new Date())}
+                min={toLocalInput(new Date(Date.now() - 90 * DAY))}
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+              />
+            )}
+            <p className={cn("mt-1 text-xs", customValid ? "text-slate-500" : "text-red-600")}>
+              {customValid
+                ? "Payments confirmed before this are left alone. One already paid out is never paid twice. Up to 90 days back."
+                : "Pick a time within the last 90 days."}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-3 rounded-b-xl border-t border-slate-100 bg-slate-50 px-5 py-3 md:px-6">
@@ -290,9 +297,9 @@ export function SettlementsPanel() {
             {dirty ? "Unsaved changes" : "All changes saved"}
           </span>
           <Button type="button" variant="outline" onClick={runNow} disabled={running || dirty || !saved.enabled} title={dirty ? "Save your changes first" : !saved.enabled ? "Turn payouts on first" : undefined}>
-            <Play className="mr-1 h-4 w-4" /> {running ? "Running…" : saved.dry_run !== false ? "Run a test now" : "Run now"}
+            <Play className="mr-1 h-4 w-4" /> {running ? "Running…" : "Run now"}
           </Button>
-          <Button type="submit" disabled={!dirty || saving || loading || !feeValid} className="bg-[#ED1C24] text-white hover:bg-red-700 disabled:opacity-50">
+          <Button type="submit" disabled={!dirty || saving || loading || !customValid} className="bg-[#ED1C24] text-white hover:bg-red-700 disabled:opacity-50">
             {saving ? "Saving…" : "Save settings"}
           </Button>
         </div>
@@ -322,7 +329,7 @@ export function SettlementsPanel() {
               <tr>
                 <th className="px-4 py-3">Payment</th>
                 <th className="px-4 py-3 text-right">Received</th>
-                <th className="px-4 py-3 text-right">Sent (after fee)</th>
+                <th className="px-4 py-3 text-right">Sent</th>
                 <th className="px-4 py-3">To</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3" />
@@ -345,7 +352,6 @@ export function SettlementsPanel() {
                   <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-slate-700">{money(p.amount_gross, p.currency)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-slate-800">
                     {p.amount_net ? money(p.amount_net, p.currency) : "—"}
-                    {!!p.fee_percent && !!p.amount_net && <div className="text-xs text-slate-400">{p.fee_percent}% fee</div>}
                   </td>
                   <td className="px-4 py-3">
                     <div className="font-mono text-slate-800">{p.account_number || "—"}</div>
