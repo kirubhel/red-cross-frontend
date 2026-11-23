@@ -34,10 +34,10 @@ interface LoginExperienceProps {
 export default function LoginExperience({ embedded = false, adminOnly = false }: LoginExperienceProps) {
   const router = useRouter();
   const { lang, t } = useLanguage();
+  const [loginMethod, setLoginMethod] = useState<"phone" | "memberId" | "email">("phone");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [noPassword, setNoPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [mfaRequired, setMfaRequired] = useState(false);
@@ -50,8 +50,8 @@ export default function LoginExperience({ embedded = false, adminOnly = false }:
   const [countryCode, setCountryCode] = useState("ET");
   const [profiles, setProfiles] = useState<any[]>([]);
   const [isMultiProfile, setIsMultiProfile] = useState(false);
-  const showCountrySelector = !adminOnly && /^[+0-9]/.test(identifier);
-  const isMemberId = !adminOnly && /^ERCS-/i.test(identifier.trim());
+  const showCountrySelector = !adminOnly && loginMethod === "phone";
+  const isMemberId = !adminOnly && loginMethod === "memberId";
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -153,6 +153,10 @@ export default function LoginExperience({ embedded = false, adminOnly = false }:
 
     try {
       let finalIdentifier = identifier.trim();
+      if (isMemberId && !/^ERCS-[A-Z0-9]+(?:-[A-Z0-9]+)*$/i.test(finalIdentifier)) {
+        setError("Enter your ERCS Member or Volunteer ID.");
+        return;
+      }
       if (showCountrySelector) {
         const selectedCountry = ALL_COUNTRIES.find(c => c.code === countryCode);
         const dialCode = selectedCountry?.dialCode ?? "";
@@ -168,7 +172,7 @@ export default function LoginExperience({ embedded = false, adminOnly = false }:
 
       const res = await api.post("/auth/login", {
         identifier: finalIdentifier,
-        password: adminOnly ? password : (isMemberId && !password) ? "" : password
+        password: isMemberId ? "" : password
       });
 
       // Check for multi-profile response
@@ -318,8 +322,30 @@ export default function LoginExperience({ embedded = false, adminOnly = false }:
               !mfaRequired ? (
                 <form onSubmit={handleLogin} className="space-y-8">
                   <div className="space-y-6">
+                    {!adminOnly && (
+                      <div className="grid grid-cols-2 rounded-xl bg-gray-100 p-1" aria-label="Sign-in method">
+                        {(["phone", "memberId"] as const).map((method) => (
+                          <button
+                            key={method}
+                            type="button"
+                            aria-pressed={loginMethod === method}
+                            onClick={() => {
+                              setLoginMethod(method);
+                              setIdentifier("");
+                              setPassword("");
+                              setError("");
+                            }}
+                            className={`rounded-lg px-3 py-2.5 text-sm font-bold transition-colors ${loginMethod === method ? "bg-white text-[#ED1C24] shadow-sm" : "text-black/60 hover:text-black"}`}
+                          >
+                            {method === "phone" ? "Phone number" : "ERCS ID"}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <div className="space-y-2">
-                      <Label htmlFor="identifier" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">{adminOnly ? "Staff email" : t.auth?.identifierLabel || "Phone number, email, or member ID"}</Label>
+                      <Label htmlFor="identifier" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">
+                        {adminOnly ? "Staff email" : loginMethod === "phone" ? "Phone number" : loginMethod === "memberId" ? "Member or Volunteer ID" : "Email address"}
+                      </Label>
                       <div className="relative">
                         {showCountrySelector ? (
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-gray-100/80 hover:bg-gray-100 rounded-lg p-1.5 border border-gray-200/50 z-20 transition-all shrink-0">
@@ -342,10 +368,10 @@ export default function LoginExperience({ embedded = false, adminOnly = false }:
                         )}
                         <Input
                           id="identifier"
-                          type={adminOnly ? "email" : "text"}
-                          inputMode={adminOnly ? "email" : "text"}
+                          type={adminOnly || loginMethod === "email" ? "email" : loginMethod === "phone" ? "tel" : "text"}
+                          inputMode={adminOnly || loginMethod === "email" ? "email" : loginMethod === "phone" ? "tel" : "text"}
                           autoComplete="username"
-                          placeholder={adminOnly ? "name@redcrosseth.org" : "Phone, email, or ERCS ID"}
+                          placeholder={adminOnly ? "name@redcrosseth.org" : loginMethod === "phone" ? "0911 234 567" : loginMethod === "memberId" ? "ERCS-AA-123456" : "name@example.com"}
                           className={`h-14 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black ${showCountrySelector ? 'pl-24' : 'pl-12'}`}
                           value={identifier}
                           onChange={(e) => setIdentifier(e.target.value)}
@@ -355,28 +381,26 @@ export default function LoginExperience({ embedded = false, adminOnly = false }:
                       {isMemberId && !adminOnly && (
                         <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200">
                           <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                          <span>Member ID detected — password is optional</span>
+                          <span>No password needed for your ERCS ID</span>
                         </div>
+                      )}
+                      {!adminOnly && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLoginMethod(loginMethod === "email" ? "phone" : "email");
+                            setIdentifier("");
+                            setPassword("");
+                            setError("");
+                          }}
+                          className="text-xs font-bold text-[#ED1C24] hover:underline"
+                        >
+                          {loginMethod === "email" ? "Use phone number instead" : "Sign in with email"}
+                        </button>
                       )}
                     </div>
 
-                  {!adminOnly && <div className="flex items-center gap-2 ml-1">
-                    <input
-                      type="checkbox"
-                      id="noPassword"
-                      checked={noPassword}
-                      onChange={(e) => {
-                        setNoPassword(e.target.checked);
-                        if (e.target.checked) setPassword("");
-                      }}
-                      className="h-4 w-4 rounded border-gray-300 text-[#ED1C24] focus:ring-[#ED1C24]"
-                    />
-                    <Label htmlFor="noPassword" className="text-xs font-bold text-black/60 cursor-pointer">
-                      {t.auth?.noPasswordLabel || "Login without password (requires Member ID)"}
-                    </Label>
-                  </div>}
-
-                  <div className={`space-y-2 transition-opacity duration-300 ${noPassword ? 'opacity-30 pointer-events-none' : ''}`}>
+                  {!isMemberId && <div className="space-y-2">
                     <div className="flex justify-between items-center ml-1">
                       <Label htmlFor="password" className="text-[9px] font-black uppercase tracking-widest text-black/60">{t.auth?.passwordLabel || "Password"}</Label>
                       <Link href={`/${lang}/forgot-password`} className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">{t.auth?.forgotPassword || "Forgot?"}</Link>
@@ -390,8 +414,7 @@ export default function LoginExperience({ embedded = false, adminOnly = false }:
                         className="h-14 pl-12 pr-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        required={adminOnly || (!noPassword && !isMemberId)}
-                        disabled={!adminOnly && noPassword}
+                        required
                       />
                       <button
                         type="button"
@@ -402,7 +425,7 @@ export default function LoginExperience({ embedded = false, adminOnly = false }:
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
-                  </div>
+                  </div>}
                 </div>
 
                 {error && (

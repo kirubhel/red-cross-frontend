@@ -975,7 +975,7 @@ export default function VolunteersPage() {
             >
                 <FileText className="h-3.5 w-3.5" /> PDF
             </Button>
-            <Link href="/admin/user-management?create=true">
+            <Link href="/join/volunteer">
               <Button className="rounded-xl h-10 px-4 text-xs font-bold bg-[#ED1C24] hover:bg-black text-white flex items-center gap-1.5">
                   <Plus className="h-3.5 w-3.5" /> Add Volunteer
               </Button>

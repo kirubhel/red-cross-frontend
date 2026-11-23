@@ -79,7 +79,7 @@ const AdminDashboard = () => {
       calculateStats(data);
     } catch (error: any) {
       toast.error('Failed to load businesses');
-      if (error.response?.status === 401) router.push('/admin/login');
+      if (error.response?.status === 401) router.push('/login');
     } finally {
       setLoading(false);
     }
