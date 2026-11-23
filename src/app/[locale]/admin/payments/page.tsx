@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { 
-  Search, CreditCard, Clock, CheckCircle2, XCircle, Download, 
+  Search, Clock, CheckCircle2, XCircle, Download, 
   RefreshCw, Trophy, MapPin, TrendingUp, Building2, Filter, 
   Copy, Check, ArrowUpDown, ChevronRight, X
 } from "lucide-react";
@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { REGIONS } from "@/lib/constants";
 import { getUserScope, type UserScope } from "@/lib/auth-scope";
 
+import { PageHeader } from "@/components/admin/page-ui";
+import { StatTile } from "@/components/admin/analytics/widgets";
 type Payment = {
   id: string;
   invoice_number?: string;
@@ -35,9 +37,28 @@ type Payment = {
   payer_phone?: string;
   payer_email?: string;
   region_id?: number;
+  purpose?: string;
   created_at: string;
+  paid_at?: string;
   due_date?: string;
 };
+
+const isPaid = (p: Payment) => p.status === "PAID" || p.status === "SUCCESS";
+const isPending = (p: Payment) => p.status === "PENDING" || p.status === "UNPAID";
+const cur = (p: Payment) => (p.currency || "ETB").toUpperCase();
+
+/** Sum amounts per currency so ETB and USD are never added together. */
+function sumByCurrency(list: Payment[]) {
+  const out: Record<string, number> = {};
+  for (const p of list) out[cur(p)] = (out[cur(p)] || 0) + (Number(p.amount) || 0);
+  return out;
+}
+function formatTotals(t: Record<string, number>) {
+  const keys = Object.keys(t).sort((a, b) => (a === "ETB" ? -1 : b === "ETB" ? 1 : a.localeCompare(b)));
+  if (keys.length === 0) return "0 ETB";
+  return keys.map((k) => `${Math.round(t[k]).toLocaleString()} ${k}`).join(" + ");
+}
+const PAGE_SIZE = 200;
 
 interface RegionMeta {
   id: number;
@@ -47,7 +68,7 @@ interface RegionMeta {
 }
 
 const REGION_LOOKUP: Record<number, RegionMeta> = {
-  0: { id: 0, name: "National / General", code: "NAT", badgeColor: "bg-slate-100 text-slate-700 border-slate-200" },
+  0: { id: 0, name: "National / General", code: "NAT", badgeColor: "bg-gray-100 text-gray-700 border-gray-200" },
   1: { id: 1, name: "Addis Ababa", code: "AA", badgeColor: "bg-blue-50 text-blue-700 border-blue-200" },
   2: { id: 2, name: "Dire Dawa", code: "DD", badgeColor: "bg-indigo-50 text-indigo-700 border-indigo-200" },
   3: { id: 3, name: "Tigray", code: "TG", badgeColor: "bg-amber-50 text-amber-700 border-amber-200" },
@@ -72,6 +93,7 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [userScope, setUserScope] = useState<UserScope | null>(null);
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     const scope = getUserScope();
@@ -85,8 +107,21 @@ export default function PaymentsPage() {
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/payments");
-      setPayments(res.data.invoices || []);
+      // The API pages its results (50 by default). Totals are only real if every invoice is
+      // counted, so keep reading until we have them all.
+      const all: Payment[] = [];
+      let page = 1;
+      let totalItems = 0;
+      for (;;) {
+        const res = await api.get("/payments", { params: { page, page_size: PAGE_SIZE } });
+        const batch: Payment[] = res.data.invoices || [];
+        all.push(...batch);
+        totalItems = Number(res.data.pagination?.total_items ?? all.length);
+        if (batch.length < PAGE_SIZE || all.length >= totalItems || page >= 100) break;
+        page += 1;
+      }
+      setPayments(all);
+      setLoadedAt(new Date());
     } catch (err) {
       console.error("Failed to fetch payments:", err);
       toast.error("Failed to load payments");
@@ -131,10 +166,10 @@ export default function PaymentsPage() {
       };
 
       entry.count += 1;
-      const isPaid = p.status === "PAID" || p.status === "SUCCESS";
-      if (isPaid) {
-        entry.totalAmount += Number(p.amount) || 0;
+      if (isPaid(p)) {
         entry.paidCount += 1;
+        // The leaderboard ranks in birr; other currencies are shown in the totals card.
+        if (cur(p) === "ETB") entry.totalAmount += Number(p.amount) || 0;
       }
       map.set(rId, entry);
     });
@@ -145,32 +180,23 @@ export default function PaymentsPage() {
 
   // Overall Financial KPIs
   const kpiData = useMemo(() => {
-    let totalRevenue = 0;
-    let paidCount = 0;
-    let pendingAmount = 0;
-    let pendingCount = 0;
+    const paid = payments.filter(isPaid);
+    const pending = payments.filter(isPending);
+    const failed = payments.filter((p) => p.status === "FAILED");
+    const paidTotals = sumByCurrency(paid);
+    const etbPaid = paid.filter((p) => cur(p) === "ETB");
 
-    payments.forEach((p) => {
-      const amt = Number(p.amount) || 0;
-      if (p.status === "PAID" || p.status === "SUCCESS") {
-        totalRevenue += amt;
-        paidCount += 1;
-      } else if (p.status === "PENDING" || p.status === "UNPAID") {
-        pendingAmount += amt;
-        pendingCount += 1;
-      }
-    });
-
-    const activeRegions = regionalStats.filter(r => r.totalAmount > 0);
+    const activeRegions = regionalStats.filter((r) => r.id !== 0 && r.totalAmount > 0);
     const topRegion = activeRegions.length > 0 ? activeRegions[0] : null;
-    const avgAmount = paidCount > 0 ? Math.round(totalRevenue / paidCount) : 0;
+    const avgAmount = etbPaid.length > 0 ? Math.round(paidTotals.ETB / etbPaid.length) : 0;
 
     return {
-      totalRevenue,
-      paidCount,
+      paidTotals,
+      paidCount: paid.length,
       totalCount: payments.length,
-      pendingAmount,
-      pendingCount,
+      pendingTotals: sumByCurrency(pending),
+      pendingCount: pending.length,
+      failedCount: failed.length,
       activeRegionsCount: activeRegions.length,
       topRegion,
       avgAmount,
@@ -187,8 +213,8 @@ export default function PaymentsPage() {
 
       // Status filter
       if (statusFilter !== "ALL") {
-        if (statusFilter === "PAID" && p.status !== "PAID" && p.status !== "SUCCESS") return false;
-        if (statusFilter === "PENDING" && p.status !== "PENDING" && p.status !== "UNPAID") return false;
+        if (statusFilter === "PAID" && !isPaid(p)) return false;
+        if (statusFilter === "PENDING" && !isPending(p)) return false;
         if (statusFilter === "FAILED" && p.status !== "FAILED") return false;
       }
 
@@ -234,116 +260,56 @@ export default function PaymentsPage() {
   const maxRegionalAmount = regionalStats[0]?.totalAmount || 1;
 
   return (
-    <div className="space-y-6 w-full max-w-full pb-14">
+    <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-red-50 text-[#ED1C24] border border-red-200 rounded-full text-[10px] font-black uppercase tracking-wider">
-            <CreditCard className="h-3 w-3" /> ERCS Finance & Revenue
-          </div>
-          <h1 className="text-3xl font-black text-black tracking-tight">Payments & Regional Revenue</h1>
-          <p className="text-gray-500 font-medium text-sm">
-            Track all membership subscriptions, public relief donations, and distinguish revenue raised across regions.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 shrink-0">
+      <PageHeader
+        title="Payments"
+        description={
+          loading
+            ? "Loading every payment on record…"
+            : `${kpiData.totalCount.toLocaleString()} payments on record${loadedAt ? `, loaded ${loadedAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}` : ""}. Totals count every payment, not just the visible page.`
+        }
+        actions={
+          <>
           <Button
             variant="outline"
             onClick={fetchPayments}
             disabled={loading}
-            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 shadow-sm flex items-center gap-2 text-xs"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 flex items-center gap-2 text-xs"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Refresh
           </Button>
           <Button 
             onClick={handleExport}
-            className="bg-[#ED1C24] hover:bg-black text-white rounded-xl h-10 px-6 font-black shadow-sm transition-all flex items-center gap-2 text-xs cursor-pointer"
+            className="bg-[#ED1C24] hover:bg-black text-white rounded-xl h-10 px-5 font-bold transition-colors flex items-center gap-2 text-xs cursor-pointer"
           >
             <Download className="h-4 w-4" /> Export Report
           </Button>
-        </div>
+        
+          </>
+        }
+      />
+
+      {/* Headline numbers, counted from every payment */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatTile label="Revenue collected" value={loading ? "…" : formatTotals(kpiData.paidTotals)} icon={TrendingUp} hint={`${kpiData.paidCount.toLocaleString()} of ${kpiData.totalCount.toLocaleString()} payments completed`} />
+        <StatTile label="Top region" value={loading ? "…" : kpiData.topRegion ? kpiData.topRegion.name : "None yet"} icon={Trophy} hint={kpiData.topRegion ? `${kpiData.topRegion.totalAmount.toLocaleString()} ETB collected` : "No paid regional payments"} />
+        <StatTile label="Pending" value={loading ? "…" : formatTotals(kpiData.pendingTotals)} icon={Clock} hint={`${kpiData.pendingCount.toLocaleString()} unpaid or awaiting confirmation${kpiData.failedCount ? `, ${kpiData.failedCount.toLocaleString()} failed` : ""}`} />
+        <StatTile label="Regions contributing" value={loading ? "…" : `${kpiData.activeRegionsCount} of 14`} icon={Building2} hint={`Average payment ${kpiData.avgAmount.toLocaleString()} ETB`} />
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Collected */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Revenue Raised</span>
-            <div className="h-9 w-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black">
-              <TrendingUp className="h-4 w-4" />
-            </div>
-          </div>
-          <h3 className="text-2xl font-black text-black tracking-tight mb-1">
-            {kpiData.totalRevenue.toLocaleString()} <span className="text-xs font-bold text-gray-400">ETB</span>
-          </h3>
-          <p className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" /> {kpiData.paidCount} of {kpiData.totalCount} transactions completed
-          </p>
-        </div>
-
-        {/* Top Performing Region */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Top Region by Revenue</span>
-            <div className="h-9 w-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black">
-              <Trophy className="h-4 w-4" />
-            </div>
-          </div>
-          <h3 className="text-2xl font-black text-black tracking-tight mb-1 truncate">
-            {kpiData.topRegion ? kpiData.topRegion.name : "None"}
-          </h3>
-          <p className="text-[11px] font-bold text-gray-500">
-            {kpiData.topRegion ? `${kpiData.topRegion.totalAmount.toLocaleString()} ETB raised` : "Awaiting transactions"}
-          </p>
-        </div>
-
-        {/* Pending In-Flight */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pending Settlements</span>
-            <div className="h-9 w-9 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center font-black">
-              <Clock className="h-4 w-4" />
-            </div>
-          </div>
-          <h3 className="text-2xl font-black text-black tracking-tight mb-1">
-            {kpiData.pendingAmount.toLocaleString()} <span className="text-xs font-bold text-gray-400">ETB</span>
-          </h3>
-          <p className="text-[11px] font-bold text-yellow-700">
-            {kpiData.pendingCount} transactions awaiting verification
-          </p>
-        </div>
-
-        {/* Active Branches */}
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Contributing Regions</span>
-            <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black">
-              <Building2 className="h-4 w-4" />
-            </div>
-          </div>
-          <h3 className="text-2xl font-black text-black tracking-tight mb-1">
-            {kpiData.activeRegionsCount} <span className="text-xs font-bold text-gray-400">/ 14 Regions</span>
-          </h3>
-          <p className="text-[11px] font-bold text-gray-500">
-            Avg. contribution: {kpiData.avgAmount.toLocaleString()} ETB
-          </p>
-        </div>
-      </div>
-
-      {/* Regional Revenue Leaderboard Section */}
+      {/* Revenue by region Section */}
       <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 pb-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-[#ED1C24]" />
-              <h2 className="text-base font-black text-black uppercase tracking-wider">
-                Regional Revenue Leaderboard
+              <h2 className="text-base font-bold tracking-tight text-gray-900">
+                Revenue by region
               </h2>
             </div>
             <p className="text-xs text-gray-500 font-medium">
-              Click any region card below to isolate its financial transactions in the ledger.
+              Paid birr per region. Select a region to filter the payments list below.
             </p>
           </div>
           {selectedRegion !== null && (
@@ -360,7 +326,7 @@ export default function PaymentsPage() {
 
         {/* Region Cards Horizontal Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {regionalStats.slice(0, 10).map((r, idx) => {
+          {regionalStats.map((r, idx) => {
             const isSelected = selectedRegion === r.id;
             const percentage = maxRegionalAmount > 0 ? Math.round((r.totalAmount / maxRegionalAmount) * 100) : 0;
             const meta = REGION_LOOKUP[r.id] || { id: r.id, name: r.name, code: r.code, badgeColor: "bg-gray-50 text-gray-700 border-gray-200" };
@@ -448,7 +414,7 @@ export default function PaymentsPage() {
             onChange={(e) => setSelectedRegion(e.target.value === "" ? null : Number(e.target.value))}
             className="h-10 px-3 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10"
           >
-            <option value="">All Regions ({regionalStats.length})</option>
+            <option value="">All regions</option>
             {regionalStats.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name} ({r.totalAmount.toLocaleString()} ETB)
@@ -484,16 +450,16 @@ export default function PaymentsPage() {
       {/* Main Ledger Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-gray-50/60">
-            <TableRow className="hover:bg-transparent border-gray-100">
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Invoice & ID</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Payer Contact</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Region Scope</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Contribution Type</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Method</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Amount</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black">Status</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black text-right">Date</TableHead>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Invoice & ID</TableHead>
+              <TableHead>Payer</TableHead>
+              <TableHead>Region</TableHead>
+              <TableHead>Purpose</TableHead>
+              <TableHead>Method</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -534,7 +500,8 @@ export default function PaymentsPage() {
             ) : (
               filteredPayments.map((p) => {
                 const reg = REGION_LOOKUP[p.region_id ?? 0] || { id: 0, name: "National", code: "NAT", badgeColor: "bg-gray-50 text-gray-700 border-gray-200" };
-                const formattedDate = p.created_at ? new Date(p.created_at).toLocaleDateString("en-US", {
+                const when = isPaid(p) && p.paid_at ? p.paid_at : p.created_at;
+                const formattedDate = when ? new Date(when).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
@@ -543,12 +510,12 @@ export default function PaymentsPage() {
                 }) : "N/A";
 
                 return (
-                  <TableRow key={p.id} className="hover:bg-gray-50/50 transition-colors border-gray-50">
+                  <TableRow key={p.id}>
                     {/* Invoice & ID */}
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                       <div className="space-y-1">
                         <span className="font-black text-black text-xs leading-tight block tracking-tight">
-                          {p.invoice_number || "ERCS-REC-PENDING"}
+                          {p.invoice_number || "No invoice number"}
                         </span>
                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 font-mono">
                           <span>{p.id.slice(0, 8)}...</span>
@@ -564,19 +531,19 @@ export default function PaymentsPage() {
                     </TableCell>
 
                     {/* Payer Contact */}
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                       <div className="space-y-0.5">
                         <p className="text-xs font-black text-black truncate max-w-[180px]">
-                          {p.payer_name || "Member Contributor"}
+                          {p.payer_name || "Name not recorded"}
                         </p>
                         <p className="text-[11px] font-bold text-gray-500 truncate max-w-[180px]">
-                          {p.payer_email || p.payer_phone || p.person_id}
+                          {p.payer_phone || p.payer_email || "No contact recorded"}
                         </p>
                       </div>
                     </TableCell>
 
                     {/* Region Scope */}
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                       <span className={cn(
                         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border",
                         reg.badgeColor
@@ -587,29 +554,29 @@ export default function PaymentsPage() {
                     </TableCell>
 
                     {/* Purpose / Description */}
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                       <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-gray-100 text-gray-700">
-                        {p.description || "MEMBERSHIP FEE"}
+                        {p.purpose || p.description || "Not recorded"}
                       </span>
                     </TableCell>
 
                     {/* Method */}
-                    <TableCell className="px-6 py-4">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-600">
-                        {p.payment_method || "ARIFPAY"}
+                    <TableCell>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                        {p.payment_method || "Not recorded"}
                       </span>
                     </TableCell>
 
                     {/* Amount */}
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                       <span className="font-black text-sm text-black">
                         {Number(p.amount).toLocaleString()}{" "}
-                        <span className="text-[10px] text-gray-400 font-bold">{p.currency || "ETB"}</span>
+                        <span className="text-[10px] text-gray-400 font-bold">{cur(p)}</span>
                       </span>
                     </TableCell>
 
                     {/* Status */}
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                       <span className={cn(
                         "px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 w-fit border",
                         p.status === "SUCCESS" || p.status === "PAID" 
@@ -626,8 +593,9 @@ export default function PaymentsPage() {
                     </TableCell>
 
                     {/* Date */}
-                    <TableCell className="px-6 py-4 text-right font-bold text-gray-400 text-[10px]">
+                    <TableCell className="text-right text-xs text-gray-500">
                       {formattedDate}
+                      <span className="block text-[10px] text-gray-400">{isPaid(p) && p.paid_at ? "Paid" : "Created"}</span>
                     </TableCell>
                   </TableRow>
                 );

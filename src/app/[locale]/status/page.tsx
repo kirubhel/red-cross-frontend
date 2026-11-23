@@ -66,7 +66,6 @@ const REGIONAL_NODES: RegionalNode[] = [
 export default function SystemStatusPage() {
   const [isRunningAll, setIsRunningAll] = useState(false);
   const [lastSystemCheck, setLastSystemCheck] = useState<string>("");
-  const [uptimeStr, setUptimeStr] = useState("99.98%");
   const [gatewayUptime, setGatewayUptime] = useState<string>("");
 
   const [services, setServices] = useState<ServiceHealth[]>([
@@ -76,10 +75,10 @@ export default function SystemStatusPage() {
       category: "Edge & Traffic",
       description: "Reverse proxy, rate limiting, and SSL termination",
       endpoint: "/health",
-      status: "OPERATIONAL",
-      latencyMs: 32,
-      lastChecked: "Just now",
-      details: "HTTP 200 • Reverse proxy active",
+      status: "TESTING",
+      latencyMs: 0,
+      lastChecked: "",
+      details: "Checking…",
       icon: Layers,
     },
     {
@@ -88,10 +87,10 @@ export default function SystemStatusPage() {
       category: "Security & RBAC",
       description: "JWT token validation, ERCS ID lookup, and passwordless login",
       endpoint: "/public/check-phone",
-      status: "OPERATIONAL",
-      latencyMs: 48,
-      lastChecked: "Just now",
-      details: "Multi-actor RBAC active • Zero token leaks",
+      status: "TESTING",
+      latencyMs: 0,
+      lastChecked: "",
+      details: "Checking…",
       icon: ShieldCheck,
     },
     {
@@ -100,10 +99,10 @@ export default function SystemStatusPage() {
       category: "Registry & DB",
       description: "Member profiles, regional partitions, and geographic boundaries",
       endpoint: "/location/branches",
-      status: "OPERATIONAL",
-      latencyMs: 54,
-      lastChecked: "Just now",
-      details: "Postgres list partitions green • Scoping enforced",
+      status: "TESTING",
+      latencyMs: 0,
+      lastChecked: "",
+      details: "Checking…",
       icon: Users,
     },
     {
@@ -112,10 +111,10 @@ export default function SystemStatusPage() {
       category: "Workforce",
       description: "Volunteer registration, requests, and assignment matching",
       endpoint: "/public/verify",
-      status: "OPERATIONAL",
-      latencyMs: 41,
-      lastChecked: "Just now",
-      details: "Auto-matching queue operational",
+      status: "TESTING",
+      latencyMs: 0,
+      lastChecked: "",
+      details: "Checking…",
       icon: Zap,
     },
     {
@@ -124,10 +123,10 @@ export default function SystemStatusPage() {
       category: "Payments",
       description: "ArifPay checkout integration, invoices, and verification",
       endpoint: "/payment/verify",
-      status: "OPERATIONAL",
-      latencyMs: 62,
-      lastChecked: "Just now",
-      details: "Checkout API connected • ETB settlement ready",
+      status: "TESTING",
+      latencyMs: 0,
+      lastChecked: "",
+      details: "Checking…",
       icon: CreditCard,
     },
     {
@@ -136,10 +135,10 @@ export default function SystemStatusPage() {
       category: "Messaging",
       description: "SMS OTP dispatch, system broadcasts, and transactional alerts",
       endpoint: "/public/forgot-password/request-otp",
-      status: "OPERATIONAL",
-      latencyMs: 39,
-      lastChecked: "Just now",
-      details: "SMS delivery queue green • Rate limiting active",
+      status: "TESTING",
+      latencyMs: 0,
+      lastChecked: "",
+      details: "Checking…",
       icon: MessageSquare,
     },
     {
@@ -148,120 +147,88 @@ export default function SystemStatusPage() {
       category: "Governance & RBAC",
       description: "Strict isolation ensuring regional admins only access their region",
       endpoint: "/person?region=2",
-      status: "OPERATIONAL",
-      latencyMs: 46,
-      lastChecked: "Just now",
-      details: "Dire Dawa (Region 2) isolation verified 100%",
+      status: "TESTING",
+      latencyMs: 0,
+      lastChecked: "",
+      details: "Checking…",
       icon: Lock,
     },
   ]);
+
+  /**
+   * A service is up if it answers. The probes send made-up IDs on purpose, so a 4xx
+   * ("member not found", "payment not found") is a healthy answer. Only a 5xx or no
+   * answer at all counts against the service.
+   */
+  const up = { validateStatus: (code: number) => code < 500 };
 
   const testSingleService = async (serviceId: string) => {
     setServices(prev => prev.map(s => s.id === serviceId ? { ...s, status: "TESTING" } : s));
     const start = performance.now();
 
+    // The gateway's own health report covers every backend service.
+    const healthReq = api.get("/health", up).catch(() => null);
+
     try {
-      if (serviceId === "gateway") {
-        const res = await api.get("/health");
-        const lat = Math.round(performance.now() - start);
-        if (res.data?.uptime) setGatewayUptime(res.data.uptime);
-        setServices(prev => prev.map(s => s.id === serviceId ? {
-          ...s,
-          status: "OPERATIONAL",
-          latencyMs: lat,
-          lastChecked: new Date().toLocaleTimeString(),
-          details: `Uptime: ${res.data?.uptime || "Active"} • Version: ${res.data?.version || "v1.0.0"}`,
-        } : s));
-      } else if (serviceId === "auth") {
-        await api.get("/public/check-phone?phone=+251911223344");
-        const lat = Math.round(performance.now() - start);
-        setServices(prev => prev.map(s => s.id === serviceId ? {
-          ...s,
-          status: "OPERATIONAL",
-          latencyMs: lat,
-          lastChecked: new Date().toLocaleTimeString(),
-          details: "Authentication service handshake passed",
-        } : s));
-      } else if (serviceId === "core") {
-        await api.get("/location/branches");
-        const lat = Math.round(performance.now() - start);
-        setServices(prev => prev.map(s => s.id === serviceId ? {
-          ...s,
-          status: "OPERATIONAL",
-          latencyMs: lat,
-          lastChecked: new Date().toLocaleTimeString(),
-          details: "Postgres branches & partitions responsive",
-        } : s));
-      } else if (serviceId === "volunteer") {
-        await api.get("/public/verify?id=TEST-HEALTH-CHECK");
-        const lat = Math.round(performance.now() - start);
-        setServices(prev => prev.map(s => s.id === serviceId ? {
-          ...s,
-          status: "OPERATIONAL",
-          latencyMs: lat,
-          lastChecked: new Date().toLocaleTimeString(),
-          details: "Volunteer verification endpoint responsive",
-        } : s));
-      } else if (serviceId === "payment") {
-        await api.get("/payment/verify/HEALTH-CHECK-PING");
-        const lat = Math.round(performance.now() - start);
-        setServices(prev => prev.map(s => s.id === serviceId ? {
-          ...s,
-          status: "OPERATIONAL",
-          latencyMs: lat,
-          lastChecked: new Date().toLocaleTimeString(),
-          details: "ArifPay webhook & verification listener green",
-        } : s));
-      } else if (serviceId === "notification") {
-        // Test OTP ping with rate limit tolerance
-        try {
-          await api.post("/public/forgot-password/request-otp", { phone_number: "+251911223344" });
-        } catch {
-          // Expected rate limit (429) confirms endpoint is active
+      let details = "";
+      switch (serviceId) {
+        case "gateway": {
+          const res = await api.get("/health", { validateStatus: (c) => c < 400 });
+          if (res.data?.uptime) setGatewayUptime(res.data.uptime);
+          details = `Uptime ${res.data?.uptime || "n/a"} • Version ${res.data?.version || "n/a"}`;
+          break;
         }
-        const lat = Math.round(performance.now() - start);
-        setServices(prev => prev.map(s => s.id === serviceId ? {
-          ...s,
-          status: "OPERATIONAL",
-          latencyMs: lat,
-          lastChecked: new Date().toLocaleTimeString(),
-          details: "SMS dispatch engine & OTP limiter active",
-        } : s));
-      } else if (serviceId === "scoping") {
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        if (token) {
-          const res = await api.get("/person?page=1&page_size=1&region=2");
-          const lat = Math.round(performance.now() - start);
-          const count = res.data?.pagination?.total_items || 0;
-          setServices(prev => prev.map(s => s.id === serviceId ? {
-            ...s,
-            status: "OPERATIONAL",
-            latencyMs: lat,
-            lastChecked: new Date().toLocaleTimeString(),
-            details: `Geographic isolation verified • ${count} Dire Dawa records isolated`,
-          } : s));
-        } else {
-          // Public ping verifying geographic partition routing
-          const res = await api.get("/location/branches?region_id=2");
-          const lat = Math.round(performance.now() - start);
-          const branchCount = res.data?.branches?.length || 0;
-          setServices(prev => prev.map(s => s.id === serviceId ? {
-            ...s,
-            status: "OPERATIONAL",
-            latencyMs: lat,
-            lastChecked: new Date().toLocaleTimeString(),
-            details: `Geographic routing active • Dire Dawa partition online (${branchCount} branches)`,
-          } : s));
+        case "auth":
+          await api.get("/public/check-phone?phone=+251911223344", up);
+          details = "Sign-in service is answering";
+          break;
+        case "core":
+          await api.get("/location/branches", { validateStatus: (c) => c < 400 });
+          details = "Registry and branch data are loading";
+          break;
+        case "volunteer":
+          await api.get("/public/verify?id=TEST-HEALTH-CHECK", up);
+          details = "Volunteer verification is answering";
+          break;
+        case "payment":
+          await api.get("/payment/verify/HEALTH-CHECK-PING", up);
+          details = "Payment verification is answering";
+          break;
+        case "notification":
+          // Never send a real SMS just to test: rely on the gateway's health report.
+          await api.get("/health", { validateStatus: (c) => c < 400 });
+          details = "Reported by the gateway health check";
+          break;
+        case "scoping": {
+          const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+          if (token) {
+            const res = await api.get("/person?page=1&page_size=1&region=2", up);
+            details = res.status === 200 ? `Region filter working • ${res.data?.pagination?.total_items ?? 0} Dire Dawa records` : "Region filter is answering";
+          } else {
+            const res = await api.get("/location/branches?region_id=2", { validateStatus: (c) => c < 400 });
+            details = `Region filter working • ${res.data?.branches?.length || 0} Dire Dawa branches`;
+          }
+          break;
         }
       }
-    } catch {
-      const lat = Math.round(performance.now() - start);
+
+      const latency = Math.round(performance.now() - start);
+      let status: ServiceStatus = "OPERATIONAL";
+      const reported = (await healthReq)?.data?.services?.[serviceId] as string | undefined;
+      if (reported && reported !== "OPERATIONAL") {
+        status = reported === "OFFLINE" ? "OFFLINE" : "DEGRADED";
+        details = `Gateway reports ${reported.toLowerCase()}`;
+      }
+      setServices(prev => prev.map(s => s.id === serviceId ? { ...s, status, latencyMs: latency, lastChecked: new Date().toLocaleTimeString(), details } : s));
+    } catch (err: any) {
+      const latency = Math.round(performance.now() - start);
+      const code: number | undefined = err?.response?.status;
       setServices(prev => prev.map(s => s.id === serviceId ? {
         ...s,
-        status: "DEGRADED",
-        latencyMs: lat,
+        status: code ? "DEGRADED" : "OFFLINE",
+        latencyMs: latency,
         lastChecked: new Date().toLocaleTimeString(),
-        details: "Intermittent delay detected, automatic retry active",
+        details: code ? `Service returned an error (HTTP ${code})` : "No response from the service",
       } : s));
     }
   };
@@ -284,10 +251,11 @@ export default function SystemStatusPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const checked = services.filter(s => s.status !== "TESTING" || s.latencyMs > 0);
+  const healthy = services.filter(s => s.status === "OPERATIONAL").length;
+  const offline = services.filter(s => s.status === "OFFLINE").length;
   const allOperational = services.every(s => s.status === "OPERATIONAL" || s.status === "TESTING");
-  const avgLatency = Math.round(
-    services.reduce((acc, curr) => acc + curr.latencyMs, 0) / (services.length || 1)
-  );
+  const avgLatency = Math.round(checked.reduce((acc, curr) => acc + curr.latencyMs, 0) / (checked.length || 1));
 
   return (
     <div className="min-h-screen bg-[#0A0D14] text-white font-sans selection:bg-[#ED1C24] selection:text-white">
@@ -346,10 +314,10 @@ export default function SystemStatusPage() {
         </div>
 
         {/* Top Status Banner */}
-        <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-transparent border border-emerald-500/30 backdrop-blur-xl shadow-2xl">
+        <div className={`relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-r ${allOperational ? "from-emerald-950/40 via-emerald-900/20 border-emerald-500/30" : "from-amber-950/40 via-amber-900/20 border-amber-500/30"} to-transparent border backdrop-blur-xl shadow-2xl`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0">
+              <div className={`h-14 w-14 rounded-2xl border flex items-center justify-center shrink-0 ${allOperational ? "bg-emerald-500/20 border-emerald-500/40" : "bg-amber-500/20 border-amber-500/40"}`}>
                 {allOperational ? (
                   <CheckCircle2 className="w-8 h-8 text-emerald-400" />
                 ) : (
@@ -360,8 +328,8 @@ export default function SystemStatusPage() {
                 <h3 className="text-2xl font-black text-white tracking-tight">
                   {allOperational ? "All Systems Operational" : "Degraded Performance Detected"}
                 </h3>
-                <p className="text-emerald-400/80 text-xs font-bold uppercase tracking-wider mt-0.5">
-                  100% Core Microservices Responding • Regional Isolation Active
+                <p className={`text-xs font-bold uppercase tracking-wider mt-0.5 ${allOperational ? "text-emerald-400/80" : "text-amber-400/90"}`}>
+                  {healthy} of {services.length} services healthy{offline ? ` • ${offline} not responding` : ""}
                 </p>
               </div>
             </div>
@@ -373,8 +341,8 @@ export default function SystemStatusPage() {
                 <span className="text-xl font-black text-white">{avgLatency} ms</span>
               </div>
               <div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">30-Day Uptime</span>
-                <span className="text-xl font-black text-emerald-400">{uptimeStr}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Gateway Uptime</span>
+                <span className="text-xl font-black text-emerald-400">{gatewayUptime || "—"}</span>
               </div>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 block">Last Check</span>
@@ -426,6 +394,8 @@ export default function SystemStatusPage() {
                           ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                           : service.status === "TESTING"
                           ? "bg-blue-500/10 border-blue-500/30 text-blue-400 animate-pulse"
+                          : service.status === "OFFLINE"
+                          ? "bg-red-500/10 border-red-500/30 text-red-400"
                           : "bg-amber-500/10 border-amber-500/30 text-amber-400"
                       }`}
                     >
@@ -436,10 +406,10 @@ export default function SystemStatusPage() {
                   <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-gray-400">
                     <div className="flex items-center gap-3">
                       <span className="font-mono text-[11px] text-gray-300">
-                        {service.latencyMs} ms
+                        {service.latencyMs ? `${service.latencyMs} ms` : "— ms"}
                       </span>
                       <span className="text-gray-600">•</span>
-                      <span className="text-[11px] text-gray-400 truncate max-w-[200px]">
+                      <span className="text-[11px] text-gray-400 truncate max-w-[260px]" title={service.details}>
                         {service.details}
                       </span>
                     </div>

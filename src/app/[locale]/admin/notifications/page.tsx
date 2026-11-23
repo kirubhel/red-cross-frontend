@@ -33,8 +33,25 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { REGIONS as REGION_LIST } from "@/lib/constants";
 import { DesktopPushToggle } from "@/components/notifications/DesktopPushToggle";
 
+import { PageHeader } from "@/components/admin/page-ui";
+
+const REGIONS = REGION_LIST.map((r) => r.name);
+
+const CHANNELS = {
+  PUSH: { label: "Push", icon: Smartphone, chip: "bg-red-50 text-[#B5121B] border-red-200" },
+  SMS: { label: "SMS", icon: MessageSquare, chip: "bg-amber-50 text-amber-800 border-amber-200" },
+  EMAIL: { label: "Email", icon: Mail, chip: "bg-blue-50 text-blue-800 border-blue-200" },
+} as const;
+
+function formatWhen(raw: string) {
+  if (!raw) return "Date not recorded";
+  const d = new Date(raw.includes("T") ? raw : raw.replace(" ", "T"));
+  if (isNaN(d.getTime())) return raw;
+  return d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
 type Notification = {
   id: string;
   name: string;
@@ -43,19 +60,6 @@ type Notification = {
   created_at: string;
   recipients_count: number;
 };
-
-const REGIONS = [
-  "Addis Ababa",
-  "Amhara",
-  "Oromia",
-  "Tigray",
-  "Somali",
-  "Sidama",
-  "Afar",
-  "Dire Dawa",
-  "Central Ethiopia",
-  "South Ethiopia",
-];
 
 const TEMPLATES = [
   { 
@@ -129,6 +133,7 @@ export default function NotificationsPage() {
   const [search, setSearch] = useState("");
   const [channelFilter, setChannelFilter] = useState<string>("ALL");
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
@@ -137,6 +142,7 @@ export default function NotificationsPage() {
     channel?: "PUSH" | "SMS" | "EMAIL";
     region?: string;
     title?: string;
+    message?: string;
     targetType?: string;
   }>({});
 
@@ -146,22 +152,20 @@ export default function NotificationsPage() {
 
   const fetchNotifications = async () => {
     setLoading(true);
+    setLoadFailed(false);
     try {
-      const res = await api.get("/notifications?page=1&page_size=50");
+      const res = await api.get("/notifications?page=1&page_size=100");
       setNotifications(res.data.campaigns || []);
     } catch (err) {
       console.error("Failed to fetch notifications:", err);
-      // Fallback sample data
-      setNotifications([
-        { id: "1", name: "Urgent Meeting", message: "Meeting tomorrow for coordinators", channel: "SMS", created_at: "2024-05-12 10:00:00", recipients_count: 142 },
-        { id: "2", name: "App Update & Push Alert", message: "Welcome to ERCS digital membership portal.", channel: "PUSH", created_at: "2024-05-10 14:30:00", recipients_count: 1250 },
-      ]);
+      setNotifications([]);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOpenBroadcast = (preset?: { channel?: "PUSH" | "SMS" | "EMAIL"; region?: string; title?: string; targetType?: string }) => {
+  const handleOpenBroadcast = (preset?: { channel?: "PUSH" | "SMS" | "EMAIL"; region?: string; title?: string; message?: string; targetType?: string }) => {
     setInitialBroadcastData(preset || { channel: "PUSH" });
     setShowBroadcastModal(true);
   };
@@ -179,238 +183,115 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
-            <Radio className="h-3 w-3 animate-pulse" /> Live Communication
-          </div>
-          <h1 className="text-3xl font-black text-black tracking-tighter">Notification Center</h1>
-          <p className="text-gray-500 font-medium text-sm">Broadcast urgent messages via Push (FCM), SMS, and Email channels.</p>
-        </div>
+      <PageHeader
+        title="Notifications"
+        description="Send push, SMS and email messages to members and volunteers, and review what has already gone out."
+        actions={
+          <>
+            <DesktopPushToggle compact />
+            <Button onClick={() => setShowTemplates(true)} variant="outline" className="h-10 gap-2 rounded-xl border-gray-200 px-4 text-xs font-bold text-gray-800 hover:bg-gray-50">
+              <Settings className="h-4 w-4 text-gray-500" /> Message templates
+            </Button>
+            <Button onClick={() => handleOpenBroadcast({ channel: "PUSH" })} className="h-10 gap-2 rounded-xl bg-[#ED1C24] px-5 text-xs font-bold text-white hover:bg-black">
+              <Send className="h-4 w-4" /> New broadcast
+            </Button>
+          </>
+        }
+      />
 
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={() => setShowTemplates(true)}
-            variant="outline"
-            className="rounded-xl h-10 px-5 font-black shadow-sm flex items-center gap-2 border-gray-200 text-black hover:bg-gray-50"
-          >
-            <Settings className="h-4 w-4 text-gray-500" /> Templates
-          </Button>
-          <Button
-            onClick={() => handleOpenBroadcast({ channel: "PUSH" })}
-            className="bg-[#ED1C24] hover:bg-black text-white rounded-xl h-10 px-6 font-black shadow-lg shadow-red-500/20 transition-all flex items-center gap-2"
-          >
-            <Send className="h-4 w-4" /> New Broadcast
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
-            placeholder="Search broadcasts by title, ID, or content..."
+            placeholder="Search by title or message"
+            aria-label="Search broadcasts"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 pl-10 bg-white text-black border border-gray-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/10 transition-all shadow-sm"
+            className="h-10 rounded-xl border border-gray-200 bg-white pl-10 text-sm text-gray-900"
           />
         </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {["ALL", "PUSH", "SMS", "EMAIL"].map((ch) => (
-            <button
-              key={ch}
-              onClick={() => setChannelFilter(ch)}
-              className={cn(
-                "px-3 py-1.5 rounded-xl text-xs font-black transition-all",
-                channelFilter === ch
-                  ? "bg-black text-white shadow-sm"
-                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-              )}
-            >
-              {ch === "ALL" ? "All Channels" : ch}
-            </button>
-          ))}
-          <Button
-            onClick={fetchNotifications}
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 rounded-xl border-gray-200"
-            title="Refresh history"
-          >
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1" role="group" aria-label="Filter by channel">
+            {["ALL", "PUSH", "SMS", "EMAIL"].map((ch) => (
+              <button
+                key={ch}
+                onClick={() => setChannelFilter(ch)}
+                aria-pressed={channelFilter === ch}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-xs font-bold transition-colors",
+                  channelFilter === ch ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"
+                )}
+              >
+                {ch === "ALL" ? "All" : CHANNELS[ch as keyof typeof CHANNELS].label}
+              </button>
+            ))}
+          </div>
+          <Button onClick={fetchNotifications} variant="outline" size="icon" className="h-10 w-10 rounded-xl border-gray-200" title="Refresh" aria-label="Refresh broadcast history">
             <RefreshCcw className={cn("h-4 w-4 text-gray-600", loading && "animate-spin")} />
           </Button>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Quick Send Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-black text-white rounded-3xl p-6 shadow-xl relative overflow-hidden group border border-gray-800">
-            <div className="absolute top-0 right-0 p-4 opacity-5 font-black text-7xl select-none">FCM</div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-red-500/20 text-[#ED1C24] flex items-center justify-center font-bold">
-                  <Smartphone className="h-4 w-4" />
-                </div>
-                <h3 className="text-lg font-black tracking-tight">Push Broadcast</h3>
-              </div>
-              <DesktopPushToggle compact />
-            </div>
-            <p className="text-gray-400 font-bold text-xs mb-4 leading-relaxed">
-              Reach all mobile app & desktop PWA subscribers instantaneously using Firebase Cloud Messaging.
-            </p>
-            <div className="flex flex-col gap-2">
-              <Button
-                onClick={() =>
-                  handleOpenBroadcast({
-                    channel: "PUSH",
-                    title: "Emergency Alert",
-                    targetType: "ALL",
-                  })
-                }
-                className="bg-[#ED1C24] hover:bg-white hover:text-black text-white h-10 rounded-xl transition-all font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-md shadow-red-500/20"
-              >
-                <Radio className="h-3.5 w-3.5" /> Blast All App Users
-              </Button>
-              <Button
-                onClick={() =>
-                  handleOpenBroadcast({
-                    channel: "PUSH",
-                    title: "Administrative Notice",
-                    targetType: "TOPIC",
-                  })
-                }
-                variant="outline"
-                className="border-gray-800 text-gray-300 hover:text-white hover:bg-gray-800 h-10 rounded-xl transition-all font-black uppercase text-[10px] tracking-widest"
-              >
-                Custom Topic Broadcast
-              </Button>
-            </div>
-          </div>
-
-          {/* Regional Targeting Quick Select */}
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-black flex items-center gap-2">
-                <Map className="h-4 w-4 text-[#ED1C24]" /> Regional Targeting
-              </h3>
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Click to Target</span>
-            </div>
-            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
-              {REGIONS.map((region) => (
-                <button
-                  key={region}
-                  onClick={() =>
-                    handleOpenBroadcast({
-                      channel: "PUSH",
-                      region: region,
-                      targetType: "REGION",
-                      title: `Notice for ${region} Branch`,
-                    })
-                  }
-                  className="w-full flex items-center justify-between p-2.5 bg-gray-50 hover:bg-red-50/50 hover:border-red-200 transition-all rounded-xl border border-gray-100 text-left group"
-                >
-                  <span className="font-bold text-xs text-gray-700 group-hover:text-black uppercase tracking-tight">
-                    {region}
-                  </span>
-                  <span className="text-[10px] font-black text-[#ED1C24] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                    Send <ChevronRight className="h-3 w-3" />
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <h2 className="text-base font-bold text-gray-900">Sent broadcasts</h2>
+          <span className="text-xs text-gray-500">
+            {filteredNotifications.length} {filteredNotifications.length === 1 ? "broadcast" : "broadcasts"}
+          </span>
         </div>
-
-        {/* History Table */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-[#ED1C24]" />
-                <h2 className="font-black text-sm uppercase tracking-wider text-black">Broadcast History</h2>
-              </div>
-              <span className="text-xs font-bold text-gray-400">{filteredNotifications.length} Campaigns</span>
-            </div>
-
-            <Table>
-              <TableHeader className="bg-gray-50/50">
-                <TableRow className="hover:bg-transparent border-gray-100">
-                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">
-                    Campaign
-                  </TableHead>
-                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">
-                    Channel
-                  </TableHead>
-                  <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500 text-right">
-                    Date
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="h-40 text-center text-xs font-bold text-gray-400">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <RefreshCcw className="h-5 w-5 animate-spin text-[#ED1C24]" />
-                        <span>Loading notification history...</span>
-                      </div>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Broadcast</TableHead>
+              <TableHead>Channel</TableHead>
+              <TableHead className="text-right">Recipients</TableHead>
+              <TableHead className="text-right">Sent</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-40 text-center text-sm text-gray-500">
+                  <RefreshCcw className="mx-auto mb-2 h-5 w-5 animate-spin text-[#ED1C24]" /> Loading broadcasts…
+                </TableCell>
+              </TableRow>
+            ) : loadFailed ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-40 text-center text-sm text-gray-600">
+                  Could not load broadcast history.{" "}
+                  <button onClick={fetchNotifications} className="font-bold text-[#B5121B] hover:underline">
+                    Try again
+                  </button>
+                </TableCell>
+              </TableRow>
+            ) : filteredNotifications.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-40 text-center text-sm text-gray-500">
+                  {notifications.length === 0 ? "Nothing has been sent yet. Choose New broadcast to send the first message." : "No broadcasts match your search."}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredNotifications.map((n) => {
+                const ch = CHANNELS[n.channel] ?? CHANNELS.PUSH;
+                return (
+                  <TableRow key={n.id} onClick={() => setSelectedNotification(n)} className="cursor-pointer">
+                    <TableCell className="max-w-[28rem]">
+                      <p className="truncate text-sm font-bold text-gray-900">{n.name}</p>
+                      <p className="mt-0.5 line-clamp-1 text-xs text-gray-500">{n.message}</p>
                     </TableCell>
-                  </TableRow>
-                ) : filteredNotifications.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="h-40 text-center text-xs font-bold text-gray-400">
-                      No broadcast campaigns found. Click &quot;New Broadcast&quot; to send your first message.
+                    <TableCell>
+                      <span className={cn("inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-bold", ch.chip)}>
+                        <ch.icon className="h-3 w-3" /> {ch.label}
+                      </span>
                     </TableCell>
+                    <TableCell className="text-right text-sm tabular-nums text-gray-700">{Number(n.recipients_count || 0).toLocaleString()}</TableCell>
+                    <TableCell className="text-right text-xs text-gray-500">{formatWhen(n.created_at)}</TableCell>
                   </TableRow>
-                ) : (
-                  filteredNotifications.map((n) => (
-                    <TableRow
-                      key={n.id}
-                      onClick={() => setSelectedNotification(n)}
-                      className="hover:bg-gray-50/80 transition-colors border-gray-50 cursor-pointer group"
-                    >
-                      <TableCell className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="font-black text-black text-sm leading-tight uppercase tracking-tight group-hover:text-[#ED1C24] transition-colors">
-                            {n.name}
-                          </span>
-                          <span className="text-gray-500 font-medium text-xs line-clamp-1 mt-0.5">{n.message}</span>
-                          <span className="text-gray-400 font-bold text-[9px] uppercase tracking-widest flex items-center gap-1 mt-1">
-                            <Users className="h-3 w-3" /> {n.recipients_count} Estimated Recipients
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-4">
-                        <span
-                          className={cn(
-                            "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-1",
-                            n.channel === "SMS"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
-                              : n.channel === "EMAIL"
-                              ? "bg-blue-50 text-blue-700 border border-blue-200"
-                              : "bg-red-50 text-[#ED1C24] border border-red-200"
-                          )}
-                        >
-                          {n.channel === "PUSH" && <Smartphone className="h-3 w-3" />}
-                          {n.channel === "SMS" && <MessageSquare className="h-3 w-3" />}
-                          {n.channel === "EMAIL" && <Mail className="h-3 w-3" />}
-                          {n.channel}
-                        </span>
-                      </TableCell>
-                      <TableCell className="px-6 py-4 text-right font-bold text-gray-400 text-xs">
-                        {n.created_at}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Broadcast Creation Modal */}
@@ -421,7 +302,7 @@ export default function NotificationsPage() {
           onSuccess={() => {
             setShowBroadcastModal(false);
             fetchNotifications();
-            toast.success("Broadcast dispatched successfully!");
+            toast.success("Broadcast sent.");
           }}
         />
       )}
@@ -441,6 +322,10 @@ export default function NotificationsPage() {
           selectedTemplate={selectedTemplate}
           onSelect={setSelectedTemplate}
           onClose={() => setShowTemplates(false)}
+          onUse={(title, message) => {
+            setShowTemplates(false);
+            handleOpenBroadcast({ channel: "PUSH", title, message, targetType: "ALL" });
+          }}
         />
       )}
     </div>
@@ -457,6 +342,7 @@ function BroadcastModal({
     channel?: "PUSH" | "SMS" | "EMAIL";
     region?: string;
     title?: string;
+    message?: string;
     targetType?: string;
   };
   onClose: () => void;
@@ -464,7 +350,7 @@ function BroadcastModal({
 }) {
   const [channel, setChannel] = useState<"PUSH" | "SMS" | "EMAIL">(initialData?.channel || "PUSH");
   const [title, setTitle] = useState(initialData?.title || "");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(initialData?.message || "");
   const [targetAudience, setTargetAudience] = useState<string>(
     initialData?.targetType || (initialData?.region ? "REGION" : "ALL")
   );
@@ -477,6 +363,11 @@ function BroadcastModal({
     e.preventDefault();
     if (!title.trim() || !message.trim()) {
       toast.error("Please fill in both title and message.");
+      return;
+    }
+
+    if (/\{\{[^}]+\}\}/.test(`${title} ${message}`)) {
+      toast.error("Replace placeholders like {{memberName}} with real text. Broadcasts do not fill them in.");
       return;
     }
 
@@ -506,7 +397,6 @@ function BroadcastModal({
       }
 
       await api.post("/notifications", payload);
-      toast.success(targetAudience === "SINGLE" ? `SMS notification sent to ${singleRecipient}` : "Broadcast dispatched successfully!");
       onSuccess();
     } catch (err: unknown) {
       console.error("Failed to send broadcast:", err);
@@ -519,7 +409,7 @@ function BroadcastModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
+      <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -527,7 +417,7 @@ function BroadcastModal({
               <Send className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-base font-black text-black tracking-tight">New Broadcast Notification</h2>
+              <h2 className="text-base font-bold tracking-tight text-gray-900">New Broadcast Notification</h2>
               <p className="text-[11px] font-bold text-gray-400">Push to Firebase FCM, SMS, or Email</p>
             </div>
           </div>
@@ -540,7 +430,7 @@ function BroadcastModal({
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 flex-1">
           {/* Channel Selector */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Broadcast Channel</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Broadcast Channel</label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
@@ -591,7 +481,7 @@ function BroadcastModal({
 
           {/* Target Audience */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Target Audience</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Target Audience</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: "ALL", label: "All Users", desc: "Global broadcast" },
@@ -659,7 +549,7 @@ function BroadcastModal({
 
           {/* Broadcast Title */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
               Broadcast Title / Subject
             </label>
             <Input
@@ -674,8 +564,10 @@ function BroadcastModal({
           {/* Message Content */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Message Body</label>
-              <span className="text-[10px] font-bold text-gray-400">{message.length} characters</span>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Message Body</label>
+              <span className="text-xs text-gray-500">
+                {message.length} characters{channel === "SMS" ? `, ${Math.max(1, Math.ceil(message.length / 160))} SMS` : ""}
+              </span>
             </div>
             <textarea
               rows={4}
@@ -686,6 +578,20 @@ function BroadcastModal({
               required
             />
           </div>
+
+          <p className="rounded-xl bg-gray-50 px-3 py-2.5 text-xs text-gray-700" aria-live="polite">
+            This will send {channel === "PUSH" ? "a push notification" : channel === "SMS" ? "an SMS" : "an email"} to{" "}
+            <strong>
+              {targetAudience === "ALL"
+                ? "everyone"
+                : targetAudience === "REGION"
+                ? `members and volunteers in ${selectedRegion}`
+                : targetAudience === "TOPIC"
+                ? `the "${topicName.trim() || "all_users"}" topic`
+                : singleRecipient.trim() || "one recipient"}
+            </strong>
+            . It cannot be recalled once sent.
+          </p>
 
           {/* Footer Actions */}
           <div className="pt-2 flex items-center justify-end gap-3">
@@ -703,7 +609,7 @@ function BroadcastModal({
                 </>
               ) : (
                 <>
-                  <Send className="h-4 w-4" /> Send Broadcast Now
+                  <Send className="h-4 w-4" /> Send now
                 </>
               )}
             </Button>
@@ -724,11 +630,11 @@ function NotificationDetailsModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
         <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Info className="h-4 w-4 text-[#ED1C24]" />
-            <h2 className="text-sm font-black text-black">Campaign Details</h2>
+            <h2 className="text-sm font-black text-black">Broadcast details</h2>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-200 rounded-full transition-colors text-gray-400 hover:text-black">
             <X className="h-4 w-4" />
@@ -736,33 +642,27 @@ function NotificationDetailsModal({
         </div>
         <div className="p-6 space-y-4">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400">Campaign Title</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Title</div>
             <div className="text-base font-black text-black uppercase tracking-tight mt-0.5">{notification.name}</div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Channel</div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Channel</div>
               <div className="font-bold text-xs text-black mt-0.5">{notification.channel}</div>
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Date Dispatched</div>
-              <div className="font-bold text-xs text-gray-600 mt-0.5">{notification.created_at}</div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Sent</div>
+              <div className="font-bold text-xs text-gray-600 mt-0.5">{formatWhen(notification.created_at)}</div>
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Recipients</div>
-              <div className="font-bold text-xs text-[#ED1C24] mt-0.5">{notification.recipients_count} Recipients</div>
-            </div>
-            <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Status</div>
-              <div className="font-bold text-xs text-green-600 mt-0.5 flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3" /> Dispatched
-              </div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Recipients</div>
+              <div className="font-bold text-xs text-[#ED1C24] mt-0.5">{Number(notification.recipients_count || 0).toLocaleString()} (estimated)</div>
             </div>
           </div>
 
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Message Content</div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">Message Content</div>
             <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-sm font-medium text-gray-800 leading-relaxed whitespace-pre-wrap">
               {notification.message}
             </div>
@@ -785,31 +685,16 @@ function TemplatesModal({
   selectedTemplate,
   onSelect,
   onClose,
+  onUse,
 }: {
   templates: typeof TEMPLATES;
   selectedTemplate: (typeof TEMPLATES)[0];
   onSelect: (t: (typeof TEMPLATES)[0]) => void;
   onClose: () => void;
+  onUse: (title: string, message: string) => void;
 }) {
   const [subject, setSubject] = useState(selectedTemplate.subject || "Membership Renewed");
   const [body, setBody] = useState(selectedTemplate.body || "");
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    setSubject(selectedTemplate.subject || "Membership Renewed");
-    setBody(selectedTemplate.body || "");
-  }, [selectedTemplate]);
-
-  const handleSave = () => {
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      toast.success(`Template '${selectedTemplate.name}' saved successfully!`, {
-        description: "Template changes updated for automated dispatches."
-      });
-    }, 400);
-  };
-
   const handleInsertVariable = (tag: string) => {
     setBody(prev => prev + " " + tag);
     toast.info(`Appended ${tag} to template body`);
@@ -817,14 +702,10 @@ function TemplatesModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/40 backdrop-blur-sm">
-      <div className="bg-gray-50 w-full max-w-6xl h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-gray-50 w-full max-w-6xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="bg-white px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 text-sm">
-            <span className="font-black text-black">Notification Templates</span>
-            <span className="text-gray-300">/</span>
-            <span className="font-bold text-gray-500">Membership</span>
-            <span className="text-gray-300">/</span>
-            <span className="font-bold text-gray-400">Message Management</span>
+            <span className="font-black text-black">Message templates</span>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-black">
             <X className="h-5 w-5" />
@@ -884,18 +765,17 @@ function TemplatesModal({
                 </div>
               </div>
               <Button
-                onClick={handleSave}
-                disabled={isSaving}
+                onClick={() => onUse(subject, body)}
                 className="bg-[#ED1C24] hover:bg-black text-white font-black text-xs px-5 h-9 rounded-xl shadow-md shadow-red-500/10 flex items-center gap-2"
               >
-                {isSaving ? "Saving..." : "Save Template Changes"}
+                Use in a broadcast
               </Button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 flex gap-8 custom-scrollbar">
               <div className="flex-1 space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
                     <Mail className="h-3 w-3" /> Email Subject (EN)
                   </label>
                   <Input
@@ -907,7 +787,7 @@ function TemplatesModal({
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
                     <MessageSquare className="h-3 w-3" /> Message Template (EN)
                   </label>
                   <textarea
@@ -917,14 +797,14 @@ function TemplatesModal({
                     className="w-full bg-white border border-gray-200 rounded-2xl p-4 text-sm font-medium text-black focus:ring-2 focus:ring-red-500 leading-relaxed custom-scrollbar outline-none"
                     placeholder="Enter SMS or email template content with {{variables}}..."
                   />
-                  <p className="text-[10px] text-gray-400">Click any variable tag on the right to append it directly to your template body.</p>
+                  <p className="text-xs text-gray-500">These are the automatic messages members receive. Changes here are not saved. They only prepare a one-off broadcast, and {"{{placeholders}}"} must be replaced with real text before sending.</p>
                 </div>
               </div>
 
               {/* Variables Sidebar */}
               <div className="w-64 shrink-0 space-y-4">
-                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
-                  Available Variables
+                <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                  Placeholders used
                 </div>
                 <div className="space-y-2">
                   {VARIABLES.map((v) => (

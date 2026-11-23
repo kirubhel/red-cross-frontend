@@ -1,21 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { 
-  UserCheck, 
   Laptop, 
   Smartphone, 
-  Globe, 
   ShieldAlert, 
   Trash2, 
   RefreshCw, 
   CheckCircle2, 
-  Clock, 
-  Search 
+  Search,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { PageHeader, tableClass, theadClass, thClass, trClass, tdClass } from "@/components/admin/page-ui";
+import { REGIONS } from "@/lib/constants";
 
 interface ActiveSession {
   id: string;
@@ -26,6 +26,7 @@ interface ActiveSession {
   device: string;
   browser: string;
   location: string;
+  region: string;
   lastActive: string;
   isCurrent: boolean;
 }
@@ -40,6 +41,7 @@ const INITIAL_SESSIONS: ActiveSession[] = [
     device: "Desktop (macOS)",
     browser: "Chrome 122.0",
     location: "Addis Ababa, Ethiopia",
+    region: "Addis Ababa",
     lastActive: "Just now",
     isCurrent: true
   },
@@ -52,6 +54,7 @@ const INITIAL_SESSIONS: ActiveSession[] = [
     device: "Laptop (Windows 11)",
     browser: "Edge 121.0",
     location: "Hawassa, Sidama",
+    region: "Sidama",
     lastActive: "4 minutes ago",
     isCurrent: false
   },
@@ -64,6 +67,7 @@ const INITIAL_SESSIONS: ActiveSession[] = [
     device: "Mobile (Android 14)",
     browser: "Mobile Safari",
     location: "Adama, Oromia",
+    region: "Oromia",
     lastActive: "18 minutes ago",
     isCurrent: false
   },
@@ -76,163 +80,188 @@ const INITIAL_SESSIONS: ActiveSession[] = [
     device: "Desktop (Ubuntu 22.04)",
     browser: "Firefox 123.0",
     location: "Bahir Dar, Amhara",
+    region: "Amhara",
     lastActive: "35 minutes ago",
     isCurrent: false
   }
 ];
 
+const selectClass =
+  "h-10 rounded-xl border border-gray-200 bg-white px-3 text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-200";
+
+const roleLabel = (r: string) => r.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
 export default function ActiveSessionsPage() {
   const [sessions, setSessions] = useState<ActiveSession[]>(INITIAL_SESSIONS);
   const [search, setSearch] = useState("");
+  const [region, setRegion] = useState("");
+  const [role, setRole] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
   const handleTerminate = (id: string, name: string) => {
-    setSessions(prev => prev.filter(s => s.id !== id));
-    toast.success(`Session for ${name} terminated successfully!`, {
-      icon: <CheckCircle2 className="h-4 w-4 text-green-500" />
-    });
+    setSessions((prev) => prev.filter((s) => s.id !== id));
+    toast.success(`Session for ${name} terminated.`, { icon: <CheckCircle2 className="h-4 w-4 text-green-500" /> });
   };
 
   const handleTerminateAllOthers = () => {
-    setSessions(prev => prev.filter(s => s.isCurrent));
-    toast.success("All other active sessions revoked successfully!");
+    setSessions((prev) => prev.filter((s) => s.isCurrent));
+    toast.success("All other sessions revoked.");
   };
 
   const handleRefresh = () => {
     setRefreshing(true);
     setTimeout(() => {
       setRefreshing(false);
-      toast.success("Active session list updated.");
+      toast.success("Session list updated.");
     }, 600);
   };
 
-  const filteredSessions = sessions.filter(s => 
-    s.userName.toLowerCase().includes(search.toLowerCase()) ||
-    s.email.toLowerCase().includes(search.toLowerCase()) ||
-    s.location.toLowerCase().includes(search.toLowerCase()) ||
-    s.ipAddress.includes(search)
-  );
+  const roles = useMemo(() => Array.from(new Set(sessions.map((s) => s.userRole))), [sessions]);
+
+  const filteredSessions = sessions.filter((s) => {
+    if (region && s.region !== region) return false;
+    if (role && s.userRole !== role) return false;
+    const q = search.trim().toLowerCase();
+    return !q || s.userName.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.location.toLowerCase().includes(q) || s.ipAddress.includes(q);
+  });
+
+  const filtering = Boolean(region || role || search);
+  const regionCount = new Set(sessions.map((s) => s.region)).size;
+  const others = sessions.filter((s) => !s.isCurrent).length;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/10 text-[#ED1C24] rounded-full text-xs font-black uppercase tracking-widest leading-none mb-3">
-            <UserCheck className="h-3.5 w-3.5" /> Security &amp; Access Control
-          </div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Active User Sessions</h1>
-          <p className="text-sm text-gray-500 font-medium mt-1">
-            Monitor and govern authenticated staff, regional officers, and administrative sessions in real time.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="rounded-xl border-gray-200 h-11 px-4 font-bold text-xs"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-          <Button
-            onClick={handleTerminateAllOthers}
-            className="rounded-xl bg-[#ED1C24] hover:bg-black text-white h-11 px-5 font-black text-xs uppercase tracking-wider shadow-lg shadow-red-500/10 transition-all"
-          >
-            <ShieldAlert className="h-4 w-4 mr-2" /> Revoke All Other Sessions
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        title="Active sessions"
+        description={`${sessions.length} signed in across ${regionCount} ${regionCount === 1 ? "region" : "regions"}. You are on the current session.`}
+        actions={
+          <>
+            <Button variant="outline" onClick={handleRefresh} disabled={refreshing} className="h-10 gap-2 rounded-xl border-gray-200 px-4 text-xs font-bold">
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
+            </Button>
+            <Button onClick={handleTerminateAllOthers} disabled={others === 0} className="h-10 gap-2 rounded-xl bg-[#ED1C24] px-5 text-xs font-bold text-white hover:bg-black">
+              <ShieldAlert className="h-4 w-4" /> Revoke all other sessions
+            </Button>
+          </>
+        }
+      />
 
-      {/* Search & Stats Bar */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Total Active</span>
-          <p className="text-2xl font-black text-gray-900">{sessions.length}</p>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Current Session</span>
-          <p className="text-2xl font-black text-emerald-600">Active (This Device)</p>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-blue-500">Locations</span>
-          <p className="text-2xl font-black text-gray-900">4 Regions</p>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center">
-          <div className="relative w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search IP, name or city..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-10 pl-10 rounded-xl bg-gray-50 border-none text-xs font-bold"
-            />
-          </div>
-        </div>
-      </div>
+      <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+        Sample data. Live session tracking is not connected yet, so these rows are examples and revoking a session here does not sign anyone out.
+      </p>
 
-      {/* Sessions Table */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="divide-y divide-gray-100">
-          {filteredSessions.map((session) => (
-            <div key={session.id} className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-gray-50/50 transition-colors">
-              <div className="flex items-start gap-4">
-                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                  session.device.includes("Mobile") 
-                    ? "bg-amber-50 text-amber-600" 
-                    : "bg-blue-50 text-blue-600"
-                }`}>
-                  {session.device.includes("Mobile") ? <Smartphone className="h-6 w-6" /> : <Laptop className="h-6 w-6" />}
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-base text-gray-900">{session.userName}</span>
-                    <span className="px-2 py-0.5 rounded-md bg-gray-100 text-[10px] font-bold text-gray-600">
-                      {session.userRole}
-                    </span>
-                    {session.isCurrent && (
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 text-[10px] font-black uppercase tracking-wider">
-                        Current Session
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 font-medium">
-                    {session.email} · <span className="font-mono">{session.ipAddress}</span>
-                  </p>
-                  <div className="flex items-center gap-4 text-xs text-gray-400 pt-1 font-semibold">
-                    <span className="flex items-center gap-1">
-                      <Globe className="h-3.5 w-3.5 text-gray-400" /> {session.location}
-                    </span>
-                    <span>·</span>
-                    <span>{session.device} ({session.browser})</span>
-                    <span>·</span>
-                    <span className="flex items-center gap-1 text-gray-600">
-                      <Clock className="h-3.5 w-3.5 text-gray-400" /> {session.lastActive}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                {!session.isCurrent && (
-                  <Button
-                    variant="outline"
-                    onClick={() => handleTerminate(session.id, session.userName)}
-                    className="h-10 px-4 rounded-xl border-red-100 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold text-xs"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" /> Terminate Session
-                  </Button>
-                )}
-              </div>
-            </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[14rem] flex-1 sm:max-w-xs">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            placeholder="Search name, email, city or IP"
+            aria-label="Search sessions"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-10 rounded-xl border border-gray-200 bg-white pl-10 text-xs text-gray-900"
+          />
+        </div>
+        <select aria-label="Region" value={region} onChange={(e) => setRegion(e.target.value)} className={selectClass}>
+          <option value="">All regions</option>
+          {REGIONS.map((r) => (
+            <option key={r.id} value={r.name}>
+              {r.name}
+            </option>
           ))}
+        </select>
+        <select aria-label="Role" value={role} onChange={(e) => setRole(e.target.value)} className={selectClass}>
+          <option value="">All roles</option>
+          {roles.map((r) => (
+            <option key={r} value={r}>
+              {roleLabel(r)}
+            </option>
+          ))}
+        </select>
+        {filtering && (
+          <button
+            onClick={() => {
+              setSearch("");
+              setRegion("");
+              setRole("");
+            }}
+            className="inline-flex h-10 items-center gap-1 rounded-xl px-3 text-xs font-bold text-[#B5121B] hover:bg-red-50"
+          >
+            <X className="h-3.5 w-3.5" /> Clear
+          </button>
+        )}
+        <span className="ml-auto text-xs text-gray-500">
+          {filteredSessions.length} of {sessions.length} shown
+        </span>
+      </div>
 
-          {filteredSessions.length === 0 && (
-            <div className="p-12 text-center text-gray-400 font-medium">
-              No active sessions matching your query.
-            </div>
-          )}
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className={`${tableClass} whitespace-nowrap`}>
+            <thead className={theadClass}>
+              <tr className="border-b border-gray-100">
+                <th className={thClass}>User</th>
+                <th className={thClass}>Role</th>
+                <th className={thClass}>Location and IP</th>
+                <th className={thClass}>Device</th>
+                <th className={thClass}>Last active</th>
+                <th className={`${thClass} text-right`}>
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSessions.map((session) => {
+                const mobile = session.device.includes("Mobile");
+                const DeviceIcon = mobile ? Smartphone : Laptop;
+                return (
+                  <tr key={session.id} className={trClass}>
+                    <td className={tdClass}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900">{session.userName}</span>
+                        {session.isCurrent && <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">This device</span>}
+                      </div>
+                      <div className="text-xs text-gray-500">{session.email}</div>
+                    </td>
+                    <td className={tdClass}>
+                      <span className="rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-700">{roleLabel(session.userRole)}</span>
+                    </td>
+                    <td className={tdClass}>
+                      {session.location.replace(", Ethiopia", "")}
+                      <div className="font-mono text-xs text-gray-500">{session.ipAddress}</div>
+                    </td>
+                    <td className={tdClass}>
+                      <span className="inline-flex items-center gap-1.5">
+                        <DeviceIcon className="h-3.5 w-3.5 text-gray-400" /> {session.device}
+                      </span>
+                      <div className="text-xs text-gray-500">{session.browser}</div>
+                    </td>
+                    <td className={`${tdClass} whitespace-nowrap text-xs text-gray-600`}>
+                      {session.lastActive}
+                    </td>
+                    <td className={`${tdClass} text-right`}>
+                      {!session.isCurrent && (
+                        <Button
+                          variant="outline"
+                          onClick={() => handleTerminate(session.id, session.userName)}
+                          className="h-8 gap-1.5 rounded-lg border-red-100 px-3 text-xs font-bold text-red-700 hover:bg-red-50 hover:text-red-800"
+                          aria-label={`Terminate session for ${session.userName}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Terminate
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filteredSessions.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="p-10 text-center text-sm text-gray-500">
+                    No sessions match these filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
