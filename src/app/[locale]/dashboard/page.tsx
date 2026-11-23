@@ -69,9 +69,13 @@ export default function DashboardPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // 1. Fetch Profile
-        const profileRes = await api.get("/person/profile");
+        // 1. Fetch Profile and Membership
+        const [profileRes, memRes] = await Promise.all([
+          api.get("/person/profile"),
+          api.get("/membership/me").catch(() => null)
+        ]);
         const userData = profileRes.data.person || profileRes.data;
+        const memData = memRes?.data;
         
         // 2. Fetch News
         const newsRes = await api.get("/news?page_size=3");
@@ -164,12 +168,13 @@ export default function DashboardPage() {
         const rawIssueDate = userData?.created_at ? new Date(userData.created_at) : new Date();
         const issueDate = isZeroDate(rawIssueDate) ? new Date() : rawIssueDate;
 
-        const membershipType = userData?.membership_type || "REGULAR";
-        const typeStr = (membershipType || "").toUpperCase();
-        const subType = (userData?.subscription_type || userMeta?.subscription_type || "").toUpperCase();
+        const rawType = memData?.membership_type || userData?.membership_type || "REGULAR";
+        const membershipType = rawType.replace(/_/g, " ");
+        const typeStr = (rawType || "").toUpperCase();
+        const subType = (memData?.subscription_type || userData?.subscription_type || userMeta?.subscription_type || "").toUpperCase();
         const counter = Number(userData?.counter || userMeta?.counter || 1) || 1;
         
-        // Calculate Membership Expiry dynamically based on Member Tier
+        // Calculate Membership Expiry dynamically based on Member Tier or DB record
         let expiryDate = new Date(issueDate);
         const isLifetime = (
           typeStr.includes("LIFETIME") || 
@@ -178,8 +183,11 @@ export default function DashboardPage() {
           subType === "LIFETIME"
         );
 
+        const dbExpiry = memData?.expiry_date || userData?.expiry_date;
         if (isLifetime) {
           expiryDate = new Date(issueDate.getFullYear() + 100, issueDate.getMonth(), issueDate.getDate());
+        } else if (dbExpiry && !isNaN(new Date(dbExpiry).getTime())) {
+          expiryDate = new Date(dbExpiry);
         } else if (subType === "MONTHLY" || typeStr.includes("MONTH")) {
           expiryDate.setMonth(expiryDate.getMonth() + counter);
         } else if (subType === "WEEKLY" || typeStr.includes("WEEK")) {
@@ -196,12 +204,12 @@ export default function DashboardPage() {
 
         const diffTime = expiryDate.getTime() - new Date().getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const rawStatus = (userData?.membership_status || userData?.status || "ACTIVE").toUpperCase();
+        const rawStatus = (memData?.status || userData?.membership_status || userData?.status || "ACTIVE").toUpperCase();
         
         // Members who register / pay are immediately ACTIVE without manual approval blocker
         const isRejectedOrSuspended = rawStatus === "REJECTED" || rawStatus === "SUSPENDED";
         // An unpaid member has no Member ID yet: show that honestly instead of "ACTIVE".
-        const isPendingPayment = rawStatus === "PENDING_PAYMENT";
+        const isPendingPayment = memData?.payment_required ?? (rawStatus === "PENDING_PAYMENT");
         const status = isRejectedOrSuspended || isPendingPayment ? rawStatus : "ACTIVE";
         const isApproved = !isRejectedOrSuspended;
 

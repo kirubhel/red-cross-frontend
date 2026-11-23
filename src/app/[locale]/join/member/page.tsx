@@ -56,6 +56,21 @@ const REGION_ABBR: Record<string, string> = {
 
 import Header from "@/components/layout/Header";
 
+// Helper to normalize names to Title Case for official ID cards
+function formatName(name: string): string {
+  if (!name) return "";
+  return name
+    .trim()
+    .split(/\s+/)
+    .map(word =>
+      word
+        .split("-")
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+        .join("-")
+    )
+    .join(" ");
+}
+
 function MemberRegistrationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -239,12 +254,8 @@ function MemberRegistrationContent() {
   const handleTypeSelect = (type: string) => {
     setFormData(prev => ({ ...prev, membershipType: type }));
     const plan = membershipPlans.find(p => p.short_code === type);
-    const minAmt = plan ? parseFloat(plan.amount) : 50;
-    setCustomPaymentAmount(prev => {
-      const cur = parseFloat(prev);
-      if (isNaN(cur) || cur < minAmt) return String(minAmt);
-      return prev;
-    });
+    const minAmt = plan ? (parseFloat(plan.amount) || 50) : 50;
+    setCustomPaymentAmount(String(minAmt));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -367,9 +378,9 @@ function MemberRegistrationContent() {
             // Corporate uses hardcoded fields (firstName/fatherName);
             // Individual uses formConfig-keyed fields via getVal()
             const isCorporate = formData.tierType === "CORPORATE";
-            const finalFirstName = isCorporate ? (formData.firstName || "") : extractedName;
-            const finalFatherName = isCorporate ? (formData.fatherName || "") : getVal("father");
-            const finalGrandName  = isCorporate ? "" : getVal("grandfather");
+            const finalFirstName = formatName(isCorporate ? (formData.firstName || "") : extractedName);
+            const finalFatherName = formatName(isCorporate ? (formData.fatherName || "") : getVal("father"));
+            const finalGrandName  = formatName(isCorporate ? "" : getVal("grandfather"));
 
             // Attempt Registration
             const res = await api.post("/join/member", {
@@ -1401,6 +1412,7 @@ function MemberRegistrationContent() {
                                             .map((plan) => (
                                             <label 
                                                 key={plan.short_code}
+                                                onClick={() => handleTypeSelect(plan.short_code)}
                                                 className={cn(
                                                     "group relative p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between",
                                                     formData.membershipType === plan.short_code ? "border-[#ED1C24] bg-red-50/30 shadow-lg scale-[1.01] z-10" : "border-gray-50 bg-gray-50/50 hover:border-gray-300"
@@ -1469,7 +1481,19 @@ function MemberRegistrationContent() {
                                             min={basePlanFee}
                                             step="any"
                                             value={customPaymentAmount}
-                                            onChange={(e) => setCustomPaymentAmount(e.target.value)}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              setCustomPaymentAmount(val);
+                                              const num = parseFloat(val);
+                                              if (!isNaN(num) && num > 0) {
+                                                const matchingPlan = membershipPlans.find(
+                                                  (p) => p.tier_type === formData.tierType && (parseFloat(p.amount) || 0) === num
+                                                );
+                                                if (matchingPlan && matchingPlan.short_code !== formData.membershipType) {
+                                                  setFormData((prev) => ({ ...prev, membershipType: matchingPlan.short_code }));
+                                                }
+                                              }
+                                            }}
                                             placeholder={String(basePlanFee)}
                                             className={cn(
                                               "w-full h-12 pl-16 pr-4 bg-gray-50 border rounded-xl text-base font-black text-black focus:outline-none transition-all",
@@ -1487,7 +1511,7 @@ function MemberRegistrationContent() {
                                           </p>
                                         ) : extraContributionAmt > 0 ? (
                                           <p className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
-                                            ✓ Base fee: {basePlanFee} {planCurrency} + Extra humanitarian contribution: {extraContributionAmt.toLocaleString()} {planCurrency}! Thank you!
+                                            ✓ Selected plan: {selectedPlanObj?.name || formData.membershipType} ({basePlanFee} {planCurrency}) + Extra humanitarian contribution: {extraContributionAmt.toLocaleString()} {planCurrency}! Thank you!
                                           </p>
                                         ) : (
                                           <p className="text-[11px] font-medium text-gray-400">
@@ -1508,7 +1532,15 @@ function MemberRegistrationContent() {
                                             <button
                                               key={chip.label}
                                               type="button"
-                                              onClick={() => setCustomPaymentAmount(String(chip.value))}
+                                              onClick={() => {
+                                                setCustomPaymentAmount(String(chip.value));
+                                                const matchingPlan = membershipPlans.find(
+                                                  (p) => p.tier_type === formData.tierType && (parseFloat(p.amount) || 0) === chip.value
+                                                );
+                                                if (matchingPlan && matchingPlan.short_code !== formData.membershipType) {
+                                                  setFormData((prev) => ({ ...prev, membershipType: matchingPlan.short_code }));
+                                                }
+                                              }}
                                               className={cn(
                                                 "text-xs font-black px-3 py-1.5 rounded-lg border transition-all cursor-pointer",
                                                 parseFloat(customPaymentAmount) === chip.value
