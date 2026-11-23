@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/admin/page-ui";
 import { 
   Save, 
   Languages, 
@@ -168,37 +169,38 @@ export default function CMSPage() {
 
   return (
     <SuperAdminGuard>
-      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-black text-black tracking-tighter">Landing Page CMS</h1>
-          <p className="text-gray-500 font-medium">Manage all public content and translations.</p>
-        </div>
-        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100">
-          {(['en', 'am', 'om'] as Language[]).map(l => (
-            <button
-              key={l}
-              onClick={() => setActiveLang(l)}
-              className={`px-4 py-2 rounded-[14px] text-xs font-black uppercase tracking-widest transition-all ${activeLang === l ? 'bg-[#ED1C24] text-white shadow-lg shadow-red-500/20' : 'text-gray-400 hover:text-black hover:bg-gray-50'}`}
-            >
-              {l === 'en' ? 'English' : l === 'am' ? 'አማርኛ' : 'Oromiffa'}
-            </button>
-          ))}
-        </div>
-      </div>
+      <div className="space-y-6">
+      <PageHeader
+        title="Landing Page CMS"
+        description="Manage all public content and translations."
+        actions={
+          <div className="flex items-center gap-1 rounded-xl border border-gray-100 bg-white p-1 shadow-sm">
+            {(['en', 'am', 'om'] as Language[]).map(l => (
+              <button
+                key={l}
+                onClick={() => setActiveLang(l)}
+                aria-pressed={activeLang === l}
+                className={`rounded-lg px-4 py-2 text-xs font-bold transition-colors ${activeLang === l ? 'bg-[#ED1C24] text-white' : 'text-gray-500 hover:bg-gray-50 hover:text-black'}`}
+              >
+                {l === 'en' ? 'English' : l === 'am' ? 'አማርኛ' : 'Oromiffa'}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
-      <div className="grid gap-8">
+      <div className="grid gap-6">
         {/* Navigation Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
                 <Globe className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">Navigation Labels</CardTitle>
+              <CardTitle>Navigation Labels</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <CardContent className="p-5 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Object.keys(current.nav).map(key => (
               <div key={key} className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">{key}</Label>
@@ -213,16 +215,16 @@ export default function CMSPage() {
         </Card>
 
         {/* Hero Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-red-50 text-[#ED1C24] flex items-center justify-center">
                 <Flame className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">Hero Section</CardTitle>
+              <CardTitle>Hero Section</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-5 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Tagline</Label>
@@ -445,16 +447,16 @@ export default function CMSPage() {
         </Card>
 
         {/* Who We Are Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
                 <Users className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">Who We Are</CardTitle>
+              <CardTitle>Who We Are</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-5 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Badge</Label>
@@ -574,16 +576,16 @@ export default function CMSPage() {
         </Card>
 
         {/* Service Areas Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
                 <Activity className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">Service Areas</CardTitle>
+              <CardTitle>Service Areas</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 space-y-8">
+          <CardContent className="p-5 space-y-8">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Badge</Label>
@@ -597,7 +599,7 @@ export default function CMSPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-6 border-t border-gray-100">
               {current.services.items.map((service, index) => (
-                <div key={service.id} className="space-y-4 p-6 rounded-3xl border border-gray-100 bg-gray-50/30">
+                <div key={service.id} className="space-y-4 p-6 rounded-2xl border border-gray-100 bg-gray-50/30">
                   <div className="flex items-center justify-between">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ED1C24]">{service.id}</h4>
                     <div className={`h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center opacity-50`}>
@@ -656,16 +658,16 @@ export default function CMSPage() {
         </Card>
 
         {/* News & Media Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center">
                 <Globe className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">News & Media Labels</CardTitle>
+              <CardTitle>News & Media Labels</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 grid md:grid-cols-2 gap-6">
+          <CardContent className="p-5 grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Badge</Label>
               <Input value={current.news.badge} onChange={(e) => updateField('news', 'badge', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
@@ -682,16 +684,16 @@ export default function CMSPage() {
         </Card>
 
         {/* Donation Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center">
                 <Heart className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">Donation Section</CardTitle>
+              <CardTitle>Donation Section</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-5 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Badge</Label>
@@ -706,16 +708,16 @@ export default function CMSPage() {
         </Card>
 
         {/* Membership Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
                 <Users className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">Membership Section</CardTitle>
+              <CardTitle>Membership Section</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-5 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Badge</Label>
@@ -813,16 +815,16 @@ export default function CMSPage() {
         </Card>
 
         {/* Programs Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[24px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
                 <Activity className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">About Programs (Membership & Donation)</CardTitle>
+              <CardTitle>About Programs (Membership & Donation)</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 space-y-8">
+          <CardContent className="p-5 space-y-8">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Main Section Title</Label>
               <Input value={current.programsSection.title} onChange={(e) => updateField('programsSection', 'title', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
@@ -870,16 +872,16 @@ export default function CMSPage() {
         </Card>
 
         {/* Volunteer Services Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[24px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
                 <UserPlus className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">Voluntary Services Section</CardTitle>
+              <CardTitle>Voluntary Services Section</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-5 space-y-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Section Title</Label>
               <Input value={current.volunteerSection.title} onChange={(e) => updateField('volunteerSection', 'title', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
@@ -900,16 +902,16 @@ export default function CMSPage() {
         </Card>
 
         {/* Contact Us Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[24px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
                 <Phone className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">Contact Us Section</CardTitle>
+              <CardTitle>Contact Us Section</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <CardContent className="p-5 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
              <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Section Title</Label>
                 <Input value={current.contactSection.title} onChange={(e) => updateField('contactSection', 'title', e.target.value)} className="rounded-xl h-12 font-bold bg-white text-black border-gray-200" />
@@ -938,16 +940,16 @@ export default function CMSPage() {
         </Card>
 
         {/* FAQ Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
                   <HelpCircle className="h-5 w-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-black tracking-tight text-black">Frequently Asked Questions (FAQ)</CardTitle>
-                  <CardDescription className="text-xs font-semibold text-gray-400">
+                  <CardTitle>Frequently Asked Questions (FAQ)</CardTitle>
+                  <CardDescription>
                     Manage the questions and detailed answers displayed in the landing page FAQ section.
                   </CardDescription>
                 </div>
@@ -973,7 +975,7 @@ export default function CMSPage() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-5 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Section Badge</Label>
@@ -1057,7 +1059,7 @@ export default function CMSPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Question</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Question</Label>
                       <Input 
                         value={item.question} 
                         onChange={(e) => {
@@ -1071,7 +1073,7 @@ export default function CMSPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Answer (Supports multi-line text, bullet points & URLs)</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Answer (Supports multi-line text, bullet points & URLs)</Label>
                       <textarea 
                         value={item.answer} 
                         onChange={(e) => {
@@ -1092,16 +1094,16 @@ export default function CMSPage() {
         </Card>
 
         {/* Footer & CTA Section */}
-        <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden">
-          <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-8 py-6">
+        <Card>
+          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center">
                 <MapPinIcon className="h-5 w-5" />
               </div>
-              <CardTitle className="text-xl font-black tracking-tight text-black">Footer & Global Content</CardTitle>
+              <CardTitle>Footer & Global Content</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-5 space-y-6">
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Footer Description</Label>
               <Input 

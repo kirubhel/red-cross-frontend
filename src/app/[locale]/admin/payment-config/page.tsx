@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useMemo, useState } from "react";
-import { Landmark, Plus, Pencil, Trash2, KeyRound, Star, X, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Plus, Pencil, Trash2, KeyRound, Star, X, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { REGIONS } from "@/lib/constants";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
+import { PageHeader } from "@/components/admin/page-ui";
 type Purpose = "ALL" | "MEMBERSHIP" | "DONATION";
 
 type Account = {
@@ -97,7 +98,7 @@ const blank = (regionId: number): Account => ({
 });
 
 const selectClass =
-  "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-200";
+  "h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-200";
 
 // The gateway answers with plain text or a JSON body ({ error, message }); never hand an object to a toast.
 function errMsg(e: any, fallback: string): string {
@@ -126,7 +127,7 @@ function SecretInput({ value, onChange, name, id, placeholder }: { value: string
       <button
         type="button"
         onClick={() => setShow((v) => !v)}
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
         aria-pressed={show}
         aria-label={show ? "Hide key" : "Show key"}
         title={show ? "Hide key" : "Show key"}
@@ -282,24 +283,24 @@ function PaymentConfig() {
   const keyCount = regionAccounts.filter((a) => a.is_active && a.api_key_set).length;
 
   return (
-    <div className="space-y-6 p-4 md:p-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-black text-slate-900">
-            <Landmark className="h-6 w-6 text-[#ED1C24]" /> Payment Configuration
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-slate-500">
+    <div className="space-y-6">
+      <PageHeader
+        title="Payment Configuration"
+        description={
+          <>
             Memberships are paid to the payer&apos;s region account with that account&apos;s own ArifPay key (a zone account when
             the payer&apos;s branch matches it). A region with no account key pays to the parent account, as do all donations
             (National donations tab).
-          </p>
-        </div>
-        {regionId !== NATIONAL && regionId !== SETTLEMENTS && (
-          <Button onClick={() => setEditing(blank(regionId))} className="bg-[#ED1C24] text-white hover:bg-red-700">
-            <Plus className="mr-1 h-4 w-4" /> Add account
-          </Button>
-        )}
-      </div>
+          </>
+        }
+        actions={
+          regionId !== NATIONAL && regionId !== SETTLEMENTS ? (
+            <Button onClick={() => setEditing(blank(regionId))} className="h-10 rounded-xl bg-[#ED1C24] px-5 text-xs font-bold text-white transition-colors hover:bg-black">
+              <Plus className="mr-1 h-4 w-4" /> Add account
+            </Button>
+          ) : undefined
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Payment scope">
         <button
@@ -307,7 +308,7 @@ function PaymentConfig() {
           aria-pressed={regionId === NATIONAL}
           className={cn(
             "flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200",
-            regionId === NATIONAL ? "border-[#ED1C24] bg-red-50 text-[#ED1C24]" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            regionId === NATIONAL ? "border-[#ED1C24] bg-red-50 text-[#ED1C24]" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
           )}
         >
           National donations
@@ -319,13 +320,13 @@ function PaymentConfig() {
           aria-pressed={regionId === SETTLEMENTS}
           className={cn(
             "rounded-full border px-3 py-1.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200",
-            regionId === SETTLEMENTS ? "border-[#ED1C24] bg-red-50 text-[#ED1C24]" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            regionId === SETTLEMENTS ? "border-[#ED1C24] bg-red-50 text-[#ED1C24]" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
           )}
         >
           Settlements
         </button>
-        <span className="mx-1 hidden h-5 w-px bg-slate-200 sm:block" aria-hidden="true" />
-        <span className="text-xs font-semibold text-slate-400">Regions (memberships)</span>
+        <span className="mx-1 hidden h-5 w-px bg-gray-200 sm:block" aria-hidden="true" />
+        <span className="text-xs font-semibold text-gray-400">Regions (memberships)</span>
         {REGIONS.map((r) => {
           const list = byRegion[r.id] || [];
           const active = list.some((a) => a.is_active && a.is_default && a.api_key_set);
@@ -336,7 +337,7 @@ function PaymentConfig() {
               aria-pressed={regionId === r.id}
               className={cn(
                 "flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200",
-                regionId === r.id ? "border-[#ED1C24] bg-red-50 text-[#ED1C24]" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                regionId === r.id ? "border-[#ED1C24] bg-red-50 text-[#ED1C24]" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
               )}
             >
               {r.name}
@@ -351,26 +352,26 @@ function PaymentConfig() {
         <SettlementsPanel />
       ) : regionId === NATIONAL ? (
         <form
-          className="rounded-xl border border-slate-200 bg-white"
+          className="rounded-xl border border-gray-200 bg-white"
           onSubmit={(e) => {
             e.preventDefault();
             if (dirty && !savingParent) saveParent();
           }}
         >
           <div className="space-y-6 p-5 md:p-6">
-            <p className="max-w-3xl text-sm text-slate-600">
+            <p className="max-w-3xl text-sm text-gray-600">
               Every donation is paid with the parent (head-office) ArifPay key. You can link donations to one sub-account; with
               none chosen they settle straight to the parent. Regional keys are never used for donations.
             </p>
 
             <section className="space-y-3" aria-labelledby="parent-key-h">
-              <h2 id="parent-key-h" className="text-sm font-bold text-slate-900">Parent ArifPay key</h2>
+              <h2 id="parent-key-h" className="text-sm font-bold text-gray-900">Parent ArifPay key</h2>
               <div
                 role="status"
                 className={cn(
                   "rounded-lg border px-3 py-2 text-sm",
                   loading
-                    ? "border-slate-200 bg-slate-50 text-slate-500"
+                    ? "border-gray-200 bg-gray-50 text-gray-500"
                     : settings.parent_api_key_set
                       ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                       : "border-amber-200 bg-amber-50 text-amber-800"
@@ -383,7 +384,7 @@ function PaymentConfig() {
                     : "No key saved yet. Online donations are unavailable."}
               </div>
               <div className="max-w-xl">
-                <Label htmlFor="parent-key">{settings.parent_api_key_set ? "Replace the key" : "Key"} <span className="font-normal text-slate-400">{settings.parent_api_key_set ? "(leave empty to keep the saved one)" : ""}</span></Label>
+                <Label htmlFor="parent-key">{settings.parent_api_key_set ? "Replace the key" : "Key"} <span className="font-normal text-gray-400">{settings.parent_api_key_set ? "(leave empty to keep the saved one)" : ""}</span></Label>
                 <SecretInput
                   id="parent-key"
                   name="parent-arifpay-key"
@@ -394,14 +395,14 @@ function PaymentConfig() {
               </div>
             </section>
 
-            <section className="space-y-3 border-t border-slate-100 pt-6" aria-labelledby="parent-details-h">
+            <section className="space-y-3 border-t border-gray-100 pt-6" aria-labelledby="parent-details-h">
               <div>
-                <h2 id="parent-details-h" className="text-sm font-bold text-slate-900">Parent account details</h2>
-                <p className="text-xs text-slate-500">For reference only. ArifPay settles to the account linked to the key.</p>
+                <h2 id="parent-details-h" className="text-sm font-bold text-gray-900">Parent account details</h2>
+                <p className="text-xs text-gray-500">For reference only. ArifPay settles to the account linked to the key.</p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="sm:col-span-2 lg:col-span-3">
-                  <Label htmlFor="copy-from">Copy from an Addis Ababa account <span className="font-normal text-slate-400">(optional)</span></Label>
+                  <Label htmlFor="copy-from">Copy from an Addis Ababa account <span className="font-normal text-gray-400">(optional)</span></Label>
                   <select
                     id="copy-from"
                     className={selectClass}
@@ -449,10 +450,10 @@ function PaymentConfig() {
               </div>
             </section>
 
-            <section className="space-y-3 border-t border-slate-100 pt-6" aria-labelledby="donation-sub-h">
+            <section className="space-y-3 border-t border-gray-100 pt-6" aria-labelledby="donation-sub-h">
               <div>
-                <h2 id="donation-sub-h" className="text-sm font-bold text-slate-900">Donation sub-account <span className="font-normal text-slate-400">(optional, only one)</span></h2>
-                <p className="text-xs text-slate-500">
+                <h2 id="donation-sub-h" className="text-sm font-bold text-gray-900">Donation sub-account <span className="font-normal text-gray-400">(optional, only one)</span></h2>
+                <p className="text-xs text-gray-500">
                   Donations are paid with the parent key and linked to this account&apos;s sub-account email.
                 </p>
               </div>
@@ -474,7 +475,7 @@ function PaymentConfig() {
                     <option value={settings.donation_account_id}>Current account (inactive, deleted or no email)</option>
                   )}
                 </select>
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-gray-500">
                   {donationCandidates.length === 0
                     ? "No account has a sub-account email yet. "
                     : "Only active accounts with a sub-account email are listed. "}
@@ -485,8 +486,8 @@ function PaymentConfig() {
             </section>
           </div>
 
-          <div className="flex items-center justify-end gap-3 rounded-b-xl border-t border-slate-100 bg-slate-50 px-5 py-3 md:px-6">
-            <span className={cn("text-xs font-medium", dirty ? "text-amber-700" : "text-slate-400")} role="status">
+          <div className="flex items-center justify-end gap-3 rounded-b-xl border-t border-gray-100 bg-gray-50 px-5 py-3 md:px-6">
+            <span className={cn("text-xs font-medium", dirty ? "text-amber-700" : "text-gray-400")} role="status">
               {dirty ? "Unsaved changes" : "All changes saved"}
             </span>
             <Button type="submit" disabled={!dirty || savingParent || loading} className="bg-[#ED1C24] text-white hover:bg-red-700 disabled:opacity-50">
@@ -499,16 +500,16 @@ function PaymentConfig() {
       <div className="grid gap-3 md:grid-cols-3">
         {(["MEMBERSHIP"] as Purpose[]).map((p) => (
           <div key={p} className={cn("rounded-xl border p-4 text-sm", hasDefault(p) ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50")}>
-            <div className="font-bold text-slate-800">{p === "MEMBERSHIP" ? "Membership" : "Donation"} routing</div>
-            <div className="mt-1 text-slate-600">
+            <div className="font-bold text-gray-800">{p === "MEMBERSHIP" ? "Membership" : "Donation"} routing</div>
+            <div className="mt-1 text-gray-600">
               {hasDefault(p) ? "Default account with key configured" : "No default account with a key — members in this region pay to the parent account"}
             </div>
           </div>
         ))}
         {(
-          <div className={cn("rounded-xl border p-4 text-sm", regionAccounts.some(isDonationAccount) ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-slate-50")}>
-            <div className="font-bold text-slate-800">Donation sub-account</div>
-            <div className="mt-1 text-slate-600">
+          <div className={cn("rounded-xl border p-4 text-sm", regionAccounts.some(isDonationAccount) ? "border-emerald-200 bg-emerald-50" : "border-gray-200 bg-gray-50")}>
+            <div className="font-bold text-gray-800">Donation sub-account</div>
+            <div className="mt-1 text-gray-600">
               {regionAccounts.some(isDonationAccount)
                 ? "An account here is the donation sub-account: donations are linked to it"
                 : "Not the donation sub-account. Pick it on the National donations tab"}
@@ -516,16 +517,16 @@ function PaymentConfig() {
           </div>
         )}
         <div className={cn("rounded-xl border p-4 text-sm", keyCount ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50")}>
-          <div className="font-bold text-slate-800">ArifPay API keys</div>
-          <div className="mt-1 text-slate-600">
+          <div className="font-bold text-gray-800">ArifPay API keys</div>
+          <div className="mt-1 text-gray-600">
             {keyCount ? `${keyCount} account(s) with their own key` : "None set — this region's membership payments use the parent account"}
           </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
         <table className="w-full min-w-[960px] text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+          <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
             <tr>
               <th className="px-4 py-3">Scope</th>
               <th className="px-4 py-3">Account</th>
@@ -539,11 +540,11 @@ function PaymentConfig() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400">Loading…</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
             )}
             {!loading && regionAccounts.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                   <AlertTriangle className="mx-auto mb-2 h-5 w-5 text-amber-500" aria-hidden="true" />
                   <p>No accounts for this region yet. Add one to route its membership payments.</p>
                   <Button variant="outline" size="sm" className="mt-3" onClick={() => setEditing(blank(regionId))}>
@@ -553,20 +554,20 @@ function PaymentConfig() {
               </tr>
             )}
             {regionAccounts.map((a) => (
-              <tr key={a.id} className={cn("border-t border-slate-100", !a.is_active && "opacity-50")}>
+              <tr key={a.id} className={cn("border-t border-gray-100", !a.is_active && "opacity-50")}>
                 <td className="px-4 py-3">
-                  <div className="font-semibold text-slate-800">{a.zone_name || "Regional branch"}</div>
-                  {a.branch_id && <div className="text-xs text-slate-400">branch {a.branch_id}</div>}
+                  <div className="font-semibold text-gray-800">{a.zone_name || "Regional branch"}</div>
+                  {a.branch_id && <div className="text-xs text-gray-400">branch {a.branch_id}</div>}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="font-mono text-slate-800">{a.account_number}</div>
-                  <div className="max-w-[260px] truncate text-xs text-slate-500">{a.account_name || a.label}</div>
+                  <div className="font-mono text-gray-800">{a.account_number}</div>
+                  <div className="max-w-[260px] truncate text-xs text-gray-500">{a.account_name || a.label}</div>
                 </td>
-                <td className="px-4 py-3 text-slate-700">{a.bank_name || "—"}</td>
-                <td className="px-4 py-3 text-slate-700">{PURPOSE_LABEL[a.purpose]}</td>
+                <td className="px-4 py-3 text-gray-700">{a.bank_name || "—"}</td>
+                <td className="px-4 py-3 text-gray-700">{PURPOSE_LABEL[a.purpose]}</td>
                 <td className="px-4 py-3">
                   {a.api_key_set ? (
-                    <span className="inline-flex items-center gap-1 font-mono text-xs text-slate-700"><KeyRound className="h-3 w-3" />{a.api_key_hint}</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-xs text-gray-700"><KeyRound className="h-3 w-3" />{a.api_key_hint}</span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600"><AlertTriangle className="h-3 w-3" />no key</span>
                   )}
@@ -575,20 +576,20 @@ function PaymentConfig() {
                   <td className="px-4 py-3">
                     {a.split_to_account ? (
                       <div className="flex flex-col gap-1">
-                        <span className="text-xs text-slate-700">{a.split_to_account}</span>
+                        <span className="text-xs text-gray-700">{a.split_to_account}</span>
                         {isDonationAccount(a) && (
                           <span className="w-fit rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">Donation account</span>
                         )}
                       </div>
                     ) : (
-                      <span className="text-xs text-slate-400">—</span>
+                      <span className="text-xs text-gray-400">—</span>
                     )}
                   </td>
                 )}
                 <td className="px-4 py-3">
                   <div className="flex flex-wrap gap-1">
                     {a.is_default && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700"><Star className="h-3 w-3" />Default</span>}
-                    <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", a.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500")}>
+                    <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", a.is_active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500")}>
                       {a.is_active ? "Active" : "Inactive"}
                     </span>
                   </div>
@@ -609,8 +610,8 @@ function PaymentConfig() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeEditor}>
           <div role="dialog" aria-modal="true" aria-labelledby="account-dialog-title" className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
-              <h2 id="account-dialog-title" className="text-lg font-black text-slate-900">{editing.id ? "Edit" : "Add"} payment account</h2>
-              <button onClick={closeEditor} aria-label="Close" className="rounded p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"><X className="h-5 w-5 text-slate-400" /></button>
+              <h2 id="account-dialog-title" className="text-lg font-black text-gray-900">{editing.id ? "Edit" : "Add"} payment account</h2>
+              <button onClick={closeEditor} aria-label="Close" className="rounded p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200"><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {editing.purpose !== "DONATION" && (<>
@@ -643,7 +644,7 @@ function PaymentConfig() {
                 <Input id="em-zone" autoComplete="off" value={editing.zone_name} onChange={(e) => setEditing({ ...editing, zone_name: e.target.value })} placeholder="e.g. Gurage Zone" />
               </div>
               <div>
-                <Label htmlFor="em-bank">Bank <span className="font-normal text-slate-400">(reference)</span></Label>
+                <Label htmlFor="em-bank">Bank <span className="font-normal text-gray-400">(reference)</span></Label>
                 <select
                   id="em-bank"
                   className={selectClass}
@@ -664,7 +665,7 @@ function PaymentConfig() {
               </div>
               {(
               <div className="sm:col-span-2">
-                <Label htmlFor="em-email">Donation sub-account email <span className="font-normal text-slate-400">(optional)</span></Label>
+                <Label htmlFor="em-email">Donation sub-account email <span className="font-normal text-gray-400">(optional)</span></Label>
                 <Input
                   id="em-email"
                   type="email"
@@ -673,24 +674,24 @@ function PaymentConfig() {
                   onChange={(e) => setEditing({ ...editing, split_to_account: e.target.value })}
                   placeholder="Email of this region's sub-account registered in ArifPay"
                 />
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-gray-400">
                   Makes this account selectable as the donation sub-account (National donations tab). Donations are then paid with the
                   parent key and linked to this email. Must match a sub-account in the ArifPay merchant dashboard.
                 </p>
               </div>
               )}
               <div className="sm:col-span-2">
-                <Label htmlFor="em-key">This account&apos;s own ArifPay key {editing.api_key_set && <span className="font-normal text-slate-400">(current {editing.api_key_hint} — leave empty to keep)</span>}</Label>
+                <Label htmlFor="em-key">This account&apos;s own ArifPay key {editing.api_key_set && <span className="font-normal text-gray-400">(current {editing.api_key_hint} — leave empty to keep)</span>}</Label>
                 <SecretInput id="em-key" name="account-arifpay-key" value={editing.api_key || ""} onChange={(v) => setEditing({ ...editing, api_key: v })} placeholder="This sub-account's own key (memberships and withdrawals)" />
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-gray-400">
                   Saved for this account only. Donations never use it: they use the parent key saved on the National tab.
                 </p>
               </div>
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <input type="checkbox" checked={editing.is_default} onChange={(e) => setEditing({ ...editing, is_default: e.target.checked })} />
                 Default for this region &amp; purpose
               </label>
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <input type="checkbox" checked={editing.is_active} onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })} />
                 Active
               </label>

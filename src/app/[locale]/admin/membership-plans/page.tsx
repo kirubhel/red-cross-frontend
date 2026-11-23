@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
 
+import { PageHeader } from "@/components/admin/page-ui";
 type MembershipPlan = {
   id: string;
   name: string;
@@ -121,19 +122,15 @@ export default function MembershipPlansPage() {
     <SuperAdminGuard>
       <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
-            <Layers className="h-3 w-3" /> Plan Management
-          </div>
-          <h1 className="text-3xl font-black text-black tracking-tighter">Membership Tiers</h1>
-          <p className="text-gray-500 font-medium text-sm">Define subscription cycles, pricing models, and featured benefits.</p>
-        </div>
-
-        <Button onClick={createNewPlan} className="bg-black hover:bg-[#ED1C24] text-white rounded-xl h-10 px-6 text-xs font-black shadow-lg shadow-red-500/10 transition-all flex items-center gap-2">
+      <PageHeader
+        title="Membership Tiers"
+        description="Define subscription cycles, pricing models, and featured benefits."
+        actions={
+          <Button onClick={createNewPlan} className="bg-[#ED1C24] hover:bg-black text-white rounded-xl h-10 px-5 text-xs font-bold transition-colors flex items-center gap-2">
             <Plus className="h-4 w-4" /> Create New Tier
-        </Button>
-      </div>
+          </Button>
+        }
+      />
 
       <div className="grid lg:grid-cols-[300px_1fr] gap-6">
         
@@ -166,7 +163,7 @@ export default function MembershipPlansPage() {
                       
                       <div className="flex items-center justify-between gap-3">
                         <div className="space-y-0.5">
-                           <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">{plan.short_code}</div>
+                           <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500">{plan.short_code}</div>
                            <h4 className="text-base font-black text-black tracking-tighter leading-tight">{plan.name}</h4>
                            <div className="flex items-center gap-1.5 pt-0.5">
                               <span className="text-xs font-black text-[#ED1C24]">{plan.amount} {plan.currency}</span>
@@ -213,7 +210,7 @@ export default function MembershipPlansPage() {
                       
                       <div className="flex items-center justify-between gap-3">
                         <div className="space-y-0.5">
-                           <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">{plan.short_code}</div>
+                           <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500">{plan.short_code}</div>
                            <h4 className="text-base font-black text-black tracking-tighter leading-tight">{plan.name}</h4>
                            <div className="flex items-center gap-1.5 pt-0.5">
                               <span className="text-xs font-black text-purple-600">{plan.amount} {plan.currency}</span>
@@ -242,7 +239,7 @@ export default function MembershipPlansPage() {
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
                exit={{ opacity: 0, y: -20 }}
-               className="bg-white rounded-[24px] border border-gray-100 shadow-xl overflow-hidden self-start"
+               className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden self-start"
              >
                 <div className="p-6 space-y-6">
                    <div className="flex items-center gap-3 pb-4 border-b border-gray-50">
@@ -258,7 +255,7 @@ export default function MembershipPlansPage() {
                    <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
                       {/* Basic Info */}
                       <div className="space-y-1.5">
-                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                        <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">
                             <Type className="h-3 w-3" /> Plan Name
                         </Label>
                         <Input 
@@ -269,7 +266,7 @@ export default function MembershipPlansPage() {
                       </div>
                       
                       <div className="space-y-1.5">
-                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                        <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">
                             <BadgeInfo className="h-3 w-3" /> Short Code (ID)
                         </Label>
                         <Input 
@@ -281,7 +278,7 @@ export default function MembershipPlansPage() {
 
                       {/* Pricing */}
                       <div className="space-y-1.5">
-                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                        <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">
                             <DollarSign className="h-3 w-3" /> Price Amount
                         </Label>
                         <Input 
@@ -293,7 +290,7 @@ export default function MembershipPlansPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                        <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">
                             <Calendar className="h-3 w-3" /> Subscription Type
                         </Label>
                         <select 
@@ -309,7 +306,7 @@ export default function MembershipPlansPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                        <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">
                             <Layers className="h-3 w-3" /> Plan Category
                         </Label>
                         <select 
@@ -324,7 +321,7 @@ export default function MembershipPlansPage() {
 
                       {/* Features & Description */}
                       <div className="space-y-1.5 md:col-span-2">
-                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                        <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">
                             <FileText className="h-3 w-3" /> Description
                         </Label>
                         <Input 
@@ -335,7 +332,7 @@ export default function MembershipPlansPage() {
                       </div>
 
                       <div className="space-y-1.5 md:col-span-2">
-                        <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                        <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">
                             <Star className="h-3 w-3" /> Plan Features (Comma-separated)
                         </Label>
                         <textarea 
@@ -401,7 +398,7 @@ export default function MembershipPlansPage() {
                 </div>
              </motion.div>
           ) : (
-            <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-[24px] flex flex-col items-center justify-center p-10 text-center space-y-3 self-start">
+            <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center p-10 text-center space-y-3 self-start">
                 <CreditCard className="h-8 w-8 text-gray-300" />
                 <div className="text-gray-400 font-black uppercase tracking-widest text-[10px]">Select a plan to edit its details</div>
             </div>

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { PageHeader, tableClass, theadClass, thClass, trClass, tdClass } from "@/components/admin/page-ui";
 
 const ERCS_RED = "#ED1C24";
 const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', ERCS_RED, '#8b5cf6'];
@@ -97,27 +98,26 @@ export default function AnalyticsDashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-6 md:p-8 max-w-7xl mx-auto w-full">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-black tracking-tight">Analytics Dashboard</h1>
-          <p className="text-sm font-medium text-gray-500">Overview of system statistics and performance.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-11 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 bg-white flex items-center gap-2 px-4 shadow-sm">
-            <Calendar className="h-4 w-4 text-gray-400" />
-            {dateRange} <ChevronDown className="h-4 w-4 text-gray-400 ml-1" />
-          </Button>
-          <Button className="h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black px-6 flex items-center gap-2 shadow-lg shadow-blue-500/20 tracking-widest uppercase">
-            <Download className="h-4 w-4" /> Export Report
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Analytics Dashboard"
+        description="Overview of system statistics and performance."
+        actions={
+          <>
+            <Button variant="outline" className="h-10 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 bg-white flex items-center gap-2 px-4 shadow-sm">
+              <Calendar className="h-4 w-4 text-gray-400" />
+              {dateRange} <ChevronDown className="h-4 w-4 text-gray-400 ml-1" />
+            </Button>
+            <Button className="h-10 rounded-xl bg-[#ED1C24] hover:bg-black text-white text-xs font-bold px-5 flex items-center gap-2 transition-colors">
+              <Download className="h-4 w-4" /> Export Report
+            </Button>
+          </>
+        }
+      />
 
       {/* Top KPIs Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between h-28">
+        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between h-28">
           <div className="flex justify-between items-start">
             <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
               <Users className="h-5 w-5" />
@@ -130,7 +130,7 @@ export default function AnalyticsDashboardPage() {
           </div>
         </motion.div>
 
-        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between h-28">
+        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between h-28">
           <div className="flex justify-between items-start">
             <div className="h-10 w-10 rounded-xl bg-green-50 flex items-center justify-center text-green-500 shrink-0">
               <CheckCircle className="h-5 w-5" />
@@ -143,7 +143,7 @@ export default function AnalyticsDashboardPage() {
           </div>
         </motion.div>
 
-        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between h-28">
+        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between h-28">
           <div className="flex justify-between items-start">
             <div className="h-10 w-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 shrink-0">
               <Megaphone className="h-5 w-5" />
@@ -156,7 +156,7 @@ export default function AnalyticsDashboardPage() {
           </div>
         </motion.div>
 
-        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between h-28">
+        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between h-28">
           <div className="flex justify-between items-start">
             <div className="h-10 w-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
               <Calendar className="h-5 w-5" />
@@ -169,7 +169,7 @@ export default function AnalyticsDashboardPage() {
           </div>
         </motion.div>
 
-        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col justify-between h-28">
+        <motion.div whileHover={{ y: -2 }} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between h-28">
           <div className="flex justify-between items-start">
             <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
               <FileText className="h-5 w-5" />
@@ -188,7 +188,7 @@ export default function AnalyticsDashboardPage() {
         {/* Volunteer Growth */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-black uppercase tracking-widest">Volunteer Growth</h3>
+            <h3 className="text-base font-bold tracking-tight text-gray-900">Volunteer Growth</h3>
             <Button variant="outline" className="h-8 text-[10px] font-bold px-3 rounded-lg border-gray-200">
                 This Year <ChevronDown className="h-3 w-3 ml-1" />
             </Button>
@@ -209,7 +209,7 @@ export default function AnalyticsDashboardPage() {
         {/* Monthly Registrations */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-black uppercase tracking-widest">Monthly Registrations</h3>
+            <h3 className="text-base font-bold tracking-tight text-gray-900">Monthly Registrations</h3>
             <Button variant="outline" className="h-8 text-[10px] font-bold px-3 rounded-lg border-gray-200">
                 This Year <ChevronDown className="h-3 w-3 ml-1" />
             </Button>
@@ -233,7 +233,7 @@ export default function AnalyticsDashboardPage() {
         
         {/* Volunteers by Region */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col">
-          <h3 className="text-sm font-black text-black uppercase tracking-widest mb-6">Volunteers by Region</h3>
+          <h3 className="text-base font-bold tracking-tight text-gray-900 mb-4">Volunteers by Region</h3>
           <div className="flex-1 flex items-center justify-between">
             <div className="w-1/2 relative h-[180px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -272,7 +272,7 @@ export default function AnalyticsDashboardPage() {
 
         {/* Active Campaigns by Status */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col">
-          <h3 className="text-sm font-black text-black uppercase tracking-widest mb-6">Active Campaigns by Status</h3>
+          <h3 className="text-base font-bold tracking-tight text-gray-900 mb-4">Active Campaigns by Status</h3>
           <div className="flex-1 flex items-center justify-between">
             <div className="w-1/2 relative h-[180px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
@@ -312,7 +312,7 @@ export default function AnalyticsDashboardPage() {
         {/* User Activity Trend */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-black uppercase tracking-widest">User Activity Trend</h3>
+            <h3 className="text-base font-bold tracking-tight text-gray-900">User Activity Trend</h3>
             <Button variant="outline" className="h-8 text-[10px] font-bold px-3 rounded-lg border-gray-200">
                 This Month <ChevronDown className="h-3 w-3 ml-1" />
             </Button>
@@ -339,26 +339,26 @@ export default function AnalyticsDashboardPage() {
         
         {/* Reports Summary Table */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <h3 className="text-sm font-black text-black uppercase tracking-widest mb-6">Reports Summary</h3>
+          <h3 className="text-base font-bold tracking-tight text-gray-900 mb-4">Reports Summary</h3>
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
+            <table className={tableClass}>
+              <thead className={theadClass}>
                 <tr className="border-b border-gray-100">
-                  <th className="py-3 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Report Name</th>
-                  <th className="py-3 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</th>
-                  <th className="py-3 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Generated On</th>
-                  <th className="py-3 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Generated By</th>
-                  <th className="py-3 px-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                  <th className={thClass}>Report Name</th>
+                  <th className={thClass}>Type</th>
+                  <th className={thClass}>Generated On</th>
+                  <th className={thClass}>Generated By</th>
+                  <th className={`${thClass} text-right`}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {reportsList.map((report, i) => (
-                  <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <td className="py-4 px-4 text-xs font-bold text-black">{report.name}</td>
-                    <td className="py-4 px-4 text-xs font-bold text-gray-600">{report.type}</td>
-                    <td className="py-4 px-4 text-xs font-bold text-gray-500">{report.date}</td>
-                    <td className="py-4 px-4 text-xs font-bold text-gray-500">{report.by}</td>
-                    <td className="py-4 px-4 text-right">
+                  <tr key={i} className={trClass}>
+                    <td className={`${tdClass} font-semibold text-gray-900`}>{report.name}</td>
+                    <td className={tdClass}>{report.type}</td>
+                    <td className={`${tdClass} text-gray-500`}>{report.date}</td>
+                    <td className={`${tdClass} text-gray-500`}>{report.by}</td>
+                    <td className={`${tdClass} text-right`}>
                       <div className="flex items-center justify-end gap-2">
                         <button className="p-1.5 text-gray-400 hover:text-blue-500 transition-colors rounded-lg hover:bg-blue-50"><Download className="h-4 w-4" /></button>
                         <button className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors rounded-lg hover:bg-gray-100"><Eye className="h-4 w-4" /></button>
@@ -375,7 +375,7 @@ export default function AnalyticsDashboardPage() {
         {/* Top Performing Campaigns */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-black text-black uppercase tracking-widest">Top Performing Campaigns</h3>
+            <h3 className="text-base font-bold tracking-tight text-gray-900">Top Performing Campaigns</h3>
             <span className="text-[10px] font-bold text-blue-500 cursor-pointer hover:underline">View All</span>
           </div>
           <div className="space-y-5">

@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/admin/page-ui";
 import { 
   ContactMessage, 
   getStoredMessages, 
@@ -164,15 +165,10 @@ export default function AdminMessagesPage() {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-red-50 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-widest leading-none">
-            <Mail className="h-3.5 w-3.5" /> Communications Portal
-          </div>
-          <h1 className="text-3xl font-black text-black tracking-tighter">Contact Messages & Inquiries</h1>
-          <p className="text-gray-500 font-medium text-sm">Review, manage, and respond to incoming inquiries from the landing page.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Contact Messages & Inquiries"
+        description="Review, manage, and respond to incoming inquiries from the landing page."
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -246,7 +242,7 @@ export default function AdminMessagesPage() {
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mr-2 flex items-center gap-1">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mr-2 flex items-center gap-1">
             <Filter className="h-3 w-3" /> Status:
           </span>
           {(["ALL", "NEW", "IN_PROGRESS", "RESOLVED"] as const).map((st) => (
@@ -281,12 +277,12 @@ export default function AdminMessagesPage() {
         ) : (
           <Table>
             <TableHeader>
-              <TableRow className="border-b border-gray-100 hover:bg-transparent">
-                <TableHead className="py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Date</TableHead>
-                <TableHead className="py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Sender</TableHead>
-                <TableHead className="py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Subject & Preview</TableHead>
-                <TableHead className="py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Status</TableHead>
-                <TableHead className="py-4 text-right text-[10px] font-black uppercase tracking-widest text-gray-400">Actions</TableHead>
+              <TableRow className="border-b hover:bg-transparent">
+                <TableHead>Date</TableHead>
+                <TableHead>Sender</TableHead>
+                <TableHead>Subject & Preview</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -298,11 +294,11 @@ export default function AdminMessagesPage() {
                     msg.status === "NEW" && "bg-red-50/20 font-bold"
                   )}
                 >
-                  <TableCell className="py-4 text-xs font-bold text-gray-500 whitespace-nowrap">
+                  <TableCell className="text-xs font-bold text-gray-500 whitespace-nowrap">
                     {formatDate(msg.created_at)}
                   </TableCell>
 
-                  <TableCell className="py-4">
+                  <TableCell>
                     <div className="space-y-0.5">
                       <div className="text-sm font-black text-black flex items-center gap-1.5">
                         <User className="h-3.5 w-3.5 text-[#ED1C24]" />
@@ -312,14 +308,14 @@ export default function AdminMessagesPage() {
                     </div>
                   </TableCell>
 
-                  <TableCell className="py-4 max-w-md">
+                  <TableCell className="max-w-md">
                     <div className="space-y-1">
                       <div className="text-sm font-black text-gray-900 truncate">{msg.subject}</div>
                       <p className="text-xs text-gray-500 font-medium line-clamp-1">{msg.message}</p>
                     </div>
                   </TableCell>
 
-                  <TableCell className="py-4 whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap">
                     {msg.status === "NEW" && (
                       <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-100 text-[#ED1C24]">
                         <AlertCircle className="h-3 w-3" /> New
@@ -337,7 +333,7 @@ export default function AdminMessagesPage() {
                     )}
                   </TableCell>
 
-                  <TableCell className="py-4 text-right whitespace-nowrap">
+                  <TableCell className="text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         size="sm"
@@ -366,7 +362,7 @@ export default function AdminMessagesPage() {
       {/* Message Details & Reply Modal */}
       {selectedMessage && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl border border-gray-100 relative space-y-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-8 shadow-2xl border border-gray-100 relative space-y-6 animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-gray-100 pb-5">
               <div className="space-y-1">

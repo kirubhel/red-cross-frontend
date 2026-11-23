@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/admin/page-ui";
 import {
   Table,
   TableBody,
@@ -15,7 +16,6 @@ import {
 } from "@/components/ui/table";
 import { 
     Search, 
-    HandHeart, 
     Plus, 
     Star, 
     Filter, 
@@ -877,21 +877,21 @@ export default function VolunteersPage() {
     switch (tier.toUpperCase()) {
       case "PLATINUM":
         return (
-          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1.5 w-fit shadow-xs">
+          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1.5 w-fit">
             <span>💎</span>
             <span>Platinum</span>
           </span>
         );
       case "GOLD":
         return (
-          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1.5 w-fit shadow-xs">
+          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1.5 w-fit">
             <span>🥇</span>
             <span>Gold</span>
           </span>
         );
       case "SILVER":
         return (
-          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-300 flex items-center gap-1.5 w-fit">
+          <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-300 flex items-center gap-1.5 w-fit">
             <span>🥈</span>
             <span>Silver</span>
           </span>
@@ -934,60 +934,55 @@ export default function VolunteersPage() {
   });
 
   return (
-    <div className="space-y-10 print:p-0 text-black">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 print:hidden">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
-            <HandHeart className="h-3 w-3" /> Volunteers System
-          </div>
-          <h1 className="text-3xl font-black text-black tracking-tighter">Volunteer Registry</h1>
-          <p className="text-gray-500 font-medium text-sm">Manage all field volunteers, track hours, and coordinate field activities.</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 justify-start md:justify-end">
+    <div className="space-y-6 print:p-0 text-black">
+      <PageHeader
+        title="Volunteer Registry"
+        description="Manage all field volunteers, track hours, and coordinate field activities."
+        actions={
+          <>
             <Button 
                 onClick={downloadTemplate}
                 variant="outline" 
-                className="rounded-xl h-9 px-3 text-xs font-black border-gray-200 flex items-center gap-1.5 shadow-xs"
+                className="rounded-xl h-10 px-4 text-xs font-bold border-gray-200 flex items-center gap-1.5"
             >
                 <Upload className="h-3.5 w-3.5 rotate-180" /> Template
             </Button>
             <Button 
                 onClick={() => setShowClearConfirm(true)}
                 variant="destructive" 
-                className="rounded-xl h-9 px-3 text-xs font-black bg-red-600 hover:bg-red-700 text-white flex items-center gap-1.5 shadow-xs"
+                className="rounded-xl h-10 px-4 text-xs font-bold bg-red-600 hover:bg-red-700 text-white flex items-center gap-1.5"
             >
                 <X className="h-3.5 w-3.5" /> Clear
             </Button>
             <Button 
                 onClick={exportToExcel}
                 variant="outline" 
-                className="rounded-xl h-9 px-3 text-xs font-black border-gray-200 text-[#ED1C24] hover:bg-red-50 cursor-pointer flex items-center gap-1.5 shadow-xs"
+                className="rounded-xl h-10 px-4 text-xs font-bold border-gray-200 text-[#ED1C24] hover:bg-red-50 cursor-pointer flex items-center gap-1.5"
             >
                 <Download className="h-3.5 w-3.5" /> Excel
             </Button>
             <Button 
                 onClick={exportToCSV}
                 variant="outline" 
-                className="rounded-xl h-9 px-3 text-xs font-black border-gray-200 cursor-pointer flex items-center gap-1.5 shadow-xs"
+                className="rounded-xl h-10 px-4 text-xs font-bold border-gray-200 cursor-pointer flex items-center gap-1.5"
             >
                 <TableIcon className="h-3.5 w-3.5" /> CSV
             </Button>
             <Button 
                 onClick={exportToPDF}
                 variant="outline" 
-                className="rounded-xl h-9 px-3 text-xs font-black border-gray-200 flex items-center gap-1.5 shadow-xs"
+                className="rounded-xl h-10 px-4 text-xs font-bold border-gray-200 flex items-center gap-1.5"
             >
                 <FileText className="h-3.5 w-3.5" /> PDF
             </Button>
             <Link href="/admin/user-management?create=true">
-              <Button className="rounded-xl h-9 px-4 text-xs font-black bg-[#ED1C24] hover:bg-black text-white shadow-lg shadow-red-500/10 flex items-center gap-1.5">
+              <Button className="rounded-xl h-10 px-4 text-xs font-bold bg-[#ED1C24] hover:bg-black text-white flex items-center gap-1.5">
                   <Plus className="h-3.5 w-3.5" /> Add Volunteer
               </Button>
             </Link>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="flex flex-col gap-4 print:hidden">
         <div className="flex w-full items-center justify-between gap-4">
@@ -1013,7 +1008,7 @@ export default function VolunteersPage() {
 
         {/* Quick Filter Chips */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mr-1">Quick Filters:</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mr-1">Quick Filters:</span>
           {[
             { label: "All", rating: "ALL", tier: "ALL" },
             { label: "★ 5.0 Stars", rating: "5_STARS", tier: "ALL" },
@@ -1049,7 +1044,7 @@ export default function VolunteersPage() {
         {showFilters && (
             <div className="grid md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-300">
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Performance / Rating</label>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">Performance / Rating</label>
                     <select 
                         value={ratingFilter}
                         onChange={(e) => setRatingFilter(e.target.value)}
@@ -1065,7 +1060,7 @@ export default function VolunteersPage() {
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Volunteer Tier</label>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">Volunteer Tier</label>
                     <select 
                         value={tierFilter}
                         onChange={(e) => setTierFilter(e.target.value)}
@@ -1080,7 +1075,7 @@ export default function VolunteersPage() {
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Location/Region</label>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">Location/Region</label>
                     <select 
                         value={regionFilter}
                         onChange={(e) => setRegionFilter(e.target.value)}
@@ -1094,7 +1089,7 @@ export default function VolunteersPage() {
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Status</label>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">Status</label>
                     <select 
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
@@ -1108,7 +1103,7 @@ export default function VolunteersPage() {
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Area</label>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">Area</label>
                     <select 
                         value={areaFilter}
                         onChange={(e) => setAreaFilter(e.target.value)}
@@ -1121,7 +1116,7 @@ export default function VolunteersPage() {
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Classification</label>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">Classification</label>
                     <select 
                         value={classificationFilter}
                         onChange={(e) => setClassificationFilter(e.target.value)}
@@ -1136,7 +1131,7 @@ export default function VolunteersPage() {
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Occupation</label>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">Occupation</label>
                     <select 
                         value={occupationFilter}
                         onChange={(e) => setOccupationFilter(e.target.value)}
@@ -1182,7 +1177,7 @@ export default function VolunteersPage() {
         <div className="p-5 border-b border-gray-50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Excel Import</p>
-                <h2 className="text-lg font-black text-black tracking-tight">Import Volunteers</h2>
+                <h2 className="text-base font-bold tracking-tight text-gray-900">Import Volunteers</h2>
                 <p className="text-xs font-bold text-gray-400 mt-1">
                     Successful rows are removed after upload; defective rows stay red with the issue attached.
                 </p>
@@ -1223,7 +1218,7 @@ export default function VolunteersPage() {
         {(importRows.length > 0 || importResult) && (
             <div className="p-5 space-y-4">
                 {importRows.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gray-500">
                         <span className="px-2 py-1 rounded-md bg-gray-50 text-gray-500">{importFileName}</span>
                         <span>{importRows.length} remaining rows</span>
                         <span>{importColumns.length} columns</span>
@@ -1255,13 +1250,13 @@ export default function VolunteersPage() {
                             <table className="min-w-full text-left">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="sticky left-0 bg-gray-50 px-3 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap border-b border-gray-100">Row</th>
+                                        <th className="sticky left-0 bg-gray-50 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap border-b border-gray-100">Row</th>
                                         {importColumns.slice(0, 8).map(column => (
-                                            <th key={column} className="px-3 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap border-b border-gray-100">
+                                            <th key={column} className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap border-b border-gray-100">
                                                 {column}
                                             </th>
                                         ))}
-                                        <th className="px-3 py-3 text-[9px] font-black uppercase tracking-widest text-gray-500 whitespace-nowrap border-b border-gray-100">Issue</th>
+                                        <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap border-b border-gray-100">Issue</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1288,15 +1283,15 @@ export default function VolunteersPage() {
       {/* Main Table Container */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-gray-50/50">
-            <TableRow className="hover:bg-transparent border-gray-50">
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Volunteer Identity</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Tier Level</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Performance / Rating</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contact</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Location</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500">Contribution</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-gray-500 text-right">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Volunteer Identity</TableHead>
+              <TableHead>Tier Level</TableHead>
+              <TableHead>Performance / Rating</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Contribution</TableHead>
+              <TableHead className="text-right">
                 <div className="flex items-center justify-end gap-1.5 group relative cursor-help">
                   <span>Status</span>
                   <Info className="w-3.5 h-3.5 text-gray-400 group-hover:text-red-600 transition-colors" />
@@ -1316,7 +1311,7 @@ export default function VolunteersPage() {
                    <TableCell colSpan={7} className="h-32 text-center">
                       <div className="flex flex-col items-center justify-center space-y-4">
                          <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin"></div>
-                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading Volunteers...</p>
+                         <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Loading Volunteers...</p>
                       </div>
                    </TableCell>
                 </TableRow>
@@ -1326,16 +1321,16 @@ export default function VolunteersPage() {
                 </TableRow>
             ) : (
                 filteredVolunteers.map((v) => (
-                    <TableRow key={v.id} className="hover:bg-gray-50/50 transition-colors border-gray-50 font-bold">
-                    <TableCell className="px-6 py-4">
+                    <TableRow key={v.id} className="font-bold">
+                    <TableCell>
                         <span className="font-black text-black text-sm leading-tight uppercase tracking-tighter">{v.first_name} {v.last_name}</span>
                     </TableCell>
 
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                       {renderTierBadge(getVolunteerTier(v))}
                     </TableCell>
 
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                       {(() => {
                         const summary = performanceMap[v.id] || performanceMap[v.person_id];
                         if (!summary || summary.total_evaluations === 0) {
@@ -1347,7 +1342,7 @@ export default function VolunteersPage() {
                               <span className="text-amber-500 font-black text-sm">★ {summary.average_overall.toFixed(1)}</span>
                               <span className="text-gray-400 text-[10px] font-bold">({summary.total_evaluations} {summary.total_evaluations === 1 ? 'review' : 'reviews'})</span>
                             </div>
-                            <div className="flex items-center gap-1 text-[9px] font-semibold text-slate-500">
+                            <div className="flex items-center gap-1 text-[9px] font-semibold text-gray-500">
                               <span>Punct: {summary.avg_punctuality.toFixed(1)}</span> • <span>Skills: {summary.avg_skills.toFixed(1)}</span>
                             </div>
                           </div>
@@ -1355,11 +1350,11 @@ export default function VolunteersPage() {
                       })()}
                     </TableCell>
 
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                         <span className="text-xs font-bold text-gray-500">{v.phone_number}</span>
                     </TableCell>
                     
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                         <div className="flex flex-col gap-1">
                             <span className="px-2 py-1 bg-gray-100 text-gray-600 text-[9px] font-black uppercase tracking-widest rounded-md w-fit">
                                 {regions.find(r => String(r.id) === String(v.region))?.name || v.region || 'N/A'}
@@ -1368,13 +1363,13 @@ export default function VolunteersPage() {
                         </div>
                     </TableCell>
 
-                    <TableCell className="px-6 py-4">
+                    <TableCell>
                         <div className="flex items-center gap-1.5">
                             <span className="font-black text-sm text-[#ED1C24]">{v.hoursSpent || 0} <span className="text-[9px] uppercase font-black opacity-50">Hrs</span></span>
                             {v.hoursSpent > 100 && <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />}
                         </div>
                     </TableCell>
-                    <TableCell className="px-6 py-4 text-right">
+                    <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                             <span className={cn(
                                 "px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest",
@@ -1415,7 +1410,7 @@ export default function VolunteersPage() {
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Rows per page:</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Rows per page:</span>
             <select
               value={pageSize}
               onChange={(e) => {
@@ -1490,7 +1485,7 @@ export default function VolunteersPage() {
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100"
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100"
             >
                 <div className="p-6 border-b border-gray-50 flex justify-between items-start sticky top-0 bg-white/80 backdrop-blur-md z-10">
                     <div className="space-y-1">
@@ -1527,7 +1522,7 @@ export default function VolunteersPage() {
                   <button
                     onClick={() => setActiveDetailsTab("profile")}
                     className={cn(
-                      "px-4 py-2.5 rounded-t-xl text-xs font-black uppercase tracking-wider transition-all border-b-2",
+                      "px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all border-b-2",
                       activeDetailsTab === "profile"
                         ? "border-[#ED1C24] text-[#ED1C24] bg-white shadow-sm"
                         : "border-transparent text-gray-500 hover:text-black"
@@ -1538,7 +1533,7 @@ export default function VolunteersPage() {
                   <button
                     onClick={() => setActiveDetailsTab("performance")}
                     className={cn(
-                      "px-4 py-2.5 rounded-t-xl text-xs font-black uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5",
+                      "px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5",
                       activeDetailsTab === "performance"
                         ? "border-[#ED1C24] text-[#ED1C24] bg-white shadow-sm"
                         : "border-transparent text-gray-500 hover:text-black"
@@ -1552,7 +1547,7 @@ export default function VolunteersPage() {
                   <button
                     onClick={() => setActiveDetailsTab("benefits")}
                     className={cn(
-                      "px-4 py-2.5 rounded-t-xl text-xs font-black uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5",
+                      "px-4 py-2.5 text-xs font-black uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5",
                       activeDetailsTab === "benefits"
                         ? "border-[#ED1C24] text-[#ED1C24] bg-white shadow-sm"
                         : "border-transparent text-gray-500 hover:text-black"
@@ -1656,7 +1651,7 @@ export default function VolunteersPage() {
                     </div>
 
                     <div className="px-6 pb-6">
-                        <div className="mt-4 p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                        <div className="mt-4 p-5 bg-gray-50 rounded-2xl border border-gray-100">
                             <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Expertise & Engagement</h4>
                             <div className="space-y-3">
                                 <div>
@@ -1717,7 +1712,7 @@ export default function VolunteersPage() {
                             </div>
                         </div>
 
-                        <div className="mt-4 p-5 bg-gray-50 rounded-[24px] border border-gray-100">
+                        <div className="mt-4 p-5 bg-gray-50 rounded-2xl border border-gray-100">
                             <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Volunteer Status</h4>
                             <div className="flex items-center justify-between">
                                 <span className={cn(
@@ -1737,36 +1732,36 @@ export default function VolunteersPage() {
                     {(() => {
                       const summary = performanceMap[selectedVolunteer.id] || performanceMap[selectedVolunteer.person_id];
                       return (
-                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white shadow-lg space-y-4">
+                        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-lg space-y-4">
                           <div className="flex justify-between items-center">
                             <div>
                               <p className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Overall Rating Average</p>
                               <div className="flex items-baseline gap-2 mt-0.5">
                                 <span className="text-3xl font-black text-amber-400">★ {summary ? summary.average_overall.toFixed(1) : "0.0"}</span>
-                                <span className="text-xs text-slate-400 font-bold">/ 5.0 ({summary ? summary.total_evaluations : 0} reviews)</span>
+                                <span className="text-xs text-gray-400 font-bold">/ 5.0 ({summary ? summary.total_evaluations : 0} reviews)</span>
                               </div>
                             </div>
                             <div className="text-right">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Total Hours</span>
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block">Total Hours</span>
                               <span className="text-xl font-extrabold text-white">{summary ? summary.total_hours_worked : 0} hrs</span>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3 border-t border-slate-700 text-center">
-                            <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-                              <span className="text-[9px] font-black text-slate-400 uppercase block">Punctuality</span>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3 border-t border-gray-700 text-center">
+                            <div className="bg-gray-800/80 p-2.5 rounded-xl border border-gray-700">
+                              <span className="text-[9px] font-black text-gray-400 uppercase block">Punctuality</span>
                               <span className="text-sm font-black text-white">{summary ? summary.avg_punctuality.toFixed(1) : "N/A"} ★</span>
                             </div>
-                            <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-                              <span className="text-[9px] font-black text-slate-400 uppercase block">Skills</span>
+                            <div className="bg-gray-800/80 p-2.5 rounded-xl border border-gray-700">
+                              <span className="text-[9px] font-black text-gray-400 uppercase block">Skills</span>
                               <span className="text-sm font-black text-white">{summary ? summary.avg_skills.toFixed(1) : "N/A"} ★</span>
                             </div>
-                            <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-                              <span className="text-[9px] font-black text-slate-400 uppercase block">Teamwork</span>
+                            <div className="bg-gray-800/80 p-2.5 rounded-xl border border-gray-700">
+                              <span className="text-[9px] font-black text-gray-400 uppercase block">Teamwork</span>
                               <span className="text-sm font-black text-white">{summary ? summary.avg_teamwork.toFixed(1) : "N/A"} ★</span>
                             </div>
-                            <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
-                              <span className="text-[9px] font-black text-slate-400 uppercase block">Conduct</span>
+                            <div className="bg-gray-800/80 p-2.5 rounded-xl border border-gray-700">
+                              <span className="text-[9px] font-black text-gray-400 uppercase block">Conduct</span>
                               <span className="text-sm font-black text-white">{summary ? summary.avg_conduct.toFixed(1) : "N/A"} ★</span>
                             </div>
                           </div>
@@ -1776,30 +1771,30 @@ export default function VolunteersPage() {
 
                     {/* Evaluations History List */}
                     <div className="space-y-3">
-                      <h4 className="text-xs font-black uppercase tracking-widest text-slate-700">Organization Performance Reviews</h4>
+                      <h4 className="text-xs font-black uppercase tracking-widest text-gray-700">Organization Performance Reviews</h4>
                       {loadingEvaluations ? (
-                        <div className="p-8 text-center text-slate-400 font-bold text-xs animate-pulse">Loading evaluations...</div>
+                        <div className="p-8 text-center text-gray-400 font-bold text-xs animate-pulse">Loading evaluations...</div>
                       ) : volunteerEvaluations.length === 0 ? (
-                        <div className="bg-slate-50 p-8 rounded-2xl text-center border border-slate-100">
-                          <p className="text-slate-400 font-medium text-xs">No evaluations submitted yet for this volunteer.</p>
+                        <div className="bg-gray-50 p-8 rounded-2xl text-center border border-gray-100">
+                          <p className="text-gray-400 font-medium text-xs">No evaluations submitted yet for this volunteer.</p>
                         </div>
                       ) : (
                         <div className="space-y-3">
                           {volunteerEvaluations.map((evalItem) => (
-                            <div key={evalItem.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2.5">
+                            <div key={evalItem.id} className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-2.5">
                               <div className="flex justify-between items-start">
                                 <div>
-                                  <p className="font-extrabold text-slate-900 text-sm">{evalItem.organization_name || "Partner Organization"}</p>
+                                  <p className="font-extrabold text-gray-900 text-sm">{evalItem.organization_name || "Partner Organization"}</p>
                                   <p className="text-[11px] font-semibold text-blue-600">{evalItem.request_title || "Volunteer Mission"}</p>
                                 </div>
                                 <div className="text-right">
                                   <span className="text-amber-500 font-black text-base">★ {evalItem.overall}/5</span>
-                                  <span className="text-[10px] text-slate-400 font-bold block">{new Date(evalItem.created_at).toLocaleDateString()}</span>
+                                  <span className="text-[10px] text-gray-400 font-bold block">{new Date(evalItem.created_at).toLocaleDateString()}</span>
                                 </div>
                               </div>
 
                               <div className="flex flex-wrap gap-2 text-[10px] font-bold">
-                                <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">Hours: {evalItem.hours_worked}h</span>
+                                <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700">Hours: {evalItem.hours_worked}h</span>
                                 <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">Outcome: {evalItem.outcome}</span>
                                 {evalItem.certificate_issued && (
                                   <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200">🏆 Certificate Issued</span>
@@ -1807,16 +1802,16 @@ export default function VolunteersPage() {
                               </div>
 
                               {evalItem.feedback && (
-                                <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 italic">
+                                <p className="text-xs text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100 italic">
                                   &ldquo;{evalItem.feedback}&rdquo;
                                 </p>
                               )}
 
-                              <div className="grid grid-cols-4 gap-2 text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                                <div>Punctuality: <strong className="text-slate-800">{evalItem.punctuality}★</strong></div>
-                                <div>Skills: <strong className="text-slate-800">{evalItem.skills}★</strong></div>
-                                <div>Teamwork: <strong className="text-slate-800">{evalItem.teamwork}★</strong></div>
-                                <div>Conduct: <strong className="text-slate-800">{evalItem.conduct}★</strong></div>
+                              <div className="grid grid-cols-4 gap-2 text-[10px] text-gray-500 pt-1 border-t border-gray-100">
+                                <div>Punctuality: <strong className="text-gray-800">{evalItem.punctuality}★</strong></div>
+                                <div>Skills: <strong className="text-gray-800">{evalItem.skills}★</strong></div>
+                                <div>Teamwork: <strong className="text-gray-800">{evalItem.teamwork}★</strong></div>
+                                <div>Conduct: <strong className="text-gray-800">{evalItem.conduct}★</strong></div>
                               </div>
                             </div>
                           ))}
@@ -1829,7 +1824,7 @@ export default function VolunteersPage() {
                 {activeDetailsTab === "benefits" && (
                   <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
                     {/* Header Summary */}
-                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white shadow-lg space-y-3">
+                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-lg space-y-3">
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24] flex items-center gap-1.5">
@@ -1840,30 +1835,30 @@ export default function VolunteersPage() {
                           </h3>
                         </div>
                         <div className="text-right">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Total Items Issued</span>
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block">Total Items Issued</span>
                           <span className="text-2xl font-extrabold text-emerald-400">
                             {volunteerBenefits.reduce((acc, b) => acc + (b.quantity || 1), 0)}
                           </span>
                         </div>
                       </div>
-                      <p className="text-xs text-slate-300">
+                      <p className="text-xs text-gray-300">
                         Record and audit all official ERCS field gear, safety kits, uniform items, per diem stipends, and insurance benefits provided to this volunteer.
                       </p>
                     </div>
 
                     {/* Issue / Record New Benefit Form */}
-                    <form onSubmit={handleRecordBenefit} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                    <form onSubmit={handleRecordBenefit} className="bg-gray-50 p-5 rounded-2xl border border-gray-200 space-y-4">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
                         <Package className="h-4 w-4 text-[#ED1C24]" /> Record Issued Benefit / Safety Gear
                       </h4>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Benefit Type *</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Benefit Type *</label>
                           <select
                             value={benefitType}
                             onChange={(e) => setBenefitType(e.target.value)}
-                            className="w-full h-9 px-2.5 rounded-xl bg-white border border-slate-200 font-bold text-xs text-slate-900 outline-none focus:border-[#ED1C24]"
+                            className="w-full h-9 px-2.5 rounded-xl bg-white border border-gray-200 font-bold text-xs text-gray-900 outline-none focus:border-[#ED1C24]"
                           >
                             <option value="Safety Kit">Safety Kit</option>
                             <option value="Uniform & Gear">Uniform & Gear</option>
@@ -1875,24 +1870,24 @@ export default function VolunteersPage() {
                         </div>
 
                         <div className="space-y-1 sm:col-span-1 md:col-span-2">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Item / Benefit Name *</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Item / Benefit Name *</label>
                           <Input 
                             value={benefitItemName}
                             onChange={(e) => setBenefitItemName(e.target.value)}
                             placeholder="e.g. ERCS First Aid Kit, Boots, Vest, Cap..."
-                            className="h-9 bg-white border-slate-200 rounded-xl font-bold text-xs text-slate-900"
+                            className="h-9 bg-white border-gray-200 rounded-xl font-bold text-xs text-gray-900"
                             required
                           />
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Quantity *</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Quantity *</label>
                           <Input 
                             type="number"
                             min={1}
                             value={benefitQuantity}
                             onChange={(e) => setBenefitQuantity(Math.max(1, Number(e.target.value)))}
-                            className="h-9 bg-white border-slate-200 rounded-xl font-bold text-xs text-center text-slate-900"
+                            className="h-9 bg-white border-gray-200 rounded-xl font-bold text-xs text-center text-gray-900"
                             required
                           />
                         </div>
@@ -1900,23 +1895,23 @@ export default function VolunteersPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Date Provided *</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date Provided *</label>
                           <Input 
                             type="date"
                             value={benefitDate}
                             onChange={(e) => setBenefitDate(e.target.value)}
-                            className="h-9 bg-white border-slate-200 rounded-xl font-bold text-xs text-slate-900"
+                            className="h-9 bg-white border-gray-200 rounded-xl font-bold text-xs text-gray-900"
                             required
                           />
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Remarks / Notes (Optional)</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Remarks / Notes (Optional)</label>
                           <Input 
                             value={benefitRemarks}
                             onChange={(e) => setBenefitRemarks(e.target.value)}
                             placeholder="Serial #, condition, branch notes..."
-                            className="h-9 bg-white border-slate-200 rounded-xl font-medium text-xs text-slate-900"
+                            className="h-9 bg-white border-gray-200 rounded-xl font-medium text-xs text-gray-900"
                           />
                         </div>
                       </div>
@@ -1935,34 +1930,34 @@ export default function VolunteersPage() {
 
                     {/* Historical Benefits Log */}
                     <div className="space-y-3">
-                      <h4 className="text-xs font-black uppercase tracking-widest text-slate-700">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-gray-700">
                         Issued Equipment & Benefits History
                       </h4>
 
                       {loadingBenefits ? (
-                        <div className="p-8 text-center text-slate-400 font-bold text-xs animate-pulse">
+                        <div className="p-8 text-center text-gray-400 font-bold text-xs animate-pulse">
                           Loading benefits log...
                         </div>
                       ) : volunteerBenefits.length === 0 ? (
-                        <div className="bg-slate-50 p-8 rounded-2xl text-center border border-slate-100">
-                          <p className="text-slate-400 font-medium text-xs">
+                        <div className="bg-gray-50 p-8 rounded-2xl text-center border border-gray-100">
+                          <p className="text-gray-400 font-medium text-xs">
                             No benefits or safety gear recorded for this volunteer yet. Use the form above to record items issued.
                           </p>
                         </div>
                       ) : (
                         <div className="space-y-2.5">
                           {volunteerBenefits.map((item, idx) => (
-                            <div key={item.id || idx} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between gap-4">
+                            <div key={item.id || idx} className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between gap-4">
                               <div className="flex items-center gap-3 min-w-0">
                                 <div className="h-9 w-9 rounded-xl bg-red-50 text-[#ED1C24] flex items-center justify-center shrink-0">
                                   <Shield className="h-4 w-4" />
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-extrabold text-slate-900 text-xs truncate">
+                                  <p className="font-extrabold text-gray-900 text-xs truncate">
                                     {item.item_name}
                                   </p>
-                                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium">
-                                    <span className="font-bold text-slate-600">{item.benefit_type}</span>
+                                  <div className="flex items-center gap-2 text-[10px] text-gray-400 font-medium">
+                                    <span className="font-bold text-gray-600">{item.benefit_type}</span>
                                     <span>•</span>
                                     <span>Qty: {item.quantity || 1}</span>
                                     {item.remarks && (
@@ -1975,7 +1970,7 @@ export default function VolunteersPage() {
                                 </div>
                               </div>
                               <div className="text-right shrink-0">
-                                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
                                   {item.provided_date ? new Date(item.provided_date).toLocaleDateString() : "Recorded"}
                                 </span>
                               </div>
@@ -2017,7 +2012,7 @@ export default function VolunteersPage() {
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white rounded-[32px] shadow-2xl w-full max-w-md border border-gray-100 p-6 space-y-6"
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 p-6 space-y-6"
             >
                 <div className="space-y-2">
                     <p className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5">
@@ -2079,7 +2074,7 @@ export default function VolunteersPage() {
               </div>
               <div className="bg-[#ED1C24] text-white p-6 font-black text-3xl">ERCS</div>
           </div>
-          <div className="mt-8 border-t-2 border-dashed border-gray-100 pt-4 text-[10px] font-black uppercase tracking-widest text-gray-300">
+          <div className="mt-8 border-t-2 border-dashed border-gray-100 pt-4 text-[11px] font-bold uppercase tracking-wider text-gray-500">
               Confidential Administrative Record • ERCS Humanitarian Management System
           </div>
       </div>

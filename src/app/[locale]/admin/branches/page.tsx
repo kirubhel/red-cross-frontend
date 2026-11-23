@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { getUserScope } from "@/lib/auth-scope";
+import { PageHeader } from "@/components/admin/page-ui";
 
 interface Branch {
   id: string;
@@ -225,44 +226,32 @@ export default function BranchManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="h-2 w-2 rounded-full bg-[#ED1C24] animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">
-              National Structure Directory
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-black tracking-tight">
-            Branch Management
-          </h1>
-          <p className="text-xs sm:text-sm font-medium text-gray-400 mt-1">
-            Centralized registry of all {branches.length || 60}+ Ethiopian Red Cross Society regional branches, zonal offices, and coordination centers.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={handleExport}
-            variant="outline"
-            className="h-11 px-4 rounded-2xl font-black text-xs uppercase tracking-wider border-gray-200 hover:bg-gray-50 text-gray-700 shadow-sm"
-          >
-            <Download className="mr-2 h-4 w-4 text-gray-500" /> Export Directory
-          </Button>
-          <Link href="/admin/user-management?create=true">
-            <Button className="h-11 px-5 rounded-2xl font-black text-xs uppercase tracking-wider bg-[#ED1C24] hover:bg-black text-white transition-all shadow-md shadow-red-500/20">
-              <ShieldCheck className="mr-2 h-4 w-4" /> Provision Officer
+      <PageHeader
+        title="Branch Management"
+        description={`Centralized registry of all ${branches.length || 60}+ Ethiopian Red Cross Society regional branches, zonal offices, and coordination centers.`}
+        actions={
+          <>
+            <Button
+              onClick={handleExport}
+              variant="outline"
+              className="h-10 px-4 rounded-xl font-bold text-xs border-gray-200 hover:bg-gray-50 text-gray-700"
+            >
+              <Download className="mr-2 h-4 w-4 text-gray-500" /> Export Directory
             </Button>
-          </Link>
-        </div>
-      </div>
+            <Link href="/admin/user-management?create=true">
+              <Button className="h-10 px-5 rounded-xl font-bold text-xs bg-[#ED1C24] hover:bg-black text-white transition-colors">
+                <ShieldCheck className="mr-2 h-4 w-4" /> Provision Officer
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       {/* KPI Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Total Branches</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Total Branches</span>
             <div className="h-7 w-7 rounded-xl bg-red-50 text-[#ED1C24] flex items-center justify-center">
               <Building2 className="h-3.5 w-3.5" />
             </div>
@@ -273,7 +262,7 @@ export default function BranchManagementPage() {
 
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Regional Branches</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Regional Branches</span>
             <div className="h-7 w-7 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <Globe2 className="h-3.5 w-3.5" />
             </div>
@@ -284,7 +273,7 @@ export default function BranchManagementPage() {
 
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Zonal Branches</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Zonal Branches</span>
             <div className="h-7 w-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Building className="h-3.5 w-3.5" />
             </div>
@@ -295,7 +284,7 @@ export default function BranchManagementPage() {
 
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Coordination Offices</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Coordination Offices</span>
             <div className="h-7 w-7 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
               <Layers className="h-3.5 w-3.5" />
             </div>
@@ -306,7 +295,7 @@ export default function BranchManagementPage() {
 
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Special Woredas</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Special Woredas</span>
             <div className="h-7 w-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <MapPin className="h-3.5 w-3.5" />
             </div>
@@ -415,12 +404,12 @@ export default function BranchManagementPage() {
 
       {/* Main Content Area */}
       {loading ? (
-        <div className="bg-white rounded-3xl p-16 text-center border border-gray-100 flex flex-col items-center justify-center">
+        <div className="bg-white rounded-2xl p-16 text-center border border-gray-100 flex flex-col items-center justify-center">
           <div className="h-10 w-10 border-4 border-red-200 border-t-[#ED1C24] rounded-full animate-spin mb-4" />
           <p className="font-black text-sm text-black">Loading ERCS National Branch Directory...</p>
         </div>
       ) : filteredBranches.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center border border-gray-100">
+        <div className="bg-white rounded-2xl p-16 text-center border border-gray-100">
           <div className="h-14 w-14 rounded-2xl bg-gray-50 text-gray-400 flex items-center justify-center mx-auto mb-3">
             <Building2 className="h-7 w-7" />
           </div>
@@ -442,7 +431,7 @@ export default function BranchManagementPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 onClick={() => setSelectedBranch(branch)}
                 className={cn(
-                  "bg-white rounded-3xl border p-5 sm:p-6 transition-all duration-200 hover:shadow-lg hover:border-red-200/80 cursor-pointer flex flex-col justify-between relative group overflow-hidden",
+                  "bg-white rounded-2xl border p-5 sm:p-6 transition-all duration-200 hover:shadow-lg hover:border-red-200/80 cursor-pointer flex flex-col justify-between relative group overflow-hidden",
                   config.border
                 )}
               >
@@ -533,20 +522,20 @@ export default function BranchManagementPage() {
         </div>
       ) : (
         /* TABLE VIEW */
-        <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/70 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                  <th className="px-6 py-4">Branch Structure</th>
-                  <th className="px-6 py-4">Type</th>
-                  <th className="px-6 py-4">Region & Zone</th>
-                  <th className="px-6 py-4">Contact Info</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                <tr className="border-b border-gray-100 bg-gray-50/70 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                  <th className="h-11 px-4 align-middle whitespace-nowrap">Branch Structure</th>
+                  <th className="h-11 px-4 align-middle whitespace-nowrap">Type</th>
+                  <th className="h-11 px-4 align-middle whitespace-nowrap">Region & Zone</th>
+                  <th className="h-11 px-4 align-middle whitespace-nowrap">Contact Info</th>
+                  <th className="h-11 px-4 align-middle whitespace-nowrap">Status</th>
+                  <th className="h-11 px-4 align-middle whitespace-nowrap text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-100">
                 {filteredBranches.map((branch) => {
                   const config = BRANCH_TYPE_CONFIG[branch.branch_type] || BRANCH_TYPE_CONFIG.ZONAL_BRANCH;
                   return (
@@ -555,7 +544,7 @@ export default function BranchManagementPage() {
                       onClick={() => setSelectedBranch(branch)}
                       className="hover:bg-gray-50/60 cursor-pointer transition-colors"
                     >
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 align-middle">
                         <div className="font-black text-black text-sm">{branch.name}</div>
                         {branch.name_am && (
                           <div className="text-[11px] text-gray-500 font-medium font-ethiopic">{branch.name_am}</div>
@@ -564,7 +553,7 @@ export default function BranchManagementPage() {
                           <div className="text-[10px] text-gray-400 italic">{branch.name_or}</div>
                         )}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 align-middle">
                         <span
                           className={cn(
                             "px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border",
@@ -574,20 +563,20 @@ export default function BranchManagementPage() {
                           {config.label}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 align-middle">
                         <div className="font-bold text-black">{REGION_MAP[branch.region_id] || `Region ${branch.region_id}`}</div>
                         <div className="text-[10px] text-gray-400 font-mono">{branch.zone_id || "Direct Branch"}</div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 align-middle">
                         <div className="text-[11px] font-mono text-gray-700">{branch.phone || "—"}</div>
                         <div className="text-[10px] text-gray-400 truncate max-w-[160px]">{branch.email || "—"}</div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3 align-middle">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-green-50 text-green-700">
                           <CheckCircle2 className="h-3 w-3" /> Active
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 py-3 align-middle text-right">
                         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                           <Link
                             href={`/admin/members?branch_id=${branch.id}`}
@@ -628,7 +617,7 @@ export default function BranchManagementPage() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-xl bg-white rounded-3xl border border-gray-100 shadow-2xl p-6 sm:p-8 overflow-hidden z-10 space-y-6"
+              className="relative w-full max-w-xl bg-white rounded-2xl border border-gray-100 shadow-2xl p-6 sm:p-8 overflow-hidden z-10 space-y-6"
             >
               {/* Modal Header */}
               <div className="flex items-start justify-between gap-4 pb-4 border-b border-gray-100">
@@ -646,7 +635,7 @@ export default function BranchManagementPage() {
                       ID: {selectedBranch.id}
                     </span>
                   </div>
-                  <h2 className="text-xl font-black text-black tracking-tight">{selectedBranch.name}</h2>
+                  <h2 className="text-base font-bold tracking-tight text-gray-900">{selectedBranch.name}</h2>
                   {selectedBranch.name_am && (
                     <p className="text-sm font-bold text-gray-600 mt-1 font-ethiopic">{selectedBranch.name_am}</p>
                   )}
@@ -666,18 +655,18 @@ export default function BranchManagementPage() {
               {/* Geographic Hierarchy Info */}
               <div className="grid grid-cols-2 gap-3 bg-gray-50/70 p-4 rounded-2xl border border-gray-100 text-xs">
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Assigned Region</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Assigned Region</p>
                   <p className="font-black text-black mt-0.5">{REGION_MAP[selectedBranch.region_id] || `Region ${selectedBranch.region_id}`}</p>
                 </div>
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Zone Mapping</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Zone Mapping</p>
                   <p className="font-black text-black mt-0.5">{selectedBranch.zone_id || "All Zones / Central"}</p>
                 </div>
               </div>
 
               {/* Contact Information */}
               <div className="space-y-3">
-                <Label className="text-[9px] font-black uppercase tracking-widest text-gray-400">
+                <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                   Branch Contact & Office Details
                 </Label>
                 <div className="space-y-2 text-xs">

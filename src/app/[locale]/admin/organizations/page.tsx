@@ -58,6 +58,7 @@ import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { getRegionName, getZoneName } from "@/lib/constants";
 
+import { PageHeader } from "@/components/admin/page-ui";
 type Organization = {
   id: string;
   name: string;
@@ -449,44 +450,36 @@ export default function AdminOrganizationsPage() {
   }, [richOrgRequests, richOrgReviews]);
 
   return (
-    <div className="space-y-6 w-full pb-16">
+    <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-red-50 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-wider border border-red-100">
-            <Building2 className="h-3.5 w-3.5" /> Partner & Resource Hub
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tight leading-none">
-            Organization <span className="text-[#ED1C24]">Partners</span>
-          </h1>
-          <p className="text-gray-500 font-medium text-sm max-w-2xl">
-            Manage partner registrations, verify organization applications, review volunteer need requests, and track engagements.
-          </p>
-        </div>
-
-        {/* Global Summary Badges */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="px-4 py-2.5 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700">
+      <PageHeader
+        title="Organization Partners"
+        description="Manage partner registrations, verify organization applications, review volunteer need requests, and track engagements."
+        actions={
+          <>
+          <div className="px-4 py-2.5 bg-white border border-gray-100 rounded-xl flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-700">
               <Building2 className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-tight">Partners</p>
-              <p className="text-base font-black text-black leading-tight">{organizations.length}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 leading-tight">Partners</p>
+              <p className="text-base font-bold text-black leading-tight">{organizations.length}</p>
             </div>
           </div>
 
-          <div className="px-4 py-2.5 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-red-50 flex items-center justify-center text-[#ED1C24]">
+          <div className="px-4 py-2.5 bg-white border border-gray-100 rounded-xl flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-red-50 flex items-center justify-center text-[#ED1C24]">
               <Users className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-tight">Need Requests</p>
-              <p className="text-base font-black text-[#ED1C24] leading-tight">{requests.length}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 leading-tight">Need Requests</p>
+              <p className="text-base font-bold text-[#ED1C24] leading-tight">{requests.length}</p>
             </div>
           </div>
-        </div>
-      </div>
+        
+          </>
+        }
+      />
 
       {/* Main Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-gray-200">
@@ -571,24 +564,24 @@ export default function AdminOrganizationsPage() {
           {/* Organizations Table Container */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <Table>
-              <TableHeader className="bg-gray-50/60">
-                <TableRow className="border-gray-100">
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
                     Organization Identity
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                  <TableHead>
                     Representative & Contact
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                  <TableHead>
                     Rate per Vol.
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                  <TableHead>
                     Registered Date
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                  <TableHead>
                     Approval Status
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500 text-right">
+                  <TableHead className="text-right">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -617,9 +610,9 @@ export default function AdminOrganizationsPage() {
                   </TableRow>
                 ) : (
                   paginatedOrgs.map((org) => (
-                    <TableRow key={org.id} className="hover:bg-gray-50/60 transition-colors border-gray-100 group">
+                    <TableRow key={org.id} className="group">
                       {/* Identity */}
-                      <TableCell className="px-6 py-5">
+                      <TableCell>
                         <div className="flex items-center gap-3.5">
                           <div className="h-11 w-11 bg-gray-100 rounded-xl flex items-center justify-center text-gray-700 group-hover:bg-[#ED1C24]/10 group-hover:text-[#ED1C24] transition-colors shrink-0">
                             <Building2 className="h-5 w-5" />
@@ -636,7 +629,7 @@ export default function AdminOrganizationsPage() {
                       </TableCell>
 
                       {/* Representative */}
-                      <TableCell className="px-6 py-5">
+                      <TableCell>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1.5 text-gray-900 font-bold text-xs">
                             <User className="h-3.5 w-3.5 text-[#ED1C24]" />
@@ -656,14 +649,14 @@ export default function AdminOrganizationsPage() {
                       </TableCell>
 
                       {/* Rate */}
-                      <TableCell className="px-6 py-5">
+                      <TableCell>
                         <span className="font-black text-xs text-gray-800">
                           {org.rate_per_volunteer ? `${org.rate_per_volunteer} ETB` : "Not Configured"}
                         </span>
                       </TableCell>
 
                       {/* Created At */}
-                      <TableCell className="px-6 py-5">
+                      <TableCell>
                         <span className="text-xs font-semibold text-gray-600">
                           {org.created_at
                             ? new Date(org.created_at).toLocaleDateString("en-GB", {
@@ -676,7 +669,7 @@ export default function AdminOrganizationsPage() {
                       </TableCell>
 
                       {/* Status */}
-                      <TableCell className="px-6 py-5">
+                      <TableCell>
                         <span
                           className={cn(
                             "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-1.5 border",
@@ -695,7 +688,7 @@ export default function AdminOrganizationsPage() {
                       </TableCell>
 
                       {/* Actions */}
-                      <TableCell className="px-6 py-5 text-right">
+                      <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
                             onClick={() => handleOpenRichOrg(org)}
@@ -844,24 +837,24 @@ export default function AdminOrganizationsPage() {
           {/* Requests Table */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <Table>
-              <TableHeader className="bg-gray-50/60">
-                <TableRow className="border-gray-100">
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>
                     Request Title & Org
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                  <TableHead>
                     Personnel Needed
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                  <TableHead>
                     Target Location
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                  <TableHead>
                     Payment & Invoice
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500">
+                  <TableHead>
                     Mission Status
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-gray-500 text-right">
+                  <TableHead className="text-right">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -892,9 +885,9 @@ export default function AdminOrganizationsPage() {
                   paginatedRequests.map((req) => {
                     const org = orgMap.get(req.organization_id);
                     return (
-                      <TableRow key={req.id} className="hover:bg-gray-50/60 transition-colors border-gray-100 group">
+                      <TableRow key={req.id} className="group">
                         {/* Title & Organization */}
-                        <TableCell className="px-6 py-5">
+                        <TableCell>
                           <div className="flex flex-col gap-1">
                             <span className="font-black text-gray-900 text-sm leading-tight">
                               {req.title || req.activities_skills || `Volunteer Request #${req.id.slice(0, 8)}`}
@@ -914,7 +907,7 @@ export default function AdminOrganizationsPage() {
                         </TableCell>
 
                         {/* Personnel Needed */}
-                        <TableCell className="px-6 py-5">
+                        <TableCell>
                           <div className="flex flex-col gap-0.5">
                             <span className="font-black text-sm text-black">
                               {req.headcount} Volunteers
@@ -928,7 +921,7 @@ export default function AdminOrganizationsPage() {
                         </TableCell>
 
                         {/* Location */}
-                        <TableCell className="px-6 py-5">
+                        <TableCell>
                           <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
                             <MapPin className="h-3.5 w-3.5 text-[#ED1C24] shrink-0" />
                             <span>
@@ -939,7 +932,7 @@ export default function AdminOrganizationsPage() {
                         </TableCell>
 
                         {/* Payment & Invoice */}
-                        <TableCell className="px-6 py-5">
+                        <TableCell>
                           <div className="flex flex-col gap-1">
                             <span className="font-black text-xs text-gray-900">
                               {req.payment_amount ? `${req.payment_amount} ETB` : "0 ETB"}
@@ -960,7 +953,7 @@ export default function AdminOrganizationsPage() {
                         </TableCell>
 
                         {/* Mission Status */}
-                        <TableCell className="px-6 py-5">
+                        <TableCell>
                           <span
                             className={cn(
                               "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-1.5 border",
@@ -978,7 +971,7 @@ export default function AdminOrganizationsPage() {
                         </TableCell>
 
                         {/* Actions */}
-                        <TableCell className="px-6 py-5 text-right">
+                        <TableCell className="text-right">
                           <Button
                             onClick={() => handleInspectRequest(req)}
                             variant="outline"
@@ -1050,7 +1043,7 @@ export default function AdminOrganizationsPage() {
       {/* RICH ORGANIZATION DETAILS MODAL ("RICH DATA PAGE") */}
       {richOrg && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-[32px] shadow-2xl max-w-5xl w-full flex flex-col overflow-hidden border border-gray-100 max-h-[92vh]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full flex flex-col overflow-hidden border border-gray-100 max-h-[92vh]">
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-start justify-between">
               <div className="flex items-center gap-4">
@@ -1096,25 +1089,25 @@ export default function AdminOrganizationsPage() {
             {/* 4 Rich KPI Summary Cards */}
             <div className="p-6 border-b border-gray-100 bg-white grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100">
-                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Total Need Requests</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Total Need Requests</p>
                 <p className="text-2xl font-black text-gray-900 mt-1">{richOrgKPIs.totalReqs}</p>
                 <p className="text-[10px] font-bold text-gray-500 mt-0.5">Campaigns registered</p>
               </div>
 
               <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100">
-                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Volunteers Requested</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Volunteers Requested</p>
                 <p className="text-2xl font-black text-[#ED1C24] mt-1">{richOrgKPIs.totalVolunteersRequested}</p>
                 <p className="text-[10px] font-bold text-gray-500 mt-0.5">Total personnel headcount</p>
               </div>
 
               <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100">
-                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Total Payments</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Total Payments</p>
                 <p className="text-2xl font-black text-gray-900 mt-1">{richOrgKPIs.totalPayments} ETB</p>
                 <p className="text-[10px] font-bold text-green-600 mt-0.5">{richOrgKPIs.paidPayments} ETB Verified</p>
               </div>
 
               <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100">
-                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Reviews & Rating</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Reviews & Rating</p>
                 <div className="flex items-center gap-1.5 mt-1">
                   <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
                   <span className="text-2xl font-black text-gray-900">{richOrgKPIs.avgRating}</span>
@@ -1186,19 +1179,19 @@ export default function AdminOrganizationsPage() {
                   {/* Contact Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Representative</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">Representative</p>
                       <p className="font-bold text-gray-900 text-sm">{richOrg.contact_person}</p>
                     </div>
 
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Email Address</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">Email Address</p>
                       <a href={`mailto:${richOrg.email}`} className="font-bold text-[#ED1C24] text-sm hover:underline break-all">
                         {richOrg.email}
                       </a>
                     </div>
 
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Phone Number</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1">Phone Number</p>
                       <a href={`tel:${richOrg.phone}`} className="font-bold text-gray-900 text-sm hover:text-[#ED1C24]">
                         {richOrg.phone || "Not provided"}
                       </a>
@@ -1208,7 +1201,7 @@ export default function AdminOrganizationsPage() {
                   {/* Digital Presence & Registration */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 bg-white rounded-2xl border border-gray-200">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1.5 flex items-center gap-1.5">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1.5">
                         <Globe className="h-3.5 w-3.5 text-[#ED1C24]" /> Official Website
                       </p>
                       {richOrg.website ? (
@@ -1226,7 +1219,7 @@ export default function AdminOrganizationsPage() {
                     </div>
 
                     <div className="p-4 bg-white rounded-2xl border border-gray-200">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1.5 flex items-center gap-1.5">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5 text-[#ED1C24]" /> Application Date
                       </p>
                       <p className="font-bold text-gray-900 text-sm">
@@ -1522,11 +1515,11 @@ export default function AdminOrganizationsPage() {
       {/* SINGLE REQUEST INSPECTION MODAL */}
       {inspectingReq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-[32px] shadow-2xl max-w-3xl w-full flex flex-col overflow-hidden border border-gray-100 max-h-[90vh]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full flex flex-col overflow-hidden border border-gray-100 max-h-[90vh]">
             <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                  <h3 className="text-base font-bold tracking-tight text-gray-900">
                     {inspectingReq.title || inspectingReq.activities_skills || `Volunteer Request #${inspectingReq.id.slice(0, 8)}`}
                   </h3>
                   <span
@@ -1714,7 +1707,7 @@ export default function AdminOrganizationsPage() {
                 {inspectingLoading ? (
                   <div className="py-6 text-center">
                     <div className="h-6 w-6 border-2 border-red-50 border-t-[#ED1C24] rounded-full animate-spin mx-auto mb-1" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Loading roster...</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Loading roster...</p>
                   </div>
                 ) : inspectingAssignments.length === 0 ? (
                   <div className="py-6 text-center bg-gray-50 rounded-xl border border-gray-100">
@@ -1796,7 +1789,7 @@ export default function AdminOrganizationsPage() {
       {/* APPROVE / DECLINE ACTION MODAL */}
       {actionOrg && actionType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full flex flex-col overflow-hidden border border-gray-100">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full flex flex-col overflow-hidden border border-gray-100">
             <div
               className={`p-6 border-b flex items-start gap-4 ${
                 actionType === "APPROVED" ? "bg-green-50/50 border-green-100" : "bg-red-50/50 border-red-100"

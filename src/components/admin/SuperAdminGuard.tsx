@@ -32,7 +32,7 @@ export function SuperAdminGuard({ children }: { children: React.ReactNode }) {
   if (!isAuthorized) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center max-w-lg mx-auto">
-        <div className="h-16 w-16 bg-red-50 text-[#ED1C24] rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-red-100">
+        <div className="h-16 w-16 bg-red-50 text-[#ED1C24] rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-red-100">
           <ShieldAlert className="h-8 w-8" />
         </div>
         <h2 className="text-2xl font-black text-black tracking-tight mb-2">

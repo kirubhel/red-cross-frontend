@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/admin/page-ui";
 import {
   Table,
   TableBody,
@@ -546,35 +547,29 @@ export default function MembersPage() {
 
   return (
     <div className="space-y-6 print:p-0">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
-            <Users className="h-3 w-3" /> Registry
-          </div>
-          <h1 className="text-3xl font-black text-black tracking-tighter">Member Directory</h1>
-          <p className="text-gray-500 font-medium text-sm">Manage hierarchy and status across all regions.</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 justify-start md:justify-end">
+      <PageHeader
+        title="Member Directory"
+        description="Manage hierarchy and status across all regions."
+        actions={
+          <>
             <Button 
                 onClick={downloadTemplate}
                 variant="outline" 
-                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest"
+                className="rounded-xl h-10 px-4 font-bold border-gray-200 flex items-center gap-2 text-xs"
             >
                 <Download className="h-4 w-4" /> Template
             </Button>
             <Button 
                 onClick={exportToExcel}
                 variant="outline" 
-                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest text-[#ED1C24] hover:bg-red-50 cursor-pointer"
+                className="rounded-xl h-10 px-4 font-bold border-gray-200 flex items-center gap-2 text-xs text-[#ED1C24] hover:bg-red-50 cursor-pointer"
             >
                 <Download className="h-4 w-4" /> Excel
             </Button>
             <Button 
                 onClick={exportToCSV}
                 variant="outline" 
-                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest cursor-pointer"
+                className="rounded-xl h-10 px-4 font-bold border-gray-200 flex items-center gap-2 text-xs cursor-pointer"
             >
                 <TableIcon className="h-4 w-4" /> CSV
             </Button>
@@ -587,7 +582,7 @@ export default function MembersPage() {
                 />
                 <Button 
                     variant="outline" 
-                    className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest"
+                    className="rounded-xl h-10 px-4 font-bold border-gray-200 flex items-center gap-2 text-xs"
                 >
                     <Upload className="h-4 w-4" /> Import
                 </Button>
@@ -595,18 +590,19 @@ export default function MembersPage() {
             <Button 
                 onClick={exportToPDF}
                 variant="outline" 
-                className="rounded-xl h-10 px-4 font-black border-gray-200 flex items-center gap-2 shadow-sm text-[10px] uppercase tracking-widest"
+                className="rounded-xl h-10 px-4 font-bold border-gray-200 flex items-center gap-2 text-xs"
             >
                 <FileText className="h-4 w-4" /> PDF
             </Button>
             <Button 
                 onClick={() => setShowAddMemberModal(true)}
-                className="rounded-xl h-10 px-6 font-black shadow-xl shadow-red-500/10 flex items-center gap-2 bg-[#ED1C24] text-white text-[10px] uppercase tracking-widest"
+                className="rounded-xl h-10 px-5 font-bold flex items-center gap-2 bg-[#ED1C24] hover:bg-black text-white text-xs transition-colors"
             >
                 <Plus className="h-4 w-4" /> Add Member
             </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="flex flex-col gap-3 print:hidden">
         <div className="flex w-full items-center justify-between gap-3">
@@ -631,7 +627,7 @@ export default function MembersPage() {
         </div>
 
         {showFilters && (
-            <div className="space-y-4 p-6 bg-gray-50 rounded-[28px] border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="space-y-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
                 {/* Master Category Row */}
                 <div className="grid md:grid-cols-4 gap-4 pb-4 border-b border-gray-200/50">
                     <div className="space-y-1">
@@ -816,11 +812,11 @@ export default function MembersPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-[32px] border border-gray-100 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.03)] overflow-hidden print:shadow-none print:border-none print:rounded-none">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none print:border-none print:rounded-none">
         <Table>
-          <TableHeader className="bg-gray-50/50 print:bg-transparent">
-            <TableRow className="hover:bg-transparent border-gray-50">
-              <TableHead className="w-12 px-4 py-4 print:hidden">
+          <TableHeader className="print:bg-transparent">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-12 print:hidden">
                 <button
                   type="button"
                   onClick={toggleSelectAll}
@@ -838,11 +834,11 @@ export default function MembersPage() {
                   {isSomeSelected && <div className="h-2 w-2 rounded-sm bg-[#ED1C24]" />}
                 </button>
               </TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">ID</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Full Identity</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Region</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">Category</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40">
+              <TableHead>ID</TableHead>
+              <TableHead>Full Identity</TableHead>
+              <TableHead>Region</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>
                 <div className="flex items-center gap-1.5 group relative cursor-help">
                   <span>Status</span>
                   <Info className="w-3.5 h-3.5 text-gray-400 group-hover:text-red-600 transition-colors" />
@@ -854,7 +850,7 @@ export default function MembersPage() {
                   </div>
                 </div>
               </TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-widest text-black/40 text-right print:hidden">Audit</TableHead>
+              <TableHead className="text-right print:hidden">Audit</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -863,7 +859,7 @@ export default function MembersPage() {
                 <TableCell colSpan={7} className="h-48 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                      <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
-                     <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Syncing Registry...</p>
+                     <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Syncing Registry...</p>
                   </div>
                 </TableCell>
               </TableRow>
@@ -884,7 +880,7 @@ export default function MembersPage() {
                       : "hover:bg-[#ED1C24]/5"
                   )}
                 >
-                  <TableCell className="w-12 px-4 py-4 print:hidden">
+                  <TableCell className="w-12 px-4 print:hidden">
                     <button
                       type="button"
                       onClick={(e) => toggleSelectMember(member.id, e)}
@@ -899,7 +895,7 @@ export default function MembersPage() {
                       {selectedMemberIds.has(member.id) && <Check className="h-3.5 w-3.5 text-white stroke-[3]" />}
                     </button>
                   </TableCell>
-                  <TableCell className="px-6 py-4 font-black text-black text-[11px]">
+                  <TableCell className="font-black text-black text-[11px]">
                     <div className="flex items-center gap-2 group">
                       {!member.ercs_id ? (
                         <span className="text-[10px] font-bold text-gray-400 normal-case tracking-normal">Issued on payment</span>
@@ -927,19 +923,19 @@ export default function MembersPage() {
                       </button>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell>
                     <div className="flex flex-col">
                         <span className="font-bold text-gray-900 text-xs">{member.first_name} {member.father_name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 font-black text-[9px] uppercase tracking-wider text-gray-400">
+                  <TableCell className="font-black text-[9px] uppercase tracking-wider text-gray-400">
                     {(regions || DEFAULT_REGIONS).find(r => String(r.id) === String(member.region))?.name || String(member.region)}
                   </TableCell>
-                  <TableCell className="px-6 py-4 font-bold text-[11px] text-gray-500">
+                  <TableCell className="font-bold text-[11px] text-gray-500">
                     {(member as any).membership_type || (member as any).membershipType || "REGULAR"}
                   </TableCell>
 
-                  <TableCell className="px-6 py-4">
+                  <TableCell>
                     <span
                       className={cn(
                         "inline-flex items-center rounded-md px-2 py-0.5 text-[9px] font-black uppercase tracking-widest",
@@ -955,7 +951,7 @@ export default function MembersPage() {
                       {member.status === "PENDING_PAYMENT" ? "UNPAID" : member.status || "ACTIVE"}
                     </span>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right print:hidden">
+                  <TableCell className="text-right print:hidden">
                     <div className="flex items-center justify-end gap-1">
                       {member.status === "PENDING_PAYMENT" ? (
                         <button
@@ -1003,7 +999,7 @@ export default function MembersPage() {
                 <motion.div 
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100"
+                    className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100"
                 >
                     <div className="p-8 border-b border-gray-50 flex justify-between items-start">
                         <div className="space-y-1">
@@ -1134,7 +1130,7 @@ export default function MembersPage() {
                     </div>
 
                     <div className="px-8 pb-8">
-                        <div className="p-6 bg-gray-50 rounded-[32px] border border-gray-100">
+                        <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
                             <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">System Metadata</h4>
                             <pre className="text-[10px] font-mono text-gray-500 overflow-auto max-h-48">
                                 {JSON.stringify(selectedMember, null, 2)}

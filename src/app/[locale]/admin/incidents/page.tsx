@@ -3,7 +3,8 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from "react";
-import { ShieldAlert, Plus, Search, Filter, AlertTriangle, CheckCircle, FileText } from "lucide-react";
+import { Plus, Search, Filter, AlertTriangle, CheckCircle, FileText } from "lucide-react";
+import { PageHeader, tableClass, theadClass, thClass, trClass, tdClass } from "@/components/admin/page-ui";
 
 interface Incident {
   id: string;
@@ -90,27 +91,22 @@ export default function AdminIncidentsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ShieldAlert className="h-6 w-6 text-red-600" />
-            Volunteer Protection & Incident Records
-          </h1>
-          <p className="text-sm text-gray-500">
-            Confidential incident logging, medical follow-up, and protection case management.
-          </p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-red-700 transition"
-        >
-          <Plus className="h-4 w-4" /> Log Incident Record
-        </button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Volunteer Protection & Incident Records"
+        description="Confidential incident logging, medical follow-up, and protection case management."
+        actions={
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-[#ED1C24] text-white h-10 px-5 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-black transition-colors"
+          >
+            <Plus className="h-4 w-4" /> Log Incident Record
+          </button>
+        }
+      />
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-wrap gap-4 items-center">
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap gap-4 items-center">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Filter className="h-4 w-4 text-gray-400" />
           <span>Confidentiality Filter:</span>
@@ -131,34 +127,34 @@ export default function AdminIncidentsPage() {
       </div>
 
       {/* Incidents Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-12 text-center text-gray-500 text-sm">Loading incident reports...</div>
         ) : incidents.length === 0 ? (
           <div className="p-12 text-center text-gray-500 text-sm">No incident records found.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-gray-50 text-gray-700 border-b border-gray-100 font-medium">
-                <tr>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4">Location</th>
-                  <th className="py-3 px-4">Narrative</th>
-                  <th className="py-3 px-4">Confidentiality</th>
-                  <th className="py-3 px-4">Status</th>
+            <table className={tableClass}>
+              <thead className={theadClass}>
+                <tr className="border-b border-gray-100">
+                  <th className={thClass}>Date</th>
+                  <th className={thClass}>Type</th>
+                  <th className={thClass}>Location</th>
+                  <th className={thClass}>Narrative</th>
+                  <th className={thClass}>Confidentiality</th>
+                  <th className={thClass}>Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {incidents.map((inc) => (
-                  <tr key={inc.id} className="hover:bg-gray-50/50 transition">
-                    <td className="py-3 px-4 font-mono text-xs text-gray-500">
+                  <tr key={inc.id} className={trClass}>
+                    <td className={`${tdClass} tabular-nums text-gray-500`}>
                       {inc.incident_date ? inc.incident_date.split("T")[0] : inc.created_at?.split("T")[0]}
                     </td>
-                    <td className="py-3 px-4 font-medium text-gray-900">{inc.incident_type}</td>
-                    <td className="py-3 px-4 text-gray-600">{inc.location || "N/A"}</td>
-                    <td className="py-3 px-4 max-w-xs truncate text-gray-600">{inc.narrative}</td>
-                    <td className="py-3 px-4">
+                    <td className={`${tdClass} font-semibold text-gray-900`}>{inc.incident_type}</td>
+                    <td className={tdClass}>{inc.location || "N/A"}</td>
+                    <td className={`${tdClass} max-w-xs truncate`}>{inc.narrative}</td>
+                    <td className={tdClass}>
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                           inc.confidentiality_level === "RESTRICTED"
@@ -171,7 +167,7 @@ export default function AdminIncidentsPage() {
                         {inc.confidentiality_level}
                       </span>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className={tdClass}>
                       <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
                         {inc.status}
                       </span>

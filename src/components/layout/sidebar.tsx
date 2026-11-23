@@ -83,7 +83,7 @@ export function Sidebar() {
       
       {/* Brand Header */}
       <div className={cn(
-        "flex h-24 items-center border-b border-gray-50 pb-2 pt-4 relative",
+        "flex h-16 shrink-0 items-center border-b border-gray-100 relative",
         isCollapsed ? "justify-center px-0" : "px-6 gap-4"
       )}>
          <div className="bg-gray-50 border border-gray-100 p-1.5 rounded-xl shrink-0 shadow-sm">

@@ -23,6 +23,7 @@ import { formatNumber, genderSplit, loadRegistry, percent, type RegistryLoad } f
 import { RegistryInsights } from "@/components/admin/analytics/RegistryInsights";
 import { StatTile } from "@/components/admin/analytics/widgets";
 
+import { PageHeader } from "@/components/admin/page-ui";
 interface RegionOption {
   id: number;
   name: string;
@@ -245,36 +246,17 @@ export default function ReportsAndAnalyticsPage() {
   };
 
   return (
-    <div className="space-y-3.5 w-full max-w-[1600px] mx-auto pb-8">
-      {/* Top ERCS Red and White Brand Header - Compact */}
-      <div className="bg-white rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-1.5 bg-red-50 rounded-lg border border-red-100 shrink-0">
-            {/* <Image 
-              src="/logo.png" 
-              alt="ERCS Logo" 
-              width={26} 
-              height={26} 
-              className="object-contain" 
-              unoptimized 
-            /> */}
-          </div>
-          <div>
-            <h1 className="text-base font-black text-gray-900 tracking-tight leading-tight flex items-center gap-2">
-              <span className="text-[#ED1C24]">ERCS</span> Reports &amp; Analytics
-            </h1>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              National Headquarters — Official Analytics &amp; Reporting Hub
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
+    <div className="space-y-6">
+      <PageHeader
+        title="Reports & Analytics"
+        description="National Headquarters — Official Analytics & Reporting Hub"
+        actions={
+          <>
           <Button 
             onClick={fetchLiveStats} 
             variant="outline" 
             disabled={loadingStats}
-            className="rounded-lg border-gray-200 text-gray-600 hover:text-black font-bold text-xs h-8 px-3"
+            className="rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50 font-bold text-xs h-10 px-4"
           >
             <RefreshCw className={`h-3 w-3 mr-1.5 ${loadingStats ? 'animate-spin text-[#ED1C24]' : ''}`} /> 
             {loadingStats ? "Syncing..." : "Refresh"}
@@ -284,7 +266,7 @@ export default function ReportsAndAnalyticsPage() {
           <div className="relative">
             <Button
               onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-              className="bg-[#ED1C24] hover:bg-black text-white rounded-lg h-8 px-3 font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+              className="bg-[#ED1C24] hover:bg-black text-white rounded-xl h-10 px-4 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <Download className="h-3.5 w-3.5" /> Export Report <ChevronDown className="h-3 w-3" />
             </Button>
@@ -352,8 +334,10 @@ export default function ReportsAndAnalyticsPage() {
               </div>
             )}
           </div>
-        </div>
-      </div>
+        
+          </>
+        }
+      />
 
       {/* Rich Filter Bar (Members Style & Regional Auto-Scope) */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 space-y-3">
@@ -436,7 +420,7 @@ export default function ReportsAndAnalyticsPage() {
           <div className="pt-2.5 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
             {/* Region Select */}
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase tracking-wider text-gray-500 flex items-center gap-1">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1">
                 {isRegionLocked && <Lock className="w-2.5 h-2.5 text-[#ED1C24]" />}
                 Region
               </label>
@@ -465,7 +449,7 @@ export default function ReportsAndAnalyticsPage() {
 
             {/* Zone Select */}
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase tracking-wider text-gray-500">Zone</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Zone</label>
               <select
                 value={zoneFilter}
                 onChange={(e) => {
@@ -506,7 +490,7 @@ export default function ReportsAndAnalyticsPage() {
 
             {/* Sub-Type Select */}
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase tracking-wider text-gray-500">Type</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Type</label>
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
@@ -533,7 +517,7 @@ export default function ReportsAndAnalyticsPage() {
 
             {/* Status Select */}
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase tracking-wider text-gray-500">Status</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -549,7 +533,7 @@ export default function ReportsAndAnalyticsPage() {
 
             {/* Woreda Select */}
             <div className="space-y-1">
-              <label className="text-[9px] font-black uppercase tracking-wider text-gray-500">Woreda</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Woreda</label>
               <select
                 value={woredaFilter}
                 onChange={(e) => setWoredaFilter(e.target.value)}
@@ -597,7 +581,7 @@ export default function ReportsAndAnalyticsPage() {
         <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#ED1C24]"></span>
-            <h3 className="text-xs font-black uppercase tracking-wider text-gray-800">
+            <h3 className="text-base font-bold tracking-tight text-gray-900">
               Instant File Download Center
             </h3>
           </div>

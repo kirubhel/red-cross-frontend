@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
+import { PageHeader } from "@/components/admin/page-ui";
 type NewsArticle = {
   id?: string;
   title: string;
@@ -221,39 +222,35 @@ export default function NewsManagementPage() {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-full pb-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="max-w-xl space-y-1">
-          <h1 className="text-2xl font-black text-black tracking-tighter leading-none">
-            News & <span className="text-[#ED1C24]">Media</span>
-          </h1>
-          <p className="text-gray-500 font-medium text-[11px] leading-tight">
-            Manage press releases, field updates, and community stories.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2 shrink-0">
+    <div className="space-y-6">
+      <PageHeader
+        title="News & Media"
+        description="Manage press releases, field updates, and community stories."
+        actions={
+          <>
           <Button 
             onClick={fetchNews}
             variant="outline" 
-            className="h-9 rounded-xl px-4 font-black text-[9px] uppercase tracking-widest hover:bg-gray-50 border-gray-200"
+            className="h-10 rounded-xl px-4 font-bold text-xs hover:bg-gray-50 border-gray-200"
           >
             Refresh
           </Button>
           <Button 
             onClick={handleCreateNew}
-            className="h-9 rounded-xl px-4 font-black text-[9px] uppercase tracking-widest bg-[#ED1C24] hover:bg-black text-white transition-colors"
+            className="h-10 rounded-xl px-4 font-bold text-xs bg-[#ED1C24] hover:bg-black text-white transition-colors"
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" /> New Story
           </Button>
-        </div>
-      </div>
+        
+          </>
+        }
+      />
 
       <div className="grid lg:grid-cols-12 gap-8 items-start">
          
          {/* News List */}
          <div className="lg:col-span-4 space-y-3">
-            <h3 className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-2">Latest Articles</h3>
+            <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 px-2">Latest Articles</h3>
             
             <div className="space-y-2">
                {loading ? (
@@ -340,7 +337,7 @@ export default function NewsManagementPage() {
                                 <Newspaper className="h-4 w-4" />
                               </div>
                               <div>
-                                 <h3 className="text-base font-black text-black tracking-tighter">
+                                 <h3 className="text-base font-bold tracking-tight text-gray-900">
                                    {selectedArticle.id ? 'Edit Story' : 'New Story'}
                                  </h3>
                               </div>
@@ -411,7 +408,7 @@ export default function NewsManagementPage() {
 
                            <div className="md:col-span-2 space-y-3">
                              <div className="flex items-center justify-between">
-                               <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                               <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">
                                    <ImageIcon className="h-3 w-3" /> Image Gallery
                                </Label>
                                <div className="relative">
@@ -515,7 +512,7 @@ export default function NewsManagementPage() {
                            </div>
 
                            <div className="md:col-span-2 space-y-1.5">
-                             <Label className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-400 ml-1">
+                             <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">
                                  <FileText className="h-3 w-3" /> Full Content
                              </Label>
                              <textarea 

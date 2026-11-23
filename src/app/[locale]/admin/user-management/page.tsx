@@ -9,7 +9,7 @@ import {
   CheckCircle2, UserX, User, Users, Search, RefreshCw, X,
   Eye, EyeOff, LayoutDashboard, HandHeart, Building2,
   ClipboardList, BarChart3, CreditCard, Bell, Newspaper,
-  Settings, MapPin, Globe, Lock, ChevronRight
+  Settings, MapPin, Lock, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { getUserScope } from "@/lib/auth-scope";
 
+import { PageHeader } from "@/components/admin/page-ui";
 type SystemUser = {
   id: string;
   email: string;
@@ -552,29 +553,17 @@ export default function UserManagementPage() {
   });
 
   return (
-    <div className="space-y-6 w-full max-w-full pb-10">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="max-w-xl space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-red-50 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-widest border border-red-100">
-            {adminScope.isSuper ? (
-              <><Globe className="h-3.5 w-3.5" /> Super Admin — Full National Jurisdiction</>
-            ) : (
-              <><MapPin className="h-3.5 w-3.5" /> {adminScope.roleName} — {getRegionName(adminScope.regionId)} Jurisdiction</>
-            )}
-          </div>
-          <h1 className="text-3xl font-black text-black tracking-tighter leading-none">
-            User <span className="text-[#ED1C24]">Management</span>
-          </h1>
-          <p className="text-gray-500 font-medium text-sm leading-snug">
-            Manage admin users, regional branches, and personnel access according to geographic jurisdiction.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
+      <PageHeader
+        title="User Management"
+        description="Manage admin users, regional branches, and personnel access according to geographic jurisdiction."
+        actions={
+          <>
           <Button
             onClick={fetchUsers}
             variant="outline"
-            className="h-10 rounded-xl px-5 font-black text-[10px] uppercase tracking-widest hover:bg-gray-50 border-gray-200"
+            className="h-10 rounded-xl px-5 font-bold text-xs hover:bg-gray-50 border-gray-200"
           >
             <RefreshCw className="mr-2 h-3.5 w-3.5" /> Refresh
           </Button>
@@ -593,12 +582,14 @@ export default function UserManagementPage() {
                 branch: "",
               }); 
             }}
-            className="h-10 rounded-xl px-5 font-black text-[10px] uppercase tracking-widest bg-[#ED1C24] hover:bg-black text-white transition-colors"
+            className="h-10 rounded-xl px-5 font-bold text-xs bg-[#ED1C24] hover:bg-black text-white transition-colors"
           >
             <Plus className="mr-2 h-4 w-4" /> Create User
           </Button>
-        </div>
-      </div>
+        
+          </>
+        }
+      />
 
       <div className="grid lg:grid-cols-12 gap-6 items-start">
         {/* User List Panel */}
@@ -638,7 +629,7 @@ export default function UserManagementPage() {
           {/* Cascaded Location Filters */}
           <div className="bg-gray-50/70 p-3 rounded-2xl border border-gray-200 space-y-2">
             <div className="flex items-center justify-between px-1">
-              <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 flex items-center gap-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1">
                 <MapPin className="h-3 w-3 text-[#ED1C24]" /> Cascaded Location Filters
               </span>
               {((adminScope.isSuper && filterRegion > 0) || filterZone !== "" || filterWoreda !== "") && (
@@ -711,7 +702,7 @@ export default function UserManagementPage() {
             {loading ? (
               <div className="h-32 flex flex-col items-center justify-center bg-gray-50 rounded-2xl gap-2">
                 <div className="h-6 w-6 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Loading Personnel...</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Loading Personnel...</span>
               </div>
             ) : filtered.length === 0 ? (
               <div className="text-center p-8 bg-gray-50 rounded-2xl border border-gray-100">
@@ -739,7 +730,7 @@ export default function UserManagementPage() {
                         <User className={cn("h-4 w-4", selectedUser?.id === user.id ? "text-white" : "text-gray-600")} />
                       </div>
                       <div className="min-w-0">
-                        <p className={cn("font-black truncate text-xs", selectedUser?.id === user.id ? "text-white" : "text-slate-900")}>
+                        <p className={cn("font-black truncate text-xs", selectedUser?.id === user.id ? "text-white" : "text-gray-900")}>
                           {user.email || user.phone_number || "Unknown"}
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
@@ -810,7 +801,7 @@ export default function UserManagementPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden"
+                className="bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden"
               >
                 <div className="p-6 md:p-8 space-y-6">
                   <div className="flex items-center justify-between pb-4 border-b border-gray-100">
@@ -819,7 +810,7 @@ export default function UserManagementPage() {
                         <Plus className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-black text-black tracking-tight">Create Personnel Account</h3>
+                        <h3 className="text-base font-bold tracking-tight text-gray-900">Create Personnel Account</h3>
                         <p className="text-gray-400 font-medium text-xs">
                           {adminScope.isSuper ? "Register new system user or administrator across any region." : `Register new staff or personnel in ${getRegionName(adminScope.regionId)}.`}
                         </p>
@@ -832,7 +823,7 @@ export default function UserManagementPage() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Email Address *</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Email Address *</Label>
                       <Input
                         type="email"
                         value={form.email}
@@ -844,7 +835,7 @@ export default function UserManagementPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Phone Number *</Label>
+                       <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Phone Number *</Label>
                        <PhoneNumberInput
                            countryCode={countryIso}
                            onCountryChange={(code) => {
@@ -859,7 +850,7 @@ export default function UserManagementPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Password *</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Password *</Label>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
@@ -880,7 +871,7 @@ export default function UserManagementPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Assigned Role *</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Assigned Role *</Label>
                       <select
                         value={form.role}
                         onChange={e => setForm(f => ({ ...f, role: Number(e.target.value) }))}
@@ -894,7 +885,7 @@ export default function UserManagementPage() {
 
                     {/* Region Selector (Cascaded / Locked) */}
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500 flex items-center justify-between">
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex items-center justify-between">
                         <span>Region *</span>
                         {!adminScope.isSuper && <span className="text-[9px] font-black text-[#ED1C24] flex items-center gap-0.5"><Lock className="h-2.5 w-2.5" /> Locked by Jurisdiction</span>}
                       </Label>
@@ -922,7 +913,7 @@ export default function UserManagementPage() {
 
                     {/* Zone Selector (Cascaded from Region) */}
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Zone / Sub-City</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Zone / Sub-City</Label>
                       <select
                         value={form.zone}
                         onChange={e => setForm(f => ({ 
@@ -942,7 +933,7 @@ export default function UserManagementPage() {
 
                     {/* Woreda Selector (Cascaded from Zone) */}
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Woreda / Kebele</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Woreda / Kebele</Label>
                       <select
                         value={form.woreda}
                         onChange={e => setForm(f => ({ 
@@ -961,7 +952,7 @@ export default function UserManagementPage() {
 
                     {/* Branch Selector (Cascaded from Region & Zone) */}
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Assigned Branch (If Applicable)</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Assigned Branch (If Applicable)</Label>
                       <select
                         value={form.branch || ""}
                         onChange={e => setForm(f => ({ ...f, branch: e.target.value }))}
@@ -978,7 +969,7 @@ export default function UserManagementPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Module Access & Capabilities</Label>
+                    <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Module Access & Capabilities</Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {MODULE_PERMISSIONS.filter(m => {
                         const isSuperOnly = ["FORMS", "MEMBERSHIP_PLANS", "CMS", "SETTINGS"].includes(m.id);
@@ -1012,7 +1003,7 @@ export default function UserManagementPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="bg-white rounded-3xl border border-gray-200 p-6 md:p-8 shadow-xl sticky top-6"
+                className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-xl sticky top-6"
               >
                 <div className="space-y-6">
                   {/* User Header */}
@@ -1022,7 +1013,7 @@ export default function UserManagementPage() {
                         {selectedUser.email ? selectedUser.email[0].toUpperCase() : "U"}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-black text-slate-900 tracking-tight truncate text-base">{selectedUser.email || "No Email"}</h3>
+                        <h3 className="font-black text-gray-900 tracking-tight truncate text-base">{selectedUser.email || "No Email"}</h3>
                         <p className="text-xs font-bold text-gray-400 font-mono">{selectedUser.phone_number || "No Phone Number"}</p>
                       </div>
                     </div>
@@ -1033,23 +1024,23 @@ export default function UserManagementPage() {
 
                   {/* Geographic Jurisdiction Summary */}
                   <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Assigned Jurisdiction</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Assigned Jurisdiction</span>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                       <div>
                         <span className="text-[9px] text-gray-400 font-bold uppercase block">Region</span>
-                        <span className="font-extrabold text-slate-900">{getRegionName(selectedUser.region_id)}</span>
+                        <span className="font-extrabold text-gray-900">{getRegionName(selectedUser.region_id)}</span>
                       </div>
                       <div>
                         <span className="text-[9px] text-gray-400 font-bold uppercase block">Zone</span>
-                        <span className="font-extrabold text-slate-900">{selectedUser.zone_id ? getZoneName(selectedUser.zone_id) : "All Zones"}</span>
+                        <span className="font-extrabold text-gray-900">{selectedUser.zone_id ? getZoneName(selectedUser.zone_id) : "All Zones"}</span>
                       </div>
                       <div>
                         <span className="text-[9px] text-gray-400 font-bold uppercase block">Woreda</span>
-                        <span className="font-extrabold text-slate-900">{selectedUser.woreda_id ? getWoredaName(selectedUser.woreda_id) : "All Woredas"}</span>
+                        <span className="font-extrabold text-gray-900">{selectedUser.woreda_id ? getWoredaName(selectedUser.woreda_id) : "All Woredas"}</span>
                       </div>
                       <div>
                         <span className="text-[9px] text-gray-400 font-bold uppercase block">Branch</span>
-                        <span className="font-extrabold text-slate-900">{selectedUser.branch_id ? getBranchName(selectedUser.branch_id) : "General"}</span>
+                        <span className="font-extrabold text-gray-900">{selectedUser.branch_id ? getBranchName(selectedUser.branch_id) : "General"}</span>
                       </div>
                     </div>
                   </div>
@@ -1057,7 +1048,7 @@ export default function UserManagementPage() {
                   {/* Edit fields */}
                   <div className="space-y-4">
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Role Authority</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Role Authority</Label>
                       <select
                         value={editRole}
                         onChange={e => setEditRole(Number(e.target.value))}
@@ -1070,7 +1061,7 @@ export default function UserManagementPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Account Status</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Account Status</Label>
                       <select
                         value={editStatus}
                         onChange={e => setEditStatus(e.target.value)}
@@ -1083,7 +1074,7 @@ export default function UserManagementPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Reassign Branch (Cascaded for {getRegionName(selectedUser.region_id)})</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Reassign Branch (Cascaded for {getRegionName(selectedUser.region_id)})</Label>
                       <select
                         value={editBranch}
                         onChange={e => setEditBranch(e.target.value)}
@@ -1124,15 +1115,15 @@ export default function UserManagementPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="h-full min-h-[350px] bg-white rounded-3xl border border-gray-200 border-dashed flex items-center justify-center p-8 text-center"
+                className="h-full min-h-[350px] bg-white rounded-2xl border border-gray-200 border-dashed flex items-center justify-center p-8 text-center"
               >
                 <div className="max-w-sm space-y-3">
                   <div className="h-14 w-14 bg-red-50 rounded-2xl flex items-center justify-center text-[#ED1C24] mx-auto">
                     <ShieldCheck className="h-7 w-7" />
                   </div>
-                  <h3 className="text-xl font-black text-slate-900 tracking-tight">Personnel Directory</h3>
+                  <h3 className="text-base font-bold tracking-tight text-gray-900">Personnel Directory</h3>
                   <p className="text-gray-400 font-medium text-xs">
-                    Select a staff member, regional admin, or volunteer from the left list to review permissions and jurisdiction, or click <strong className="text-slate-700">+ Create User</strong>.
+                    Select a staff member, regional admin, or volunteer from the left list to review permissions and jurisdiction, or click <strong className="text-gray-700">+ Create User</strong>.
                   </p>
                 </div>
               </motion.div>

@@ -49,11 +49,11 @@ const STATUSES = ["", "SUCCESS", "SUBMITTED", "PENDING", "FAILED", "UNKNOWN", "S
 const STATUS_STYLE: Record<string, string> = {
   SUCCESS: "bg-emerald-100 text-emerald-700",
   SUBMITTED: "bg-sky-100 text-sky-700",
-  PENDING: "bg-slate-100 text-slate-600",
-  SUBMITTING: "bg-slate-100 text-slate-600",
+  PENDING: "bg-gray-100 text-gray-600",
+  SUBMITTING: "bg-gray-100 text-gray-600",
   FAILED: "bg-red-100 text-red-700",
   UNKNOWN: "bg-amber-100 text-amber-800",
-  SKIPPED: "bg-slate-100 text-slate-500",
+  SKIPPED: "bg-gray-100 text-gray-500",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -67,7 +67,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const selectClass =
-  "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-200";
+  "h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-200";
 
 function errMsg(e: any, fallback: string): string {
   const d = e?.response?.data;
@@ -217,10 +217,10 @@ export function SettlementsPanel() {
         className={cn(
           "rounded-xl border px-4 py-3 text-sm",
           loading
-            ? "border-slate-200 bg-slate-50 text-slate-500"
+            ? "border-gray-200 bg-gray-50 text-gray-500"
             : live
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-slate-200 bg-slate-50 text-slate-600"
+              : "border-gray-200 bg-gray-50 text-gray-600"
         )}
       >
         {loading ? (
@@ -234,24 +234,24 @@ export function SettlementsPanel() {
       </div>
 
       <form
-        className="rounded-xl border border-slate-200 bg-white"
+        className="rounded-xl border border-gray-200 bg-white"
         onSubmit={(e) => {
           e.preventDefault();
           if (dirty && !saving && customValid) save();
         }}
       >
         <div className="space-y-6 p-5 md:p-6">
-          <p className="max-w-3xl text-sm text-slate-600">
+          <p className="max-w-3xl text-sm text-gray-600">
             When a payment is confirmed, its money lands in the ArifPay wallet. Every few minutes the system sends each confirmed
             payment from the wallet to the bank account that payment belongs to: one transfer per payment.
           </p>
 
           <section className="grid gap-4 sm:grid-cols-2" aria-label="Payout settings">
-            <label className="flex items-start gap-3 rounded-lg border border-slate-200 p-3 text-sm">
+            <label className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 text-sm">
               <input type="checkbox" className="mt-0.5 h-4 w-4" checked={enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
               <span>
-                <span className="block font-semibold text-slate-800">Send payouts automatically</span>
-                <span className="text-xs text-slate-500">Off means nothing is checked or sent.</span>
+                <span className="block font-semibold text-gray-800">Send payouts automatically</span>
+                <span className="text-xs text-gray-500">Off means nothing is checked or sent.</span>
               </span>
             </label>
             <div>
@@ -284,7 +284,7 @@ export function SettlementsPanel() {
                 onChange={(e) => setCustomFrom(e.target.value)}
               />
             )}
-            <p className={cn("mt-1 text-xs", customValid ? "text-slate-500" : "text-red-600")}>
+            <p className={cn("mt-1 text-xs", customValid ? "text-gray-500" : "text-red-600")}>
               {customValid
                 ? "Payments confirmed before this are left alone. One already paid out is never paid twice. Up to 90 days back."
                 : "Pick a time within the last 90 days."}
@@ -292,8 +292,8 @@ export function SettlementsPanel() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-3 rounded-b-xl border-t border-slate-100 bg-slate-50 px-5 py-3 md:px-6">
-          <span className={cn("mr-auto text-xs font-medium", dirty ? "text-amber-700" : "text-slate-400")} role="status">
+        <div className="flex flex-wrap items-center justify-end gap-3 rounded-b-xl border-t border-gray-100 bg-gray-50 px-5 py-3 md:px-6">
+          <span className={cn("mr-auto text-xs font-medium", dirty ? "text-amber-700" : "text-gray-400")} role="status">
             {dirty ? "Unsaved changes" : "All changes saved"}
           </span>
           <Button type="button" variant="outline" onClick={runNow} disabled={running || dirty || !saved.enabled} title={dirty ? "Save your changes first" : !saved.enabled ? "Turn payouts on first" : undefined}>
@@ -307,8 +307,8 @@ export function SettlementsPanel() {
 
       <section className="space-y-3" aria-labelledby="payouts-h">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="payouts-h" className="text-sm font-bold text-slate-900">
-            Payouts <span className="font-normal text-slate-400">({total})</span>
+          <h2 id="payouts-h" className="text-sm font-bold text-gray-900">
+            Payouts <span className="font-normal text-gray-400">({total})</span>
           </h2>
           <div className="flex items-center gap-2">
             <Label htmlFor="po-filter" className="sr-only">Filter by status</Label>
@@ -323,9 +323,9 @@ export function SettlementsPanel() {
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
           <table className="w-full min-w-[860px] text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+            <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
               <tr>
                 <th className="px-4 py-3">Payment</th>
                 <th className="px-4 py-3 text-right">Received</th>
@@ -338,31 +338,31 @@ export function SettlementsPanel() {
             <tbody>
               {payouts.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                     {filter ? "Nothing with this status." : "No payouts yet. Payments confirmed after you turn payouts on appear here."}
                   </td>
                 </tr>
               )}
               {payouts.map((p) => (
-                <tr key={p.id} className="border-t border-slate-100 align-top">
+                <tr key={p.id} className="border-t border-gray-100 align-top">
                   <td className="px-4 py-3">
-                    <div className="font-mono text-slate-800">{p.invoice_number}</div>
-                    <div className="text-xs text-slate-400">{p.purpose === "MEMBERSHIP" ? "Membership" : "Donation"} · {when(p.created_at)}</div>
+                    <div className="font-mono text-gray-800">{p.invoice_number}</div>
+                    <div className="text-xs text-gray-400">{p.purpose === "MEMBERSHIP" ? "Membership" : "Donation"} · {when(p.created_at)}</div>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-slate-700">{money(p.amount_gross, p.currency)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-slate-800">
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-gray-700">{money(p.amount_gross, p.currency)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-gray-800">
                     {p.amount_net ? money(p.amount_net, p.currency) : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-mono text-slate-800">{p.account_number || "—"}</div>
-                    <div className="max-w-[220px] truncate text-xs text-slate-500">{[p.account_name, p.bank_name].filter(Boolean).join(" · ")}</div>
+                    <div className="font-mono text-gray-800">{p.account_number || "—"}</div>
+                    <div className="max-w-[220px] truncate text-xs text-gray-500">{[p.account_name, p.bank_name].filter(Boolean).join(" · ")}</div>
                   </td>
                   <td className="px-4 py-3">
                     <span className={cn("rounded-full px-2 py-0.5 text-xs font-bold", STATUS_STYLE[p.status] || STATUS_STYLE.PENDING)}>
                       {STATUS_LABEL[p.status] || p.status}
                     </span>
                     {p.reason && (
-                      <div className="mt-1 flex max-w-[300px] items-start gap-1 text-xs text-slate-500">
+                      <div className="mt-1 flex max-w-[300px] items-start gap-1 text-xs text-gray-500">
                         {(p.status === "FAILED" || p.status === "UNKNOWN") && <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" aria-hidden="true" />}
                         <span>{p.reason}</span>
                       </div>

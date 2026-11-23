@@ -12,6 +12,7 @@ import { QRCodeSVG } from "qrcode.react";
 import api from "@/lib/api";
 import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
 
+import { PageHeader } from "@/components/admin/page-ui";
 type MemberIDConfig = {
   prefix: string;
   padding: number;
@@ -408,32 +409,28 @@ export default function SystemSettingsPage() {
 
   return (
     <SuperAdminGuard>
-      <div className="space-y-6 w-full max-w-7xl mx-auto pb-10">
-      {/* Header */ }
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-red-100 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-widest leading-none">
-            <Settings className="h-3 w-3" /> System Configuration
-            </div>
-            <h1 className="text-3xl font-black text-black tracking-tighter">Global Settings</h1>
-            <p className="text-gray-500 font-medium text-sm">Manage core operational behaviors, volunteer pricing rates, and identifier formatting rules.</p>
-        </div>
-        
-        <div className="flex bg-gray-100 p-1 rounded-xl flex-wrap">
-            {(["id", "volunteer_rates", "regions", "zones", "woredas", "assets", "system", "security"] as const).map((tab) => (
-                <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-black transition-all ${
-                        activeTab === tab 
-                        ? "bg-white text-black shadow-sm" 
-                        : "text-gray-400 hover:text-gray-600"
-                    }`}
-                >
-                    {tab === "id" ? "Member ID" : tab === "volunteer_rates" ? "Volunteer Rates" : tab === "assets" ? "ID Assets" : tab === "system" ? "Connectivity" : tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-            ))}
-        </div>
+      <div className="space-y-6">
+      <PageHeader
+        title="Global Settings"
+        description="Manage core operational behaviors, volunteer pricing rates, and identifier formatting rules."
+      />
+
+      <div role="tablist" aria-label="Settings sections" className="flex flex-wrap gap-1 rounded-xl border border-gray-100 bg-white p-1 shadow-sm">
+        {(["id", "volunteer_rates", "regions", "zones", "woredas", "assets", "system", "security"] as const).map((tab) => (
+          <button
+            key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
+            onClick={() => setActiveTab(tab)}
+            className={`rounded-lg px-4 py-2 text-xs font-bold transition-colors ${
+              activeTab === tab
+                ? "bg-[#ED1C24] text-white"
+                : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+            }`}
+          >
+            {tab === "id" ? "Member ID" : tab === "volunteer_rates" ? "Volunteer Rates" : tab === "assets" ? "ID Assets" : tab === "system" ? "Connectivity" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
       </div>
 
       {/* Main Content Area */ }
@@ -456,7 +453,7 @@ export default function SystemSettingsPage() {
                         <Hash className="h-6 w-6" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black text-black tracking-tighter">Member ID Generator</h3>
+                        <h3 className="text-base font-bold tracking-tight text-gray-900">Member ID Generator</h3>
                         <p className="text-gray-400 font-medium text-xs">Configure the randomized, unique ERCS ID format.</p>
                     </div>
                 </div>
@@ -536,7 +533,7 @@ export default function SystemSettingsPage() {
                             <Settings className="h-6 w-6" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-black tracking-tighter">Volunteer Request Cost & Rate Settings</h3>
+                            <h3 className="text-base font-bold tracking-tight text-gray-900">Volunteer Request Cost & Rate Settings</h3>
                             <p className="text-gray-400 font-medium text-xs">Set global default per-day and per-volunteer unit rates for organization missions.</p>
                         </div>
                     </div>
@@ -625,7 +622,7 @@ export default function SystemSettingsPage() {
                         </div>
                     </div>
 
-                    <div className="bg-slate-900 text-white p-6 rounded-3xl space-y-6 flex flex-col justify-between">
+                    <div className="bg-gray-900 text-white p-6 rounded-2xl space-y-6 flex flex-col justify-between">
                         <div>
                             <div className="flex items-center justify-between pb-4 border-b border-white/10">
                                 <div>
@@ -636,27 +633,27 @@ export default function SystemSettingsPage() {
                             </div>
 
                             <div className="mt-4 space-y-2.5 text-xs font-semibold">
-                                <div className="flex justify-between text-slate-300">
+                                <div className="flex justify-between text-gray-300">
                                     <span>Base Daily Allowance (5 × 3 × {volunteerRates.dailyRatePerVolunteer} ETB):</span>
                                     <span className="font-bold text-white">{(5 * 3 * (volunteerRates.dailyRatePerVolunteer || 0)).toLocaleString()} ETB</span>
                                 </div>
-                                <div className="flex justify-between text-slate-300">
+                                <div className="flex justify-between text-gray-300">
                                     <span>Accommodations (5 × 3 × {volunteerRates.accommodationDailyCost} ETB):</span>
                                     <span className="font-bold text-white">{(5 * 3 * (volunteerRates.accommodationDailyCost || 0)).toLocaleString()} ETB</span>
                                 </div>
-                                <div className="flex justify-between text-slate-300">
+                                <div className="flex justify-between text-gray-300">
                                     <span>Meals & Per Diem (5 × 3 × {volunteerRates.mealDailyCost} ETB):</span>
                                     <span className="font-bold text-white">{(5 * 3 * (volunteerRates.mealDailyCost || 0)).toLocaleString()} ETB</span>
                                 </div>
-                                <div className="flex justify-between text-slate-300">
+                                <div className="flex justify-between text-gray-300">
                                     <span>Transport (5 × 3 × {volunteerRates.transportAllowance} ETB):</span>
                                     <span className="font-bold text-white">{(5 * 3 * (volunteerRates.transportAllowance || 0)).toLocaleString()} ETB</span>
                                 </div>
-                                <div className="flex justify-between text-slate-300">
+                                <div className="flex justify-between text-gray-300">
                                     <span>Medical Insurance (5 × {volunteerRates.insuranceFeePerVolunteer} ETB):</span>
                                     <span className="font-bold text-white">{(5 * (volunteerRates.insuranceFeePerVolunteer || 0)).toLocaleString()} ETB</span>
                                 </div>
-                                <div className="flex justify-between text-slate-300">
+                                <div className="flex justify-between text-gray-300">
                                     <span>Admin Fee ({volunteerRates.adminFeePercent || 0}%):</span>
                                     <span className="font-bold text-white">
                                         {Math.round(((5 * 3 * ((volunteerRates.dailyRatePerVolunteer || 0) + (volunteerRates.accommodationDailyCost || 0) + (volunteerRates.mealDailyCost || 0) + (volunteerRates.transportAllowance || 0))) + (5 * (volunteerRates.insuranceFeePerVolunteer || 0))) * ((volunteerRates.adminFeePercent || 0) / 100)).toLocaleString()} ETB
@@ -667,14 +664,14 @@ export default function SystemSettingsPage() {
 
                         <div className="pt-4 border-t border-white/10 flex justify-between items-end">
                             <div>
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Calculated Estimate</span>
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Total Calculated Estimate</span>
                                 <div className="text-3xl font-black text-white tracking-tighter">
                                     {Math.round(
                                         ((5 * 3 * ((volunteerRates.dailyRatePerVolunteer || 0) + (volunteerRates.accommodationDailyCost || 0) + (volunteerRates.mealDailyCost || 0) + (volunteerRates.transportAllowance || 0))) + (5 * (volunteerRates.insuranceFeePerVolunteer || 0))) * (1 + ((volunteerRates.adminFeePercent || 0) / 100))
                                     ).toLocaleString()} <span className="text-sm text-[#ED1C24] font-bold">ETB</span>
                                 </div>
                             </div>
-                            <span className="text-[10px] text-slate-400 font-semibold italic">Applied to all new org requests</span>
+                            <span className="text-[10px] text-gray-400 font-semibold italic">Applied to all new org requests</span>
                         </div>
                     </div>
                 </div>
@@ -689,7 +686,7 @@ export default function SystemSettingsPage() {
                             <Globe className="h-6 w-6" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-black tracking-tighter">Region Management</h3>
+                            <h3 className="text-base font-bold tracking-tight text-gray-900">Region Management</h3>
                             <p className="text-gray-400 font-medium text-xs">Manage top-level organizational regions and their codes.</p>
                         </div>
                     </div>
@@ -750,7 +747,7 @@ export default function SystemSettingsPage() {
                             <MapPin className="h-6 w-6" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-black tracking-tighter">Zone Management</h3>
+                            <h3 className="text-base font-bold tracking-tight text-gray-900">Zone Management</h3>
                             <p className="text-gray-400 font-medium text-xs">Configure regional zones and administrative areas.</p>
                         </div>
                     </div>
@@ -857,7 +854,7 @@ export default function SystemSettingsPage() {
                         <Edit3 className="h-6 w-6" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black text-black tracking-tighter">ID Card Branding Assets</h3>
+                        <h3 className="text-base font-bold tracking-tight text-gray-900">ID Card Branding Assets</h3>
                         <p className="text-gray-400 font-medium text-xs">Manage official stamps and authorized signatures for member identification.</p>
                     </div>
                 </div>
@@ -917,14 +914,14 @@ export default function SystemSettingsPage() {
                         <RefreshCw className="h-6 w-6" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black text-black tracking-tighter">Connectivity & Gateways</h3>
+                        <h3 className="text-base font-bold tracking-tight text-gray-900">Connectivity & Gateways</h3>
                         <p className="text-gray-400 font-medium text-xs">Configure communication APIs and infrastructure parameters.</p>
                     </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
                     {/* SMS Gateway */}
-                    <div className="space-y-4 p-6 bg-gray-50 rounded-[24px] border border-gray-100">
+                    <div className="space-y-4 p-6 bg-gray-50 rounded-2xl border border-gray-100">
                         <h4 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                            <MessageCircle className="h-4 w-4 text-green-600" /> SMS Gateway
                         </h4>
@@ -947,7 +944,7 @@ export default function SystemSettingsPage() {
                     </div>
 
                     {/* WhatsApp API */}
-                    <div className="space-y-4 p-6 bg-gray-50 rounded-[24px] border border-gray-100">
+                    <div className="space-y-4 p-6 bg-gray-50 rounded-2xl border border-gray-100">
                         <h4 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                            <MessageCircle className="h-4 w-4 text-green-500" /> WhatsApp API
                         </h4>
@@ -970,7 +967,7 @@ export default function SystemSettingsPage() {
                     </div>
 
                     {/* Telegram Bot */}
-                    <div className="space-y-4 p-6 bg-gray-50 rounded-[24px] border border-gray-100">
+                    <div className="space-y-4 p-6 bg-gray-50 rounded-2xl border border-gray-100">
                         <h4 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                            <MessageCircle className="h-4 w-4 text-blue-400" /> Telegram Bot
                         </h4>
@@ -984,7 +981,7 @@ export default function SystemSettingsPage() {
                     </div>
 
                     {/* Infrastructure */}
-                    <div className="space-y-4 p-6 bg-gray-50 rounded-[24px] border border-gray-100">
+                    <div className="space-y-4 p-6 bg-gray-50 rounded-2xl border border-gray-100">
                         <h4 className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                            <Globe className="h-4 w-4 text-amber-500" /> Infrastructure
                         </h4>
@@ -1031,7 +1028,7 @@ export default function SystemSettingsPage() {
                             <Map className="h-6 w-6" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-black tracking-tighter">Woreda Management</h3>
+                            <h3 className="text-base font-bold tracking-tight text-gray-900">Woreda Management</h3>
                             <p className="text-gray-400 font-medium text-xs">Manage district-level woredas linked to zones.</p>
                         </div>
                     </div>
@@ -1173,13 +1170,13 @@ export default function SystemSettingsPage() {
                         <ShieldCheck className="h-6 w-6" />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black text-black tracking-tighter">Security & Authentication</h3>
+                        <h3 className="text-base font-bold tracking-tight text-gray-900">Security & Authentication</h3>
                         <p className="text-gray-400 font-medium text-xs">Enhance account security with Two-Factor Authentication (2FA) via SMS OTP or Authenticator App.</p>
                     </div>
                 </div>
 
                 {is2faEnabled && !mfaSetup ? (
-                    <div className="p-8 bg-green-50/50 rounded-3xl border border-green-200/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div className="p-8 bg-green-50/50 rounded-2xl border border-green-200/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                         <div className="flex items-center gap-5">
                             <div className="h-16 w-16 bg-green-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/20 shrink-0">
                                 <CheckCircle2 className="h-8 w-8" />
@@ -1244,7 +1241,7 @@ export default function SystemSettingsPage() {
                         <div className="hidden md:flex justify-center">
                             <div className="relative w-64 h-64">
                                 <div className="absolute inset-0 bg-red-50 rounded-full blur-3xl opacity-50" />
-                                <div className="relative h-full w-full bg-white rounded-[40px] border border-gray-100 shadow-xl flex items-center justify-center">
+                                <div className="relative h-full w-full bg-white rounded-2xl border border-gray-100 shadow-xl flex items-center justify-center">
                                     <Smartphone className="h-32 w-32 text-gray-200" />
                                 </div>
                             </div>
@@ -1277,7 +1274,7 @@ export default function SystemSettingsPage() {
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }} 
                         animate={{ opacity: 1, scale: 1 }} 
-                        className="p-6 bg-white rounded-3xl border border-gray-100 shadow-xl space-y-6"
+                        className="p-6 bg-white rounded-2xl border border-gray-100 shadow-xl space-y-6"
                     >
                         {/* Tab Selector */}
                         <div className="flex items-center justify-between border-b border-gray-100 pb-4">
@@ -1391,7 +1388,7 @@ export default function SystemSettingsPage() {
                                 </div>
 
                                 <div className="flex flex-col items-center gap-6">
-                                    <div className="p-6 bg-white rounded-[32px] shadow-2xl shadow-black/5 border border-gray-100 flex items-center justify-center">
+                                    <div className="p-6 bg-white rounded-2xl shadow-2xl shadow-black/5 border border-gray-100 flex items-center justify-center">
                                         <QRCodeSVG value={mfaSetup?.qrCodeUrl || "https://ercs.org/mfa-setup"} size={180} />
                                     </div>
                                     <div className="w-full max-w-xs space-y-2 text-center">

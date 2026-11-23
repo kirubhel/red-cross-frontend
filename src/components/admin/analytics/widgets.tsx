@@ -4,20 +4,14 @@ import type { ReactNode } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingDown, TrendingUp, Minus, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Panel } from "@/components/admin/page-ui";
 import { SERIES, formatNumber, percent, type RegionStat } from "@/lib/registry-analytics";
 
 export function Card({ title, subtitle, action, children, className }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={cn("rounded-2xl border border-gray-100 bg-white p-5 shadow-sm", className)}>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-black tracking-tight text-gray-900">{title}</h2>
-          {subtitle && <p className="mt-0.5 text-xs text-gray-500">{subtitle}</p>}
-        </div>
-        {action}
-      </div>
+    <Panel title={title} description={subtitle} actions={action} className={className}>
       {children}
-    </section>
+    </Panel>
   );
 }
 

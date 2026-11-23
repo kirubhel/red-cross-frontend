@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
+import { PageHeader } from "@/components/admin/page-ui";
 
 const features = [
   {
@@ -158,21 +159,11 @@ export default function AiFeaturesPage() {
   };
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 relative">
-        <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-100 to-indigo-100 text-indigo-700 rounded-full text-[10px] font-black uppercase tracking-widest leading-none mb-2 shadow-inner">
-            <Sparkles className="h-3.5 w-3.5" /> Next-Gen Capabilities
-          </div>
-          <h1 className="text-4xl md:text-5xl font-black text-black tracking-tighter">
-            AI Ecosystem
-          </h1>
-          <p className="text-gray-500 font-medium text-sm max-w-2xl mt-2 leading-relaxed">
-            Discover the artificial intelligence features recommended to supercharge the ERCS portal. From smart volunteer matching to autonomous fraud detection, these tools transform raw data into operational power.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="AI Capabilities"
+        description="AI features recommended for the ERCS portal, from smart volunteer matching to fraud detection. Open one to preview it or request an implementation plan."
+      />
 
       {/* Grid Section */}
       <motion.div 
@@ -186,7 +177,7 @@ export default function AiFeaturesPage() {
             key={idx}
             variants={itemVariants}
             onClick={() => handleOpenFeature(feature)}
-            className="group relative bg-white rounded-[32px] p-8 border border-gray-100 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.08)] transition-all duration-300 overflow-hidden flex flex-col h-full cursor-pointer hover:border-gray-200"
+            className="group relative bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-sm transition-all duration-300 overflow-hidden flex flex-col h-full cursor-pointer hover:border-gray-200"
           >
             {/* Background Glow */}
             <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feature.color} opacity-[0.03] group-hover:opacity-[0.08] blur-2xl rounded-full -mr-10 -mt-10 transition-opacity duration-500 pointer-events-none`} />
@@ -212,7 +203,6 @@ export default function AiFeaturesPage() {
             <div className="space-y-4 mt-auto">
               {/* Example Block */}
               <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 relative overflow-hidden group-hover:bg-gray-100/50 transition-colors">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b opacity-50 group-hover:opacity-100 transition-opacity duration-300 rounded-l-2xl" />
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">Example Prompt</p>
                 <p className="text-sm font-semibold text-gray-900 italic">
                   {feature.example}
@@ -257,11 +247,11 @@ export default function AiFeaturesPage() {
         variants={itemVariants}
         initial="hidden"
         animate="visible"
-        className="mt-12 bg-gradient-to-br from-gray-900 to-black rounded-[40px] p-10 md:p-14 relative overflow-hidden text-center flex flex-col items-center shadow-2xl"
+        className="bg-gradient-to-br from-gray-900 to-black rounded-2xl p-8 md:p-10 relative overflow-hidden text-center flex flex-col items-center shadow-sm"
       >
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
         <Sparkles className="h-10 w-10 text-white/50 mb-6 relative z-10" />
-        <h2 className="text-3xl md:text-4xl font-black text-white tracking-tighter mb-4 relative z-10">
+        <h2 className="text-2xl font-black text-white tracking-tight mb-3 relative z-10">
           Ready to activate AI?
         </h2>
         <p className="text-gray-400 text-sm font-medium max-w-xl mx-auto mb-8 relative z-10">
@@ -278,14 +268,14 @@ export default function AiFeaturesPage() {
       {/* Feature Preview & Test Modal */}
       {selectedFeature && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 shadow-2xl border border-gray-100 space-y-6 animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-2xl p-6 shadow-2xl border border-gray-100 space-y-6 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <div className={`p-3 rounded-2xl ${selectedFeature.bgLight}`}>
                   <selectedFeature.icon className="h-6 w-6 text-gray-900" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-gray-900">{selectedFeature.title}</h3>
+                  <h3 className="text-base font-bold tracking-tight text-gray-900">{selectedFeature.title}</h3>
                   <span className="text-xs font-bold text-gray-400 uppercase">{selectedFeature.status}</span>
                 </div>
               </div>
@@ -349,14 +339,14 @@ export default function AiFeaturesPage() {
       {/* Request Implementation Plan Modal */}
       {isPlanModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100 space-y-6 animate-in zoom-in-95 duration-200">
+          <div className="bg-white w-full max-w-xl rounded-2xl p-6 sm:p-8 shadow-2xl border border-gray-100 space-y-6 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-red-50 text-[#ED1C24]">
                   <Sparkles className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-gray-900">Request AI Implementation Plan</h3>
+                  <h3 className="text-base font-bold tracking-tight text-gray-900">Request AI Implementation Plan</h3>
                   <p className="text-xs text-gray-400 font-medium">ERCS Microservices Technical Roadmap</p>
                 </div>
               </div>

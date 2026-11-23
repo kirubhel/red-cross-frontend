@@ -18,7 +18,6 @@ import {
   Building2, 
   CheckCircle2, 
   Clock, 
-  Users, 
   Eye, 
   X, 
   FileText, 
@@ -35,6 +34,7 @@ import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { getUserScope } from "@/lib/auth-scope";
 
+import { PageHeader } from "@/components/admin/page-ui";
 type VolunteerRequest = {
   id: string;
   organization_id: string;
@@ -251,17 +251,12 @@ export default function AdminVolunteerRequestsPage() {
   });
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-[9px] font-black uppercase tracking-widest leading-none border border-blue-100">
-            <Users className="h-3 w-3" /> Procurement & Fulfillment
-          </div>
-          <h1 className="text-3xl font-black text-black tracking-tighter leading-none">Volunteer <span className="text-blue-600">Requests</span></h1>
-          <p className="text-gray-500 font-medium text-sm max-w-2xl">Manage organization requests for volunteers, oversee payments, and approve auto-matching across all regions and zones.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Volunteer Requests"
+        description="Manage organization requests for volunteers, oversee payments, and approve auto-matching across all regions and zones."
+      />
 
       {/* Actions & Filters */}
       <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -282,14 +277,14 @@ export default function AdminVolunteerRequestsPage() {
       {/* Main Table Container */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-gray-50/50">
-            <TableRow className="hover:bg-transparent border-gray-100">
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Organization & Mission</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Target Location</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Headcount & Skills</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Payment Status</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">Status</TableHead>
-              <TableHead className="px-6 py-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 text-right">Actions</TableHead>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Organization & Mission</TableHead>
+              <TableHead>Target Location</TableHead>
+              <TableHead>Headcount & Skills</TableHead>
+              <TableHead>Payment Status</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -317,17 +312,17 @@ export default function AdminVolunteerRequestsPage() {
               </TableRow>
             ) : (
               filteredRequests.map((req) => (
-                <TableRow key={req.id} className="hover:bg-gray-50/50 transition-all duration-300 border-gray-50">
-                  <TableCell className="px-6 py-4">
+                <TableRow key={req.id} className="transition-all duration-300">
+                  <TableCell>
                     <div className="flex flex-col gap-0.5">
                       <span className="font-black text-black text-sm uppercase">{req.org_name || "Unknown Org"}</span>
                       <span className="text-blue-600 text-xs font-extrabold">{req.title || "Untitled Mission"}</span>
                       <span className="text-gray-400 text-[10px] font-bold">ID: {req.id.substring(0,8)}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell>
                     <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-gray-800">
                         <MapPin className="h-3.5 w-3.5 text-red-500 shrink-0" />
                         <span>{req.region_name || "Addis Ababa"}</span>
                       </div>
@@ -336,7 +331,7 @@ export default function AdminVolunteerRequestsPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell>
                     <div className="flex flex-col gap-1">
                       <span className="font-black text-black text-xs">{req.headcount} Volunteers</span>
                       <span className="text-gray-500 text-[10px] font-medium line-clamp-1">{req.activities_skills}</span>
@@ -348,7 +343,7 @@ export default function AdminVolunteerRequestsPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell>
                     <div className="flex flex-col gap-1">
                       <span className="font-black text-green-600 text-sm">{req.payment_amount || 0} ETB</span>
                       <span className={cn(
@@ -358,7 +353,7 @@ export default function AdminVolunteerRequestsPage() {
                       )}>{req.payment_status || "PENDING"}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4">
+                  <TableCell>
                     <div className={cn(
                       "px-3 py-1 rounded-md text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-2 w-fit border shadow-sm",
                       req.status === "APPROVED" ? "bg-green-50 text-green-600 border-green-100" : "bg-yellow-50 text-yellow-600 border-yellow-100"
@@ -367,7 +362,7 @@ export default function AdminVolunteerRequestsPage() {
                       {req.status}
                     </div>
                   </TableCell>
-                  <TableCell className="px-6 py-4 text-right space-x-2">
+                  <TableCell className="text-right space-x-2">
                     <Button 
                       onClick={() => { setSelectedReq(req); setActionType("VIEW_DETAILS"); }} 
                       variant="outline"
@@ -409,7 +404,7 @@ export default function AdminVolunteerRequestsPage() {
       {/* View Details Modal */}
       {selectedReq && actionType === "VIEW_DETAILS" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden border border-gray-100 max-h-[90vh]">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden border border-gray-100 max-h-[90vh]">
             {/* Header */}
             <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div>
@@ -427,7 +422,7 @@ export default function AdminVolunteerRequestsPage() {
               {/* Mission Description */}
               {selectedReq.description && (
                 <div className="space-y-1.5">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Mission Description</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Mission Description</h4>
                   <p className="text-xs font-medium text-gray-700 bg-gray-50 p-4 rounded-2xl border border-gray-100 leading-relaxed">
                     {selectedReq.description}
                   </p>
@@ -436,7 +431,7 @@ export default function AdminVolunteerRequestsPage() {
 
               {/* Headcount Breakdown Grid */}
               <div className="space-y-2">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Headcount & Gender Split</h4>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Headcount & Gender Split</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
                   <div>
                     <span className="text-[10px] font-bold text-gray-500 uppercase">Total Needed</span>
@@ -444,27 +439,27 @@ export default function AdminVolunteerRequestsPage() {
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-gray-500 uppercase">Men Count</span>
-                    <p className="text-lg font-black text-slate-800">{selectedReq.men_count ?? "N/A"}</p>
+                    <p className="text-lg font-black text-gray-800">{selectedReq.men_count ?? "N/A"}</p>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-gray-500 uppercase">Women Count</span>
-                    <p className="text-lg font-black text-slate-800">{selectedReq.women_count ?? "N/A"}</p>
+                    <p className="text-lg font-black text-gray-800">{selectedReq.women_count ?? "N/A"}</p>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-gray-500 uppercase">Min Experience</span>
-                    <p className="text-lg font-black text-slate-800">{selectedReq.min_experience ? `${selectedReq.min_experience} Yrs` : "None"}</p>
+                    <p className="text-lg font-black text-gray-800">{selectedReq.min_experience ? `${selectedReq.min_experience} Yrs` : "None"}</p>
                   </div>
                 </div>
               </div>
 
               {/* Deployment Location & Duration (PROMINENT JURISDICTION SECTION) */}
               <div className="space-y-2">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Target Location & Deployment Schedule</h4>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Target Location & Deployment Schedule</h4>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 space-y-2">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Deployment Territory</span>
                     <div className="space-y-1">
-                      <div className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                      <div className="font-extrabold text-sm text-gray-900 flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-[#ED1C24] shrink-0" />
                         <span>{selectedReq.region_name || "Addis Ababa"}</span>
                       </div>
@@ -477,7 +472,7 @@ export default function AdminVolunteerRequestsPage() {
                   <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 space-y-2">
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Timeline & Duration</span>
                     <div className="space-y-1">
-                      <div className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                      <div className="font-extrabold text-sm text-gray-900 flex items-center gap-2">
                         <Clock className="h-4 w-4 text-blue-600 shrink-0" />
                         <span>{selectedReq.duration_days || 1} Day(s) Mission</span>
                       </div>
@@ -492,14 +487,14 @@ export default function AdminVolunteerRequestsPage() {
               {/* Type & Engagement Areas */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Volunteer Type</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Volunteer Type</h4>
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 font-bold text-xs text-black">
                     {selectedReq.volunteer_type || "General Volunteer"}
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Engagement Areas / Skills</h4>
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 font-medium text-xs text-slate-800">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Engagement Areas / Skills</h4>
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 font-medium text-xs text-gray-800">
                     {selectedReq.activities_skills}
                   </div>
                 </div>
@@ -508,24 +503,24 @@ export default function AdminVolunteerRequestsPage() {
               {/* Volunteer Benefits Provided */}
               {selectedReq.benefits && (
                 <div className="space-y-1.5">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Volunteer Benefits & Accommodations (Organization Policy)</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Volunteer Benefits & Accommodations (Organization Policy)</h4>
                   <div className="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                       <div className="p-2.5 bg-white rounded-xl border border-gray-100 space-y-1">
                         <span className="text-[9px] font-bold text-gray-400 uppercase block">Accommodation</span>
-                        <span className="font-bold text-slate-900 block leading-tight">
+                        <span className="font-bold text-gray-900 block leading-tight">
                           {selectedReq.benefits.custom_accommodation ? `Custom: ${selectedReq.benefits.custom_accommodation}` : (selectedReq.benefits.accommodation || "Standard Provided")}
                         </span>
                       </div>
                       <div className="p-2.5 bg-white rounded-xl border border-gray-100 space-y-1">
                         <span className="text-[9px] font-bold text-gray-400 uppercase block">Meals & Per Diem</span>
-                        <span className="font-bold text-slate-900 block leading-tight">
+                        <span className="font-bold text-gray-900 block leading-tight">
                           {selectedReq.benefits.custom_meals ? `Custom: ${selectedReq.benefits.custom_meals}` : (selectedReq.benefits.meals || "Provided")}
                         </span>
                       </div>
                       <div className="p-2.5 bg-white rounded-xl border border-gray-100 space-y-1">
                         <span className="text-[9px] font-bold text-gray-400 uppercase block">Local Transport</span>
-                        <span className="font-bold text-slate-900 block leading-tight">
+                        <span className="font-bold text-gray-900 block leading-tight">
                           {selectedReq.benefits.custom_transport ? `Custom: ${selectedReq.benefits.custom_transport}` : (selectedReq.benefits.transport || "Covered")}
                         </span>
                       </div>
@@ -549,8 +544,8 @@ export default function AdminVolunteerRequestsPage() {
                         </div>
                       )}
                       {selectedReq.benefits.notes && (
-                        <div className="w-full text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-gray-100">
-                          <span className="font-bold text-slate-800">Special Notes: </span>
+                        <div className="w-full text-xs text-gray-600 bg-white p-2.5 rounded-xl border border-gray-100">
+                          <span className="font-bold text-gray-800">Special Notes: </span>
                           <span>{selectedReq.benefits.notes}</span>
                         </div>
                       )}
@@ -582,15 +577,15 @@ export default function AdminVolunteerRequestsPage() {
 
               {/* Qualifications */}
               <div className="space-y-1.5">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Specific Qualifications & Requirements</h4>
-                <p className="text-xs font-medium text-slate-700 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Specific Qualifications & Requirements</h4>
+                <p className="text-xs font-medium text-gray-700 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
                   {selectedReq.qualifications || "Standard Ethiopian Red Cross Society volunteer qualifications apply."}
                 </p>
               </div>
 
               {/* Payment Info & Calculation Breakdown */}
               <div className="space-y-2">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Financial & Calculated Budget Breakdown</h4>
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Financial & Calculated Budget Breakdown</h4>
                 <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 space-y-3">
                   <div className="flex items-center justify-between pb-3 border-b border-emerald-200/50">
                     <div>
@@ -677,7 +672,7 @@ export default function AdminVolunteerRequestsPage() {
       {/* Action Details Modal (Approve, Edit Payment, Verify Payment) */}
       {selectedReq && actionType && actionType !== "VIEW_DETAILS" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full flex flex-col overflow-hidden border border-gray-100">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full flex flex-col overflow-hidden border border-gray-100">
             
             <div className="p-6 border-b bg-gray-50/50">
               <h2 className="text-2xl font-black text-black tracking-tighter">

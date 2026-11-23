@@ -12,6 +12,7 @@ import { REGIONS } from "@/lib/constants";
 import { REGION_NAME, SERIES, byRegion, formatNumber, loadRegistry, recentWindow, type RegistryLoad, type RegistryRecord } from "@/lib/registry-analytics";
 import { RegistryInsights } from "@/components/admin/analytics/RegistryInsights";
 import { Card, Empty, StatTile } from "@/components/admin/analytics/widgets";
+import { PageHeader } from "@/components/admin/page-ui";
 
 const DAY = 24 * 3600 * 1000;
 const DATE_RANGES = [
@@ -103,25 +104,21 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-4 pb-10">
-      {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#B5121B] via-[#ED1C24] to-[#F0484F] p-6 text-white shadow-sm">
-        <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/10" aria-hidden />
-        <div className="absolute -bottom-20 right-32 h-44 w-44 rounded-full bg-white/5" aria-hidden />
-        <div className="relative flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white">Ethiopian Red Cross Society · {scopeLabel}</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight">Dashboard</h1>
-            <p className="mt-1 text-sm text-white">
-              {loading ? "Loading the registry…" : `${formatNumber(scoped.length)} people in ${regionId ? REGION_NAME[regionId] : `${regionsCovered} of 14 regions`}.`}
-            </p>
-          </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Dashboard"
+        description={
+          <>
+            {scopeLabel}. {loading ? "Loading the registry…" : `${formatNumber(scoped.length)} people in ${regionId ? REGION_NAME[regionId] : `${regionsCovered} of 14 regions`}.`}
+          </>
+        }
+        actions={
           <form
             onSubmit={(e) => {
               e.preventDefault();
               submitSearch("members");
             }}
-            className="flex w-full max-w-md items-center gap-2 rounded-xl bg-white p-1.5 shadow-sm"
+            className="flex w-full items-center gap-2 rounded-xl border border-gray-200 bg-white p-1 md:w-[30rem]"
           >
             <Search className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
             <input
@@ -131,15 +128,15 @@ export default function DashboardPage() {
               aria-label="Search the registry"
               className="h-8 min-w-0 flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
             />
-            <button type="submit" className="h-8 rounded-lg bg-gray-900 px-3 text-xs font-bold text-white hover:bg-gray-700">
+            <button type="submit" className="h-8 rounded-lg bg-[#ED1C24] px-3 text-xs font-bold text-white hover:bg-black">
               Members
             </button>
             <button type="button" onClick={() => submitSearch("volunteers")} className="h-8 rounded-lg bg-gray-100 px-3 text-xs font-bold text-gray-800 hover:bg-gray-200">
               Volunteers
             </button>
           </form>
-        </div>
-      </div>
+        }
+      />
 
       {/* Filters: one row, scoping everything below */}
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">

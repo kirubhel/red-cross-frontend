@@ -88,7 +88,7 @@ export function AddMemberModal({ onClose, onSuccess, regions, defaultRegion, isR
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-[40px] shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]"
       >
         <div className="p-6 border-b border-gray-50 flex justify-between items-center shrink-0">
           <div>

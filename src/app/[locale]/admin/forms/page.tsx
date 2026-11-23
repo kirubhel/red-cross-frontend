@@ -18,7 +18,6 @@ import {
   GripVertical,
   Check,
   Layout,
-  Settings2,
   Loader2,
   FileSpreadsheet
 } from "lucide-react";
@@ -27,6 +26,7 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import type { Cell, CellValue } from "exceljs";
 import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
+import { PageHeader } from "@/components/admin/page-ui";
 
 type FormField = {
   id: string;
@@ -583,60 +583,57 @@ export default function FormConfigurationPage() {
   return (
     <SuperAdminGuard>
       <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-widest leading-none">
-            <Settings2 className="h-3.5 w-3.5" /> Portal Configuration
-          </div>
-          <h1 className="text-4xl font-black text-black tracking-tighter">Form Designer</h1>
-          <p className="text-gray-500 font-medium text-base">Customize dynamic registration fields for Individual and Corporate members.</p>
-        </div>
+      <PageHeader
+        title="Form Designer"
+        description="Customize dynamic registration fields for Individual and Corporate members."
+        actions={
+          <>
+            <label className="h-10 px-4 rounded-xl border border-gray-200 bg-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors">
+              {importingExcel ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 text-[#ED1C24]" />}
+              Import Excel Columns
+              <input
+                type="file"
+                accept=".xlsx"
+                className="hidden"
+                disabled={importingExcel || saving}
+                onChange={(e) => importFieldsFromExcel(e.target.files?.[0])}
+              />
+            </label>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <label className="h-12 px-5 rounded-2xl border border-gray-200 bg-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
-            {importingExcel ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 text-[#ED1C24]" />}
-            Import Excel Columns
-            <input
-              type="file"
-              accept=".xlsx"
-              className="hidden"
-              disabled={importingExcel || saving}
-              onChange={(e) => importFieldsFromExcel(e.target.files?.[0])}
-            />
-          </label>
-
-          <div className="flex bg-gray-100 p-1.5 rounded-2xl border border-gray-200 shadow-inner">
-            <button 
-              onClick={() => setFormType("MEMBER")}
-              className={cn(
-                "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all",
-                formType === "MEMBER" ? "bg-white text-black shadow-md" : "text-gray-500 hover:text-black"
-              )}
-            >
-              <Users className="h-4 w-4" /> Members
-            </button>
-            <button 
-              onClick={() => setFormType("VOLUNTEER")}
-              className={cn(
-                "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all",
-                formType === "VOLUNTEER" ? "bg-white text-black shadow-md" : "text-gray-500 hover:text-black"
-              )}
-            >
-              <HandHeart className="h-4 w-4" /> Volunteers
-            </button>
-          </div>
-        </div>
-      </div>
+            <div className="flex rounded-xl border border-gray-200 bg-gray-100 p-1">
+              <button
+                onClick={() => setFormType("MEMBER")}
+                aria-pressed={formType === "MEMBER"}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors",
+                  formType === "MEMBER" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"
+                )}
+              >
+                <Users className="h-4 w-4" /> Members
+              </button>
+              <button
+                onClick={() => setFormType("VOLUNTEER")}
+                aria-pressed={formType === "VOLUNTEER"}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors",
+                  formType === "VOLUNTEER" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"
+                )}
+              >
+                <HandHeart className="h-4 w-4" /> Volunteers
+              </button>
+            </div>
+          </>
+        }
+      />
 
       <div className="w-full grid lg:grid-cols-[1fr_420px] gap-6 items-start">
         
         {/* Designer Side */}
         <div className="space-y-4">
-          <div className="bg-white rounded-[32px] border border-gray-100 shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
-            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div className="flex items-center gap-3">
-                <h3 className="font-black text-black uppercase tracking-widest text-xs">Form Fields ({fields.length})</h3>
+                <h3 className="text-base font-bold tracking-tight text-gray-900">Form Fields ({fields.length})</h3>
                 <span className="text-[10px] font-bold text-gray-400">Drag to reorder • Configure audience per field</span>
               </div>
               <Button onClick={addField} size="sm" className="bg-[#ED1C24] hover:bg-black rounded-xl h-9 px-4 text-xs font-black">
@@ -677,7 +674,7 @@ export default function FormConfigurationPage() {
 
         {/* Preview Pane */}
         <div className="space-y-6">
-          <div className="bg-gray-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden h-fit sticky top-24">
+          <div className="bg-gray-900 rounded-2xl p-8 text-white shadow-2xl relative overflow-hidden h-fit sticky top-24">
             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-[60px] rounded-full pointer-events-none" />
             
             <div className="relative z-10 space-y-6">
@@ -737,7 +734,7 @@ export default function FormConfigurationPage() {
                   {filteredPreviewFields.map(field => (
                     <div key={`prev_${field.id}`} className="space-y-1">
                         <div className="flex justify-between items-center px-1">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1.5">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
                               {field.id === "name" && previewAudience === "CORPORATE" ? "Organization Name" : 
                                field.id === "phone" && previewAudience === "CORPORATE" ? "Organization Mobile" : field.label}
                               {field.audience && field.audience !== "ALL" && (

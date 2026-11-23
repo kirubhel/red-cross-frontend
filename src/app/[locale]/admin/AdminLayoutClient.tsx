@@ -139,23 +139,23 @@ export default function AdminLayoutClient({
       <div className="flex flex-1 flex-col overflow-hidden relative">
         
         {/* Top Header */}
-        <header className="flex h-24 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-8 md:px-12 sticky top-0 z-10">
-          <div className="flex items-center gap-4 flex-1">
-             <button className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-black transition-colors rounded-xl hover:bg-gray-50">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-4 md:px-6 lg:px-8 sticky top-0 z-10">
+          <div className="flex items-center gap-4 lg:hidden">
+             <button aria-label="Open menu" className="p-2 -ml-2 text-gray-400 hover:text-black transition-colors rounded-xl hover:bg-gray-50">
                <Menu className="h-6 w-6" />
              </button>
-             <h2 className="hidden text-2xl font-black text-black tracking-tighter sm:block">Overview</h2>
           </div>
 
           <div className="flex items-center flex-1 justify-end gap-6">
             
             {/* Search Bar */}
-            <div className="relative hidden w-full max-w-sm md:block">
+            <div className="relative hidden w-full max-w-sm md:mr-auto md:block">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search resources, ID, names..." 
-                className="h-12 w-full pl-12 pr-4 bg-gray-50 border-none rounded-2xl text-sm font-bold text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/10 transition-shadow"
+              <input
+                type="text"
+                aria-label="Search"
+                placeholder="Search resources, ID, names..."
+                className="h-10 w-full pl-11 pr-4 bg-gray-50 border border-transparent rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-gray-200 focus:ring-2 focus:ring-[#ED1C24]/15 transition-shadow"
               />
             </div>
 
@@ -329,7 +329,7 @@ export default function AdminLayoutClient({
 
         {/* Dashboard Content Region */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden w-full relative">
-           <div className="p-4 md:p-6 pb-20 mx-auto max-w-[1920px]">
+           <div className="mx-auto w-full max-w-[1600px] space-y-6 p-4 pb-16 md:p-6 lg:p-8 lg:pb-16">
               {children}
            </div>
         </main>

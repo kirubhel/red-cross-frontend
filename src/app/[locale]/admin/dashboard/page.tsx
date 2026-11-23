@@ -154,7 +154,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] text-slate-900 overflow-hidden">
+    <div className="flex h-screen bg-[#F8FAFC] text-gray-900 overflow-hidden">
       {/* Confirm Modal */}
       <AnimatePresence>
         {confirmModal.show && (
@@ -170,7 +170,7 @@ const AdminDashboard = () => {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white rounded-[32px] p-8 max-w-md w-full shadow-2xl"
+              className="relative bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl"
             >
               <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 ${
                 confirmModal.action === 'delete' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'
@@ -178,8 +178,8 @@ const AdminDashboard = () => {
                 {confirmModal.action === 'delete' ? <Trash2 className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
               </div>
               <h3 className="text-2xl font-black mb-2">Confirm Action</h3>
-              <p className="text-slate-500 mb-8 font-medium">
-                Are you sure you want to <span className="font-black text-slate-900">{confirmModal.action}</span> "{confirmModal.name}"?
+              <p className="text-gray-500 mb-8 font-medium">
+                Are you sure you want to <span className="font-black text-gray-900">{confirmModal.action}</span> "{confirmModal.name}"?
                 This action cannot be undone.
               </p>
               <div className="flex gap-3">
@@ -218,39 +218,39 @@ const AdminDashboard = () => {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white rounded-[40px] p-10 max-w-2xl w-full shadow-2xl overflow-hidden"
+              className="relative bg-white rounded-2xl p-10 max-w-2xl w-full shadow-2xl overflow-hidden"
             >
               <div className="flex items-center justify-between mb-8">
                  <div>
                     <h3 className="text-3xl font-black tracking-tighter">Candidate Match</h3>
-                    <p className="text-slate-400 font-bold">Top volunteers for {matchModal.org?.name}</p>
+                    <p className="text-gray-400 font-bold">Top volunteers for {matchModal.org?.name}</p>
                  </div>
-                 <button onClick={() => setMatchModal({ show: false, org: null })} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                 <button onClick={() => setMatchModal({ show: false, org: null })} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                     <X className="w-6 h-6" />
                  </button>
               </div>
 
               <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {[1,2,3].map((v) => (
-                  <div key={v} className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex items-center justify-between">
+                  <div key={v} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex items-center justify-between">
                      <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm font-black text-blue-600 border border-blue-50">
                           {v === 1 ? 'AB' : v === 2 ? 'KT' : 'SB'}
                         </div>
                         <div>
                            <p className="font-black text-sm">{v === 1 ? 'Abebe Bikila' : v === 2 ? 'Kalkidan Tadesse' : 'Solomon Belay'}</p>
-                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Matched: 94% • Addis Ababa</p>
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Matched: 94% • Addis Ababa</p>
                         </div>
                      </div>
-                     <button className="bg-white hover:bg-[#ED1C24] hover:text-white text-black border border-slate-200 px-4 py-2 rounded-xl text-xs font-black transition-all">
+                     <button className="bg-white hover:bg-[#ED1C24] hover:text-white text-black border border-gray-200 px-4 py-2 rounded-xl text-xs font-black transition-all">
                         Assign
                      </button>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-8 pt-8 border-t border-slate-100 flex justify-between items-center">
-                 <p className="text-xs text-slate-400 font-medium italic">Showing AI-matched candidates based on organization requirements</p>
+              <div className="mt-8 pt-8 border-t border-gray-100 flex justify-between items-center">
+                 <p className="text-xs text-gray-400 font-medium italic">Showing AI-matched candidates based on organization requirements</p>
                  <button className="bg-black text-white px-6 py-3 rounded-2xl font-black text-sm hover:scale-105 active:scale-95 transition-all">
                     View More
                  </button>
@@ -262,7 +262,7 @@ const AdminDashboard = () => {
 
       {/* Sidebar */}
       <aside 
-        className={`${isSidebarOpen ? 'w-80' : 'w-24'} transition-all duration-500 bg-white border-r border-slate-100 flex flex-col z-40 relative shadow-xl shadow-slate-200/50`}
+        className={`${isSidebarOpen ? 'w-80' : 'w-24'} transition-all duration-500 bg-white border-r border-gray-100 flex flex-col z-40 relative shadow-xl shadow-slate-200/50`}
       >
         <div className="p-8 flex items-center gap-4">
           <div className="w-10 h-10 bg-[#ED1C24] rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-red-200">
@@ -287,7 +287,7 @@ const AdminDashboard = () => {
             <button
               key={item.id}
               className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all group ${
-                item.id === 'businesses' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'
+                item.id === 'businesses' ? 'bg-blue-50 text-blue-600' : 'text-gray-400 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
               <item.icon className={`w-6 h-6 ${item.id === 'businesses' ? 'text-blue-600' : 'group-hover:scale-110 transition-transform'}`} />
@@ -299,7 +299,7 @@ const AdminDashboard = () => {
           ))}
         </nav>
 
-        <div className="p-4 mt-auto border-t border-slate-50">
+        <div className="p-4 mt-auto border-t border-gray-50">
           <button 
             className="w-full flex items-center gap-4 p-4 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold group"
           >
@@ -311,31 +311,31 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-24 bg-white/80 backdrop-blur-md border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-30">
-          <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 px-6 py-3 rounded-2xl w-full max-w-xl group focus-within:bg-white focus-within:shadow-xl focus-within:shadow-blue-500/5 transition-all">
-            <Search className="w-5 h-5 text-slate-400" />
+        <header className="h-24 bg-white/80 backdrop-blur-md border-b border-gray-100 px-8 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-4 bg-gray-50 border border-gray-200 px-6 py-3 rounded-2xl w-full max-w-xl group focus-within:bg-white focus-within:shadow-xl focus-within:shadow-blue-500/5 transition-all">
+            <Search className="w-5 h-5 text-gray-400" />
             <input 
               type="text" 
               placeholder="Filter by name, email or status..."
-              className="bg-transparent border-none outline-none w-full text-sm font-bold placeholder:text-slate-400"
+              className="bg-transparent border-none outline-none w-full text-sm font-bold placeholder:text-gray-400"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
           <div className="flex items-center gap-6">
-             <button className="relative p-3 text-slate-400 hover:text-slate-900 transition-colors">
+             <button className="relative p-3 text-gray-400 hover:text-gray-900 transition-colors">
                 <Bell className="w-6 h-6" />
                 <span className="absolute top-3 right-3 w-2 h-2 bg-[#ED1C24] rounded-full border-2 border-white" />
              </button>
-             <div className="h-10 w-px bg-slate-100" />
-             <div className="flex items-center gap-4 bg-slate-50 p-2 pr-4 rounded-2xl border border-slate-100">
+             <div className="h-10 w-px bg-gray-100" />
+             <div className="flex items-center gap-4 bg-gray-50 p-2 pr-4 rounded-2xl border border-gray-100">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-100">
                   DA
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-xs font-black leading-none">Admin Area</p>
-                  <p className="text-[10px] text-slate-400 font-bold mt-1">Authorized</p>
+                  <p className="text-[10px] text-gray-400 font-bold mt-1">Authorized</p>
                 </div>
              </div>
           </div>
@@ -347,34 +347,34 @@ const AdminDashboard = () => {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div>
                 <h1 className="text-5xl font-black tracking-tighter mb-2">Business Control Hub</h1>
-                <p className="text-slate-400 font-bold uppercase text-xs tracking-widest flex items-center gap-2">
+                <p className="text-gray-400 font-bold uppercase text-xs tracking-widest flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                   Real-time Data Stream Enabled
                 </p>
               </div>
               <div className="flex gap-4">
-                 <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-4 min-w-[180px]">
+                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 min-w-[180px]">
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
                       <Layers className="w-6 h-6" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</p>
                       <p className="text-2xl font-black tabular-nums">{stats.total}</p>
                     </div>
                  </div>
-                 <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-4 min-w-[180px]">
+                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 min-w-[180px]">
                     <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
                       <Calendar className="w-6 h-6" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pending</p>
                       <p className="text-2xl font-black tabular-nums">{stats.pending}</p>
                     </div>
                  </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-white p-2 rounded-3xl w-fit shadow-lg shadow-slate-100 border border-slate-50">
+            <div className="flex items-center gap-2 bg-white p-2 rounded-2xl w-fit shadow-lg shadow-slate-100 border border-gray-50">
               {['all', 'pending', 'approved', 'rejected'].map((tab) => (
                 <button
                   key={tab}
@@ -382,7 +382,7 @@ const AdminDashboard = () => {
                   className={`px-8 py-3 rounded-2xl font-black text-sm transition-all capitalize ${
                     activeTab === tab 
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
-                      : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'
+                      : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
                   {tab}
@@ -390,28 +390,28 @@ const AdminDashboard = () => {
               ))}
             </div>
 
-            <div className="bg-white rounded-[40px] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/40 border border-gray-100 overflow-hidden">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Business Details</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                      <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                    <tr className="bg-gray-50/50 border-b border-gray-100">
+                      <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Business Details</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Status</th>
+                      <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-gray-50">
                     {filteredBusinesses.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50/30 transition-colors group">
+                      <tr key={item.id} className="hover:bg-gray-50/30 transition-colors group">
                         <td className="px-8 py-8">
                           <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-                              <Building2 className="w-7 h-7 text-slate-900" />
+                            <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
+                              <Building2 className="w-7 h-7 text-gray-900" />
                             </div>
                             <div>
                               <p className="font-black text-lg tracking-tight">{item.name}</p>
-                              <div className="flex items-center gap-3 mt-1.5 font-bold text-xs text-slate-400">
+                              <div className="flex items-center gap-3 mt-1.5 font-bold text-xs text-gray-400">
                                 <span>{item.email}</span>
-                                <span className="w-1 h-1 bg-slate-200 rounded-full" />
+                                <span className="w-1 h-1 bg-gray-200 rounded-full" />
                                 <span>{item.type}</span>
                               </div>
                             </div>
@@ -470,20 +470,20 @@ const AdminDashboard = () => {
                 </table>
                 {filteredBusinesses.length === 0 && (
                   <div className="py-32 text-center flex flex-col items-center">
-                    <Search className="w-12 h-12 text-slate-100 mb-4" />
-                    <p className="font-black text-slate-300">No records found matching your filters</p>
+                    <Search className="w-12 h-12 text-gray-100 mb-4" />
+                    <p className="font-black text-gray-300">No records found matching your filters</p>
                   </div>
                 )}
             </div>
 
-            <div className="bg-slate-900 rounded-[40px] p-8 text-white flex items-center justify-between">
+            <div className="bg-gray-900 rounded-2xl p-8 text-white flex items-center justify-between">
                <div className="flex items-center gap-6">
-                  <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-xl border border-white/10">
+                  <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/10">
                      <Users className="w-8 h-8" />
                   </div>
                   <div>
                     <h4 className="text-xl font-black">Volunteer Recruitment Phase</h4>
-                    <p className="text-sm text-slate-400 font-bold mt-1">Q2 2024 active campaigns tracking enabled</p>
+                    <p className="text-sm text-gray-400 font-bold mt-1">Q2 2024 active campaigns tracking enabled</p>
                   </div>
                </div>
                <button className="bg-[#ED1C24] px-8 py-4 rounded-2xl font-black tracking-widest uppercase text-xs hover:scale-105 transition-all shadow-xl shadow-red-500/20">
