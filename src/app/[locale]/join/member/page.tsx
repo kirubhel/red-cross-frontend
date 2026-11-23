@@ -55,6 +55,7 @@ const REGION_ABBR: Record<string, string> = {
 
 
 import Header from "@/components/layout/Header";
+import LoginExperience from "@/components/auth/LoginExperience";
 
 function MemberRegistrationContent() {
   const router = useRouter();
@@ -1174,40 +1175,14 @@ function MemberRegistrationContent() {
        <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-7xl grid lg:grid-cols-[1fr_640px] gap-20 items-start pt-10">
             
-            <div className="hidden lg:flex flex-col space-y-6 sticky top-20">
-                <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 text-[#ED1C24] rounded-full text-[9px] font-black uppercase tracking-[0.2em]">
-                        <ShieldCheck className="h-2.5 w-2.5 fill-current" /> Official Member
-                    </div>
-                    <h1 className="text-6xl font-black text-black leading-[0.8] tracking-tighter">
-                        Stand With <br />
-                        <span className="text-[#ED1C24]">Humanity.</span>
-                    </h1>
-                    <p className="text-lg text-black/60 font-medium max-w-sm">
-                        Your membership sustains our critical operations. Join millions of Ethiopians supporting our mission.
-                    </p>
-                </div>
-
-                <div className="space-y-6 pt-10 border-t border-gray-100">
-                    {[
-                        { icon: ShieldCheck, text: "Official Credentials" },
-                        { icon: User, text: "Assembly Voting Rights" },
-                        { icon: Heart, text: "Sustainable Impact" }
-                    ].map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-                                <item.icon className="h-5 w-5 text-[#ED1C24]" />
-                            </div>
-                            <span className="font-bold text-black/80">{item.text}</span>
-                        </div>
-                    ))}
-                </div>
+            <div className="w-full order-2 lg:order-1 lg:sticky lg:top-20">
+                <LoginExperience embedded />
             </div>
 
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-full bg-white p-6 md:p-8 rounded-[32px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)] border border-gray-100 h-fit"
+                className="w-full order-1 lg:order-2 bg-white p-6 md:p-8 rounded-[32px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)] border border-gray-100 h-fit"
             >
 
         <div className="w-full text-left mb-8">
@@ -1619,7 +1594,7 @@ function MemberRegistrationContent() {
                                   Go to Portal Dashboard <ChevronRight className="h-5 w-5" />
                                 </Button>
                               </Link>
-                              <Link href="/">
+                              <Link href="/home">
                                 <Button variant="outline" className="h-14 border-gray-200 hover:bg-gray-50 text-black rounded-2xl px-8 text-base font-black transition-all">
                                   Back to Home
                                 </Button>

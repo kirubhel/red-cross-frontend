@@ -140,7 +140,7 @@ function PaymentDetails() {
             </Button>
           ) : null}
           {check === "failed" || check === "notfound" ? (
-            <Link href="/" className="inline-block text-xs font-black uppercase tracking-widest text-black hover:text-[#ED1C24] transition-colors">
+            <Link href="/home" className="inline-block text-xs font-black uppercase tracking-widest text-black hover:text-[#ED1C24] transition-colors">
               Back to Home
             </Link>
           ) : null}
@@ -330,7 +330,7 @@ export default function PaymentSuccessPage() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 print:hidden">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/home" className="flex items-center gap-3">
             <Image 
               src="/logo.png" 
               alt="ERCS Logo" 
@@ -344,7 +344,7 @@ export default function PaymentSuccessPage() {
               <span className="text-[10px] font-bold text-[#ED1C24] uppercase tracking-[0.2em]">Ethiopia</span>
             </div>
           </Link>
-          <Link href="/" className="text-xs font-black uppercase tracking-widest text-black hover:text-[#ED1C24] transition-colors">
+          <Link href="/home" className="text-xs font-black uppercase tracking-widest text-black hover:text-[#ED1C24] transition-colors">
             Back to Home
           </Link>
         </div>

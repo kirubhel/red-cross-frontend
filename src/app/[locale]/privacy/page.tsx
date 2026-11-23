@@ -12,7 +12,7 @@ export default function PrivacyPolicyPage() {
       {/* Header */}
       <div className="bg-gray-950 text-white py-16 px-6">
         <div className="container mx-auto max-w-3xl">
-          <Link href="/" className="text-[#ED1C24] text-xs font-black uppercase tracking-widest hover:underline">
+          <Link href="/home" className="text-[#ED1C24] text-xs font-black uppercase tracking-widest hover:underline">
             ← Back to Home
           </Link>
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter mt-4">Privacy Policy</h1>

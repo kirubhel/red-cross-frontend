@@ -17,7 +17,7 @@ export default function DonatePage() {
       <div className="bg-gray-950 text-white py-16 px-6">
         <div className="container mx-auto max-w-4xl">
           <Link
-            href={`/${lang}`}
+            href={`/${lang}/home`}
             className="inline-flex items-center gap-2 text-[#ED1C24] text-xs font-black uppercase tracking-widest hover:underline mb-6"
           >
             <ArrowLeft className="h-4 w-4" /> Back to Home

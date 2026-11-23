@@ -13,7 +13,7 @@ export default function CookiesPage() {
       <div className="bg-gray-950 text-white py-16 px-6">
         <div className="container mx-auto max-w-3xl">
           <Link
-            href={`/${lang}`}
+            href={`/${lang}/home`}
             className="inline-flex items-center gap-2 text-[#ED1C24] text-xs font-black uppercase tracking-widest hover:underline mb-4"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to Home

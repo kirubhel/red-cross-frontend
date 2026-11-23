@@ -12,7 +12,7 @@ export default function TermsPage() {
       {/* Header */}
       <div className="bg-gray-950 text-white py-16 px-6">
         <div className="container mx-auto max-w-3xl">
-          <Link href={`/${lang}`} className="inline-flex items-center gap-2 text-[#ED1C24] text-xs font-black uppercase tracking-widest hover:underline mb-4">
+          <Link href={`/${lang}/home`} className="inline-flex items-center gap-2 text-[#ED1C24] text-xs font-black uppercase tracking-widest hover:underline mb-4">
             <ArrowLeft className="h-3.5 w-3.5" /> Back to Home
           </Link>
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/10 text-[#ED1C24] rounded-full text-[10px] font-black uppercase tracking-widest leading-none mb-3">

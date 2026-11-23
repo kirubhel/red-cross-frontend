@@ -113,7 +113,7 @@ export default function HistoryPage() {
       {/* Dynamic Header / Navigation */}
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/home" className="flex items-center gap-3 group">
             <div className="relative overflow-hidden rounded-lg">
               <Image 
                 src="/logo.png" 
@@ -129,7 +129,7 @@ export default function HistoryPage() {
               <span className="text-[10px] font-bold text-[#ED1C24] uppercase tracking-[0.2em]">Ethiopia</span>
             </div>
           </Link>
-          <Link href="/" className="text-xs font-black uppercase tracking-widest text-black hover:text-[#ED1C24] transition-all flex items-center gap-2 group">
+          <Link href="/home" className="text-xs font-black uppercase tracking-widest text-black hover:text-[#ED1C24] transition-all flex items-center gap-2 group">
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" /> 
             {lang === 'en' ? 'Back to Home' : lang === 'am' ? 'ወደ ዋናው ገጽ' : 'Gara Manaa'}
           </Link>

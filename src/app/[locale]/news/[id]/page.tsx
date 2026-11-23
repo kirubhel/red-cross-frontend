@@ -128,7 +128,7 @@ export default function NewsDetailPage() {
       <div className="min-h-screen bg-gray-50 flex flex-col justify-between">
         <header className="bg-white border-b border-gray-100 h-20 flex items-center px-6">
           <div className="container mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/home" className="flex items-center gap-3">
               <span className="text-xl font-bold text-black">ERCS</span>
             </Link>
             <Link href="/news" className="text-sm font-bold text-black">Back to News</Link>
@@ -150,7 +150,7 @@ export default function NewsDetailPage() {
                 Back to News
               </Button>
             </Link>
-            <Link href="/">
+            <Link href="/home">
               <Button variant="outline" className="border-gray-200 rounded-xl px-6 h-12 font-bold cursor-pointer hover:bg-gray-50">
                 Go Home
               </Button>
@@ -175,7 +175,7 @@ export default function NewsDetailPage() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 transition-all">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/home" className="flex items-center gap-3 group">
             <div className="relative overflow-hidden rounded-lg">
               <Image 
                 src="/logo.png" 

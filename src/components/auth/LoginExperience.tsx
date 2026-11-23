@@ -1,0 +1,599 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  ArrowLeft,
+  ShieldCheck,
+  Lock,
+  User,
+  ChevronRight,
+  Plus,
+  Eye,
+  EyeOff,
+  Heart,
+  Award,
+  Check
+} from "lucide-react";
+import api from "@/lib/api";
+import Header from "@/components/layout/Header";
+import { useLanguage } from "@/context/LanguageContext";
+import { ALL_COUNTRIES, getFlagEmoji } from "@/components/ui/phone-number-input";
+
+interface LoginExperienceProps {
+  embedded?: boolean;
+  adminOnly?: boolean;
+}
+
+export default function LoginExperience({ embedded = false, adminOnly = false }: LoginExperienceProps) {
+  const router = useRouter();
+  const { lang, t } = useLanguage();
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [noPassword, setNoPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
+  const [userIdForMfa, setUserIdForMfa] = useState("");
+  const [otpSentPhone, setOtpSentPhone] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendingOtp, setResendingOtp] = useState(false);
+  // Country Selector and Multi-Profile selection states
+  const [countryCode, setCountryCode] = useState("ET");
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [isMultiProfile, setIsMultiProfile] = useState(false);
+  const showCountrySelector = !adminOnly && /^[+0-9]/.test(identifier);
+  const isMemberId = !adminOnly && /^ERCS-/i.test(identifier.trim());
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || resendingOtp || !userIdForMfa) return;
+    try {
+      setResendingOtp(true);
+      setError("");
+      const res = await api.post("/auth/mfa/resend", { user_id: userIdForMfa });
+      if (res.data?.phone) setOtpSentPhone(res.data.phone);
+      setResendCooldown(60);
+    } catch (err: any) {
+      setError("Failed to resend SMS code. Please try again.");
+    } finally {
+      setResendingOtp(false);
+    }
+  };
+
+  const handleLoginSuccess = (data: any) => {
+    const { access_token, role, ercs_id } = data;
+
+    const rawRole = role;
+    let roleStr = typeof rawRole === "string" ? rawRole : "";
+    if (rawRole === 1 || rawRole === "ROLE_super_admin") roleStr = "SUPER_ADMIN";
+    else if (rawRole === 2 || rawRole === "ROLE_regional_admin") roleStr = "REGIONAL_ADMIN";
+    else if (rawRole === 3 || rawRole === "ROLE_zonal_admin" || rawRole === "ZONE_ADMIN") roleStr = "ZONE_ADMIN";
+    else if (rawRole === 4 || rawRole === "ROLE_woreda_admin") roleStr = "WOREDA_ADMIN";
+    else if (rawRole === 7 || rawRole === "ROLE_branch_officer") roleStr = "BRANCH_OFFICER";
+    else if (rawRole === 6 || rawRole === "ROLE_member") roleStr = "MEMBER";
+    else if (rawRole === 5 || rawRole === "ROLE_volunteer") roleStr = "VOLUNTEER";
+    else if (rawRole === 8 || rawRole === "ROLE_organization") roleStr = "ORGANIZATION";
+    else if (!roleStr) roleStr = String(rawRole || "");
+
+    const regId = data.region_id !== undefined && data.region_id !== null ? String(data.region_id) : (data.regionId !== undefined ? String(data.regionId) : "");
+    const zoneId = data.zone_id || data.zoneId || "";
+    const woredaId = data.woreda_id || data.woredaId || "";
+    const branchId = data.branch_id || data.branchId || "";
+
+    const isAdmin = ["SUPER_ADMIN", "REGIONAL_ADMIN", "ZONE_ADMIN", "ZONAL_ADMIN", "WOREDA_ADMIN", "BRANCH_OFFICER", "1", "2", "3", "4", "7"].includes(roleStr) || [1, 2, 3, 4, 7].includes(rawRole);
+    const isOrg = roleStr === "ORGANIZATION" || roleStr === "8" || rawRole === 8;
+    if (adminOnly && !isAdmin) {
+      setError("This sign-in is for administrators. Please use the member or volunteer login.");
+      return;
+    }
+    localStorage.setItem("token", access_token);
+    localStorage.setItem("access_token", access_token);
+    localStorage.setItem("user_role", roleStr);
+    if (ercs_id) localStorage.setItem("ercs_id", ercs_id);
+    if (regId !== "") localStorage.setItem("user_region", regId);
+    if (zoneId) localStorage.setItem("user_zone", zoneId);
+    if (woredaId) localStorage.setItem("user_woreda", woredaId);
+    if (branchId) {
+      localStorage.setItem("user_branch", branchId);
+      localStorage.setItem("user_branch_id", branchId);
+    }
+
+    if (isAdmin) {
+      router.push("/admin");
+    } else if (isOrg) {
+      router.push("/organization/portal");
+    } else {
+      router.push("/dashboard");
+    }
+  };
+
+  const handleMfaLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await api.post("/auth/login-mfa", { user_id: userIdForMfa, code: mfaCode.trim() });
+      handleLoginSuccess(res.data);
+    } catch (err: any) {
+      console.error("MFA Login error:", err);
+      const rawMessage = typeof err.response?.data === 'string'
+        ? err.response.data
+        : err.response?.data?.message || err.response?.data?.error || err.message;
+      let cleanMessage = rawMessage;
+      if (typeof rawMessage === "string" && rawMessage.includes("desc = ")) {
+        cleanMessage = rawMessage.split("desc = ")[1];
+      }
+      setError(cleanMessage || "Invalid 2FA verification code. Please check and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      let finalIdentifier = identifier.trim();
+      if (showCountrySelector) {
+        const selectedCountry = ALL_COUNTRIES.find(c => c.code === countryCode);
+        const dialCode = selectedCountry?.dialCode ?? "";
+        const cleanDigits = identifier.replace(/\D/g, "");
+        const dialDigits = dialCode.replace(/\D/g, "");
+        if (!cleanDigits.startsWith(dialDigits)) {
+          const localPart = cleanDigits.startsWith("0") ? cleanDigits.slice(1) : cleanDigits;
+          finalIdentifier = dialCode + localPart;
+        } else {
+          finalIdentifier = "+" + cleanDigits;
+        }
+      }
+
+      const res = await api.post("/auth/login", {
+        identifier: finalIdentifier,
+        password: adminOnly ? password : (isMemberId && !password) ? "" : password
+      });
+
+      // Check for multi-profile response
+      if (res.data.multi_profile) {
+        setProfiles(res.data.profiles || []);
+        setIsMultiProfile(true);
+        setLoading(false);
+        return;
+      }
+
+      if (res.data.mfa_required) {
+        setMfaRequired(true);
+        setUserIdForMfa(res.data.user_id);
+        setLoading(false);
+        return;
+      }
+
+      handleLoginSuccess(res.data);
+    } catch (err: any) {
+      console.error("Login detail err:", err);
+
+      const rawMessage = typeof err.response?.data === 'string'
+        ? err.response.data
+        : err.response?.data?.message || err.response?.data || "";
+
+      // Extract the clean description from gRPC error if present
+      let cleanMessage = rawMessage;
+      if (rawMessage.includes("desc = ")) {
+        cleanMessage = rawMessage.split("desc = ")[1];
+      }
+
+      // Map technical gRPC errors to user-friendly messages
+      let friendlyMessage = cleanMessage || "Sign in failed. Please check your connection and try again.";
+
+      if (rawMessage.includes("invalid credentials") || rawMessage.includes("Unauthenticated")) {
+        friendlyMessage = "Those credentials don't look right. Please double-check your ID and password.";
+      } else if (rawMessage.includes("not found")) {
+        friendlyMessage = "We couldn't find an account with that identifier.";
+      } else if (rawMessage.includes("deadline exceeded")) {
+        friendlyMessage = "The server is taking too long to respond. Please try again in a moment.";
+      } else if (rawMessage.includes("PENDING")) {
+        friendlyMessage = cleanMessage || "Your account is currently pending approval from ERCS administrators.";
+      }
+
+      setError(friendlyMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectProfile = async (userId: string) => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.post("/auth/login", { identifier: userId, password });
+
+      if (res.data.mfa_required) {
+        setMfaRequired(true);
+        setUserIdForMfa(res.data.user_id);
+        setLoading(false);
+        return;
+      }
+
+      handleLoginSuccess(res.data);
+    } catch (err: any) {
+      setError("Failed to sign in to the selected profile. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className={embedded ? "w-full" : "min-h-screen w-full flex flex-col bg-white overflow-hidden relative"}>
+      {!embedded && <Header minimal={true} />}
+      {/* Decorative Background Elements */}
+      {!embedded && <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-50 rounded-full blur-[120px] opacity-60" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-50 rounded-full blur-[120px] opacity-60" />
+        <div className="absolute inset-0 opacity-[0.03]"
+             style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+      </div>}
+
+      {/* Main Content */}
+      <div className={embedded ? "w-full" : "relative z-10 w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center p-6 md:p-12 gap-16 flex-1"}>
+
+        {/* Brand Side (Visible on Desktop) */}
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          className={embedded ? "hidden" : "hidden lg:flex flex-col flex-1 space-y-12"}
+        >
+          <Link href={`/${lang}/home`} className="inline-flex items-center gap-1.5 group text-black/40 hover:text-black transition-colors font-black uppercase tracking-widest text-[10px]">
+            <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" /> {t.auth?.backToHome || "Back to home"}
+          </Link>
+
+          <div className="space-y-4">
+            <div className="relative w-16 h-16 rounded-2xl overflow-hidden shadow-xl shadow-red-500/10 bg-white p-1.5">
+              <Image
+                src="/logo.png"
+                alt="ERCS Logo"
+                fill
+                className="object-contain p-1.5"
+                unoptimized
+              />
+            </div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-black leading-[1.05] tracking-tighter">
+              {t.auth?.brandTitle || "Be a Member, Volunteer and Red Cross Family"}
+            </h1>
+            <p className="text-sm sm:text-base text-black/60 font-medium max-w-sm">
+              {t.auth?.brandSubtitle || "Access the Ethiopian Red Cross Society portal to manage memberships, volunteer assignments, and humanitarian impact."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-8 pt-8">
+            <div className="space-y-3">
+              <ShieldCheck className="h-8 w-8 text-[#ED1C24]" />
+              <h4 className="font-black uppercase tracking-widest text-[#ED1C24] text-xs">{t.auth?.secureAccess || "Secure Access"}</h4>
+              <p className="text-sm text-black/60 font-bold">{t.auth?.secureAccessDesc || "Industry standard encryption for all data."}</p>
+            </div>
+            <div className="space-y-3">
+              <Lock className="h-8 w-8 text-[#ED1C24]" />
+              <h4 className="font-black uppercase tracking-widest text-[#ED1C24] text-xs">{t.auth?.internalPortal || "Internal Portal"}</h4>
+              <p className="text-sm text-black/60 font-bold">{t.auth?.internalPortalDesc || "Authorized personnel and volunteers only."}</p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Login Form Side */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-[440px]"
+        >
+          <div className="bg-white p-6 md:p-10 rounded-[40px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.12)] border border-gray-100 flex flex-col">
+            <div className="lg:hidden flex justify-center mb-8">
+               <Image src="/logo.png" alt="ERCS Logo" width={80} height={80} className="object-contain" unoptimized />
+            </div>
+
+            <div className="space-y-1 mb-8 text-center lg:text-left">
+              <h2 className="text-3xl font-black text-black tracking-tighter">{adminOnly ? "Administrator sign in" : t.auth?.welcomeBack || "Welcome back."}</h2>
+              <p className="text-black/60 font-black text-[10px] uppercase tracking-widest">{adminOnly ? "Authorized staff only" : t.auth?.signInSubtitle || "Sign in to your account"}</p>
+            </div>
+
+            {!isMultiProfile ? (
+              !mfaRequired ? (
+                <form onSubmit={handleLogin} className="space-y-8">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="identifier" className="text-[9px] font-black uppercase tracking-widest ml-1 text-black/60">{adminOnly ? "Staff email" : t.auth?.identifierLabel || "Phone number, email, or member ID"}</Label>
+                      <div className="relative">
+                        {showCountrySelector ? (
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-gray-100/80 hover:bg-gray-100 rounded-lg p-1.5 border border-gray-200/50 z-20 transition-all shrink-0">
+                            <select
+                              value={countryCode}
+                              onChange={(e) => setCountryCode(e.target.value)}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
+                            >
+                              {ALL_COUNTRIES.map((c) => (
+                                <option key={c.code} value={c.code}>
+                                  {getFlagEmoji(c.code)} {c.dialCode} ({c.name})
+                                </option>
+                              ))}
+                            </select>
+                            <span className="text-lg leading-none">{getFlagEmoji(countryCode)}</span>
+                            <span className="text-xs font-black text-black/60">{ALL_COUNTRIES.find(c => c.code === countryCode)?.dialCode}</span>
+                          </div>
+                        ) : (
+                          <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
+                        )}
+                        <Input
+                          id="identifier"
+                          type={adminOnly ? "email" : "text"}
+                          inputMode={adminOnly ? "email" : "text"}
+                          autoComplete="username"
+                          placeholder={adminOnly ? "name@redcrosseth.org" : "Phone, email, or ERCS ID"}
+                          className={`h-14 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black ${showCountrySelector ? 'pl-24' : 'pl-12'}`}
+                          value={identifier}
+                          onChange={(e) => setIdentifier(e.target.value)}
+                          required
+                        />
+                      </div>
+                      {isMemberId && !adminOnly && (
+                        <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200">
+                          <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+                          <span>Member ID detected — password is optional</span>
+                        </div>
+                      )}
+                    </div>
+
+                  {!adminOnly && <div className="flex items-center gap-2 ml-1">
+                    <input
+                      type="checkbox"
+                      id="noPassword"
+                      checked={noPassword}
+                      onChange={(e) => {
+                        setNoPassword(e.target.checked);
+                        if (e.target.checked) setPassword("");
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-[#ED1C24] focus:ring-[#ED1C24]"
+                    />
+                    <Label htmlFor="noPassword" className="text-xs font-bold text-black/60 cursor-pointer">
+                      {t.auth?.noPasswordLabel || "Login without password (requires Member ID)"}
+                    </Label>
+                  </div>}
+
+                  <div className={`space-y-2 transition-opacity duration-300 ${noPassword ? 'opacity-30 pointer-events-none' : ''}`}>
+                    <div className="flex justify-between items-center ml-1">
+                      <Label htmlFor="password" className="text-[9px] font-black uppercase tracking-widest text-black/60">{t.auth?.passwordLabel || "Password"}</Label>
+                      <Link href={`/${lang}/forgot-password`} className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-60 transition-opacity">{t.auth?.forgotPassword || "Forgot?"}</Link>
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-black/60" />
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="h-14 pl-12 pr-12 rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-bold text-base placeholder:text-black/30 text-black"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required={adminOnly || (!noPassword && !isMemberId)}
+                        disabled={!adminOnly && noPassword}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-black/60 hover:text-black transition-colors"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-red-50 text-[#ED1C24] p-4 rounded-xl text-sm font-bold text-center border border-red-100"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full h-14 rounded-xl text-lg font-black shadow-xl shadow-red-500/15 active:scale-95 group overflow-hidden relative"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+                        <Plus className="h-4 w-4" />
+                      </motion.div>
+                      {t.auth?.signingIn || "Authenticating..."}
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      {t.auth?.signInButton || "Sign In"} <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleMfaLogin} className="space-y-6">
+                <div className="space-y-3 text-center">
+                  <div className="h-16 w-16 bg-red-50 text-[#ED1C24] rounded-3xl flex items-center justify-center mx-auto mb-2 shadow-lg shadow-red-500/10">
+                    <ShieldCheck className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-xl font-black text-black tracking-tight uppercase">{t.auth?.enterOtp || "Two-Factor Authentication"}</h3>
+                  <p className="text-xs text-black/60 font-bold leading-relaxed max-w-xs mx-auto">
+                    {otpSentPhone
+                      ? `We sent a 6-digit verification code via SMS to ${otpSentPhone}. You can also use your Authenticator app.`
+                      : "Enter the 6-digit code sent via SMS to your registered phone number or from your Authenticator app."}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center ml-1">
+                    <Label htmlFor="mfaCode" className="text-[9px] font-black uppercase tracking-widest text-black/60">6-Digit Verification Code</Label>
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resendCooldown > 0 || resendingOtp}
+                      className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] hover:opacity-70 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {resendingOtp ? "Sending..." : resendCooldown > 0 ? `Resend SMS in ${resendCooldown}s` : "Resend SMS Code"}
+                    </button>
+                  </div>
+                  <Input
+                    id="mfaCode"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="000 000"
+                    className="h-14 text-center text-2xl tracking-[0.5em] rounded-xl bg-gray-50 border-none focus-visible:ring-2 focus-visible:ring-[#ED1C24]/10 transition-all font-black text-black"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-red-50 text-[#ED1C24] p-4 rounded-xl text-sm font-bold text-center border border-red-100"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+
+                <div className="flex flex-col gap-3 pt-2">
+                  <Button
+                    type="submit"
+                    className="w-full h-14 rounded-xl text-lg font-black shadow-xl shadow-red-500/15 active:scale-95 transition-all"
+                    disabled={loading || mfaCode.length !== 6}
+                  >
+                    {loading ? "Verifying..." : "Verify & Sign In"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setMfaRequired(false);
+                      setMfaCode("");
+                      setError("");
+                    }}
+                    className="w-full h-12 rounded-xl text-xs font-black uppercase tracking-widest text-black/40 hover:text-black transition-colors"
+                  >
+                    Back to login
+                  </Button>
+                </div>
+              </form>
+            )) : (
+              <div className="space-y-6">
+                <div className="space-y-2 text-center lg:text-left">
+                  <h3 className="text-2xl font-black text-black tracking-tight">CHOOSE PROFILE</h3>
+                  <p className="text-sm text-black/60 font-bold">Select the account profile you want to sign in with.</p>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  {profiles.map((profile) => {
+                    const isVolunteer = profile.role === "VOLUNTEER" || profile.role === "5";
+                    const roleTitle = isVolunteer ? "Volunteer Portal" : "Member Portal";
+                    const roleDesc = isVolunteer
+                      ? "Access volunteer missions, hours, and training logs."
+                      : "Manage your membership details, dues, and digital ID card.";
+
+                    return (
+                      <button
+                        key={profile.user_id}
+                        type="button"
+                        onClick={() => handleSelectProfile(profile.user_id)}
+                        disabled={loading}
+                        className="w-full text-left p-5 rounded-2xl border-2 border-gray-100 hover:border-[#ED1C24] hover:bg-red-50/5 active:scale-[0.98] transition-all flex items-center gap-4 group"
+                      >
+                        <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                          isVolunteer
+                            ? 'bg-red-50 text-[#ED1C24] group-hover:bg-[#ED1C24] group-hover:text-white'
+                            : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                        }`}>
+                          {isVolunteer ? <Heart className="h-6 w-6" /> : <Award className="h-6 w-6" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-black text-base text-black flex items-center gap-1.5">
+                            {roleTitle}
+                          </h4>
+                          <p className="text-xs text-black/50 font-bold line-clamp-1 mt-0.5">{roleDesc}</p>
+                          {profile.ercs_id && (
+                            <p className="text-[10px] text-[#ED1C24] font-black uppercase tracking-wider mt-1">ID: {profile.ercs_id}</p>
+                          )}
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-black/30 group-hover:text-[#ED1C24] group-hover:translate-x-1 transition-all" />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 text-[#ED1C24] p-4 rounded-xl text-sm font-bold text-center border border-red-100">
+                    {error}
+                  </div>
+                )}
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsMultiProfile(false);
+                    setProfiles([]);
+                    setError("");
+                  }}
+                  className="w-full h-12 rounded-xl text-xs font-black uppercase tracking-widest text-black/40 hover:text-black transition-colors"
+                >
+                  Back to login
+                </Button>
+              </div>
+            )}
+
+            {!adminOnly && <div className="mt-8 pt-6 border-t border-gray-100 text-center space-y-2">
+              <p className="text-xs font-bold text-black/40">
+                {t.auth?.noAccount || "Don't have an account?"}
+              </p>
+              <div className="flex items-center justify-center gap-3 text-xs">
+                <Link href={`/${lang}/join/member`} className="text-[#ED1C24] hover:underline font-black">
+                  {t.auth?.joinMember || "Join as Member"}
+                </Link>
+                <span className="text-gray-300">·</span>
+                <Link href={`/${lang}/join/volunteer`} className="text-[#ED1C24] hover:underline font-black">
+                  {t.auth?.joinVolunteer || "Join as Volunteer"}
+                </Link>
+              </div>
+              {!embedded && <Link href={`/${lang}/staff/login`} className="inline-block pt-3 text-[10px] font-bold text-black/40 hover:text-[#ED1C24]">Staff sign in</Link>}
+            </div>}
+            {adminOnly && <Link href={`/${lang}/login`} className="mt-8 pt-6 border-t border-gray-100 text-center text-xs font-bold text-[#ED1C24] hover:underline">Member or volunteer sign in</Link>}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Aesthetic Accents */}
+      {!embedded && <div className="absolute top-20 right-[-5%] w-64 h-64 border-[40px] border-red-50/30 rounded-full opacity-20 pointer-events-none" />}
+      {!embedded && <div className="absolute bottom-20 left-[-5%] w-64 h-64 border-[40px] border-red-50/30 rounded-full opacity-20 pointer-events-none" />}
+    </div>
+  );
+}

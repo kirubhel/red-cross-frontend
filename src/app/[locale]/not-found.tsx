@@ -33,7 +33,7 @@ export default function NotFound() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
           <Button asChild size="lg" className="w-full bg-ercs-red hover:bg-red-700 text-white shadow-md font-medium group transition-all">
-            <Link href="/">
+            <Link href="/home">
               <Home className="mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
               Homepage
             </Link>

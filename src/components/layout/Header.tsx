@@ -71,10 +71,10 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
   }, [pathname]);
 
   const navLinks = [
-    { id: "about", label: t.nav.about, href: `/${lang}#about` },
-    { id: "services", label: t.nav.services, href: `/${lang}#services` },
-    { id: "impact", label: t.nav.impact, href: `/${lang}#impact` },
-    { id: "news", label: t.nav.news, href: `/${lang}#news` },
+    { id: "about", label: t.nav.about, href: `/${lang}/home#about` },
+    { id: "services", label: t.nav.services, href: `/${lang}/home#services` },
+    { id: "impact", label: t.nav.impact, href: `/${lang}/home#impact` },
+    { id: "news", label: t.nav.news, href: `/${lang}/home#news` },
   ];
 
   return (
@@ -84,7 +84,7 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
       className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md"
     >
       <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link href={`/${lang}`} className="flex items-center gap-2 sm:gap-3 group cursor-pointer shrink-0">
+        <Link href={`/${lang}/home`} className="flex items-center gap-2 sm:gap-3 group cursor-pointer shrink-0">
           <div className="relative overflow-hidden rounded-md border border-gray-100 shadow-sm">
             <Image 
               src="/logo.jpg" 
@@ -126,7 +126,7 @@ export default function Header({ showBackToHome = false, minimal = false }: Head
             })}
           </nav>
         ) : (
-          <Link href={`/${lang}`} className="text-sm font-bold text-black hover:text-[#ED1C24] transition-colors flex items-center gap-2">
+          <Link href={`/${lang}/home`} className="text-sm font-bold text-black hover:text-[#ED1C24] transition-colors flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" /> {t.nav.backToHome}
           </Link>
         )}

@@ -68,7 +68,7 @@ export default function DeleteAccountPage() {
               Re-register as Volunteer
             </Link>
             <Link
-              href={`/${lang}`}
+              href={`/${lang}/home`}
               className="w-full py-2 px-4 text-gray-500 hover:text-white font-bold text-xs transition-colors"
             >
               Back to Home
