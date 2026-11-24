@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ElectronicReceiptModal, ReceiptData } from "@/components/payment/ElectronicReceiptModal";
+import PostPaymentFlow from "@/components/payment/PostPaymentFlow";
 import api from "@/lib/api";
 
 type CheckState = "checking" | "paid" | "pending" | "failed" | "notfound";
@@ -42,6 +43,8 @@ function PaymentDetails() {
   const [firstName, setFirstName] = useState("Contributor");
   const [lastName, setLastName] = useState("");
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [isPostPaymentOpen, setIsPostPaymentOpen] = useState(false);
+  const autoOpenedRef = useRef(false);
 
   useEffect(() => {
     const amt = searchParams.get("amount");
@@ -98,11 +101,25 @@ function PaymentDetails() {
 
   const isMembership = purpose === "MEMBERSHIP";
 
+  // A paid membership shows the receipt straight away; closing it leads to the photo and ID card steps.
+  useEffect(() => {
+    if (check === "paid" && isMembership && !autoOpenedRef.current) {
+      autoOpenedRef.current = true;
+      setIsReceiptModalOpen(true);
+    }
+  }, [check, isMembership]);
+
+  const closeReceipt = () => {
+    setIsReceiptModalOpen(false);
+    if (isMembership) setIsPostPaymentOpen(true);
+  };
+
   const receiptData: ReceiptData = {
     id: txRef,
     invoiceNumber: `INV-${txRef.slice(0, 10).toUpperCase()}`,
     payerName: `${firstName} ${lastName}`.trim() || "ERCS Contributor",
     payerEmail: email,
+    ercsId: memberId || undefined,
     amount: parseFloat(amount) || 0,
     currency: currency || "ETB",
     paymentMethod: "ArifPay Electronic Payment",
@@ -313,8 +330,14 @@ function PaymentDetails() {
       {/* Official Electronic Receipt Modal */}
       <ElectronicReceiptModal 
         isOpen={isReceiptModalOpen}
-        onClose={() => setIsReceiptModalOpen(false)}
+        onClose={closeReceipt}
         receipt={receiptData}
+      />
+
+      <PostPaymentFlow
+        isOpen={isPostPaymentOpen}
+        memberId={memberId}
+        onClose={() => setIsPostPaymentOpen(false)}
       />
     </>
   );

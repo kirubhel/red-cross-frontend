@@ -482,8 +482,11 @@ function MemberRegistrationContent() {
             return;
         }
 
-        // Registered & logged in, ready for ArifPay payment. The Member ID is issued once the fee is paid.
+        // Registered & logged in. Go straight to checkout instead of asking them to confirm the
+        // same payment a second time; the Member ID is issued once the fee is paid. If starting the
+        // payment fails, the screen stays on the pay button so they can retry.
         setRegisteredLoggedIn(true);
+        await handlePayWithArifPay(registeredPersonId);
     } catch (err: any) {
          console.error("Registration error:", err);
          setError(err.response?.data?.message || err.message || "Failed to complete registration. Please try again.");
@@ -493,7 +496,8 @@ function MemberRegistrationContent() {
   };
 
   // Dedicated ArifPay payment trigger after auto-login & plan selection
-  const handlePayWithArifPay = async () => {
+  // `ownerPersonId` is passed right after registration, when the `personId` state has not updated yet.
+  const handlePayWithArifPay = async (ownerPersonId?: string) => {
     setLoading(true);
     setError("");
     try {
@@ -518,7 +522,7 @@ function MemberRegistrationContent() {
         first_name: formData.name || "Member",
         last_name: "Member",
         // The server routes the fee by the member's own record (region, fee), not by the browser.
-        person_id: personId,
+        person_id: ownerPersonId || personId,
         purpose: "MEMBERSHIP"
       });
 

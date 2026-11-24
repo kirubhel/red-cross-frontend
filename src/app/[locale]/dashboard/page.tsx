@@ -416,6 +416,28 @@ export default function DashboardPage() {
     }
   };
 
+  // Arriving from the post-payment prompt (?download_id=1): download the card once it has rendered.
+  const autoDownloadedRef = useRef(false);
+  useEffect(() => {
+    if (loading || autoDownloadedRef.current) return;
+    if (!user?.memberId || user.memberId === "NOT_ASSIGNED" || user.isPendingPayment) return;
+    let wanted = false;
+    try {
+      wanted = new URLSearchParams(window.location.search).get("download_id") === "1";
+    } catch {
+      /* no query string available */
+    }
+    if (!wanted) return;
+    autoDownloadedRef.current = true;
+    // Give the photo, logo and QR code a moment to load so they appear on the card.
+    const t = setTimeout(() => {
+      downloadIDCard();
+      window.history.replaceState(null, "", window.location.pathname);
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, user]);
+
   // ROLE_member = 6, ROLE_volunteer = 5
   const isMember = user?.role === "MEMBER" || user?.role === "6" || user?.role === 6;
   const isVolunteer = user?.role === "VOLUNTEER" || user?.role === "5" || user?.role === 5;

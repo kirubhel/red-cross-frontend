@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
   Building2, Mail, Phone, Globe, User, ShieldCheck, 
-  CheckCircle2, ArrowRight, Eye, EyeOff, Lock
+  CheckCircle2, ChevronRight, Eye, EyeOff, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/layout/Header";
@@ -139,14 +139,11 @@ export default function OrganizationsRegisterPage() {
               </div>
             </div>
 
-            <div className="relative z-10 pt-4 border-t border-gray-800/80 text-[11px] text-gray-400 flex items-center justify-between">
-              <span>Already registered?</span>
-              <Link 
-                href="/login" 
-                className="text-[#ED1C24] hover:underline font-bold inline-flex items-center gap-1"
-              >
-                Sign In <ArrowRight className="h-3 w-3" />
-              </Link>
+            <div className="relative z-10 pt-4 border-t border-gray-800/80 space-y-2.5">
+              <span className="block text-[11px] text-gray-400">Already registered?</span>
+              <Button asChild className="w-full h-12 rounded-xl bg-[#ED1C24] text-white font-black hover:bg-white hover:text-black gap-2">
+                <Link href="/login">Log in <ChevronRight className="h-4 w-4" /></Link>
+              </Button>
             </div>
           </div>
 
