@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const [regionLocked, setRegionLocked] = useState(false);
   const [scopeLabel, setScopeLabel] = useState("");
   const [quickSearch, setQuickSearch] = useState("");
+  const [searchTarget, setSearchTarget] = useState<"members" | "volunteers">("members");
 
   const load = async () => {
     setLoading(true);
@@ -99,8 +100,8 @@ export default function DashboardPage() {
   const regionsCovered = byRegion(filtered).filter((r) => r.total > 0).length;
   const recent = useMemo(() => [...scoped].filter((r) => r.createdAt !== null).sort((a, b) => b.createdAt! - a.createdAt!).slice(0, 8), [scoped]);
 
-  const submitSearch = (target: "members" | "volunteers" | "payments") => {
-    if (quickSearch.trim()) router.push(`/admin/${target}?search=${encodeURIComponent(quickSearch.trim())}`);
+  const submitSearch = () => {
+    if (quickSearch.trim()) router.push(`/admin/${searchTarget}?search=${encodeURIComponent(quickSearch.trim())}`);
   };
 
   return (
@@ -116,23 +117,40 @@ export default function DashboardPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              submitSearch("members");
+              submitSearch();
             }}
-            className="flex w-full items-center gap-2 rounded-xl border border-gray-200 bg-white p-1 md:w-[30rem]"
+            role="search"
+            aria-label="Search the registry"
+            className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-1 md:w-[38rem]"
           >
             <Search className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
             <input
+              type="search"
               value={quickSearch}
               onChange={(e) => setQuickSearch(e.target.value)}
               placeholder="Search by name, phone or ID"
               aria-label="Search the registry"
-              className="h-8 min-w-0 flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+              required
+              className="h-8 min-w-40 flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
             />
-            <button type="submit" className="h-8 rounded-lg bg-[#ED1C24] px-3 text-xs font-bold text-white hover:bg-black">
-              Members
-            </button>
-            <button type="button" onClick={() => submitSearch("volunteers")} className="h-8 rounded-lg bg-gray-100 px-3 text-xs font-bold text-gray-800 hover:bg-gray-200">
-              Volunteers
+            <fieldset className="flex items-center gap-1 rounded-lg p-0.5">
+              <legend className="sr-only">Search in</legend>
+              {(["members", "volunteers"] as const).map((target) => (
+                <label key={target} className={cn("cursor-pointer rounded-md border px-2.5 py-1.5 text-xs font-bold transition-colors", searchTarget === target ? "border-[#ED1C24] bg-[#ED1C24] text-white" : "border-gray-200 bg-white text-gray-900 hover:border-red-400 hover:bg-red-50")}>
+                  <input
+                    type="radio"
+                    name="searchTarget"
+                    value={target}
+                    checked={searchTarget === target}
+                    onChange={() => setSearchTarget(target)}
+                    className="peer sr-only"
+                  />
+                  <span className="peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-red-600">{target === "members" ? "Members" : "Volunteers"}</span>
+                </label>
+              ))}
+            </fieldset>
+            <button type="submit" className="h-8 rounded-lg bg-[#ED1C24] px-3 text-xs font-bold text-white hover:bg-black focus-visible:outline-2 focus-visible:outline-red-600">
+              Search
             </button>
           </form>
         }

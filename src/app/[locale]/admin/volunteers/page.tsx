@@ -191,6 +191,7 @@ export default function VolunteersPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [search, setSearch] = useState("");
+  const [searchReady, setSearchReady] = useState(false);
   const [regionFilter, setRegionFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -239,6 +240,8 @@ export default function VolunteersPage() {
   const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
+    setSearch(new URLSearchParams(window.location.search).get("search") || "");
+    setSearchReady(true);
     fetchRegions();
     fetchPerformanceSummaries();
   }, []);
@@ -259,11 +262,12 @@ export default function VolunteersPage() {
 
   // Fetch volunteers when page, page size, or filters change
   useEffect(() => {
+    if (!searchReady) return;
     const timer = setTimeout(() => {
       fetchVolunteers();
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
-  }, [currentPage, pageSize, search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter]);
+  }, [searchReady, currentPage, pageSize, search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter]);
 
   const fetchRegions = async () => {
     try {
