@@ -192,6 +192,7 @@ export default function ReportsAndAnalyticsPage() {
       const params = new URLSearchParams();
       params.set("page", "1");
       params.set("page_size", "5000");
+      params.set("members_only", "true");
       if (regionFilter) params.set("region", regionFilter);
       if (statusFilter) params.set("status", statusFilter);
       if (mainCategory) params.set("category", mainCategory);

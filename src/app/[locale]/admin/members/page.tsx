@@ -227,7 +227,7 @@ export default function MembersPage() {
     try {
       const scope = userScope || getUserScope();
       const effectiveRegion = (!scope.isSuperAdmin && scope.regionId) ? scope.regionId : regionFilter;
-      const url = `/person?page=${page}&page_size=${pageSize}&search=${encodeURIComponent(search.trim())}&region=${effectiveRegion}&status=${statusFilter}&type=${typeFilter}&zone=${zoneFilter}&woreda=${woredaFilter}&category=${mainCategory}`;
+      const url = `/person?page=${page}&page_size=${pageSize}&members_only=true&search=${encodeURIComponent(search.trim())}&region=${effectiveRegion}&status=${statusFilter}&type=${typeFilter}&zone=${zoneFilter}&woreda=${woredaFilter}&category=${mainCategory}`;
       const res = await api.get(url);
       setMembers(res.data.people || []);
       setTotalItems(res.data.pagination?.total_items || 0);
