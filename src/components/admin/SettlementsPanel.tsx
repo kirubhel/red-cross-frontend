@@ -189,14 +189,10 @@ export function SettlementsPanel() {
 
   const retry = async (p: Payout) => {
     const again = p.status === "SKIPPED";
-    // An unanswered transfer is repeated under the same reference, which ArifPay de-duplicates.
-    // A failed one is sent as a brand-new transfer, so it could be paid twice if the first did go through.
-    const newReference = p.status === "FAILED";
+    const newReference = !again;
     const warning = again
       ? `Check ${p.invoice_number} again?\n\nIt is looked at again on the next run, using the bank details now on record.`
-      : newReference
-        ? `Send ${money(p.amount_net, p.currency)} to ${p.account_name || p.account_number} again as a new transfer?\n\nOpen the ArifPay dashboard first and make sure the first attempt did not go through. A second transfer cannot be undone.`
-        : `Send ${money(p.amount_net, p.currency)} to ${p.account_name || p.account_number} again?\n\nThe first attempt got no answer from ArifPay. Check the ArifPay dashboard first. It is repeated under the same reference, so ArifPay will not pay twice if it already went through.`;
+      : `Send ${money(p.amount_net, p.currency)} to ${p.account_name || p.account_number} again as a new transfer?\n\nOpen the ArifPay dashboard first and make sure the first attempt did not go through. A second transfer cannot be undone.`;
     if (!confirm(warning)) return;
     setBusyId(p.id);
     try {
