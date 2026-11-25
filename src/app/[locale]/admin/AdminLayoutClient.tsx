@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useLocale } from "next-intl";
 import { Sidebar } from "@/components/layout/sidebar";
 import { toast } from "sonner";
 import { AiChatWidget } from "@/components/admin/AiChatWidget";
@@ -24,6 +25,7 @@ export default function AdminLayoutClient({
   children: React.ReactNode;
 }) {
   const [unreadCount, setUnreadCount] = useState(0);
+  const locale = useLocale();
   const [pendingOrgs, setPendingOrgs] = useState<any[]>([]);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
@@ -149,15 +151,19 @@ export default function AdminLayoutClient({
           <div className="flex items-center flex-1 justify-end gap-6">
             
             {/* Search Bar */}
-            <div className="relative hidden w-full max-w-sm md:mr-auto md:block">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <form action={`/${locale}/admin/members`} method="get" role="search" aria-label="Search members" className="relative hidden w-full max-w-sm md:mr-auto md:block">
               <input
-                type="text"
-                aria-label="Search"
-                placeholder="Search resources, ID, names..."
-                className="h-10 w-full pl-11 pr-4 bg-gray-50 border border-transparent rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-gray-200 focus:ring-2 focus:ring-[#ED1C24]/15 transition-shadow"
+                type="search"
+                name="search"
+                aria-label="Search members by name, phone or ID"
+                placeholder="Search members by name, phone or ID..."
+                required
+                className="h-10 w-full pl-4 pr-11 bg-gray-50 border border-transparent rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-gray-200 focus:ring-2 focus:ring-[#ED1C24]/15 transition-shadow"
               />
-            </div>
+              <button type="submit" aria-label="Search members" className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-gray-500 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-red-600">
+                <Search className="h-4 w-4" />
+              </button>
+            </form>
 
             <div className="h-8 w-px bg-gray-100 hidden sm:block" />
 

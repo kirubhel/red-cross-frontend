@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { membershipTypeLabel } from "@/lib/membership-type";
 import {
   SERIES,
   REGION_NAME,
@@ -49,7 +50,7 @@ export function RegistryInsights({ records, regionId, onRegionChange, regionLock
   const trend = useMemo(() => registrationTrend(scoped), [scoped]);
   const ages = useMemo(() => ageGroups(scoped), [scoped]);
   const statuses = useMemo(() => countBy(members, (r) => titleCase(r.status)), [members]);
-  const types = useMemo(() => countBy(members, (r) => (r.membershipType ? titleCase(r.membershipType) : "Not recorded")), [members]);
+  const types = useMemo(() => countBy(members, (r) => membershipTypeLabel(r.membershipType)), [members]);
 
   const noRegion = records.filter((r) => r.regionId === 0).length;
   const values = Object.fromEntries(regions.map((r) => [r.id, r[metric]]));

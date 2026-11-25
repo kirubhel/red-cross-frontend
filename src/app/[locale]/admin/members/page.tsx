@@ -64,6 +64,7 @@ export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [regions, setRegions] = useState<Region[]>(DEFAULT_REGIONS);
   const [search, setSearch] = useState("");
+  const [searchReady, setSearchReady] = useState(false);
   const [regionFilter, setRegionFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
@@ -176,6 +177,8 @@ export default function MembersPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    setSearch(new URLSearchParams(window.location.search).get("search") || "");
+    setSearchReady(true);
     const scope = getUserScope();
     setUserScope(scope);
 
@@ -198,11 +201,12 @@ export default function MembersPage() {
   }, [showModal]);
 
   useEffect(() => {
+    if (!searchReady) return;
     const timer = setTimeout(() => {
         fetchMembers();
     }, 500); // Debounce search
     return () => clearTimeout(timer);
-  }, [search, page, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, userScope]);
+  }, [searchReady, search, page, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, userScope]);
 
   const fetchRegions = async () => {
     try {
@@ -223,7 +227,7 @@ export default function MembersPage() {
     try {
       const scope = userScope || getUserScope();
       const effectiveRegion = (!scope.isSuperAdmin && scope.regionId) ? scope.regionId : regionFilter;
-      const url = `/person?page=${page}&page_size=${pageSize}&search=${search}&region=${effectiveRegion}&status=${statusFilter}&type=${typeFilter}&zone=${zoneFilter}&woreda=${woredaFilter}&category=${mainCategory}`;
+      const url = `/person?page=${page}&page_size=${pageSize}&search=${encodeURIComponent(search.trim())}&region=${effectiveRegion}&status=${statusFilter}&type=${typeFilter}&zone=${zoneFilter}&woreda=${woredaFilter}&category=${mainCategory}`;
       const res = await api.get(url);
       setMembers(res.data.people || []);
       setTotalItems(res.data.pagination?.total_items || 0);
@@ -611,7 +615,7 @@ export default function MembersPage() {
                 <Input
                 placeholder="Search Identity..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="h-10 pl-10 bg-white text-black border border-gray-200 rounded-xl font-black text-xs focus:ring-4 focus:ring-[#ED1C24]/10 transition-all shadow-sm"
                 />
             </div>
