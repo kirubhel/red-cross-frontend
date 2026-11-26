@@ -21,6 +21,7 @@ interface DonationModalProps {
 export default function DonationModal({ isOpen, onClose, initialAmount = "100" }: DonationModalProps) {
   const [amount, setAmount] = useState("100");
   const [customAmount, setCustomAmount] = useState("");
+  const [donorName, setDonorName] = useState("");
   const [countryCode, setCountryCode] = useState("ET");
   const [localNumber, setLocalNumber] = useState("");
   const [paymentError, setPaymentError] = useState("");
@@ -59,6 +60,10 @@ export default function DonationModal({ isOpen, onClose, initialAmount = "100" }
       return;
     }
     const normalizedPhone = buildFullPhoneNumber(countryCode, localNumber).replace(/\D/g, "");
+    const normalizedName = donorName.trim().replace(/\s+/g, " ");
+    const [firstPart, ...restParts] = normalizedName ? normalizedName.split(" ") : ["Anonymous", "Donor"];
+    const firstName = firstPart || "Anonymous";
+    const lastName = normalizedName ? restParts.join(" ") : "Donor";
 
     setLoading(true);
     try {
@@ -68,8 +73,8 @@ export default function DonationModal({ isOpen, onClose, initialAmount = "100" }
         provider: PROVIDER,
         payer_phone: normalizedPhone,
         email: "donor@redcrosseth.org",
-        first_name: "Anonymous",
-        last_name: "Donor",
+        first_name: firstName,
+        last_name: lastName,
         purpose: "DONATION",
       });
       if (res.data?.payment_url) {
@@ -205,6 +210,21 @@ export default function DonationModal({ isOpen, onClose, initialAmount = "100" }
                             />
                         </div>
                     </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="donor-name" className="text-[9px] font-black uppercase tracking-[0.2em] text-black/30 ml-1">
+                      Name <span className="text-black/20">(Optional)</span>
+                    </Label>
+                    <Input
+                      id="donor-name"
+                      type="text"
+                      placeholder="Anonymous"
+                      maxLength={100}
+                      value={donorName}
+                      onChange={(e) => setDonorName(e.target.value)}
+                      className="h-12 px-4 rounded-xl bg-gray-50 border-none text-sm font-bold text-black placeholder:text-gray-300 focus-visible:ring-1 focus-visible:ring-red-500/20 transition-all"
+                    />
+                  </div>
 
                   <div className="space-y-2">
                     <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-black/30 ml-1">Phone Number</Label>

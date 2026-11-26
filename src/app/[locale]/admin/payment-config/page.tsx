@@ -15,6 +15,7 @@ import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 import { PageHeader } from "@/components/admin/page-ui";
+import { FinanceUnlock } from "@/components/admin/FinanceUnlock";
 type Purpose = "ALL" | "MEMBERSHIP" | "DONATION";
 
 type Account = {
@@ -139,11 +140,7 @@ function SecretInput({ value, onChange, name, id, placeholder }: { value: string
 }
 
 export default function PaymentConfigPage() {
-  return (
-    <SuperAdminGuard>
-      <PaymentConfig />
-    </SuperAdminGuard>
-  );
+  return <SuperAdminGuard><FinanceUnlock><PaymentConfig /></FinanceUnlock></SuperAdminGuard>;
 }
 
 function PaymentConfig() {
@@ -278,7 +275,7 @@ function PaymentConfig() {
     regionAccounts.some((a) => a.is_active && a.is_default && a.api_key_set && (a.purpose === purpose || a.purpose === "ALL"));
   const dirty = JSON.stringify(settings) !== JSON.stringify(savedSettings);
   const regionName = (id: number) => REGIONS.find((r) => r.id === id)?.name || `Region ${id}`;
-  const donationCandidates = accounts.filter((a) => a.is_active && !!a.split_to_account && a.region_id !== NATIONAL);
+  const donationCandidates = accounts.filter((a) => a.is_active && a.api_key_set && !!a.split_to_account && a.region_id !== NATIONAL);
   const isDonationAccount = (a: Account) => !!a.id && a.id === settings.donation_account_id;
   const keyCount = regionAccounts.filter((a) => a.is_active && a.api_key_set).length;
 
@@ -454,7 +451,7 @@ function PaymentConfig() {
               <div>
                 <h2 id="donation-sub-h" className="text-sm font-bold text-gray-900">Donation sub-account <span className="font-normal text-gray-400">(optional, only one)</span></h2>
                 <p className="text-xs text-gray-500">
-                  Donations are paid with the parent key and linked to this account&apos;s sub-account email.
+                  Checkout uses the parent key and splits funds to this account&apos;s ArifPay wallet. Settlements use this account&apos;s own key and bank details.
                 </p>
               </div>
               <div className="max-w-xl">
@@ -472,15 +469,14 @@ function PaymentConfig() {
                     </option>
                   ))}
                   {settings.donation_account_id && !donationCandidates.some((a) => a.id === settings.donation_account_id) && (
-                    <option value={settings.donation_account_id}>Current account (inactive, deleted or no email)</option>
+                    <option value={settings.donation_account_id}>Current account (inactive, deleted, or missing email or key)</option>
                   )}
                 </select>
                 <p className="mt-2 text-xs text-gray-500">
                   {donationCandidates.length === 0
-                    ? "No account has a sub-account email yet. "
-                    : "Only active accounts with a sub-account email are listed. "}
-                  To add one, open a region tab, edit its account and set <b>Donation sub-account email</b>. It must match a
-                  sub-account in the ArifPay dashboard.
+                    ? "No active account has both a sub-account email and API key yet. "
+                    : "Only active accounts with a sub-account email and API key are listed. "}
+                  To add one, open a region tab, edit its account, save its <b>ArifPay API key</b> and set <b>Donation sub-account email</b>.
                 </p>
               </div>
             </section>

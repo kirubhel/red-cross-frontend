@@ -11,6 +11,7 @@ import { Settings, Save, Check, RefreshCw, Hash, ShieldAlert, MapPin, Map, Globe
 import { QRCodeSVG } from "qrcode.react";
 import api from "@/lib/api";
 import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
+import { FinancePasswordSettings } from "@/components/admin/FinancePasswordSettings";
 
 import { PageHeader } from "@/components/admin/page-ui";
 type MemberIDConfig = {
@@ -1165,6 +1166,7 @@ export default function SystemSettingsPage() {
 
           {activeTab === "security" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+                <FinancePasswordSettings />
                 <div className="flex items-center gap-4 pb-4 border-b border-gray-50">
                     <div className="h-12 w-12 bg-red-50 rounded-xl flex items-center justify-center text-[#ED1C24]">
                         <ShieldCheck className="h-6 w-6" />
