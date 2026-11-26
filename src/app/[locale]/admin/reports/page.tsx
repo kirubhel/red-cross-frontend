@@ -45,7 +45,9 @@ const DEFAULT_REGIONS: RegionOption[] = [
   { id: 11, name: "Harari", code: "HR" },
   { id: 12, name: "Sidama", code: "SD" },
   { id: 13, name: "South West Ethiopia", code: "SW" },
-  { id: 14, name: "South Ethiopia", code: "SE" }
+  { id: 14, name: "South Ethiopia", code: "SE" },
+  { id: 16, name: "Moyale Special Woreda", code: "MY" },
+  { id: 17, name: "Humera Special Woreda", code: "HM" }
 ];
 
 export default function ReportsAndAnalyticsPage() {

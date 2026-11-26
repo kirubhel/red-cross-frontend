@@ -46,6 +46,13 @@ api.interceptors.response.use((response) => response, (error) => {
     financeAuthToken = null;
     window.dispatchEvent(new Event('finance-lock-expired'));
   }
+  // A temporary password only works for changing it: send the user there.
+  if (error.response?.status === 403 && String(error.response.data).trim() === 'password_change_required' && typeof window !== 'undefined') {
+    if (!window.location.pathname.includes('/change-password')) {
+      const lang = window.location.pathname.split('/')[1] || 'en';
+      window.location.href = `/${lang}/change-password`;
+    }
+  }
   if (error.response && error.response.status === 401) {
     if (typeof window !== 'undefined') {
       financeToken = null;

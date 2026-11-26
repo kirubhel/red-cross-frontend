@@ -66,6 +66,8 @@ const REGION_MAP: Record<number, string> = {
   12: "Sidama",
   13: "South West Ethiopia",
   14: "South Ethiopia",
+  16: "Moyale Special Woreda",
+  17: "Humera Special Woreda",
 };
 
 const BRANCH_TYPE_CONFIG: Record<string, { label: string; badge: string; border: string; bg: string }> = {

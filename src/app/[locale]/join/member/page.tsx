@@ -50,6 +50,8 @@ const REGION_ABBR: Record<string, string> = {
   "REGION_sidama": "SD",
   "REGION_south_west_ethiopia": "SW",
   "REGION_south_ethiopia": "SE",
+  "REGION_moyale_special_woreda": "MY",
+  "REGION_humera_special_woreda": "HM",
 };
 
 
@@ -149,7 +151,8 @@ function MemberRegistrationContent() {
       try {
         const formRes = await api.get("/config/form?type=MEMBER");
         const fields = JSON.parse(formRes.data.fields_json);
-        setFormConfig(fields);
+        // Grandfather name is optional everywhere, whatever an older saved config says.
+        setFormConfig(fields.map((f: any) => (f.id === "grandfatherName" ? { ...f, required: false } : f)));
         
         const plansRes = await api.get("/config/membership?active=true");
         const activePlans = plansRes.data.plans || [];

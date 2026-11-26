@@ -44,7 +44,10 @@ import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { DateFilterControls } from "@/components/admin/DateFilterControls";
 import { dateBounds, validLocalDate, type DatePreset } from "@/lib/date-filters";
-import type { Cell, CellValue } from "exceljs";
+import { ImportReviewDialog } from "@/components/admin/ImportReviewDialog";
+import { useImportFlow } from "@/components/admin/useImportFlow";
+import { buildTemplateWorkbook, downloadWorkbook } from "@/lib/excel-import";
+import { volunteerImportConfig } from "@/lib/import-columns";
 
 type VolunteerBenefitRecord = {
   id?: string;
@@ -141,55 +144,10 @@ const DEFAULT_REGIONS: Region[] = [
   { id: 11, name: "Harari", code: "HR" },
   { id: 12, name: "Sidama", code: "SD" },
   { id: 13, name: "South West Ethiopia", code: "SW" },
-  { id: 14, name: "South Ethiopia", code: "SE" }
+  { id: 14, name: "South Ethiopia", code: "SE" },
+  { id: 16, name: "Moyale Special Woreda", code: "MY" },
+  { id: 17, name: "Humera Special Woreda", code: "HM" }
 ];
-
-type ImportedCellValue = string | number | boolean | null;
-
-type ImportedRow = {
-  rowNumber: number;
-  data: Record<string, ImportedCellValue>;
-  importIssue?: string;
-};
-
-type ImportResult = {
-  success: number;
-  failed: number;
-  errors: string[];
-};
-
-const normalizeHeader = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-const getImportValue = (row: ImportedRow, aliases: string[]) => {
-  const aliasSet = new Set(aliases.map(normalizeHeader));
-  const entry = Object.entries(row.data).find(([key]) => aliasSet.has(normalizeHeader(key)));
-  if (!entry || entry[1] === null) return "";
-  return String(entry[1]).trim();
-};
-
-const normalizeGender = (value: string) => {
-  const normalized = value.trim().toLowerCase();
-  if (["f", "female", "woman"].includes(normalized)) return "Female";
-  if (["m", "male", "man"].includes(normalized)) return "Male";
-  return value.trim();
-};
-
-const cellValueToText = (value: ImportedCellValue) => {
-  if (value === null) return "";
-  return String(value).trim();
-};
-
-const hasCellText = (value: CellValue): value is CellValue & { text: string } => {
-  return typeof value === "object" && value !== null && "text" in value;
-};
-
-const hasFormulaResult = (value: CellValue): value is CellValue & { result: CellValue } => {
-  return typeof value === "object" && value !== null && "result" in value;
-};
-
-const hasRichText = (value: CellValue): value is CellValue & { richText: { text?: string }[] } => {
-  return typeof value === "object" && value !== null && "richText" in value && Array.isArray(value.richText);
-};
 
 export default function VolunteersPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
@@ -206,14 +164,7 @@ export default function VolunteersPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [importColumns, setImportColumns] = useState<string[]>([]);
-  const [importRows, setImportRows] = useState<ImportedRow[]>([]);
-  const [importFileName, setImportFileName] = useState("");
   const [importRegion, setImportRegion] = useState("1");
-  const [parsingImport, setParsingImport] = useState(false);
-  const [submittingImport, setSubmittingImport] = useState(false);
-  const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  const [importPage, setImportPage] = useState(1);
 
   // Performance & Ratings States
   const [performanceMap, setPerformanceMap] = useState<Record<string, PerformanceSummary>>({});
@@ -480,117 +431,9 @@ export default function VolunteersPage() {
 
   const downloadTemplate = async () => {
     try {
-      const ExcelJS = await import("exceljs");
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet("Volunteers Template");
-
-      // Set up headers
-      const headers = [
-        "Mobile", "Name", "Father Name", "Last Name", "Gender", 
-        "Date of Birth (Eth)", "Registration Date", "Occupation", 
-        "Organization Name", "Organization Type", "Education Level", 
-        "Area", "Languages", "Kebele", "Email", 
-        "General", "Youth", "Professional", "Leadership"
-      ];
-
-      worksheet.addRow(headers);
-
-      // Style headers
-      const headerRow = worksheet.getRow(1);
-      headerRow.height = 25;
-      headerRow.eachCell((cell) => {
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FFED1C24" } // ERCS Red
-        };
-        cell.font = {
-          name: "Segoe UI",
-          bold: true,
-          color: { argb: "FFFFFFFF" },
-          size: 11
-        };
-        cell.alignment = {
-          vertical: "middle",
-          horizontal: "center"
-        };
-      });
-
-      // Add sample rows (2-100) with data validation
-      const totalRows = 100;
-      for (let i = 2; i <= totalRows; i++) {
-        // Gender column (E)
-        worksheet.getCell(`E${i}`).dataValidation = {
-          type: "list",
-          allowBlank: true,
-          formulae: ['"Male,Female"']
-        };
-
-        // Occupation column (H)
-        worksheet.getCell(`H${i}`).dataValidation = {
-          type: "list",
-          allowBlank: true,
-          formulae: ['"Farmer,Business Person,Civil Servant,House Wife,Military,NGO,Self Employed,Student,Police,Diplomat,Others"']
-        };
-
-        // Organization Type column (J)
-        worksheet.getCell(`J${i}`).dataValidation = {
-          type: "list",
-          allowBlank: true,
-          formulae: ['"Government,Ngo,Private,Association"']
-        };
-
-        // Education Level column (K)
-        worksheet.getCell(`K${i}`).dataValidation = {
-          type: "list",
-          allowBlank: true,
-          formulae: ['"Below Primary School,Primary School Completed,High School Completed,Degree,Masters,PHD"']
-        };
-
-        // Area column (L)
-        worksheet.getCell(`L${i}`).dataValidation = {
-          type: "list",
-          allowBlank: true,
-          formulae: ['"URBAN,RURAL"']
-        };
-
-        // Classifications: General (P), Youth (Q), Professional (R), Leadership (S)
-        const classCols = ["P", "Q", "R", "S"];
-        classCols.forEach((col) => {
-          worksheet.getCell(`${col}${i}`).dataValidation = {
-            type: "list",
-            allowBlank: true,
-            formulae: ['"YES,NO"']
-          };
-        });
-      }
-
-      // Add dummy data for first row as help
-      worksheet.addRow([
-        "+251911223344", "Sara", "Belay", "Tadesse", "Female", 
-        "12/04/1995", "05/07/2026", "NGO", "ERCS", "Ngo", 
-        "Degree", "URBAN", "Amharic, English", "Kebele 03, House 405", "sara@example.com", 
-        "YES", "NO", "YES", "NO"
-      ]);
-
-      // Set columns auto-width
-      worksheet.columns.forEach((column) => {
-        let maxLen = 0;
-        column.eachCell!({ includeEmpty: true }, (cell) => {
-          const val = cell.value ? String(cell.value) : "";
-          if (val.length > maxLen) maxLen = val.length;
-        });
-        column.width = Math.max(maxLen + 4, 15);
-      });
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "volunteer_registration_template.xlsx";
-      link.click();
-      toast.success("Excel Template downloaded successfully!");
+      const wb = await buildTemplateWorkbook(volunteerImportConfig());
+      await downloadWorkbook(wb, "volunteer_registration_template.xlsx");
+      toast.success("Template downloaded. Open the Instructions sheet first.");
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate template");
@@ -617,297 +460,56 @@ export default function VolunteersPage() {
     }
   };
 
-  const readExcelCell = (cell: Cell): ImportedCellValue => {
-    const value = cell?.value;
-    if (value === undefined || value === null || value === "") return null;
-    if (value instanceof Date) return value.toISOString().split("T")[0];
-    if (typeof value === "object") {
-      if (hasCellText(value)) return String(value.text).trim() || null;
-      if (hasFormulaResult(value)) return value.result === undefined || value.result === null ? null : String(value.result).trim();
-      if (hasRichText(value)) {
-        const text = value.richText.map((part) => part.text || "").join("").trim();
-        return text || null;
-      }
-      return JSON.stringify(value);
-    }
-    if (typeof value === "string") return value.trim() || null;
-    if (typeof value === "number" || typeof value === "boolean") return value;
-    return String(value).trim() || null;
-  };
+  const importFlow = useImportFlow({
+    getConfig: volunteerImportConfig,
+    fileLabel: "volunteer_import",
+    batchSize: 1,
+    submit: async ([item]) => {
+      const { clean, row } = item;
+      const classes: [string, string][] = [["general", "General"], ["youth", "Youth"], ["professional", "Professional"], ["leadership", "Leadership"]];
+      const interests: string[] = [];
+      if (clean.area) interests.push(`Area:${clean.area}`);
+      if (clean.education) interests.push(`Education:${clean.education}`);
+      if (clean.orgName) interests.push(`OrgName:${clean.orgName}`);
+      if (clean.orgType) interests.push(`OrgType:${clean.orgType}`);
 
-  const handleImportFile = async (file?: File | null) => {
-    if (!file) return;
-    setParsingImport(true);
-    setImportResult(null);
-
-    try {
-      const ExcelJS = await import("exceljs");
-      const workbook = new ExcelJS.Workbook();
-      const buffer = await file.arrayBuffer();
-      await workbook.xlsx.load(buffer);
-
-      const worksheet = workbook.worksheets.find(sheet => sheet.actualRowCount > 0);
-      if (!worksheet) {
-        toast.error("No worksheet data found");
-        return;
-      }
-
-      let headerRowNumber = 1;
-      let headers: string[] = [];
-      worksheet.eachRow((row, rowNumber) => {
-        if (headers.length > 0) return;
-        const values = row.values as CellValue[];
-        const candidateHeaders = values.slice(1).map((value, index) => {
-          const raw = value === undefined || value === null ? "" : String(value).trim();
-          return raw || `Column ${index + 1}`;
-        });
-        if (candidateHeaders.some(Boolean)) {
-          headerRowNumber = rowNumber;
-          headers = candidateHeaders;
-        }
+      await api.post("/auth/register/volunteer", {
+        first_name: clean.firstName,
+        father_name: clean.fatherName,
+        grandfather_name: clean.grandfatherName || "",
+        phone_number: clean.phone,
+        email: clean.email || "",
+        password: `ERCS@${clean.phone.replace(/\D/g, "").slice(-4)}`,
+        region: Number(importRegion) || 1,
+        role: 5,
+        gender: clean.gender,
+        date_of_birth: clean.dob || "",
+        profession: clean.occupation || "",
+        address: clean.kebele || "",
+        country: "Ethiopia",
+        engagement_areas: classes.filter(([key]) => clean[key] === "YES").map(([, label]) => label),
+        skills: clean.languages ? clean.languages.split(",").map((x) => x.trim()).filter(Boolean) : [],
+        interests,
+        metadata: JSON.stringify({
+          source: "volunteer_excel_import",
+          imported_at: new Date().toISOString(),
+          source_row_number: row.rowNumber,
+          nullable_columns: row.values,
+          date_of_birth: clean.dob || null,
+          registration_date: clean.registrationDate || null,
+          occupation: clean.occupation || null,
+          kebele: clean.kebele || null,
+          educationLevel: clean.education || null,
+          organizationName: clean.orgName || null,
+          organizationType: clean.orgType || null,
+          area: clean.area || null,
+          languages: clean.languages || null,
+        }),
       });
-
-      const seenHeaders = new Map<string, number>();
-      const uniqueHeaders = headers.map((header, index) => {
-        const base = header || `Column ${index + 1}`;
-        const seen = seenHeaders.get(base) || 0;
-        seenHeaders.set(base, seen + 1);
-        return seen === 0 ? base : `${base} ${seen + 1}`;
-      });
-
-      const rows: ImportedRow[] = [];
-      worksheet.eachRow((row, rowNumber) => {
-        if (rowNumber <= headerRowNumber) return;
-        const data = uniqueHeaders.reduce<Record<string, ImportedCellValue>>((acc, header, index) => {
-          acc[header] = readExcelCell(row.getCell(index + 1));
-          return acc;
-        }, {});
-        const hasAnyValue = Object.values(data).some(value => value !== null && String(value).trim() !== "");
-        if (hasAnyValue) rows.push({ rowNumber, data });
-      });
-
-      setImportColumns(uniqueHeaders);
-      setImportRows(rows);
-      setImportFileName(file.name);
-      setImportPage(1);
-      toast.success(`Parsed ${rows.length} volunteer rows`);
-    } catch (err) {
-      console.error("Failed to parse volunteer import:", err);
-      toast.error("Failed to parse Excel file");
-    } finally {
-      setParsingImport(false);
-    }
-  };
-
-  const downloadDefectiveWorkbook = async (failedRows: ImportedRow[]) => {
-    if (failedRows.length === 0) return;
-
-    const ExcelJS = await import("exceljs");
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Defective Volunteers");
-    const issueColumn = "Import Issue";
-
-    worksheet.addRow(["Source Row", ...importColumns, issueColumn]);
-    worksheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    worksheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FFB91C1C" },
-    };
-
-    failedRows.forEach((row) => {
-      const issue = row.importIssue || "Unknown import issue";
-      const addedRow = worksheet.addRow([
-        row.rowNumber,
-        ...importColumns.map((column) => row.data[column] ?? null),
-        issue,
-      ]);
-
-      addedRow.eachCell((cell) => {
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FFFFE4E6" },
-        };
-        cell.border = {
-          top: { style: "thin", color: { argb: "FFFECACA" } },
-          left: { style: "thin", color: { argb: "FFFECACA" } },
-          bottom: { style: "thin", color: { argb: "FFFECACA" } },
-          right: { style: "thin", color: { argb: "FFFECACA" } },
-        };
-      });
-
-      const issueCell = addedRow.getCell(importColumns.length + 2);
-      issueCell.note = issue;
-      addedRow.getCell(1).note = issue;
-    });
-
-    worksheet.columns.forEach((column) => {
-      column.width = Math.min(Math.max(Number(column.header?.toString().length || 12) + 4, 14), 36);
-    });
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    const safeName = importFileName.replace(/\.xlsx$/i, "") || "volunteer_import";
-    link.href = url;
-    link.download = `${safeName}_defects.xlsx`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const formatDOBForBackend = (dobStr: string): string => {
-    if (!dobStr) return "";
-    
-    // Check if already in YYYY-MM-DD format
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dobStr)) {
-      return dobStr;
-    }
-    
-    // Try parsing DD/MM/YYYY or DD-MM-YYYY
-    const parts = dobStr.split(/[\/\-]/);
-    if (parts.length === 3) {
-      const part0 = parts[0].trim();
-      const part1 = parts[1].trim();
-      const part2 = parts[2].trim();
-      
-      // Check if it matches DD/MM/YYYY where YYYY is 4 digits
-      if (part0.length <= 2 && part1.length <= 2 && part2.length === 4) {
-        const day = part0.padStart(2, '0');
-        const month = part1.padStart(2, '0');
-        const year = part2;
-        return `${year}-${month}-${day}`;
-      }
-      
-      // Check if it matches YYYY/MM/DD
-      if (part0.length === 4 && part1.length <= 2 && part2.length <= 2) {
-        const year = part0;
-        const month = part1.padStart(2, '0');
-        const day = part2.padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      }
-    }
-    
-    return dobStr;
-  };
-
-  const buildVolunteerPayload = (row: ImportedRow, index: number) => {
-    const firstName = getImportValue(row, ["Name", "First Name", "FirstName"]);
-    const fatherName = getImportValue(row, ["Father Name", "FatherName", "Middle Name", "Last Name"]);
-    const grandfatherName = getImportValue(row, ["Last Name", "Grandfather Name", "GrandfatherName"]);
-    const phoneNumber = getImportValue(row, ["Mobile", "Phone", "Phone Number", "phone_number"]);
-    const email = getImportValue(row, ["Email", "Email Address"]);
-    const gender = normalizeGender(getImportValue(row, ["Gender"]));
-    const dateOfBirth = getImportValue(row, ["Date of Birth (Eth)", "Date of Birth", "DOB"]);
-    const occupation = getImportValue(row, ["Occupation", "Profession"]);
-    const kebele = getImportValue(row, ["Kebele"]);
-    const area = getImportValue(row, ["Area"]);
-    const languages = getImportValue(row, ["Languages"]);
-    const educationLevel = getImportValue(row, ["Education Level", "EducationLevel"]);
-    const orgName = getImportValue(row, ["Organization Name", "OrganizationName"]);
-    const orgType = getImportValue(row, ["Organization Type", "OrganizationType"]);
-
-    const engagementAreas = ["General", "Youth", "Professional", "Leadership"]
-      .filter(column => {
-        const val = cellValueToText(row.data[column]).toLowerCase();
-        return val === "yes" || val === "1" || val === "true";
-      });
-
-    const interests = [];
-    if (area) interests.push(`Area:${area.toUpperCase()}`);
-    if (educationLevel) interests.push(`Education:${educationLevel}`);
-    if (orgName) interests.push(`OrgName:${orgName}`);
-    if (orgType) interests.push(`OrgType:${orgType}`);
-
-    const metadataObj = {
-      source: "volunteer_excel_import",
-      file_name: importFileName,
-      imported_at: new Date().toISOString(),
-      source_row_number: row.rowNumber,
-      nullable_columns: row.data,
-      date_of_birth: formatDOBForBackend(dateOfBirth) || null,
-      occupation: occupation || null,
-      kebele: kebele || null,
-      educationLevel: educationLevel || null,
-      organizationName: orgName || null,
-      organizationType: orgType || null,
-      area: area || null,
-      languages: languages || null,
-    };
-
-    return {
-      first_name: firstName,
-      father_name: fatherName,
-      grandfather_name: grandfatherName,
-      phone_number: phoneNumber,
-      email,
-      password: `ERCS@${phoneNumber.slice(-4) || String(index + 1).padStart(4, "0")}`,
-      region: Number(importRegion) || 1,
-      role: 5,
-      gender,
-      date_of_birth: formatDOBForBackend(dateOfBirth),
-      profession: occupation,
-      address: kebele,
-      country: "Ethiopia",
-      engagement_areas: engagementAreas,
-      skills: languages ? languages.split(",").map(item => item.trim()).filter(Boolean) : [],
-      interests: interests,
-      metadata: JSON.stringify(metadataObj),
-    };
-  };
-
-  const submitImportedVolunteers = async () => {
-    if (importRows.length === 0) {
-      toast.error("Choose an Excel file before importing");
-      return;
-    }
-
-    setSubmittingImport(true);
-    const result: ImportResult = { success: 0, failed: 0, errors: [] };
-    const failedRows: ImportedRow[] = [];
-
-    for (const [index, row] of importRows.entries()) {
-      const payload = buildVolunteerPayload(row, index);
-      if (!payload.first_name && !payload.phone_number) {
-        const issue = "Missing name and phone";
-        result.failed += 1;
-        result.errors.push(`Row ${row.rowNumber}: ${issue}`);
-        failedRows.push({ ...row, importIssue: issue });
-        continue;
-      }
-
-      try {
-        await api.post("/auth/register/volunteer", payload);
-        result.success += 1;
-      } catch (err: unknown) {
-        result.failed += 1;
-        const error = err as { response?: { data?: { message?: string } | string }, message?: string };
-        const message = (typeof error.response?.data === "object" ? error.response.data.message : error.response?.data) || error.message || "Import failed";
-        result.errors.push(`Row ${row.rowNumber}: ${message}`);
-        failedRows.push({ ...row, importIssue: message });
-      }
-    }
-
-    setImportResult(result);
-    setImportRows(failedRows);
-    setImportPage(1);
-    setSubmittingImport(false);
-    if (result.failed === 0) {
-      toast.success(`Imported ${result.success} volunteers`);
-    } else {
-      toast.warning(`Imported ${result.success}, failed ${result.failed}`);
-      try {
-        await downloadDefectiveWorkbook(failedRows);
-      } catch (err) {
-        console.error("Failed to create defect workbook:", err);
-        toast.error("Failed to download defect workbook");
-      }
-    }
-    fetchVolunteers();
-  };
+      return [null];
+    },
+    onFinished: () => fetchVolunteers(),
+  });
 
   const getArea = (v: Volunteer) => v.interests?.find(i => i.startsWith("Area:"))?.replace("Area:", "") || "Not Specified";
   const getEducation = (v: Volunteer) => v.interests?.find(i => i.startsWith("Education:"))?.replace("Education:", "") || "Not Specified";
@@ -1234,12 +836,12 @@ export default function VolunteersPage() {
       </div>
 
       <div className="print:hidden rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-gray-50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-[#ED1C24]">Excel Import</p>
                 <h2 className="text-base font-bold tracking-tight text-gray-900">Import Volunteers</h2>
                 <p className="text-xs font-bold text-gray-400 mt-1">
-                    Successful rows are removed after upload; defective rows stay red with the issue attached.
+                    Every row is checked before anything is saved. Rows with problems come back in an Excel file with the wrong cells highlighted.
                 </p>
             </div>
 
@@ -1247,6 +849,7 @@ export default function VolunteersPage() {
                 <select
                     value={importRegion}
                     onChange={(e) => setImportRegion(e.target.value)}
+                    aria-label="Region for imported volunteers"
                     className="h-10 min-w-[180px] rounded-xl border border-gray-200 bg-white px-3 text-xs font-black outline-none"
                 >
                     {((regions && regions.length > 0) ? regions : DEFAULT_REGIONS).map(region => (
@@ -1254,91 +857,31 @@ export default function VolunteersPage() {
                     ))}
                 </select>
                 <label className="h-10 px-5 rounded-xl border border-gray-200 bg-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors">
-                    {parsingImport ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    {importFlow.state.stage === "reading" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                     Choose Excel
                     <input
                         type="file"
                         accept=".xlsx"
                         className="hidden"
-                        disabled={parsingImport || submittingImport}
-                        onChange={(e) => handleImportFile(e.target.files?.[0])}
+                        disabled={importFlow.state.stage === "reading" || importFlow.state.stage === "importing"}
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (file) importFlow.openFile(file);
+                        }}
                     />
                 </label>
-                <Button
-                    onClick={submitImportedVolunteers}
-                    disabled={importRows.length === 0 || parsingImport || submittingImport}
-                    className="h-10 px-5 rounded-xl font-black text-xs"
-                >
-                    {submittingImport ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                    Upload {importRows.length > 0 ? importRows.length : ""}
-                </Button>
             </div>
         </div>
-
-        {(importRows.length > 0 || importResult) && (
-            <div className="p-5 space-y-4">
-                {importRows.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                        <span className="px-2 py-1 rounded-md bg-gray-50 text-gray-500">{importFileName}</span>
-                        <span>{importRows.length} remaining rows</span>
-                        <span>{importColumns.length} columns</span>
-                    </div>
-                )}
-
-                {importResult && (
-                    <div className={cn(
-                        "rounded-xl border p-4 text-sm font-bold",
-                        importResult.failed === 0 ? "bg-green-50 border-green-100 text-green-700" : "bg-amber-50 border-amber-100 text-amber-800"
-                    )}>
-                        <div className="flex items-center gap-2">
-                            {importResult.failed === 0 ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                            <span>{importResult.success} imported, {importResult.failed} failed</span>
-                        </div>
-                        {importResult.errors.length > 0 && (
-                            <div className="mt-3 max-h-28 overflow-y-auto space-y-1 text-xs">
-                                {importResult.errors.slice(0, 20).map(error => (
-                                    <p key={error}>{error}</p>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {importRows.length > 0 && (
-                    <div className="rounded-xl border border-gray-100 overflow-hidden bg-white shadow-sm">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="sticky left-0 bg-gray-50 px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap border-b border-gray-100">Row</th>
-                                        {importColumns.slice(0, 8).map(column => (
-                                            <th key={column} className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap border-b border-gray-100">
-                                                {column}
-                                            </th>
-                                        ))}
-                                        <th className="px-3 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap border-b border-gray-100">Issue</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {importRows.slice((importPage - 1) * 8, importPage * 8).map((row) => (
-                                        <tr key={row.rowNumber} className={cn("border-b border-gray-50 text-xs font-bold", row.importIssue ? "bg-red-50/70 text-red-700" : "hover:bg-gray-50/50")}>
-                                            <td className="sticky left-0 bg-inherit px-3 py-2 text-[10px] font-black text-gray-400 whitespace-nowrap">{row.rowNumber}</td>
-                                            {importColumns.slice(0, 8).map(column => (
-                                                <td key={column} className="px-3 py-2 whitespace-nowrap text-gray-600">
-                                                    {cellValueToText(row.data[column]) || "---"}
-                                                </td>
-                                            ))}
-                                            <td className="px-3 py-2 text-[10px] font-black text-red-600 whitespace-nowrap">{row.importIssue || "Pending"}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-            </div>
-        )}
       </div>
+
+      <ImportReviewDialog
+        state={importFlow.state}
+        noun="volunteers"
+        onImportValid={importFlow.importValid}
+        onDownloadErrors={() => importFlow.downloadErrors()}
+        onClose={importFlow.close}
+      />
 
       {/* Main Table Container */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">

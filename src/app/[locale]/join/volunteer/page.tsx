@@ -115,7 +115,8 @@ export default function VolunteerJoinPage() {
         ]);
         
         const fields = JSON.parse(configRes.data.fields_json);
-        setFormConfig(fields);
+        // Grandfather name is optional everywhere, whatever an older saved config says.
+        setFormConfig(fields.map((f: any) => (f.id === "grandfatherName" ? { ...f, required: false } : f)));
         setMembershipPlans(plansRes.data);
         
         const initialData: any = { ...formData };

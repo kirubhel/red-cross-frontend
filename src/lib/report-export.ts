@@ -87,7 +87,8 @@ const REGIONS: Record<string, string> = {
   "1": "Addis Ababa", "2": "Dire Dawa", "3": "Tigray", "4": "Afar",
   "5": "Amhara", "6": "Oromia", "7": "Somali", "8": "Benishangul Gumz",
   "9": "Central Ethiopia", "10": "Gambela", "11": "Harari", "12": "Sidama",
-  "13": "South West Ethiopia", "14": "South Ethiopia"
+  "13": "South West Ethiopia", "14": "South Ethiopia",
+  "16": "Moyale Special Woreda", "17": "Humera Special Woreda"
 };
 
 function triggerDownload(blob: Blob, filename: string) {

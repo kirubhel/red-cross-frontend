@@ -100,6 +100,7 @@ function PaymentDetails() {
   }, [txRef, checkRound]);
 
   const isMembership = purpose === "MEMBERSHIP";
+  const isOrgRequest = purpose === "ORG_REQUEST";
 
   // A paid membership shows the receipt straight away; closing it leads to the photo and ID card steps.
   useEffect(() => {
@@ -124,7 +125,7 @@ function PaymentDetails() {
     currency: currency || "ETB",
     paymentMethod: "ArifPay Electronic Payment",
     transactionRef: txRef,
-    description: "Ethiopian Red Cross Society Membership / Contribution",
+    description: isOrgRequest ? "Ethiopian Red Cross Society volunteer request payment" : "Ethiopian Red Cross Society Membership / Contribution",
     issuedAt: new Date().toLocaleDateString(undefined, { dateStyle: "long" }),
     status: "PAID",
   };
@@ -222,10 +223,12 @@ function PaymentDetails() {
               PAYMENT COMPLETED SUCCESSFULLY
             </span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-black tracking-tight leading-none pt-1">
-              Thank You for Your Support!
+              {isOrgRequest ? "Payment Received" : "Thank You for Your Support!"}
             </h2>
             <p className="text-gray-500 text-xs sm:text-sm font-medium leading-relaxed max-w-md mx-auto">
-              {isMembership ? "Welcome to the Ethiopian Red Cross Society. We've sent your Member ID to your phone by SMS. " : ""}Your contribution fuels emergency relief, medical supplies, WASH programs, and volunteer mobilization across Ethiopia.
+              {isOrgRequest
+                ? "Your payment for the volunteer request is confirmed. Volunteers are being assigned to your request now; open your partner portal to see them."
+                : <>{isMembership ? "Welcome to the Ethiopian Red Cross Society. We've sent your Member ID to your phone by SMS. " : ""}Your contribution fuels emergency relief, medical supplies, WASH programs, and volunteer mobilization across Ethiopia.</>}
             </p>
           </div>
 
@@ -292,7 +295,7 @@ function PaymentDetails() {
             </div>
 
             <div className="flex justify-between items-center pt-2">
-              <span className="text-xs font-black text-[#ED1C24] uppercase tracking-wider">Total Contribution</span>
+              <span className="text-xs font-black text-[#ED1C24] uppercase tracking-wider">{isOrgRequest ? "Total Paid" : "Total Contribution"}</span>
               <span className="text-2xl font-black text-black flex items-center gap-1">
                 <span className="text-xs font-bold text-gray-400">{currency}</span>
                 {parseFloat(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -302,7 +305,7 @@ function PaymentDetails() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 print:hidden">
-            <Link href="/dashboard" className="w-full sm:w-auto">
+            <Link href={isOrgRequest ? "/organization/portal" : "/dashboard"} className="w-full sm:w-auto">
               <Button 
                 className="w-full sm:w-auto bg-black hover:bg-[#ED1C24] text-white rounded-2xl px-8 h-13 font-black uppercase text-xs tracking-widest shadow-xl shadow-black/10 flex items-center justify-center gap-2 group transition"
               >  Back to Portal
