@@ -70,6 +70,9 @@ export default function VolunteerJoinPage() {
     otherEngagementArea: "",
     country: "ET",
     phoneNumber: "",
+    registerOnBehalf: false,
+    payerCountry: "ET",
+    payerPhone: "",
     internationalAddress: "",
     registrationDate: new Date().toISOString().split("T")[0],
   });
@@ -275,6 +278,25 @@ export default function VolunteerJoinPage() {
             return;
         }
 
+        const eduField = formConfig.find((f: any) => {
+            const fid = (f.id || "").toLowerCase();
+            const flab = (f.label || "").toLowerCase();
+            return (fid.includes("education") || flab.includes("education")) && !fid.includes("background") && !flab.includes("background") && !fid.includes("study") && !flab.includes("study");
+        });
+        const eduVal = eduField ? String(formData[eduField.id] || "") : String(formData.educationLevel || "");
+        if (eduVal && !/below primary|primary school|none|illiterate/i.test(eduVal)) {
+            const studyField = formConfig.find((f: any) => {
+                const fid = (f.id || "").toLowerCase();
+                const flab = (f.label || "").toLowerCase();
+                return fid.includes("study") || flab.includes("study") || fid.includes("background") || flab.includes("background") || fid.includes("fieldof");
+            });
+            const studyVal = studyField ? String(formData[studyField.id] || "").trim() : String(formData.educationalBackground || "").trim();
+            if (!studyVal) {
+                setError(`Please fill in your Field of Study (${studyField?.label || "Educational Background"}) for ${eduVal}.`);
+                return;
+            }
+        }
+
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords do not match.");
             return;
@@ -338,6 +360,10 @@ export default function VolunteerJoinPage() {
             const regDate = formData.registrationDate || new Date().toISOString().split("T")[0];
             metadataObj.registration_date = regDate;
             metadataObj.date_of_birth = extractedDOB;
+            if (formData.registerOnBehalf && formData.payerPhone) {
+                metadataObj.on_behalf = true;
+                metadataObj.registered_by_phone = buildFullPhoneNumber(formData.payerCountry || "ET", formData.payerPhone);
+            }
 
             // Register User
             const res = await api.post("/auth/register/volunteer", {
@@ -450,6 +476,34 @@ export default function VolunteerJoinPage() {
                             </div>
 
                              <form onSubmit={handleSubmit} className="space-y-6 text-left">
+                                  <div className="rounded-2xl border border-gray-200/80 bg-gray-50/70 p-4 space-y-3">
+                                    <label className="flex items-start gap-3 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!formData.registerOnBehalf}
+                                        onChange={(e) => setFormData((prev: any) => ({ ...prev, registerOnBehalf: e.target.checked }))}
+                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#ED1C24] focus:ring-[#ED1C24]"
+                                      />
+                                      <div className="space-y-0.5">
+                                        <span className="text-xs font-black text-black block">Registering someone else</span>
+                                        <span className="text-[11px] font-medium text-gray-500 block">Enter the volunteer&apos;s details below and optionally include your own phone number as the representative.</span>
+                                      </div>
+                                    </label>
+                                    {formData.registerOnBehalf && (
+                                      <div className="pt-1 space-y-1.5">
+                                        <Label className="text-[9px] font-black uppercase tracking-widest text-black/50 ml-1">
+                                          Your Phone Number (Representative) <span className="text-[#ED1C24] text-xs">*</span>
+                                        </Label>
+                                        <PhoneNumberInput
+                                          countryCode={formData.payerCountry || "ET"}
+                                          onCountryChange={(code) => setFormData((prev: any) => ({ ...prev, payerCountry: code, payerPhone: "" }))}
+                                          localNumber={formData.payerPhone || ""}
+                                          onLocalNumberChange={(val) => setFormData((prev: any) => ({ ...prev, payerPhone: val }))}
+                                          required
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                                       {(() => {
                                           const validFields = formConfig.filter((field: any) => 

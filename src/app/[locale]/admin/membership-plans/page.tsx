@@ -41,6 +41,7 @@ type MembershipPlan = {
   plan_features: string;
   is_active: boolean;
   tier_type: string;
+  renewal_amount?: number;
 };
 
 export default function MembershipPlansPage() {
@@ -104,7 +105,8 @@ export default function MembershipPlansPage() {
       is_featured: false,
       plan_features: "Benefit 1, Benefit 2",
       is_active: true,
-      tier_type: "INDIVIDUAL"
+      tier_type: "INDIVIDUAL",
+      renewal_amount: 0
     };
     setSelectedPlan(newPlan);
     setPlans([newPlan, ...plans]);
@@ -284,9 +286,24 @@ export default function MembershipPlansPage() {
                         <Input 
                             type="number"
                             value={selectedPlan.amount} 
-                            onChange={(e) => handleUpdate({ amount: parseFloat(e.target.value) })}
+                            onChange={(e) => handleUpdate({ amount: parseFloat(e.target.value) || 0 })}
                             className="h-10 rounded-lg bg-white text-black border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/20"
                         />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">
+                            <DollarSign className="h-3 w-3" /> Annual Renewal Fee (ETB)
+                        </Label>
+                        <Input 
+                            type="number"
+                            min={0}
+                            value={selectedPlan.renewal_amount ?? 0} 
+                            onChange={(e) => handleUpdate({ renewal_amount: parseFloat(e.target.value) || 0 })}
+                            placeholder="0 (no annual renewal)"
+                            className="h-10 rounded-lg bg-white text-black border border-gray-200 font-bold text-sm focus:ring-2 focus:ring-[#ED1C24]/20"
+                        />
+                        <p className="text-[10px] text-gray-400 ml-1">Optional yearly fee to keep a lifetime plan active (e.g. 120 ETB).</p>
                       </div>
 
                       <div className="space-y-1.5">

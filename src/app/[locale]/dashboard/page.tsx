@@ -25,7 +25,8 @@ import {
   ShieldCheck,
   User,
   Camera,
-  XCircle
+  XCircle,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -37,6 +38,7 @@ import { useRouter } from "next/navigation";
 import html2canvas from "html2canvas";
 import PendingMembershipBanner from "@/components/payment/PendingMembershipBanner";
 import { getRegionName, getZoneName, getWoredaName } from "@/lib/constants";
+import { formatDualDate } from "@/lib/ethiopian-calendar";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -63,6 +65,12 @@ export default function DashboardPage() {
 
   const [history, setHistory] = useState<any[]>([]);
   const [openRequests, setOpenRequests] = useState<any[]>([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradePlans, setUpgradePlans] = useState<any[]>([]);
+  const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
+  const [calendarDisplay, setCalendarDisplay] = useState<"GC" | "EC">("GC");
+  const [showOptionalReminder, setShowOptionalReminder] = useState(false);
+  const [missingOptionalFields, setMissingOptionalFields] = useState<string[]>([]);
   const idCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -173,10 +181,14 @@ export default function DashboardPage() {
         const typeStr = (rawType || "").toUpperCase();
         const subType = (memData?.subscription_type || userData?.subscription_type || userMeta?.subscription_type || "").toUpperCase();
         const counter = Number(userData?.counter || userMeta?.counter || 1) || 1;
+        const renewalAmount = Number(memData?.renewal_amount || 0);
+        const planAmount = Number(memData?.plan_amount || 0);
+        const hasAnnualRenewal = renewalAmount > 0;
+        const isCorporateMember = typeStr.startsWith("CORP_") || String(userMeta?.tier_type || "").toUpperCase() === "CORPORATE";
         
         // Calculate Membership Expiry dynamically based on Member Tier or DB record
         let expiryDate = new Date(issueDate);
-        const isLifetime = (
+        const isLifetime = !hasAnnualRenewal && (
           typeStr.includes("LIFETIME") || 
           typeStr.includes("LIFE") || 
           subType === "ONE_TIME" || 
@@ -228,6 +240,26 @@ export default function DashboardPage() {
         const fullName = constructedName || "Valued Member";
         const personId = userData?.id || userData?.person_id || userData?.personId || "";
 
+        // Check missing optional profile fields for the monthly reminder popup
+        const missingOptional: string[] = [];
+        if (!userData?.photo_url) missingOptional.push("Profile Photo");
+        if (!(userData?.date_of_birth || userMeta?.date_of_birth || userMeta?.dateOfBirth)) missingOptional.push("Date of Birth");
+        if (!(userData?.profession || userMeta?.occupation)) missingOptional.push("Occupation");
+        if (!(userMeta?.education_level || userMeta?.educationLevel)) missingOptional.push("Education Level");
+        if (!(userMeta?.educational_background || userMeta?.educationalBackground)) missingOptional.push("Field of Study");
+        if (!(userMeta?.languages || userData?.languages)) missingOptional.push("Languages");
+        if (!userData?.email) missingOptional.push("Email");
+
+        if (missingOptional.length > 0 && personId) {
+          const storageKey = `ercs_optional_profile_reminder_${personId}`;
+          const lastDismissed = Number(localStorage.getItem(storageKey) || 0);
+          const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+          if (!lastDismissed || Date.now() - lastDismissed >= thirtyDaysMs) {
+            setMissingOptionalFields(missingOptional);
+            setShowOptionalReminder(true);
+          }
+        }
+
         // 5. Fetch Payments / Total Donations
         let totalDonations = 0;
         let fetchedActivities: any[] = [];
@@ -269,9 +301,14 @@ export default function DashboardPage() {
           status: status,
           isApproved: isApproved,
           membershipType: membershipType,
+          renewalAmount: renewalAmount > 0 ? renewalAmount : planAmount,
+          isLifetimePlan: isLifetime,
+          isCorporateMember,
           role: role || "MEMBER",
           issueDate: isPendingPayment ? "—" : isRejectedOrSuspended ? "PENDING" : formattedIssueDate,
+          issueDateISO: isPendingPayment || isRejectedOrSuspended ? "" : issueDate.toISOString(),
           expiryDate: isPendingPayment ? "—" : isRejectedOrSuspended ? "PENDING" : formattedExpiryDate,
+          expiryDateISO: isPendingPayment || isRejectedOrSuspended || isLifetime ? "" : expiryDate.toISOString(),
           cardExpiry: isPendingPayment ? "—" : isRejectedOrSuspended ? "PENDING" : formattedCardExpiry,
           daysLeft: isApproved && !isPendingPayment ? Math.max(1, diffDays > 0 ? diffDays : 365) : 0,
           region: regionName,
@@ -448,6 +485,67 @@ export default function DashboardPage() {
     { label: "Direct Impact", value: `${user?.donations || "0 ETB"}`, desc: "Total Financial Contribution", icon: CreditCard, color: "text-green-500", bg: "bg-green-50" },
   ];
 
+  const handleRenewMembership = async () => {
+    if (!user?.id) return;
+    const toastId = toast.loading("Starting membership renewal payment...");
+    try {
+      const res = await api.post("/payment/initiate", {
+        amount: user.renewalAmount || 0,
+        currency: "ETB",
+        provider: "ARIFPAY",
+        person_id: user.id,
+        purpose: "MEMBERSHIP_RENEWAL",
+      });
+      if (res.data?.payment_url) {
+        toast.dismiss(toastId);
+        window.location.href = res.data.payment_url;
+        return;
+      }
+      toast.error("Could not start renewal checkout.", { id: toastId });
+    } catch (err: any) {
+      toast.error(err.response?.data || "Could not start renewal payment.", { id: toastId });
+    }
+  };
+
+  const openUpgradeModal = async () => {
+    setShowUpgradeModal(true);
+    try {
+      const res = await api.get("/config/membership?only_active=true");
+      const allPlans = res.data?.plans || [];
+      const lifetimePlans = allPlans.filter((p: any) =>
+        (p.tier_type || "INDIVIDUAL").toUpperCase() === "INDIVIDUAL" &&
+        (String(p.short_code || "").toUpperCase().includes("LIFETIME") || String(p.subscription_type || "").toUpperCase() === "ONE_TIME")
+      );
+      setUpgradePlans(lifetimePlans);
+    } catch {
+      toast.error("Could not load upgrade plans.");
+    }
+  };
+
+  const handleUpgradePlan = async (plan: any) => {
+    if (!user?.id) return;
+    setUpgradingPlan(plan.short_code);
+    try {
+      const res = await api.post("/payment/initiate", {
+        amount: Number(plan.amount) || 0,
+        currency: plan.currency || "ETB",
+        provider: "ARIFPAY",
+        person_id: user.id,
+        purpose: "MEMBERSHIP_UPGRADE",
+        target_membership_type: plan.short_code,
+      });
+      if (res.data?.payment_url) {
+        window.location.href = res.data.payment_url;
+        return;
+      }
+      toast.error("Could not start upgrade payment.");
+    } catch (err: any) {
+      toast.error(err.response?.data || "Could not start upgrade payment.");
+    } finally {
+      setUpgradingPlan(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center bg-white">
@@ -586,13 +684,31 @@ export default function DashboardPage() {
                 <h2 className="text-2xl sm:text-3xl font-black tracking-tighter text-gray-900">Digital ID Card</h2>
                 <p className="text-gray-400 font-bold uppercase text-[9px] tracking-widest mt-0.5">Official ERCS {user?.role === "VOLUNTEER" ? "Volunteer" : "Membership"} Identification</p>
              </div>
-             <Button 
-                onClick={downloadIDCard}
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="inline-flex rounded-xl bg-gray-100 p-1 text-[10px] font-black">
+                  <button
+                    type="button"
+                    onClick={() => setCalendarDisplay("GC")}
+                    className={cn("px-2.5 py-1 rounded-lg transition-colors", calendarDisplay === "GC" ? "bg-white text-black shadow-xs" : "text-gray-500 hover:text-black")}
+                  >
+                    Gregorian (GC)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarDisplay("EC")}
+                    className={cn("px-2.5 py-1 rounded-lg transition-colors", calendarDisplay === "EC" ? "bg-white text-[#ED1C24] shadow-xs" : "text-gray-500 hover:text-black")}
+                  >
+                    Ethiopian (EC)
+                  </button>
+                </div>
+                <Button 
+                  onClick={downloadIDCard}
                 disabled={user?.isPendingPayment}
                 className="bg-[#ED1C24] hover:bg-black text-white px-6 h-11 rounded-xl font-black tracking-widest uppercase text-[10px] shadow-lg shadow-red-500/20 transition-all flex items-center gap-2 disabled:bg-gray-200 disabled:text-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
               >
                 <Download className="h-3.5 w-3.5" /> {user?.isPendingPayment ? "Available after payment" : "Download ID Card"}
              </Button>
+              </div>
           </div>
 
           <div 
@@ -642,8 +758,8 @@ export default function DashboardPage() {
                            { label: user?.role === "VOLUNTEER" ? "Volunteer Type" : "Membership Type", val: user?.membershipType },
                            { label: "Mobile Number", val: user?.phone || "+251..." },
                            { label: "Region", val: user?.region },
-                           { label: "Issued Date", val: user?.issueDate },
-                           { label: "Expired Date", val: user?.cardExpiry }
+                           { label: "Issued Date", val: user?.issueDateISO ? formatDualDate(user.issueDateISO, calendarDisplay) : user?.issueDate },
+                           { label: "Expired Date", val: user?.expiryDateISO ? formatDualDate(user.expiryDateISO, calendarDisplay) : user?.cardExpiry }
                          ].map((f, i) => (
                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid #F9FAFB', paddingBottom: '2px' }}>
                               <span style={{ fontSize: '7px', fontWeight: '900', color: '#7F1D1D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f.label}</span>
@@ -862,16 +978,34 @@ export default function DashboardPage() {
               <span className="absolute top-3 right-3 h-2 w-2 bg-[#ED1C24] rounded-full border-2 border-white" />
             </button>
           </div>
+          {(!user?.isLifetimePlan || isVolunteer) && (
           <button 
-            onClick={() => router.push(isVolunteer ? "/dashboard/events" : "/join/member")}
+            onClick={() => isVolunteer ? router.push("/dashboard/events") : handleRenewMembership()}
             className="bg-[#ED1C24] text-white px-6 py-3 rounded-2xl font-black text-sm shadow-xl shadow-red-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
           >
             {isVolunteer ? (
               <><Calendar className="h-4 w-4" /> Explore Events & Drills</>
             ) : (
-              <><Award className="h-4 w-4" /> Renew Membership</>
+              <><Award className="h-4 w-4" /> Renew Membership{user?.renewalAmount ? ` (${user.renewalAmount} ETB)` : ""}</>
             )}
           </button>
+          )}
+          {!isVolunteer && !user?.isPendingPayment && user?.isCorporateMember && (
+          <button
+            onClick={() => router.push("/organization/portal")}
+            className="bg-gray-900 text-white px-5 py-3 rounded-2xl font-black text-sm shadow-lg hover:bg-black hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <HandHeart className="h-4 w-4 text-[#ED1C24]" /> Request Volunteers
+          </button>
+          )}
+          {!isVolunteer && !user?.isPendingPayment && !String(user?.membershipType || "").toUpperCase().includes("LIFETIME") && (
+          <button
+            onClick={openUpgradeModal}
+            className="bg-black text-white px-5 py-3 rounded-2xl font-black text-sm shadow-lg hover:bg-gray-900 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <Zap className="h-4 w-4 text-amber-400" /> Upgrade Plan
+          </button>
+          )}
         </div>
       </header>
 
@@ -1109,6 +1243,103 @@ export default function DashboardPage() {
         </div>
 
       </div>
+
+      {/* Monthly Optional Profile Reminder Modal */}
+      {showOptionalReminder && missingOptionalFields.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[32px] max-w-md w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-gray-100">
+            <div className="space-y-1">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[10px] font-black uppercase tracking-wider">
+                Monthly Profile Reminder
+              </span>
+              <h3 className="text-xl font-black text-black tracking-tight pt-1">Complete Your Optional Details</h3>
+              <p className="text-xs font-medium text-gray-500">
+                Help ERCS keep your {isVolunteer ? "volunteer" : "member"} profile complete by filling in the remaining optional fields:
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {missingOptionalFields.map((label) => (
+                <span key={label} className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-bold">
+                  {label}
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+              <Button
+                onClick={() => {
+                  if (user?.id) localStorage.setItem(`ercs_optional_profile_reminder_${user.id}`, String(Date.now()));
+                  setShowOptionalReminder(false);
+                  router.push("/dashboard/profile");
+                }}
+                className="flex-1 bg-[#ED1C24] hover:bg-black text-white rounded-xl h-11 font-black text-xs"
+              >
+                Complete Profile Now
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (user?.id) localStorage.setItem(`ercs_optional_profile_reminder_${user.id}`, String(Date.now()));
+                  setShowOptionalReminder(false);
+                }}
+                className="flex-1 rounded-xl h-11 font-bold text-xs"
+              >
+                Remind Me Next Month
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Membership Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[32px] max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 border border-gray-100">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-2xl font-black text-black tracking-tight">Upgrade Membership</h3>
+                <p className="text-xs font-medium text-gray-500 mt-1">
+                  Upgrade your current <span className="font-bold text-black">{user?.membershipType}</span> plan to a Lifetime tier.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-black px-2 py-1"
+              >
+                Close
+              </button>
+            </div>
+            <div className="space-y-3">
+              {upgradePlans.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4 text-center">Loading lifetime plans...</p>
+              ) : (
+                upgradePlans.map((plan: any) => (
+                  <div
+                    key={plan.short_code}
+                    className="p-4 rounded-2xl border border-gray-200 hover:border-[#ED1C24] transition-all flex items-center justify-between gap-4"
+                  >
+                    <div>
+                      <p className="font-black text-black text-base">{plan.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{plan.description}</p>
+                      {Number(plan.renewal_amount) > 0 && (
+                        <p className="text-[11px] font-bold text-amber-700 mt-1">
+                          Includes {plan.renewal_amount} {plan.currency || "ETB"}/year renewal
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      onClick={() => handleUpgradePlan(plan)}
+                      disabled={upgradingPlan !== null}
+                      className="bg-[#ED1C24] hover:bg-black text-white rounded-xl px-4 h-10 font-black text-xs shrink-0"
+                    >
+                      {upgradingPlan === plan.short_code ? "Starting..." : `${plan.amount} ${plan.currency || "ETB"}`}
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
