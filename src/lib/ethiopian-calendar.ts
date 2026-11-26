@@ -113,3 +113,95 @@ export function getEthiopianDateLabel(date: EthiopianDate): string {
   if (!monthObj) return formatEthiopianDate(date);
   return `${date.day} ${monthObj.nameEn} (${monthObj.nameAm}) ${date.year} EC`;
 }
+
+const ETHIOPIAN_JD_OFFSET = 1723856;
+
+function gregorianToJDN(year: number, month: number, day: number): number {
+  const a = Math.floor((14 - month) / 12);
+  const y = year + 4800 - a;
+  const m = month + 12 * a - 3;
+  return (
+    day +
+    Math.floor((153 * m + 2) / 5) +
+    365 * y +
+    Math.floor(y / 4) -
+    Math.floor(y / 100) +
+    Math.floor(y / 400) -
+    32045
+  );
+}
+
+function jdnToGregorian(jdn: number): { year: number; month: number; day: number } {
+  const a = jdn + 32044;
+  const b = Math.floor((4 * a + 3) / 146097);
+  const c = a - Math.floor((146097 * b) / 4);
+  const d = Math.floor((4 * c + 3) / 1461);
+  const e = c - Math.floor((1461 * d) / 4);
+  const m = Math.floor((5 * e + 2) / 153);
+  const day = e - Math.floor((153 * m + 2) / 5) + 1;
+  const month = m + 3 - 12 * Math.floor(m / 10);
+  const year = 100 * b + d - 4800 + Math.floor(m / 10);
+  return { year, month, day };
+}
+
+/**
+ * Converts a Gregorian date string (`YYYY-MM-DD` or ISO timestamp) to an EthiopianDate.
+ */
+export function gregorianToEthiopian(dateStr: string): EthiopianDate | null {
+  if (!dateStr) return null;
+  const match = dateStr.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  let year: number;
+  let month: number;
+  let day: number;
+  if (match) {
+    year = parseInt(match[1], 10);
+    month = parseInt(match[2], 10);
+    day = parseInt(match[3], 10);
+  } else {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    year = d.getFullYear();
+    month = d.getMonth() + 1;
+    day = d.getDate();
+  }
+  const jdn = gregorianToJDN(year, month, day);
+  const r = (jdn - ETHIOPIAN_JD_OFFSET) % 1461;
+  const n = (r % 365) + 365 * Math.floor(r / 1460);
+  const ecYear = 4 * Math.floor((jdn - ETHIOPIAN_JD_OFFSET) / 1461) + Math.floor(r / 365) - Math.floor(r / 1460);
+  const ecMonth = Math.floor(n / 30) + 1;
+  const ecDay = (n % 30) + 1;
+  return { year: ecYear, month: ecMonth, day: ecDay };
+}
+
+/**
+ * Converts an EthiopianDate to a Gregorian ISO date string (`YYYY-MM-DD`).
+ */
+export function ethiopianToGregorian(ec: EthiopianDate): string {
+  const jdn =
+    ETHIOPIAN_JD_OFFSET +
+    365 +
+    365 * (ec.year - 1) +
+    Math.floor(ec.year / 4) +
+    30 * ec.month +
+    ec.day -
+    31;
+  const gc = jdnToGregorian(jdn);
+  return `${String(gc.year).padStart(4, '0')}-${String(gc.month).padStart(2, '0')}-${String(gc.day).padStart(2, '0')}`;
+}
+
+/**
+ * Formats a Gregorian ISO date string in Gregorian, Ethiopian, or both calendars.
+ */
+export function formatDualDate(dateStr: string, mode: 'GC' | 'EC' | 'BOTH' = 'GC'): string {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const gcFormatted = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  if (mode === 'GC') return gcFormatted;
+  const ec = gregorianToEthiopian(dateStr);
+  if (!ec) return gcFormatted;
+  const monthObj = ETHIOPIAN_MONTHS[ec.month - 1];
+  const ecFormatted = `${ec.day} ${monthObj ? monthObj.nameEn : ec.month} ${ec.year} E.C.`;
+  if (mode === 'EC') return ecFormatted;
+  return `${gcFormatted} (${ecFormatted})`;
+}

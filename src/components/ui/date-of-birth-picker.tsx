@@ -1,8 +1,14 @@
 "use client";
 
-import React, { useId, useMemo, useRef } from "react";
+import React, { useId, useMemo, useRef, useState } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  ETHIOPIAN_MONTHS,
+  ethiopianToGregorian,
+  getDaysInEthiopianMonth,
+  gregorianToEthiopian,
+} from "@/lib/ethiopian-calendar";
 
 interface DateOfBirthPickerProps {
   id?: string;
@@ -42,6 +48,7 @@ export default function DateOfBirthPicker({
 }: DateOfBirthPickerProps) {
   const generatedId = useId();
   const inputId = id || generatedId;
+  const [calendarMode, setCalendarMode] = useState<"GC" | "EC">("GC");
 
   // Parse existing value (format expected: YYYY-MM-DD or DD/MM/YYYY)
   const { currentYear, currentMonth, currentDay } = useMemo(() => {
@@ -64,6 +71,37 @@ export default function DateOfBirthPicker({
     }
     return { currentYear: "", currentMonth: "", currentDay: "" };
   }, [value]);
+
+  const ecEquivalent = useMemo(() => {
+    if (!currentYear || !currentMonth || !currentDay) return null;
+    return gregorianToEthiopian(`${currentYear}-${currentMonth}-${currentDay}`);
+  }, [currentYear, currentMonth, currentDay]);
+
+  const currentEcYear = (new Date().getFullYear() - 7) - minAge;
+  const minEcYear = (new Date().getFullYear() - 8) - maxAge;
+  const ecYears = useMemo(() => {
+    const list: number[] = [];
+    for (let y = currentEcYear; y >= minEcYear; y--) list.push(y);
+    return list;
+  }, [currentEcYear, minEcYear]);
+
+  const [ecDraft, setEcDraft] = useState<{ y: string; m: string; d: string }>({ y: "", m: "", d: "" });
+  const activeEcYear = ecEquivalent ? String(ecEquivalent.year) : ecDraft.y;
+  const activeEcMonth = ecEquivalent ? String(ecEquivalent.month) : ecDraft.m;
+  const activeEcDay = ecEquivalent ? String(ecEquivalent.day) : ecDraft.d;
+
+  const handleEcChange = (yStr: string, mStr: string, dStr: string) => {
+    setEcDraft({ y: yStr, m: mStr, d: dStr });
+    const y = parseInt(yStr, 10);
+    const m = parseInt(mStr, 10);
+    const d = parseInt(dStr, 10);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      const maxD = getDaysInEthiopianMonth(y, m);
+      onChange(ethiopianToGregorian({ year: y, month: m, day: Math.min(d, maxD) }));
+    } else if (!yStr && !mStr && !dStr) {
+      onChange("");
+    }
+  };
 
   const currentGregorianYear = new Date().getFullYear();
   const maxYear = currentGregorianYear - minAge;
@@ -129,6 +167,88 @@ export default function DateOfBirthPicker({
 
   return (
     <div className={cn("space-y-1.5", className)}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="inline-flex rounded-md bg-gray-100 p-0.5 text-[10px] font-black">
+          <button
+            type="button"
+            onClick={() => setCalendarMode("GC")}
+            className={cn(
+              "px-2 py-0.5 rounded transition-colors",
+              calendarMode === "GC" ? "bg-white text-black shadow-xs" : "text-gray-500 hover:text-black"
+            )}
+          >
+            Gregorian (GC)
+          </button>
+          <button
+            type="button"
+            onClick={() => setCalendarMode("EC")}
+            className={cn(
+              "px-2 py-0.5 rounded transition-colors",
+              calendarMode === "EC" ? "bg-white text-[#ED1C24] shadow-xs" : "text-gray-500 hover:text-black"
+            )}
+          >
+            Ethiopian (EC)
+          </button>
+        </div>
+        {ecEquivalent && calendarMode === "GC" && (
+          <span className="text-[10px] font-bold text-gray-500 truncate">
+            EC: {ecEquivalent.day} {ETHIOPIAN_MONTHS[ecEquivalent.month - 1]?.nameEn} {ecEquivalent.year}
+          </span>
+        )}
+        {value && calendarMode === "EC" && currentYear && currentMonth && currentDay && (
+          <span className="text-[10px] font-bold text-gray-500 truncate">
+            GC: {currentYear}-{currentMonth}-{currentDay}
+          </span>
+        )}
+      </div>
+
+      {calendarMode === "EC" ? (
+        <div className="grid grid-cols-3 gap-2">
+          <select
+            aria-label="Ethiopian Day"
+            value={activeEcDay}
+            disabled={disabled}
+            required={required}
+            onChange={(e) => handleEcChange(activeEcYear, activeEcMonth, e.target.value)}
+            className="flex h-10 w-full rounded-lg bg-gray-50 border border-transparent px-3 py-2 text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20"
+          >
+            <option value="">Day</option>
+            {Array.from(
+              { length: activeEcYear && activeEcMonth ? getDaysInEthiopianMonth(parseInt(activeEcYear, 10), parseInt(activeEcMonth, 10)) : 30 },
+              (_, i) => String(i + 1)
+            ).map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          <select
+            aria-label="Ethiopian Month"
+            value={activeEcMonth}
+            disabled={disabled}
+            required={required}
+            onChange={(e) => handleEcChange(activeEcYear, e.target.value, activeEcDay)}
+            className="flex h-10 w-full rounded-lg bg-gray-50 border border-transparent px-3 py-2 text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20"
+          >
+            <option value="">Month</option>
+            {ETHIOPIAN_MONTHS.map((m) => (
+              <option key={m.number} value={String(m.number)}>{m.number} - {m.nameEn}</option>
+            ))}
+          </select>
+          <select
+            aria-label="Ethiopian Year"
+            value={activeEcYear}
+            disabled={disabled}
+            required={required}
+            onChange={(e) => handleEcChange(e.target.value, activeEcMonth, activeEcDay)}
+            className="flex h-10 w-full rounded-lg bg-gray-50 border border-transparent px-3 py-2 text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20"
+          >
+            <option value="">Year (EC)</option>
+            {ecYears.map((y) => (
+              <option key={y} value={String(y)}>{y}</option>
+            ))}
+          </select>
+        </div>
+      ) : (
+      <>
       <div className="grid grid-cols-3 gap-2">
         {/* Day Select */}
         <div className="relative">
@@ -233,6 +353,8 @@ export default function DateOfBirthPicker({
           />
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

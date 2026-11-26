@@ -216,7 +216,7 @@ export default function OrganizationPortal() {
     const token = localStorage.getItem("access_token") || localStorage.getItem("token");
     const role = localStorage.getItem("user_role");
     
-    if (!token || (role !== "ORGANIZATION" && role !== "8")) {
+    if (!token || (role !== "ORGANIZATION" && role !== "8" && role !== "MEMBER" && role !== "6")) {
       router.push("/login");
       return;
     }

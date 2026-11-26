@@ -266,6 +266,14 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const needsStudyField = Boolean(
+      formData.educationLevel &&
+      !/below primary|primary school|none|illiterate/i.test(formData.educationLevel)
+    );
+    if (needsStudyField && !String(formData.educationalBackground || "").trim()) {
+      toast.error("Please enter your Field of Study / Educational Background for the selected education level.");
+      return;
+    }
     try {
       setSaving(true);
       
@@ -626,10 +634,16 @@ export default function ProfilePage() {
                     </select>
                  </div>
                   <div className="space-y-1.5">
-                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-wider px-1">Educational Background</label>
+                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-wider px-1">
+                        Field of Study / Educational Background
+                        {formData.educationLevel && !/below primary|primary school|none|illiterate/i.test(formData.educationLevel) && (
+                           <span className="text-[#ED1C24] ml-0.5">*</span>
+                        )}
+                     </label>
                      <input
                         type="text"
                         name="educationalBackground"
+                        required={Boolean(formData.educationLevel && !/below primary|primary school|none|illiterate/i.test(formData.educationLevel))}
                         value={formData.educationalBackground || ""}
                         onChange={handleInputChange}
                         className="w-full bg-gray-50 border border-gray-100 rounded-xl h-11 px-4 font-bold text-xs text-gray-900 focus:ring-2 focus:ring-[#ED1C24]/10 transition-all"
