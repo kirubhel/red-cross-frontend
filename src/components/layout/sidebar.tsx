@@ -20,10 +20,10 @@ import {
   ShieldCheck,
   Building2,
   BarChart3,
-  Sparkles,
   Mail,
   Activity,
-  Landmark
+  Landmark,
+  HeartHandshake
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,8 +43,9 @@ const navigationSections = [
     title: "Operations & Finance",
     items: [
       { href: "/admin/reports", label: "Reports & Analytics", icon: BarChart3 },
-      { href: "/admin/ai-features", label: "AI Capabilities", icon: Sparkles },
+      // AI Capabilities is hidden from navigation until it is ready for admins.
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
+      { href: "/admin/donations", label: "Donations", icon: HeartHandshake },
       { href: "/admin/notifications", label: "Notifications", icon: Bell },
       { href: "/admin/messages", label: "Contact Messages", icon: Mail },
       { href: "/admin/news", label: "News & Media", icon: Newspaper },

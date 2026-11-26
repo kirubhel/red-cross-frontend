@@ -24,6 +24,7 @@ import { getUserScope, type UserScope } from "@/lib/auth-scope";
 
 import { PageHeader } from "@/components/admin/page-ui";
 import { StatTile } from "@/components/admin/analytics/widgets";
+import { FinanceUnlock } from "@/components/admin/FinanceUnlock";
 type Payment = {
   id: string;
   invoice_number?: string;
@@ -85,7 +86,7 @@ const REGION_LOOKUP: Record<number, RegionMeta> = {
   14: { id: 14, name: "South Ethiopia", code: "SE", badgeColor: "bg-pink-50 text-pink-700 border-pink-200" },
 };
 
-export default function PaymentsPage() {
+function PaymentsContent() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -606,4 +607,8 @@ export default function PaymentsPage() {
       </div>
     </div>
   );
+}
+
+export default function PaymentsPage() {
+  return <FinanceUnlock><PaymentsContent /></FinanceUnlock>;
 }

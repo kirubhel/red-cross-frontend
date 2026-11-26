@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import api from "@/lib/api";
+import api, { getFinanceToken } from "@/lib/api";
+import { FinanceUnlock } from "@/components/admin/FinanceUnlock";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { 
@@ -48,6 +49,8 @@ const DEFAULT_REGIONS: RegionOption[] = [
 ];
 
 export default function ReportsAndAnalyticsPage() {
+  const [showFinancePrompt, setShowFinancePrompt] = useState(false);
+  const [pendingFinancialFormat, setPendingFinancialFormat] = useState<"xlsx" | "csv">("xlsx");
   const [downloadingType, setDownloadingType] = useState<string | null>(null);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -169,6 +172,11 @@ export default function ReportsAndAnalyticsPage() {
 
   // Dedicated filtered report generators
   const handleDownloadFinancialReport = async (format: "xlsx" | "csv" = "xlsx") => {
+    if (!getFinanceToken()) {
+      setPendingFinancialFormat(format);
+      setShowFinancePrompt(true);
+      return;
+    }
     setDownloadingType(`financial-${format}`);
     try {
       toast.loading("Generating financial report...", { id: "report-action" });
@@ -178,7 +186,12 @@ export default function ReportsAndAnalyticsPage() {
       toast.success("Financial report downloaded successfully.", { id: "report-action" });
     } catch (err) {
       console.error("Financial report download failed:", err);
-      toast.error("Failed to generate financial report.", { id: "report-action" });
+      const status = (err as { response?: { status?: number } }).response?.status;
+      if (status === 423) {
+        setPendingFinancialFormat(format);
+        setShowFinancePrompt(true);
+      }
+      toast.error(status === 423 ? "Finance access expired. Unlock to retry." : "Failed to generate financial report.", { id: "report-action" });
     } finally {
       setDownloadingType(null);
       setIsExportMenuOpen(false);
@@ -192,6 +205,7 @@ export default function ReportsAndAnalyticsPage() {
       const params = new URLSearchParams();
       params.set("page", "1");
       params.set("page_size", "5000");
+      params.set("members_only", "true");
       if (regionFilter) params.set("region", regionFilter);
       if (statusFilter) params.set("status", statusFilter);
       if (mainCategory) params.set("category", mainCategory);
@@ -247,6 +261,12 @@ export default function ReportsAndAnalyticsPage() {
 
   return (
     <div className="space-y-6">
+      {showFinancePrompt && <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4" role="dialog" aria-modal="true" aria-label="Unlock finance access">
+        <div className="mx-auto max-w-md">
+          <button type="button" onClick={() => setShowFinancePrompt(false)} className="ml-auto block rounded-lg bg-white p-2 text-gray-600" aria-label="Close finance unlock"><X className="h-5 w-5" /></button>
+          <FinanceUnlock onUnlocked={() => { setShowFinancePrompt(false); void handleDownloadFinancialReport(pendingFinancialFormat); }}><p className="rounded-2xl bg-white p-6 text-sm text-gray-700">Finance access unlocked. Preparing your report…</p></FinanceUnlock>
+        </div>
+      </div>}
       <PageHeader
         title="Reports & Analytics"
         description="National Headquarters — Official Analytics & Reporting Hub"

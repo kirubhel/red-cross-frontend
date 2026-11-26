@@ -121,7 +121,7 @@ function toParams(q: RegistryQuery, keys: (keyof RegistryQuery)[]): string {
 /** Loads members and volunteers matching the query. Throws only if both requests fail. */
 export async function loadRegistry(query: RegistryQuery = {}): Promise<RegistryLoad> {
   const [people, volunteers] = await Promise.allSettled([
-    api.get(`/person?${toParams(query, ["region", "zone", "woreda", "branchId", "status", "category", "type", "search"])}`),
+    api.get(`/person?${toParams(query, ["region", "zone", "woreda", "branchId", "status", "category", "type", "search"])}&members_only=true`),
     api.get(`/volunteers?${toParams(query, ["region", "status", "search"])}`),
   ]);
   if (people.status === "rejected" && volunteers.status === "rejected") throw people.reason;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -42,6 +42,8 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { DateFilterControls } from "@/components/admin/DateFilterControls";
+import { dateBounds, validLocalDate, type DatePreset } from "@/lib/date-filters";
 import type { Cell, CellValue } from "exceljs";
 
 type VolunteerBenefitRecord = {
@@ -60,6 +62,7 @@ type VolunteerBenefitRecord = {
 type Volunteer = {
   id: string;
   person_id: string;
+  ercs_id?: string;
   first_name: string;
   last_name: string;
   phone_number: string;
@@ -77,6 +80,7 @@ type Volunteer = {
   skills?: string[];
   interests?: string[];
   status: "ACTIVE" | "INACTIVE" | "PENDING";
+  created_at?: string;
 };
 
 type VolunteerEvaluation = {
@@ -191,8 +195,13 @@ export default function VolunteersPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [search, setSearch] = useState("");
+  const [searchReady, setSearchReady] = useState(false);
   const [regionFilter, setRegionFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [registrationFilter, setRegistrationFilter] = useState<DatePreset>("");
+  const [registeredFrom, setRegisteredFrom] = useState("");
+  const [registeredTo, setRegisteredTo] = useState("");
+  const requestIdRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null);
@@ -239,9 +248,33 @@ export default function VolunteersPage() {
   const [totalItems, setTotalItems] = useState(0);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setSearch(params.get("search") || "");
+    const preset = params.get("registered");
+    if (preset === "today" || preset === "last7" || preset === "range") {
+      setRegistrationFilter(preset);
+      setShowFilters(true);
+    }
+    const from = params.get("registeredFrom") || "";
+    const to = params.get("registeredTo") || "";
+    setRegisteredFrom(validLocalDate(from) ? from : "");
+    setRegisteredTo(validLocalDate(to) ? to : "");
+    setSearchReady(true);
     fetchRegions();
     fetchPerformanceSummaries();
   }, []);
+
+  useEffect(() => {
+    if (!searchReady) return;
+    const url = new URL(window.location.href);
+    if (registrationFilter) url.searchParams.set("registered", registrationFilter);
+    else url.searchParams.delete("registered");
+    if (registrationFilter === "range" && registeredFrom) url.searchParams.set("registeredFrom", registeredFrom);
+    else url.searchParams.delete("registeredFrom");
+    if (registrationFilter === "range" && registeredTo) url.searchParams.set("registeredTo", registeredTo);
+    else url.searchParams.delete("registeredTo");
+    window.history.replaceState(null, "", url);
+  }, [searchReady, registrationFilter, registeredFrom, registeredTo]);
 
   useEffect(() => {
     if (showModal) {
@@ -255,15 +288,24 @@ export default function VolunteersPage() {
   // Reset page to 1 when filters or search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter, ratingFilter, tierFilter]);
+  }, [search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter, ratingFilter, tierFilter, registrationFilter, registeredFrom, registeredTo]);
 
   // Fetch volunteers when page, page size, or filters change
   useEffect(() => {
+    if (!searchReady) return;
+    requestIdRef.current += 1;
+    if (registrationFilter === "range" && !dateBounds(registrationFilter, registeredFrom, registeredTo)) {
+      setVolunteers([]);
+      setTotalItems(0);
+      setTotalPages(1);
+      setLoading(false);
+      return;
+    }
     const timer = setTimeout(() => {
       fetchVolunteers();
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
-  }, [currentPage, pageSize, search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter]);
+  }, [searchReady, currentPage, pageSize, search, regionFilter, statusFilter, occupationFilter, areaFilter, classificationFilter, registrationFilter, registeredFrom, registeredTo]);
 
   const fetchRegions = async () => {
     try {
@@ -295,6 +337,7 @@ export default function VolunteersPage() {
   };
 
   const fetchVolunteers = async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
       let finalSearch = search;
@@ -302,17 +345,25 @@ export default function VolunteersPage() {
       if (areaFilter) finalSearch += ` area:${areaFilter}`;
       if (classificationFilter) finalSearch += ` class:${classificationFilter}`;
 
-      const url = `/volunteers?search=${encodeURIComponent(finalSearch)}&region=${regionFilter}&status=${statusFilter}&page=${currentPage}&page_size=${pageSize}`;
+      const params = new URLSearchParams({ search: finalSearch, region: regionFilter, status: statusFilter, page: String(currentPage), page_size: String(pageSize) });
+      const bounds = dateBounds(registrationFilter, registeredFrom, registeredTo);
+      if (bounds) {
+        params.set("registered_from", bounds.from);
+        params.set("registered_before", bounds.before);
+      }
+      const url = `/volunteers?${params.toString()}`;
       const res = await api.get(url);
+      if (requestId !== requestIdRef.current) return;
       setVolunteers(res.data.volunteers || []);
       setTotalPages(res.data.pagination?.total_pages || 1);
       setTotalItems(res.data.pagination?.total_items || 0);
       fetchPerformanceSummaries();
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error("Failed to fetch volunteers:", err);
       toast.error("Failed to load volunteers");
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   };
 
@@ -1043,6 +1094,12 @@ export default function VolunteersPage() {
 
         {showFilters && (
             <div className="grid md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="md:col-span-4">
+                    <DateFilterControls id="volunteers-registered" label="Registered date" value={registrationFilter} from={registeredFrom} to={registeredTo}
+                        onValueChange={(value) => { setRegistrationFilter(value); setCurrentPage(1); }}
+                        onFromChange={(value) => { setRegisteredFrom(value); setCurrentPage(1); }}
+                        onToChange={(value) => { setRegisteredTo(value); setCurrentPage(1); }} />
+                </div>
                 <div className="space-y-1">
                     <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 ml-1">Performance / Rating</label>
                     <select 
@@ -1162,6 +1219,9 @@ export default function VolunteersPage() {
                             setOccupationFilter("");
                             setAreaFilter("");
                             setClassificationFilter("");
+                            setRegistrationFilter("");
+                            setRegisteredFrom("");
+                            setRegisteredTo("");
                         }}
                         variant="ghost" 
                         className="h-10 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-gray-400"
@@ -1281,7 +1341,7 @@ export default function VolunteersPage() {
       </div>
 
       {/* Main Table Container */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -1290,6 +1350,7 @@ export default function VolunteersPage() {
               <TableHead>Performance / Rating</TableHead>
               <TableHead>Contact</TableHead>
               <TableHead>Location</TableHead>
+              <TableHead>Registered date</TableHead>
               <TableHead>Contribution</TableHead>
               <TableHead className="text-right">
                 <div className="flex items-center justify-end gap-1.5 group relative cursor-help">
@@ -1308,7 +1369,7 @@ export default function VolunteersPage() {
           <TableBody>
             {loading ? (
                 <TableRow>
-                   <TableCell colSpan={7} className="h-32 text-center">
+                   <TableCell colSpan={8} className="h-32 text-center">
                       <div className="flex flex-col items-center justify-center space-y-4">
                          <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin"></div>
                          <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Loading Volunteers...</p>
@@ -1317,13 +1378,18 @@ export default function VolunteersPage() {
                 </TableRow>
             ) : filteredVolunteers.length === 0 ? (
                 <TableRow>
-                   <TableCell colSpan={7} className="h-32 text-center text-gray-400 font-bold italic text-xs">No volunteers found matching your criteria</TableCell>
+                   <TableCell colSpan={8} className="h-32 text-center text-gray-400 font-bold italic text-xs">
+                     {registrationFilter === "range" && !dateBounds(registrationFilter, registeredFrom, registeredTo) ? "Choose a valid start and end date." : "No volunteers found matching your criteria"}
+                   </TableCell>
                 </TableRow>
             ) : (
                 filteredVolunteers.map((v) => (
                     <TableRow key={v.id} className="font-bold">
                     <TableCell>
-                        <span className="font-black text-black text-sm leading-tight uppercase tracking-tighter">{v.first_name} {v.last_name}</span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="font-black text-black text-sm leading-tight uppercase tracking-tighter">{v.first_name} {v.last_name}</span>
+                          <span className="text-[11px] font-semibold text-gray-500">Volunteer ID: {v.ercs_id || "Unavailable"}</span>
+                        </div>
                     </TableCell>
 
                     <TableCell>
@@ -1360,6 +1426,16 @@ export default function VolunteersPage() {
                                 {regions.find(r => String(r.id) === String(v.region))?.name || v.region || 'N/A'}
                             </span>
                             <span className="text-[10px] text-gray-400 uppercase tracking-tighter ml-1">{v.country || 'Ethiopia'}</span>
+                        </div>
+                    </TableCell>
+
+                    <TableCell>
+                        <div className="flex items-center gap-1.5">
+                            <span className="whitespace-nowrap text-xs text-gray-500">
+                              {v.created_at && !Number.isNaN(Date.parse(v.created_at))
+                                ? new Date(v.created_at).toLocaleDateString("en-ET", { day: "numeric", month: "short", year: "numeric" })
+                                : "—"}
+                            </span>
                         </div>
                     </TableCell>
 
@@ -1507,7 +1583,7 @@ export default function VolunteersPage() {
                         <h2 className="text-2xl font-black tracking-tight text-black">
                             {selectedVolunteer.first_name} {selectedVolunteer.last_name}
                         </h2>
-                        <p className="text-xs font-bold text-gray-400">{selectedVolunteer.person_id || selectedVolunteer.id}</p>
+                        <p className="text-xs font-bold text-gray-500">Volunteer ID: {selectedVolunteer.ercs_id || "Unavailable"}</p>
                     </div>
                     <button 
                         onClick={() => setShowModal(false)}

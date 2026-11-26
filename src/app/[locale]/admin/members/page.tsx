@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,8 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
 import { getUserScope, type UserScope } from "@/lib/auth-scope";
+import { DateFilterControls } from "@/components/admin/DateFilterControls";
+import { dateBounds, validLocalDate, type DatePreset } from "@/lib/date-filters";
 
 type Member = {
   id: string;
@@ -35,6 +37,7 @@ type Member = {
   metadata?: string;
   zone_id?: string;
   woreda_id?: string;
+  created_at?: string;
 };
 
 type Region = {
@@ -64,12 +67,16 @@ export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [regions, setRegions] = useState<Region[]>(DEFAULT_REGIONS);
   const [search, setSearch] = useState("");
+  const [searchReady, setSearchReady] = useState(false);
   const [regionFilter, setRegionFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [mainCategory, setMainCategory] = useState<string>("");
   const [zoneFilter, setZoneFilter] = useState<string>("");
   const [woredaFilter, setWoredaFilter] = useState<string>("");
+  const [registrationFilter, setRegistrationFilter] = useState<DatePreset>("");
+  const [registeredFrom, setRegisteredFrom] = useState("");
+  const [registeredTo, setRegisteredTo] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -83,6 +90,7 @@ export default function MembersPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [userScope, setUserScope] = useState<UserScope | null>(null);
   const [isRegionLocked, setIsRegionLocked] = useState(false);
+  const requestIdRef = useRef(0);
   const pageSize = 10;
 
   const copyToClipboard = (text: string, label: string = "Member ID", e?: React.MouseEvent) => {
@@ -176,6 +184,18 @@ export default function MembersPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    const params = new URLSearchParams(window.location.search);
+    setSearch(params.get("search") || "");
+    const dateFilter = params.get("registered");
+    if (dateFilter === "today" || dateFilter === "last7" || dateFilter === "range") {
+      setRegistrationFilter(dateFilter);
+      setShowFilters(true);
+    }
+    const from = params.get("registeredFrom") || "";
+    const to = params.get("registeredTo") || "";
+    setRegisteredFrom(validLocalDate(from) ? from : "");
+    setRegisteredTo(validLocalDate(to) ? to : "");
+    setSearchReady(true);
     const scope = getUserScope();
     setUserScope(scope);
 
@@ -189,6 +209,18 @@ export default function MembersPage() {
   }, []);
 
   useEffect(() => {
+    if (!searchReady) return;
+    const url = new URL(window.location.href);
+    if (registrationFilter) url.searchParams.set("registered", registrationFilter);
+    else url.searchParams.delete("registered");
+    if (registrationFilter === "range" && registeredFrom) url.searchParams.set("registeredFrom", registeredFrom);
+    else url.searchParams.delete("registeredFrom");
+    if (registrationFilter === "range" && registeredTo) url.searchParams.set("registeredTo", registeredTo);
+    else url.searchParams.delete("registeredTo");
+    window.history.replaceState(null, "", url);
+  }, [searchReady, registrationFilter, registeredFrom, registeredTo]);
+
+  useEffect(() => {
     if (showModal) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -198,11 +230,20 @@ export default function MembersPage() {
   }, [showModal]);
 
   useEffect(() => {
+    if (!searchReady) return;
+    requestIdRef.current += 1;
+    if (registrationFilter === "range" && !dateBounds(registrationFilter, registeredFrom, registeredTo)) {
+      setMembers([]);
+      setTotalItems(0);
+      setTotalPages(1);
+      setLoading(false);
+      return;
+    }
     const timer = setTimeout(() => {
         fetchMembers();
     }, 500); // Debounce search
     return () => clearTimeout(timer);
-  }, [search, page, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, userScope]);
+  }, [searchReady, search, page, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, userScope, registrationFilter, registeredFrom, registeredTo]);
 
   const fetchRegions = async () => {
     try {
@@ -219,20 +260,29 @@ export default function MembersPage() {
   };
 
   const fetchMembers = async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
       const scope = userScope || getUserScope();
       const effectiveRegion = (!scope.isSuperAdmin && scope.regionId) ? scope.regionId : regionFilter;
-      const url = `/person?page=${page}&page_size=${pageSize}&search=${search}&region=${effectiveRegion}&status=${statusFilter}&type=${typeFilter}&zone=${zoneFilter}&woreda=${woredaFilter}&category=${mainCategory}`;
+      const params = new URLSearchParams({ page: String(page), page_size: String(pageSize), members_only: "true", search: search.trim(), region: effectiveRegion, status: statusFilter, type: typeFilter, zone: zoneFilter, woreda: woredaFilter, category: mainCategory });
+      const bounds = dateBounds(registrationFilter, registeredFrom, registeredTo);
+      if (bounds) {
+        params.set("registered_from", bounds.from);
+        params.set("registered_before", bounds.before);
+      }
+      const url = `/person?${params.toString()}`;
       const res = await api.get(url);
+      if (requestId !== requestIdRef.current) return;
       setMembers(res.data.people || []);
       setTotalItems(res.data.pagination?.total_items || 0);
       setTotalPages(res.data.pagination?.total_pages || 1);
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error("Failed to fetch members:", err);
       toast.error("Failed to sync member directory");
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   };
 
@@ -541,6 +591,9 @@ export default function MembersPage() {
     setMainCategory("");
     setStatusFilter("");
     setTypeFilter("");
+    setRegistrationFilter("");
+    setRegisteredFrom("");
+    setRegisteredTo("");
     setSearch("");
     setPage(1);
   };
@@ -611,7 +664,7 @@ export default function MembersPage() {
                 <Input
                 placeholder="Search Identity..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="h-10 pl-10 bg-white text-black border border-gray-200 rounded-xl font-black text-xs focus:ring-4 focus:ring-[#ED1C24]/10 transition-all shadow-sm"
                 />
             </div>
@@ -684,6 +737,13 @@ export default function MembersPage() {
                             <option value="PENDING_PAYMENT" className="bg-white text-black">Unpaid (no Member ID yet)</option>
                         </select>
                     </div>
+                </div>
+
+                <div className="border-b border-gray-200/50 pb-4">
+                    <DateFilterControls id="members-registered" label="Registered date" value={registrationFilter} from={registeredFrom} to={registeredTo}
+                        onValueChange={(value) => { setRegistrationFilter(value); setSelectedMemberIds(new Set()); setPage(1); }}
+                        onFromChange={(value) => { setRegisteredFrom(value); setSelectedMemberIds(new Set()); setPage(1); }}
+                        onToChange={(value) => { setRegisteredTo(value); setSelectedMemberIds(new Set()); setPage(1); }} />
                 </div>
 
                 {/* Regional Hierarchy Row */}
@@ -812,7 +872,7 @@ export default function MembersPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden print:shadow-none print:border-none print:rounded-none">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto print:shadow-none print:border-none print:rounded-none">
         <Table>
           <TableHeader className="print:bg-transparent">
             <TableRow className="hover:bg-transparent">
@@ -838,6 +898,7 @@ export default function MembersPage() {
               <TableHead>Full Identity</TableHead>
               <TableHead>Region</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Registered date</TableHead>
               <TableHead>
                 <div className="flex items-center gap-1.5 group relative cursor-help">
                   <span>Status</span>
@@ -856,7 +917,7 @@ export default function MembersPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-48 text-center">
+                <TableCell colSpan={8} className="h-48 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                      <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Syncing Registry...</p>
@@ -865,8 +926,8 @@ export default function MembersPage() {
               </TableRow>
             ) : displayedMembers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-64 text-center">
-                   <p className="text-sm font-bold text-gray-400">No members found matching your search.</p>
+                <TableCell colSpan={8} className="h-64 text-center">
+                   <p className="text-sm font-bold text-gray-400">{registrationFilter === "range" && !dateBounds(registrationFilter, registeredFrom, registeredTo) ? "Choose a valid start and end date." : "No members found matching your filters."}</p>
                 </TableCell>
               </TableRow>
             ) : (
@@ -933,6 +994,12 @@ export default function MembersPage() {
                   </TableCell>
                   <TableCell className="font-bold text-[11px] text-gray-500">
                     {(member as any).membership_type || (member as any).membershipType || "REGULAR"}
+                  </TableCell>
+
+                  <TableCell className="whitespace-nowrap text-xs text-gray-500">
+                    {member.created_at && !Number.isNaN(Date.parse(member.created_at))
+                      ? new Date(member.created_at).toLocaleDateString("en-ET", { day: "numeric", month: "short", year: "numeric" })
+                      : "—"}
                   </TableCell>
 
                   <TableCell>
