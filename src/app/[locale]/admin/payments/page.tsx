@@ -84,6 +84,8 @@ const REGION_LOOKUP: Record<number, RegionMeta> = {
   12: { id: 12, name: "Sidama", code: "SD", badgeColor: "bg-sky-50 text-sky-700 border-sky-200" },
   13: { id: 13, name: "South West Ethiopia", code: "SW", badgeColor: "bg-violet-50 text-violet-700 border-violet-200" },
   14: { id: 14, name: "South Ethiopia", code: "SE", badgeColor: "bg-pink-50 text-pink-700 border-pink-200" },
+  16: { id: 16, name: "Moyale Special Woreda", code: "MY", badgeColor: "bg-teal-50 text-teal-700 border-teal-200" },
+  17: { id: 17, name: "Humera Special Woreda", code: "HM", badgeColor: "bg-orange-50 text-orange-700 border-orange-200" },
 };
 
 function PaymentsContent() {

@@ -30,6 +30,8 @@ export const REGION_NAMES: Record<string, string> = {
   "12": "Sidama",
   "13": "South West Ethiopia",
   "14": "South Ethiopia",
+  "16": "Moyale Special Woreda",
+  "17": "Humera Special Woreda",
 };
 
 export const SUPER_ADMIN_ONLY_MODULES = [

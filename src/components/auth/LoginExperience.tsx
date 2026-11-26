@@ -114,6 +114,12 @@ export default function LoginExperience({ embedded = false, adminOnly = false }:
       localStorage.setItem("user_branch_id", branchId);
     }
 
+    // An admin-issued temporary password must be replaced before anything else.
+    if (data.must_change_password) {
+      router.push("/change-password");
+      return;
+    }
+
     if (isAdmin) {
       router.push("/admin");
     } else if (isOrg) {

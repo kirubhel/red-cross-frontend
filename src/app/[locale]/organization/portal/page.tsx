@@ -448,52 +448,19 @@ export default function OrganizationPortal() {
     if (!paymentRequest) return;
     setSubmittingPayment(true);
     try {
-      // 1. Try initiating via ArifPay API gateway
-      const response = await api.post("/payment/initiate", {
-        invoice_id: paymentRequest.id,
-        provider: "ARIFPAY",
-        amount: paymentRequest.payment_amount,
-        currency: "ETB",
-        email: profile?.email || "organization@redcrosseth.org",
-        first_name: profile?.name || "Organization",
-        last_name: "Member",
-        payer_phone: profile?.phone || ""
-      }).catch(() => null);
-
-      if (response?.data?.payment_url) {
-        window.location.href = response.data.payment_url;
+      // The server charges the amount stored on the request and returns the ArifPay checkout page.
+      const response = await api.post("/organizations/requests/pay", { request_id: paymentRequest.id });
+      const url = response?.data?.payment_url;
+      if (!url) {
+        toast.error("ArifPay did not return a checkout page. Please try again.");
         return;
       }
-
-      // 2. Fallback / direct ArifPay transaction processing
-      const txRef = `ARIFPAY_TX_${Math.floor(100000 + Math.random() * 900000)}`;
-      await api.post("/organizations/requests/payment-proof", {
-        request_id: paymentRequest.id,
-        proof_url: `https://checkout.arifpay.net/receipt/${txRef}`
-      });
-
-      toast.success("Payment initiated via ArifPay! Status updated.");
-      
-      // Update local state to reflect submitted status
-      setRequests(prev => prev.map(req => req.id === paymentRequest.id ? {
-        ...req,
-        payment_status: "SUBMITTED",
-        payment_proof_url: `https://checkout.arifpay.net/receipt/${txRef}`
-      } : req));
-
-      if (selectedRequest && selectedRequest.id === paymentRequest.id) {
-        setSelectedRequest({
-          ...selectedRequest,
-          payment_status: "SUBMITTED",
-          payment_proof_url: `https://checkout.arifpay.net/receipt/${txRef}`
-        });
-      }
-
-      setShowPaymentModal(false);
-      setPaymentRequest(null);
-    } catch (err) {
+      window.location.href = url;
+    } catch (err: any) {
       console.error("Payment initiation error:", err);
-      toast.error("Failed to process ArifPay payment");
+      const data = err?.response?.data;
+      const message = typeof data === "string" ? data : data?.message || data?.error;
+      toast.error(message?.trim() || "Could not start the ArifPay payment. Please try again.");
     } finally {
       setSubmittingPayment(false);
     }
@@ -1787,11 +1754,14 @@ export default function OrganizationPortal() {
 
               <div className="mb-8">
                 <div className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-[#ED1C24] bg-red-50 px-2 py-1 rounded mb-2">
-                  <span>❤️</span> IMPACT
+                  <span>🛡</span> VOLUNTEER REQUEST
                 </div>
                 <h3 className="text-3xl font-black tracking-tighter text-slate-900">
-                  Support <span className="text-[#ED1C24]">ERCS</span>
+                  Pay <span className="text-[#ED1C24]">ERCS</span>
                 </h3>
+                <p className="mt-2 text-xs font-semibold text-slate-500">
+                  You will be taken to ArifPay to pay. Your volunteers are assigned as soon as the payment is confirmed.
+                </p>
               </div>
 
               <div className="space-y-6">
@@ -1836,7 +1806,7 @@ export default function OrganizationPortal() {
                   className="w-full h-14 bg-black hover:bg-slate-800 text-white rounded-xl font-black flex items-center justify-center gap-2 transition-colors disabled:opacity-50 mt-4"
                 >
                   <span className="text-lg">⚡</span>
-                  {submittingPayment ? "Processing..." : "Initiate Payment"}
+                  {submittingPayment ? "Opening ArifPay..." : "Continue to ArifPay"}
                 </button>
                 
                 <div className="flex items-center justify-center gap-4 text-[9px] font-black uppercase tracking-widest text-slate-400 mt-4">

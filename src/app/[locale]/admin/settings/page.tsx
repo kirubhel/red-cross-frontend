@@ -12,6 +12,8 @@ import { QRCodeSVG } from "qrcode.react";
 import api from "@/lib/api";
 import { SuperAdminGuard } from "@/components/admin/SuperAdminGuard";
 import { FinancePasswordSettings } from "@/components/admin/FinancePasswordSettings";
+import { AddLocationDialog, type NewLocation } from "@/components/admin/AddLocationDialog";
+import { toast } from "sonner";
 
 import { PageHeader } from "@/components/admin/page-ui";
 type MemberIDConfig = {
@@ -69,6 +71,7 @@ export default function SystemSettingsPage() {
   const [zoneRegionFilter, setZoneRegionFilter] = useState<number | "all">("all");
   const [woredaRegionFilter, setWoredaRegionFilter] = useState<number | "all">("all");
   const [woredaZoneFilter, setWoredaZoneFilter] = useState<string | "all">("all");
+  const [addDialog, setAddDialog] = useState<null | "zone" | "woreda">(null);
   
   const [memberConfig, setMemberConfig] = useState<MemberIDConfig>({
     prefix: "ERCS-",
@@ -363,37 +366,37 @@ export default function SystemSettingsPage() {
     }
   };
 
-  const addZone = () => {
-    const defaultRegionId = zoneRegionFilter !== "all" ? zoneRegionFilter : (regions[0]?.id || 1);
-    const newZone: Zone = {
-      id: Math.random().toString(36).substr(2, 9),
-      region_id: defaultRegionId,
-      name: "New Zone",
-      code: "Z00"
-    };
-    setLocationHierarchy({ ...locationHierarchy, zones: [...locationHierarchy.zones, newZone] });
+  // The location list is saved as soon as a zone or woreda is added, so nothing is lost if
+  // "Save All Configurations" is forgotten. Other tabs' unsaved edits are not touched.
+  const persistHierarchy = async (next: LocationHierarchy) => {
+    try {
+      await api.post("/system-settings", {
+        key: "locations_hierarchy",
+        value_json: JSON.stringify(next),
+      });
+    } catch (err: any) {
+      const data = err?.response?.data;
+      const message = typeof data === "string" ? data : data?.message || data?.error;
+      throw new Error(message?.trim() || "Could not save. Check your connection and try again.");
+    }
+    setLocationHierarchy(next);
   };
 
-  const addWoreda = () => {
-    if (locationHierarchy.zones.length === 0) return;
-    
-    let defaultZoneId = locationHierarchy.zones[0].id;
-    if (woredaZoneFilter !== "all") {
-      defaultZoneId = woredaZoneFilter;
-    } else if (woredaRegionFilter !== "all") {
-      const regionZones = locationHierarchy.zones.filter(z => z.region_id === woredaRegionFilter);
-      if (regionZones.length > 0) {
-        defaultZoneId = regionZones[0].id;
-      }
-    }
+  const newId = () => Math.random().toString(36).slice(2, 11);
 
-    const newWoreda: Woreda = {
-      id: Math.random().toString(36).substr(2, 9),
-      zone_id: defaultZoneId,
-      name: "New Woreda",
-      code: "W00"
-    };
-    setLocationHierarchy({ ...locationHierarchy, woredas: [...locationHierarchy.woredas, newWoreda] });
+  const addZone = async (v: NewLocation) => {
+    const zone: Zone = { id: newId(), region_id: v.regionId, name: v.name, code: v.code };
+    await persistHierarchy({ ...locationHierarchy, zones: [zone, ...locationHierarchy.zones] });
+    setZoneRegionFilter(v.regionId); // show the region the new zone is in
+    toast.success(`Zone "${v.name}" added.`);
+  };
+
+  const addWoreda = async (v: NewLocation) => {
+    const woreda: Woreda = { id: newId(), zone_id: v.zoneId, name: v.name, code: v.code };
+    await persistHierarchy({ ...locationHierarchy, woredas: [woreda, ...locationHierarchy.woredas] });
+    setWoredaRegionFilter(v.regionId);
+    setWoredaZoneFilter(v.zoneId);
+    toast.success(`Woreda "${v.name}" added.`);
   };
 
   if (loading) {
@@ -764,7 +767,7 @@ export default function SystemSettingsPage() {
                                 {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                             </select>
                         </div>
-                        <Button onClick={addZone} className="bg-black text-white rounded-xl h-10 px-6 font-black gap-2 text-xs">
+                        <Button onClick={() => setAddDialog("zone")} className="bg-black text-white rounded-xl h-10 px-6 font-black gap-2 text-xs">
                             <Plus className="h-4 w-4" /> Add Zone
                         </Button>
                     </div>
@@ -1062,7 +1065,7 @@ export default function SystemSettingsPage() {
                                 }
                             </select>
                         </div>
-                        <Button onClick={addWoreda} disabled={locationHierarchy.zones.length === 0} className="bg-black text-white rounded-xl h-10 px-6 font-black gap-2 text-xs">
+                        <Button onClick={() => setAddDialog("woreda")} disabled={locationHierarchy.zones.length === 0} className="bg-black text-white rounded-xl h-10 px-6 font-black gap-2 text-xs">
                             <Plus className="h-4 w-4" /> Add Woreda
                         </Button>
                     </div>
@@ -1448,6 +1451,27 @@ export default function SystemSettingsPage() {
         </div>
       </div>
     </div>
+    <AddLocationDialog
+      kind="zone"
+      open={addDialog === "zone"}
+      onClose={() => setAddDialog((d) => (d === "zone" ? null : d))}
+      regions={regions}
+      zones={locationHierarchy.zones}
+      woredas={locationHierarchy.woredas}
+      defaultRegionId={zoneRegionFilter === "all" ? undefined : zoneRegionFilter}
+      onSubmit={addZone}
+    />
+    <AddLocationDialog
+      kind="woreda"
+      open={addDialog === "woreda"}
+      onClose={() => setAddDialog((d) => (d === "woreda" ? null : d))}
+      regions={regions}
+      zones={locationHierarchy.zones}
+      woredas={locationHierarchy.woredas}
+      defaultRegionId={woredaRegionFilter === "all" ? undefined : woredaRegionFilter}
+      defaultZoneId={woredaZoneFilter === "all" ? undefined : woredaZoneFilter}
+      onSubmit={addWoreda}
+    />
     </SuperAdminGuard>
   );
 }

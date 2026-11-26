@@ -17,6 +17,10 @@ import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X,
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
+import { ImportReviewDialog } from "@/components/admin/ImportReviewDialog";
+import { useImportFlow } from "@/components/admin/useImportFlow";
+import { buildTemplateWorkbook, downloadWorkbook } from "@/lib/excel-import";
+import { memberImportConfig } from "@/lib/import-columns";
 import { getUserScope, type UserScope } from "@/lib/auth-scope";
 import { DateFilterControls } from "@/components/admin/DateFilterControls";
 import { dateBounds, validLocalDate, type DatePreset } from "@/lib/date-filters";
@@ -60,7 +64,9 @@ const DEFAULT_REGIONS: Region[] = [
   { id: 11, name: "Harari", code: "HR" },
   { id: 12, name: "Sidama", code: "SD" },
   { id: 13, name: "South West Ethiopia", code: "SW" },
-  { id: 14, name: "South Ethiopia", code: "SE" }
+  { id: 14, name: "South Ethiopia", code: "SE" },
+  { id: 16, name: "Moyale Special Woreda", code: "MY" },
+  { id: 17, name: "Humera Special Woreda", code: "HM" }
 ];
 
 export default function MembersPage() {
@@ -337,243 +343,61 @@ export default function MembersPage() {
     }
   };
   
+  const importRegions = useMemo(
+    () => regions.map((r) => ({ id: Number(r.id), name: r.name })),
+    [regions]
+  );
+
+  // A regional admin imports into their own region only, so the template has no Region column.
+  const buildMemberConfig = () => {
+    const lockedId = isRegionLocked && userScope ? Number(userScope.regionNumber || userScope.regionId) : 0;
+    const locked = lockedId
+      ? { id: lockedId, name: importRegions.find((r) => r.id === lockedId)?.name || userScope?.regionName || `Region ${lockedId}` }
+      : null;
+    return memberImportConfig(importRegions, locked);
+  };
+
+  const importFlow = useImportFlow({
+    getConfig: buildMemberConfig,
+    regions: importRegions,
+    fileLabel: "member_import",
+    batchSize: 25,
+    submit: async (batch) => {
+      const lockedId = isRegionLocked && userScope ? Number(userScope.regionNumber || userScope.regionId) : 0;
+      const people = batch.map(({ clean }) => ({
+        first_name: clean.firstName,
+        father_name: clean.fatherName,
+        grandfather_name: clean.grandfatherName || "",
+        email: clean.email || "",
+        phone_number: clean.phone,
+        national_id: clean.nationalId || "",
+        date_of_birth: clean.dob || "",
+        gender: clean.gender || "",
+        region: Number(clean.region) || lockedId,
+        membership_type: clean.membershipType,
+        metadata: "{}",
+      }));
+      const res = await api.post("/person/bulk", people);
+      return (res.data as { success: boolean; error?: string }[]).map((r) => (r.success ? null : r.error || "Could not save this row."));
+    },
+    onFinished: () => fetchMembers(),
+  });
+
   const downloadTemplate = async () => {
     try {
-        const ExcelJS = (await import("exceljs")).default;
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("Member Import");
-
-        // Add headers
-        const headers = [
-            "First Name", 
-            "Father Name", 
-            "Grandfather Name", 
-            "Email", 
-            "Phone Number", 
-            "National ID", 
-            "Date of Birth (YYYY-MM-DD)", 
-            "Gender", 
-            "Region (Select from list)", 
-            "Membership Type"
-        ];
-        
-        const headerRow = worksheet.addRow(headers);
-        headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-        headerRow.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFED1C24' } // ERCS Red
-        };
-        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
-        headerRow.height = 25;
-
-        // Add a helper sheet for data validation source
-        const helperSheet = workbook.addWorksheet("HelperLists");
-        // Hide helper sheet using state instead of option to ensure compatibility
-        helperSheet.state = 'hidden';
-        
-        // Regions: Format as "ID - Name" so parseInt works automatically on import
-        const regionOptions = regions.map(r => `${r.id} - ${r.name}`);
-        if (regionOptions.length === 0) {
-            // Fallback if regions not loaded
-            [
-                "1 - Addis Ababa", "2 - Dire Dawa", "3 - Tigray", "4 - Afar", 
-                "5 - Amhara", "6 - Oromia", "7 - Somali", "8 - Benishangul Gumz", 
-                "9 - Central Ethiopia", "10 - Gambela", "11 - Harari", "12 - Sidama", 
-                "13 - South West Ethiopia", "14 - South Ethiopia"
-            ].forEach((opt, i) => helperSheet.getCell(`A${i+1}`).value = opt);
-        } else {
-            regionOptions.forEach((opt, i) => helperSheet.getCell(`A${i+1}`).value = opt);
-        }
-
-        const membershipOptions = [
-            "REGULAR", "INDIVIDUAL_LIFETIME", "FAMILY_LIFETIME", 
-            "CORP_REGULAR", "CORP_HIGH", "CORP_SPECIAL", "YOUTH"
-        ];
-        membershipOptions.forEach((opt, i) => helperSheet.getCell(`B${i+1}`).value = opt);
-
-        const genderOptions = ["MALE", "FEMALE"];
-        genderOptions.forEach((opt, i) => helperSheet.getCell(`C${i+1}`).value = opt);
-
-        // Apply column widths and formats
-        worksheet.columns = [
-            { width: 20 }, { width: 20 }, { width: 20 }, { width: 25 }, 
-            { width: 20 }, { width: 15 }, { width: 25 }, { width: 12 }, 
-            { width: 30 }, { width: 25 }
-        ];
-
-        // Ensure Date of Birth column (G) is treated as text to avoid Excel date auto-formatting issues
-        worksheet.getColumn(7).numFmt = '@'; 
-
-        // Apply Data Validation
-        const rowCount = 500; // Apply to first 500 rows
-        const regionCount = Math.max(regionOptions.length, 14);
-        const membershipCount = membershipOptions.length;
-        const genderCount = genderOptions.length;
-
-        for (let i = 2; i <= rowCount; i++) {
-            // Gender (Column H)
-            worksheet.getCell(`H${i}`).dataValidation = {
-                type: 'list',
-                allowBlank: true,
-                formulae: [`'HelperLists'!$C$1:$C$${genderCount}`],
-                showErrorMessage: true,
-                errorTitle: 'Invalid Selection',
-                error: 'Please select from the list.'
-            };
-            // Region (Column I)
-            worksheet.getCell(`I${i}`).dataValidation = {
-                type: 'list',
-                allowBlank: true,
-                formulae: [`'HelperLists'!$A$1:$A$${regionCount}`],
-                showErrorMessage: true,
-                errorTitle: 'Invalid Selection',
-                error: 'Please select from the list.'
-            };
-            // Membership Type (Column J)
-            worksheet.getCell(`J${i}`).dataValidation = {
-                type: 'list',
-                allowBlank: true,
-                formulae: [`'HelperLists'!$B$1:$B$${membershipCount}`],
-                showErrorMessage: true,
-                errorTitle: 'Invalid Selection',
-                error: 'Please select from the list.'
-            };
-        }
-
-        // Add example row
-        worksheet.addRow([
-            "John", "Doe", "Smith", "john.doe@example.com", "251912345678", 
-            "ID123456", "1990-01-01", "MALE", "1 - Addis Ababa", "REGULAR"
-        ]);
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "ercs_member_import_template.xlsx";
-        link.click();
-        
-        toast.success("Excel Import Template Downloaded");
+      const wb = await buildTemplateWorkbook(buildMemberConfig());
+      await downloadWorkbook(wb, "ercs_member_import_template.xlsx");
+      toast.success("Template downloaded. Open the Instructions sheet first.");
     } catch (err) {
-        console.error("Template generation failed:", err);
-        toast.error("Failed to generate Excel template.");
+      console.error("Template generation failed:", err);
+      toast.error("Failed to generate Excel template.");
     }
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    const normalizeDate = (val: any) => {
-      if (!val) return "";
-      if (val instanceof Date) return val.toISOString().split('T')[0];
-      const s = String(val).trim();
-      if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(s)) {
-        const [d, m, y] = s.split('-');
-        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-      }
-      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
-        const [d, m, y] = s.split('/');
-        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-      }
-      return s;
-    };
-
-    if (file.name.endsWith('.xlsx')) {
-        toast.loading("Parsing Excel...");
-        try {
-            const ExcelJS = (await import("exceljs")).default;
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-                try {
-                    const buffer = event.target?.result as ArrayBuffer;
-                    const workbook = new ExcelJS.Workbook();
-                    await workbook.xlsx.load(buffer);
-                    const worksheet = workbook.getWorksheet(1);
-                    
-                    const people: any[] = [];
-                    worksheet?.eachRow((row, rowNumber) => {
-                        if (rowNumber === 1) return;
-                        const firstName = row.getCell(1).text;
-                        if (!firstName || firstName.trim() === "") return;
-
-                        people.push({
-                            first_name: firstName,
-                            father_name: row.getCell(2).text,
-                            grandfather_name: row.getCell(3).text,
-                            email: row.getCell(4).text,
-                            phone_number: String(row.getCell(5).text || ""),
-                            national_id: String(row.getCell(6).text || ""),
-                            date_of_birth: normalizeDate(row.getCell(7).value),
-                            gender: row.getCell(8).text,
-                            region: parseInt(row.getCell(9).text) || 1,
-                            membership_type: row.getCell(10).text,
-                            metadata: "{}" // Important: Prevents JSONB DB error
-                        });
-                    });
-
-                    if (people.length === 0) {
-                        toast.dismiss();
-                        toast.error("No valid data found.");
-                        return;
-                    }
-
-                    const res = await api.post("/person/bulk", people);
-                    toast.dismiss();
-                    const successCount = res.data.filter((r: any) => r.success).length;
-                    const failCount = res.data.length - successCount;
-                    if (failCount === 0) toast.success(`Imported all ${successCount} members.`);
-                    else toast.warning(`Imported ${successCount}. ${failCount} failed.`);
-                    fetchMembers();
-                } catch (err) {
-                    toast.dismiss();
-                    toast.error("Failed to process Excel data.");
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        } catch (err) {
-            toast.dismiss();
-            toast.error("Excel parser error.");
-        }
-    } else {
-        toast.loading("Parsing CSV...");
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const text = event.target?.result as string;
-                const rows = text.split("\n").slice(1).filter(r => r.trim());
-                const people = rows.map(row => {
-                    const [fn, fat, gfat, em, ph, ni, dob, gen, reg, typ] = row.split(",").map(c => c.trim());
-                    return {
-                        first_name: fn,
-                        father_name: fat,
-                        grandfather_name: gfat,
-                        email: em,
-                        phone_number: ph,
-                        national_id: ni,
-                        date_of_birth: dob,
-                        gender: gen,
-                        region: parseInt(reg) || 1,
-                        membership_type: typ,
-                        metadata: "{}"
-                    };
-                });
-                const res = await api.post("/person/bulk", people);
-                toast.dismiss();
-                const successCount = res.data.filter((r: any) => r.success).length;
-                if (successCount === res.data.length) toast.success(`Imported all ${successCount} members.`);
-                else toast.warning(`Partial success: ${successCount}/${res.data.length}`);
-                fetchMembers();
-            } catch (err) {
-                toast.dismiss();
-                toast.error("Bulk import failed.");
-            }
-        };
-        reader.readAsText(file);
-    }
     e.target.value = "";
+    if (file) await importFlow.openFile(file);
   };
 
   const exportToPDF = () => {
@@ -629,7 +453,7 @@ export default function MembersPage() {
             <div className="relative">
                 <Input 
                     type="file" 
-                    accept=".csv,.xlsx" 
+                    accept=".xlsx" 
                     onChange={handleImport} 
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
@@ -1263,6 +1087,14 @@ export default function MembersPage() {
           </div>
       </div>
       
+      <ImportReviewDialog
+        state={importFlow.state}
+        noun="members"
+        onImportValid={importFlow.importValid}
+        onDownloadErrors={() => importFlow.downloadErrors()}
+        onClose={importFlow.close}
+      />
+
       {showAddMemberModal && (
         <AddMemberModal 
             onClose={() => setShowAddMemberModal(false)} 

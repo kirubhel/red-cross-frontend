@@ -61,7 +61,9 @@ export function AddMemberModal({ onClose, onSuccess, regions, defaultRegion, isR
         11: "REGION_harari",
         12: "REGION_sidama",
         13: "REGION_south_west_ethiopia",
-        14: "REGION_south_ethiopia"
+        14: "REGION_south_ethiopia",
+        16: "REGION_moyale_special_woreda",
+        17: "REGION_humera_special_woreda"
       };
 
       const payload = {

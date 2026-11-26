@@ -85,7 +85,7 @@ export default function OrganizationsRegisterPage() {
         description: formData.description,
       });
 
-      toast.success("Organization registration submitted successfully!");
+      toast.success("Registration submitted. You can sign in once ERCS approves your organization.", { duration: 8000 });
       router.push("/login");
     } catch (err: any) {
       console.error("Failed to submit organization registration:", err);

@@ -95,6 +95,8 @@ const DEFAULT_REGIONS = [
   { label: "Sidama", value: 12 },
   { label: "South West Ethiopia", value: 13 },
   { label: "South Ethiopia", value: 14 },
+  { label: "Moyale Special Woreda", value: 16 },
+  { label: "Humera Special Woreda", value: 17 },
 ];
 
 const MODULE_PERMISSIONS = [
@@ -424,8 +426,21 @@ export default function UserManagementPage() {
   }, [branches, form.region, form.zone, adminScope]);
 
   const handleCreateUser = async () => {
-    if (!form.email || !form.password) {
-      toast.error("Email and password are required.");
+    if (!form.email) {
+      toast.error("Email is required.");
+      return;
+    }
+    if (!form.phone_number) {
+      toast.error("Phone number is required so we can SMS the sign-in details.");
+      return;
+    }
+    const isStaffRole = [1, 2, 3, 4, 7].includes(Number(form.role));
+    if (!form.password && !isStaffRole) {
+      toast.error("Password is required for this role.");
+      return;
+    }
+    if (form.password && form.password.length < 8) {
+      toast.error("A temporary password must be at least 8 characters.");
       return;
     }
     setSaving(true);
@@ -433,7 +448,7 @@ export default function UserManagementPage() {
       const finalPhone = buildFullPhoneNumber(countryIso, form.phone_number);
       const effectiveRegion = adminScope.isSuper ? form.region : adminScope.regionId;
 
-      await api.post("/users/create", {
+      const created = await api.post("/users/create", {
         email: form.email,
         phone_number: finalPhone,
         password: form.password,
@@ -444,7 +459,11 @@ export default function UserManagementPage() {
         branch_id: form.branch,
       });
 
-      toast.success("User created successfully.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> });
+      if (created.data?.sms_sent === false) {
+        toast.warning("User created, but the sign-in SMS could not be sent. Check the phone number and ask them to use Forgot password.");
+      } else {
+        toast.success("User created. Sign-in details were sent by SMS.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> });
+      }
       setShowCreate(false);
       setForm({
         email: "",
@@ -459,7 +478,8 @@ export default function UserManagementPage() {
       fetchUsers();
     } catch (err: any) {
       console.error(err);
-      toast.error("Failed to create user.", { icon: <XCircle className="h-5 w-5 text-[#ED1C24]" /> });
+      const serverMsg = typeof err.response?.data === "string" ? err.response.data.trim() : "";
+      toast.error(serverMsg || "Failed to create user.", { icon: <XCircle className="h-5 w-5 text-[#ED1C24]" /> });
     } finally {
       setSaving(false);
     }
@@ -850,15 +870,15 @@ export default function UserManagementPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Password *</Label>
+                      <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Temporary Password</Label>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
                           value={form.password}
                           onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                          placeholder="Minimum 8 characters"
+                          placeholder="Leave blank to auto-generate"
                           className="h-10 rounded-xl bg-gray-50 text-black border-gray-200 font-bold text-sm pr-10"
-                          required
+                          autoComplete="new-password"
                         />
                         <button
                           type="button"
@@ -868,6 +888,9 @@ export default function UserManagementPage() {
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
+                      <p className="text-[11px] text-gray-500">
+                        Admin roles get the sign-in link, email and this password by SMS, and must change it at first login.
+                      </p>
                     </div>
 
                     <div className="space-y-1.5">

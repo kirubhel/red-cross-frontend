@@ -13,6 +13,9 @@ export const REGIONS = [
   { id: 12, name: "Sidama", value: "REGION_sidama" },
   { id: 13, name: "South West Ethiopia", value: "REGION_south_west_ethiopia" },
   { id: 14, name: "South Ethiopia", value: "REGION_south_ethiopia" },
+  // 15 is reserved for the legacy "Contested" map region.
+  { id: 16, name: "Moyale Special Woreda", value: "REGION_moyale_special_woreda" },
+  { id: 17, name: "Humera Special Woreda", value: "REGION_humera_special_woreda" },
 ];
 
 export const REGION_MAP_VALUE_TO_ID: Record<string, number> = {
@@ -30,6 +33,8 @@ export const REGION_MAP_VALUE_TO_ID: Record<string, number> = {
     "REGION_sidama": 12,
     "REGION_south_west_ethiopia": 13,
     "REGION_south_ethiopia": 14,
+    "REGION_moyale_special_woreda": 16,
+    "REGION_humera_special_woreda": 17,
 };
 
 export const GENDER_OPTIONS = [
@@ -279,7 +284,9 @@ export const REGION_NAME_TO_ID: Record<string, number> = {
   "harari": 11, "hr": 11, "harari branch": 11, "region_harari": 11,
   "sidama": 12, "sd": 12, "sidama branch": 12, "region_sidama": 12,
   "south west ethiopia": 13, "sw": 13, "south west ethiopia branch": 13, "region_south_west_ethiopia": 13,
-  "south ethiopia": 14, "se": 14, "south ethiopia branch": 14, "region_south_ethiopia": 14, "southern ethiopia": 14
+  "south ethiopia": 14, "se": 14, "south ethiopia branch": 14, "region_south_ethiopia": 14, "southern ethiopia": 14,
+  "moyale special woreda": 16, "moyale": 16, "my": 16, "moyale special woreda branch": 16, "region_moyale_special_woreda": 16,
+  "humera special woreda": 17, "humera": 17, "hm": 17, "humera special woreda branch": 17, "region_humera_special_woreda": 17
 };
 
 export function resolveRegionId(
