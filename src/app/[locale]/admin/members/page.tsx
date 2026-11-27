@@ -25,7 +25,10 @@ import { getUserScope, type UserScope } from "@/lib/auth-scope";
 import { DateFilterControls } from "@/components/admin/DateFilterControls";
 import { dateBounds, validLocalDate, type DatePreset } from "@/lib/date-filters";
 import { memberPaymentChannel, registrationSource } from "@/lib/payment-source";
-import { ETHIOPIA_LOCATION_DATA, REGIONS as REGION_CATALOG, getWoredasForZone } from "@/lib/constants";
+
+// Zone filter value for people with no zone on record (the API matches it to an empty zone).
+const ZONE_NOT_RECORDED = "__none__";
+import { ETHIOPIA_LOCATION_DATA, REGIONS as REGION_CATALOG, getWoredasForZone, getWoredaName, getZoneName } from "@/lib/constants";
 
 type Member = {
   id: string;
@@ -206,11 +209,14 @@ export default function MembersPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [userScope, setUserScope] = useState<UserScope | null>(null);
   const [isRegionLocked, setIsRegionLocked] = useState(false);
+  // Zonal admins (and branch officers) are fixed to their zone, woreda admins to their woreda.
+  const [isZoneLocked, setIsZoneLocked] = useState(false);
+  const [isWoredaLocked, setIsWoredaLocked] = useState(false);
   const requestIdRef = useRef(0);
   // Zones and woredas come from the same catalogue the registration form uses, so the values
   // match what is stored on each person.
   const zoneOptions = ETHIOPIA_LOCATION_DATA[REGION_CATALOG.find((r) => String(r.id) === regionFilter)?.value || ""]?.zones || [];
-  const woredaOptions = zoneFilter ? getWoredasForZone(zoneFilter) : [];
+  const woredaOptions = zoneFilter && zoneFilter !== ZONE_NOT_RECORDED ? getWoredasForZone(zoneFilter) : [];
   const [pageSize, setPageSize] = useState(10);
   // Selected members can span pages, so keep their records here for copy/export.
   const selectedCache = useRef<Map<string, Member>>(new Map());
@@ -364,6 +370,25 @@ export default function MembersPage() {
     setIsRegionLocked(hasRegionalLock);
     if (hasRegionalLock && scope.regionId) {
       setRegionFilter(scope.regionId);
+    }
+    const zoneLimited = (scope.isZonalAdmin || scope.isBranchOfficer || scope.isWoredaAdmin) && Boolean(scope.zoneId);
+    if (zoneLimited) {
+      setZoneFilter(scope.zoneId);
+      setIsZoneLocked(true);
+    }
+    if (scope.isWoredaAdmin && scope.woredaId) {
+      setWoredaFilter(scope.woredaId);
+      setIsWoredaLocked(true);
+    }
+    // Links from the dashboard: ?region=1&zone=ZONE_aa_bole (or zone=__none__ for no zone on record).
+    const urlRegion = params.get("region");
+    if (!hasRegionalLock && urlRegion && REGION_CATALOG.some((r) => String(r.id) === urlRegion)) {
+      setRegionFilter(urlRegion);
+    }
+    const urlZone = params.get("zone");
+    if (!zoneLimited && urlZone && /^[\w .-]{1,100}$/.test(urlZone)) {
+      setZoneFilter(urlZone);
+      setShowFilters(true);
     }
 
     fetchRegions();
@@ -523,7 +548,17 @@ export default function MembersPage() {
     const locked = lockedId
       ? { id: lockedId, name: importRegions.find((r) => r.id === lockedId)?.name || userScope?.regionName || `Region ${lockedId}` }
       : null;
-    return memberImportConfig(importRegions, locked);
+    // A zonal admin's file goes to their zone and a woreda admin's to their woreda; the server
+    // enforces it, the template just says so and drops the columns they cannot choose.
+    const zoneLimited = userScope && (userScope.isZonalAdmin || userScope.isBranchOfficer) && userScope.zoneId;
+    const woredaLimited = userScope && userScope.isWoredaAdmin && userScope.woredaId;
+    const area = locked
+      ? {
+          zone: zoneLimited ? getZoneName(userScope!.zoneId, userScope!.regionId) : undefined,
+          woreda: woredaLimited ? getWoredaName(userScope!.woredaId, userScope!.zoneId) : undefined,
+        }
+      : null;
+    return memberImportConfig(importRegions, locked, area);
   };
 
   const importFlow = useImportFlow({
@@ -578,9 +613,10 @@ export default function MembersPage() {
   };
 
   const resetFilters = () => {
-    setRegionFilter("");
-    setZoneFilter("");
-    setWoredaFilter("");
+    // Levels fixed by the admin's role stay as they are.
+    if (!isRegionLocked) setRegionFilter("");
+    if (!isZoneLocked) setZoneFilter("");
+    if (!isWoredaLocked) setWoredaFilter("");
     setMainCategory("");
     setPaymentFilter("");
     setStatusFilter("");
@@ -754,22 +790,29 @@ export default function MembersPage() {
                   id="mf-zone"
                   value={zoneFilter}
                   onChange={(e) => { setZoneFilter(e.target.value); setWoredaFilter(""); }}
-                  disabled={!regionFilter || zoneOptions.length === 0}
+                  disabled={isZoneLocked || !regionFilter}
                   className={filterSelect}
                 >
-                  <option value="">{!regionFilter ? "Choose a region first" : zoneOptions.length === 0 ? "No zones listed" : "All zones"}</option>
+                  <option value="">{!regionFilter ? "Choose a region first" : "All zones"}</option>
+                  {regionFilter && <option value={ZONE_NOT_RECORDED}>Zone not recorded</option>}
                   {zoneOptions.map((z) => (
                     <option key={z.id} value={z.id}>{z.name}</option>
                   ))}
+                  {isZoneLocked && !zoneOptions.some((z) => z.id === zoneFilter) && zoneFilter && (
+                    <option value={zoneFilter}>{getZoneName(zoneFilter, regionFilter)}</option>
+                  )}
                 </select>
               </div>
               <div>
                 <label htmlFor="mf-woreda" className={filterLabel}>Woreda</label>
-                <select id="mf-woreda" value={woredaFilter} onChange={(e) => setWoredaFilter(e.target.value)} disabled={!zoneFilter} className={filterSelect}>
-                  <option value="">{zoneFilter ? "All woredas" : "Choose a zone first"}</option>
+                <select id="mf-woreda" value={woredaFilter} onChange={(e) => setWoredaFilter(e.target.value)} disabled={isWoredaLocked || !zoneFilter || zoneFilter === ZONE_NOT_RECORDED} className={filterSelect}>
+                  <option value="">{zoneFilter && zoneFilter !== ZONE_NOT_RECORDED ? "All woredas" : "Choose a zone first"}</option>
                   {woredaOptions.map((w) => (
                     <option key={w.id} value={w.id}>{w.name}</option>
                   ))}
+                  {isWoredaLocked && !woredaOptions.some((w) => w.id === woredaFilter) && (
+                    <option value={woredaFilter}>{getWoredaName(woredaFilter, zoneFilter)}</option>
+                  )}
                 </select>
               </div>
             </div>
@@ -890,7 +933,7 @@ export default function MembersPage() {
               </TableHead>
               <TableHead>ID</TableHead>
               <TableHead>Full Identity</TableHead>
-              <TableHead>Region</TableHead>
+              <TableHead>Region / Zone</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Payment method</TableHead>
               <TableHead>Registered date</TableHead>
@@ -985,8 +1028,17 @@ export default function MembersPage() {
                         <SourceBadge source={member.registration_source} />
                     </div>
                   </TableCell>
-                  <TableCell className="font-black text-[9px] uppercase tracking-wider text-gray-400">
-                    {(regions || DEFAULT_REGIONS).find(r => String(r.id) === String(member.region))?.name || String(member.region)}
+                  <TableCell>
+                    <span className="block font-black text-[9px] uppercase tracking-wider text-gray-400">
+                      {(regions || DEFAULT_REGIONS).find(r => String(r.id) === String(member.region))?.name || String(member.region)}
+                    </span>
+                    {member.zone_id || member.woreda_id ? (
+                      <span className="mt-0.5 block text-[11px] font-semibold normal-case tracking-normal text-gray-600">
+                        {[member.zone_id && getZoneName(member.zone_id, member.region), member.woreda_id && getWoredaName(member.woreda_id, member.zone_id)].filter(Boolean).join(" · ")}
+                      </span>
+                    ) : (
+                      <span className="mt-0.5 block text-[11px] font-medium normal-case tracking-normal text-gray-400">Zone not recorded</span>
+                    )}
                   </TableCell>
                   <TableCell className="font-bold text-[11px] text-gray-500">
                     {(member as any).membership_type || (member as any).membershipType || "REGULAR"}
@@ -1197,8 +1249,8 @@ export default function MembersPage() {
                                             <p className="text-[10px] font-black text-gray-400 uppercase">Location Hierarchy</p>
                                             <p className="text-xs font-bold text-black">
                                                 {(regions || DEFAULT_REGIONS).find(r => String(r.id) === String(selectedMember.region))?.name || "Unknown Region"}
-                                                {((selectedMember as any).zone_id || (selectedMember as any).zoneId) && ` • ${(selectedMember as any).zone_id || (selectedMember as any).zoneId}`}
-                                                {((selectedMember as any).woreda_id || (selectedMember as any).woredaId) && ` • ${(selectedMember as any).woreda_id || (selectedMember as any).woredaId}`}
+                                                {((selectedMember as any).zone_id || (selectedMember as any).zoneId) && ` • ${getZoneName((selectedMember as any).zone_id || (selectedMember as any).zoneId, selectedMember.region)}`}
+                                                {((selectedMember as any).woreda_id || (selectedMember as any).woredaId) && ` • ${getWoredaName((selectedMember as any).woreda_id || (selectedMember as any).woredaId, (selectedMember as any).zone_id)}`}
                                             </p>
                                         </div>
                                     </div>

@@ -119,6 +119,8 @@ export default function SystemSettingsPage() {
   const [setupLoading, setSetupLoading] = useState(false);
   const [sendingSmsOtp, setSendingSmsOtp] = useState(false);
   const [smsSent, setSmsSent] = useState(false);
+  const [confirmingDisable, setConfirmingDisable] = useState(false);
+  const [disablePassword, setDisablePassword] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentAssetKey, setCurrentAssetKey] = useState<string | null>(null);
@@ -274,17 +276,21 @@ export default function SystemSettingsPage() {
   };
 
   const disableMfa = async () => {
-    if (!confirm("Are you sure you want to disable Two-Factor Authentication (2FA) for your account?")) return;
+    // Turning 2FA off needs the account password, so a session left open cannot remove it.
+    if (!disablePassword) return;
     try {
       setSetupLoading(true);
-      await api.post("/auth/mfa/disable");
+      await api.post("/auth/mfa/disable", { current_password: disablePassword });
       setIs2faEnabled(false);
       setSetupSuccess(false);
       setMfaSetup(null);
+      setConfirmingDisable(false);
+      setDisablePassword("");
       alert("Two-Factor Authentication has been disabled.");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to disable MFA", err);
-      alert("Failed to disable 2FA.");
+      const msg = String(err?.response?.data?.message || err?.response?.data || "");
+      alert(/incorrect/i.test(msg) ? "Your password is incorrect." : "Failed to disable 2FA.");
     } finally {
       setSetupLoading(false);
     }
@@ -1205,13 +1211,39 @@ export default function SystemSettingsPage() {
                             >
                                 Reconfigure
                             </Button>
-                            <Button 
-                                onClick={disableMfa}
-                                disabled={setupLoading}
-                                className="h-11 px-6 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg shadow-red-600/15"
-                            >
-                                {setupLoading ? "Processing..." : "Disable 2FA"}
-                            </Button>
+                            {confirmingDisable ? (
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="password"
+                                        value={disablePassword}
+                                        onChange={(e) => setDisablePassword(e.target.value)}
+                                        placeholder="Your password"
+                                        autoComplete="current-password"
+                                        className="h-11 w-44 rounded-xl border border-gray-300 bg-white px-3 text-sm font-bold"
+                                    />
+                                    <Button
+                                        onClick={disableMfa}
+                                        disabled={setupLoading || !disablePassword}
+                                        className="h-11 px-5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs uppercase tracking-wider"
+                                    >
+                                        {setupLoading ? "Processing..." : "Confirm"}
+                                    </Button>
+                                    <Button
+                                        onClick={() => { setConfirmingDisable(false); setDisablePassword(""); }}
+                                        variant="outline"
+                                        className="h-11 px-4 rounded-xl font-black text-xs uppercase tracking-wider border-gray-300 hover:bg-white"
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button
+                                    onClick={() => setConfirmingDisable(true)}
+                                    className="h-11 px-6 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg shadow-red-600/15"
+                                >
+                                    Disable 2FA
+                                </Button>
+                            )}
                         </div>
                     </div>
                 ) : !mfaSetup && !setupSuccess ? (

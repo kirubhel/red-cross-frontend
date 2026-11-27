@@ -15,11 +15,23 @@ export const MEMBERSHIP_TYPES = [
   "YOUTH",
 ];
 
+function lockedNote(region: string, area?: { zone?: string; woreda?: string } | null): string {
+  const where = [region, area?.zone && `${area.zone} zone`, area?.woreda].filter(Boolean).join(" / ");
+  const columns = area?.zone || area?.woreda ? "There are no Region, Zone or Woreda columns." : "There is no Region column.";
+  return `All members in this file are added to your area: ${where}. ${columns}`;
+}
+
 /**
  * @param lockedRegion when the admin may only add people to their own region the Region column
  *        is left out and every row goes to that region.
+ * @param lockedArea names of the zone and/or woreda a zonal or woreda admin is limited to; the
+ *        server puts every row there, so the file needs no column for it.
  */
-export function memberImportConfig(regions: RegionOption[], lockedRegion?: RegionOption | null): ImportConfig {
+export function memberImportConfig(
+  regions: RegionOption[],
+  lockedRegion?: RegionOption | null,
+  lockedArea?: { zone?: string; woreda?: string } | null
+): ImportConfig {
   const columns: ImportColumn[] = [
     { key: "firstName", label: "First Name", required: true, kind: "name", width: 20, help: "Given name. Letters only.", example: "Abebe" },
     { key: "fatherName", label: "Father Name", required: true, kind: "name", width: 20, help: "Father's name. Letters only.", example: "Kebede" },
@@ -96,9 +108,7 @@ export function memberImportConfig(regions: RegionOption[], lockedRegion?: Regio
     title: "Ethiopian Red Cross: Member import",
     columns,
     regions: lockedRegion ? undefined : regions,
-    notes: lockedRegion
-      ? [`All members in this file are added to your region: ${lockedRegion.name}. There is no Region column.`]
-      : undefined,
+    notes: lockedRegion ? [lockedNote(lockedRegion.name, lockedArea)] : undefined,
   };
 }
 

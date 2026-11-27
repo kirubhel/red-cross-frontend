@@ -4,6 +4,7 @@
 
 import api from "@/lib/api";
 import { REGIONS } from "@/lib/constants";
+import { normalizeZone } from "@/lib/zone-breakdown";
 
 export type Role = "MEMBER" | "VOLUNTEER";
 export type Gender = "FEMALE" | "MALE" | "UNKNOWN";
@@ -16,6 +17,8 @@ export type RegistryRecord = {
   phone: string;
   /** 1-14, or 0 when the record has no usable region */
   regionId: number;
+  /** catalogue zone id, the zone as typed, or "" when no zone is on record */
+  zoneId: string;
   gender: Gender;
   /** age in whole years, or null when the birth date is missing or unparseable */
   age: number | null;
@@ -140,6 +143,7 @@ export async function loadRegistry(query: RegistryQuery = {}): Promise<RegistryL
       email: p.email || "",
       phone: p.phone_number || "",
       regionId: parseRegionId(p.region) || parseRegionId(p.region_id),
+      zoneId: normalizeZone(p.zone_id),
       gender: parseGender(p.gender),
       age: parseAge(p.date_of_birth),
       status: String(p.status || "UNKNOWN").toUpperCase(),
@@ -153,6 +157,7 @@ export async function loadRegistry(query: RegistryQuery = {}): Promise<RegistryL
       email: v.email || "",
       phone: v.phone_number || "",
       regionId: parseRegionId(v.region),
+      zoneId: normalizeZone(v.zone_id),
       gender: parseGender(v.gender),
       age: parseAge(v.date_of_birth),
       status: String(v.status || "UNKNOWN").toUpperCase(),

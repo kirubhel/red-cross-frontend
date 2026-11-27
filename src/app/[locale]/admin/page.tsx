@@ -11,7 +11,8 @@ import { getUserScope } from "@/lib/auth-scope";
 import { REGIONS, getWoredaName, getZoneName } from "@/lib/constants";
 import { REGION_NAME, SERIES, byRegion, formatNumber, loadRegistry, recentWindow, type RegistryLoad, type RegistryRecord } from "@/lib/registry-analytics";
 import { RegistryInsights } from "@/components/admin/analytics/RegistryInsights";
-import { Card, Empty, StatTile } from "@/components/admin/analytics/widgets";
+import { Card, Empty, HBarList, StatTile } from "@/components/admin/analytics/widgets";
+import { zoneBreakdown } from "@/lib/zone-breakdown";
 import { PageHeader } from "@/components/admin/page-ui";
 
 const DAY = 24 * 3600 * 1000;
@@ -113,6 +114,8 @@ export default function DashboardPage() {
   const members = scoped.filter((r) => r.role === "MEMBER").length;
   const volunteers = scoped.length - members;
   const window30 = recentWindow(scoped);
+  // Members per zone for the region in focus (a zonal admin is already one zone, so no breakdown).
+  const zones = useMemo(() => (regionId && !areaName ? zoneBreakdown(filtered, regionId) : null), [filtered, regionId, areaName]);
   const regionsCovered = byRegion(filtered).filter((r) => r.total > 0).length;
   const recent = useMemo(() => [...scoped].filter((r) => r.createdAt !== null).sort((a, b) => b.createdAt! - a.createdAt!).slice(0, 8), [scoped]);
 
@@ -231,6 +234,34 @@ export default function DashboardPage() {
       </div>
 
       <RegistryInsights records={filtered} regionId={regionId} onRegionChange={setRegionId} regionLocked={regionLocked} areaName={areaName} />
+
+      {zones && (
+        <Card
+          title={`Members by zone in ${REGION_NAME[regionId!]}`}
+          subtitle={
+            loading
+              ? "Loading…"
+              : zones.total === 0
+                ? "No members in this region yet."
+                : `${formatNumber(zones.recorded)} of ${formatNumber(zones.total)} members have a zone on record.`
+          }
+          action={
+            <Link href={`/admin/members?region=${regionId}`} className="inline-flex items-center gap-1 text-xs font-bold text-[#B5121B] hover:underline">
+              Open members <ArrowRight className="h-3 w-3" />
+            </Link>
+          }
+        >
+          {loading ? (
+            <Empty>Loading…</Empty>
+          ) : zones.total === 0 ? (
+            <Empty>No members for the current filters.</Empty>
+          ) : zones.recorded === 0 ? (
+            <Empty>None of these {formatNumber(zones.total)} members has a zone recorded yet, so they cannot be split by zone.</Empty>
+          ) : (
+            <HBarList items={zones.rows} onSelect={(key) => router.push(`/admin/members?region=${regionId}&zone=${key === "" ? "__none__" : encodeURIComponent(String(key))}`)} />
+          )}
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
         <Card

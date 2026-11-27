@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import api from "@/lib/api";
 import { getUserScope, type UserScope } from "@/lib/auth-scope";
 import { PageHeader, Panel } from "@/components/admin/page-ui";
+import { TwoFactorCard } from "@/components/admin/TwoFactorCard";
 import { Button } from "@/components/ui/button";
 
 type Form = {
@@ -187,7 +188,7 @@ export default function AdminProfilePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="My Profile" description="Your personal details, contact information and password." />
+      <PageHeader title="My Profile" description="Your personal details, contact information, password and two-factor sign-in." />
 
       <Panel
         title="Assigned jurisdiction"
@@ -294,6 +295,8 @@ export default function AdminProfilePage() {
           </div>
         </form>
       </Panel>
+
+      <TwoFactorCard />
     </div>
   );
 }
