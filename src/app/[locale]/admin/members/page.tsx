@@ -69,6 +69,19 @@ const DEFAULT_REGIONS: Region[] = [
   { id: 17, name: "Humera Special Woreda", code: "HM" }
 ];
 
+// Page numbers to show: first, last, and a window around the current page.
+function pageWindow(current: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = new Set([1, total, current - 1, current, current + 1]);
+  const sorted = Array.from(pages).filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+  const out: (number | "…")[] = [];
+  sorted.forEach((p, i) => {
+    if (i > 0 && p - sorted[i - 1] > 1) out.push("…");
+    out.push(p);
+  });
+  return out;
+}
+
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [regions, setRegions] = useState<Region[]>(DEFAULT_REGIONS);
@@ -86,6 +99,59 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editForm, setEditForm] = useState({ first_name: "", father_name: "", grandfather_name: "", phone_number: "", email: "", gender: "", date_of_birth: "" });
+
+  const startEditing = (m: Member) => {
+    setEditForm({
+      first_name: m.first_name || "",
+      father_name: m.father_name || "",
+      grandfather_name: m.grandfather_name || "",
+      phone_number: m.phone_number || "",
+      email: m.email || "",
+      gender: (m.gender || "").toUpperCase(),
+      date_of_birth: String((m as any).date_of_birth || "").slice(0, 10),
+    });
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (!selectedMember) return;
+    if (!editForm.first_name.trim() || !editForm.father_name.trim()) {
+      toast.error("First name and father name are required");
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      // The server only changes fields that are sent non-empty.
+      const payload: Record<string, string> = {};
+      (Object.keys(editForm) as (keyof typeof editForm)[]).forEach((k) => {
+        const v = editForm[k].trim();
+        if (v) payload[k] = v;
+      });
+      const res = await api.put(`/person/${selectedMember.id}`, payload);
+      const p = res.data?.person || {};
+      // Merge only what this form edits; the response encodes region as an enum name.
+      const updated = {
+        first_name: p.first_name ?? editForm.first_name,
+        father_name: p.father_name ?? editForm.father_name,
+        grandfather_name: p.grandfather_name ?? editForm.grandfather_name,
+        phone_number: p.phone_number ?? editForm.phone_number,
+        email: p.email ?? editForm.email,
+        gender: p.gender ?? editForm.gender,
+        date_of_birth: p.date_of_birth ?? editForm.date_of_birth,
+      };
+      setSelectedMember({ ...selectedMember, ...updated });
+      setMembers((prev) => prev.map((m) => (m.id === selectedMember.id ? { ...m, ...updated } : m)));
+      toast.success("Profile updated");
+      setEditing(false);
+    } catch (err: any) {
+      toast.error(typeof err?.response?.data === "string" ? err.response.data : err?.response?.data?.message || "Could not update this profile");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [page, setPage] = useState(1);
@@ -97,7 +163,10 @@ export default function MembersPage() {
   const [userScope, setUserScope] = useState<UserScope | null>(null);
   const [isRegionLocked, setIsRegionLocked] = useState(false);
   const requestIdRef = useRef(0);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
+  // Selected members can span pages, so keep their records here for copy/export.
+  const selectedCache = useRef<Map<string, Member>>(new Map());
+  const [selectingAll, setSelectingAll] = useState(false);
 
   const copyToClipboard = (text: string, label: string = "Member ID", e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -123,28 +192,67 @@ export default function MembersPage() {
   const toggleSelectAll = () => {
     const next = new Set(selectedMemberIds);
     if (isAllSelected) {
-      displayedMembers.forEach(m => next.delete(m.id));
+      displayedMembers.forEach(m => { next.delete(m.id); selectedCache.current.delete(m.id); });
     } else {
-      displayedMembers.forEach(m => next.add(m.id));
+      displayedMembers.forEach(m => { next.add(m.id); selectedCache.current.set(m.id, m); });
     }
     setSelectedMemberIds(next);
   };
 
-  const toggleSelectMember = (id: string, e?: React.MouseEvent) => {
+  const toggleSelectMember = (member: Member, e?: React.MouseEvent) => {
     e?.stopPropagation();
     const next = new Set(selectedMemberIds);
-    if (next.has(id)) {
-      next.delete(id);
+    if (next.has(member.id)) {
+      next.delete(member.id);
+      selectedCache.current.delete(member.id);
     } else {
-      next.add(id);
+      next.add(member.id);
+      selectedCache.current.set(member.id, member);
     }
     setSelectedMemberIds(next);
+  };
+
+  const clearSelection = () => {
+    selectedCache.current.clear();
+    setSelectedMemberIds(new Set());
+  };
+
+  const getSelectedMembers = () =>
+    Array.from(selectedMemberIds).map(id => selectedCache.current.get(id)).filter((m): m is Member => Boolean(m));
+
+  // Selects every member matching the current search/filters, across all pages.
+  const selectAllMatching = async () => {
+    setSelectingAll(true);
+    const toastId = "select-all-matching";
+    toast.loading(`Selecting ${totalItems} records...`, { id: toastId });
+    try {
+      const CHUNK = 500;
+      const all: Member[] = [];
+      for (let p = 1; ; p++) {
+        const res = await api.get(`/person?${buildMemberParams(p, CHUNK).toString()}`);
+        const batch: Member[] = res.data.people || [];
+        all.push(...batch);
+        const pages = res.data.pagination?.total_pages || 1;
+        if (p >= pages || batch.length === 0) break;
+      }
+      const scoped = userScope && !userScope.isSuperAdmin && userScope.regionNumber > 0
+        ? all.filter(m => !m.region || Number(m.region) === userScope.regionNumber)
+        : all;
+      const next = new Set<string>();
+      scoped.forEach(m => { next.add(m.id); selectedCache.current.set(m.id, m); });
+      setSelectedMemberIds(next);
+      toast.success(`Selected all ${next.size} matching records`, { id: toastId });
+    } catch (err) {
+      console.error("Select all matching error:", err);
+      toast.error("Could not select all records", { id: toastId });
+    } finally {
+      setSelectingAll(false);
+    }
   };
 
   const copySelectedIDs = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const ids = displayedMembers
-      .filter(m => selectedMemberIds.has(m.id))
+    const ids = getSelectedMembers()
       .map(m => m.ercs_id)
       .filter(Boolean)
       .join("\n");
@@ -158,8 +266,7 @@ export default function MembersPage() {
 
   const copySelectedPhones = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const phones = displayedMembers
-      .filter(m => selectedMemberIds.has(m.id))
+    const phones = getSelectedMembers()
       .map(m => m.phone_number)
       .filter(Boolean)
       .join("\n");
@@ -172,7 +279,7 @@ export default function MembersPage() {
   };
 
   const exportSelected = async (format: "xlsx" | "csv" = "xlsx") => {
-    const selectedList = displayedMembers.filter(m => selectedMemberIds.has(m.id));
+    const selectedList = getSelectedMembers();
     if (selectedList.length === 0) {
       toast.error("No members selected for export");
       return;
@@ -231,6 +338,7 @@ export default function MembersPage() {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
+      setEditing(false);
     }
     return () => { document.body.style.overflow = 'unset'; }
   }, [showModal]);
@@ -249,7 +357,15 @@ export default function MembersPage() {
         fetchMembers();
     }, 500); // Debounce search
     return () => clearTimeout(timer);
-  }, [searchReady, search, page, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, userScope, registrationFilter, registeredFrom, registeredTo]);
+  }, [searchReady, search, page, pageSize, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, userScope, registrationFilter, registeredFrom, registeredTo]);
+
+  // A selection belongs to the search/filters it was made under. Drop it when they
+  // change so a bulk action never reaches records that are no longer on screen.
+  useEffect(() => {
+    selectedCache.current.clear();
+    setSelectedMemberIds(new Set());
+    setPage(1);
+  }, [search, pageSize, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, registrationFilter, registeredFrom, registeredTo]);
 
   const fetchRegions = async () => {
     try {
@@ -265,19 +381,24 @@ export default function MembersPage() {
     }
   };
 
+  // Query for the members matching the current search and filters.
+  const buildMemberParams = (pageNum: number, size: number) => {
+    const scope = userScope || getUserScope();
+    const effectiveRegion = (!scope.isSuperAdmin && scope.regionId) ? scope.regionId : regionFilter;
+    const params = new URLSearchParams({ page: String(pageNum), page_size: String(size), members_only: "true", search: search.trim(), region: effectiveRegion, status: statusFilter, type: typeFilter, zone: zoneFilter, woreda: woredaFilter, category: mainCategory });
+    const bounds = dateBounds(registrationFilter, registeredFrom, registeredTo);
+    if (bounds) {
+      params.set("registered_from", bounds.from);
+      params.set("registered_before", bounds.before);
+    }
+    return params;
+  };
+
   const fetchMembers = async () => {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      const scope = userScope || getUserScope();
-      const effectiveRegion = (!scope.isSuperAdmin && scope.regionId) ? scope.regionId : regionFilter;
-      const params = new URLSearchParams({ page: String(page), page_size: String(pageSize), members_only: "true", search: search.trim(), region: effectiveRegion, status: statusFilter, type: typeFilter, zone: zoneFilter, woreda: woredaFilter, category: mainCategory });
-      const bounds = dateBounds(registrationFilter, registeredFrom, registeredTo);
-      if (bounds) {
-        params.set("registered_from", bounds.from);
-        params.set("registered_before", bounds.before);
-      }
-      const url = `/person?${params.toString()}`;
+      const url = `/person?${buildMemberParams(page, pageSize).toString()}`;
       const res = await api.get(url);
       if (requestId !== requestIdRef.current) return;
       setMembers(res.data.people || []);
@@ -647,9 +768,27 @@ export default function MembersPage() {
             <span className="inline-flex items-center justify-center px-3 py-1 bg-[#ED1C24] text-white rounded-full text-[10px] font-black tracking-wider uppercase shadow-sm">
               {selectedMemberIds.size} Selected
             </span>
-            <p className="text-xs font-bold text-gray-700 hidden sm:block">
-              Perform bulk actions on selected members:
-            </p>
+            {totalItems > selectedMemberIds.size && selectedMemberIds.size >= displayedMembers.length && isAllSelected ? (
+              <p className="text-xs font-bold text-gray-700">
+                All {displayedMembers.length} on this page are selected.{" "}
+                <button
+                  type="button"
+                  onClick={selectAllMatching}
+                  disabled={selectingAll}
+                  className="text-[#ED1C24] underline underline-offset-2 font-black disabled:opacity-50"
+                >
+                  {selectingAll ? "Selecting..." : `Select all ${totalItems} matching records`}
+                </button>
+              </p>
+            ) : selectedMemberIds.size >= totalItems && totalItems > displayedMembers.length ? (
+              <p className="text-xs font-bold text-gray-700">
+                All {totalItems} matching records are selected.
+              </p>
+            ) : (
+              <p className="text-xs font-bold text-gray-700 hidden sm:block">
+                Perform bulk actions on selected members:
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button
@@ -685,7 +824,7 @@ export default function MembersPage() {
               <FileText className="h-3.5 w-3.5" /> Export CSV
             </Button>
             <Button
-              onClick={() => setSelectedMemberIds(new Set())}
+              onClick={clearSelection}
               size="sm"
               variant="ghost"
               className="h-8 px-2.5 rounded-xl text-gray-400 hover:text-black font-black text-[10px] uppercase tracking-wider"
@@ -768,7 +907,7 @@ export default function MembersPage() {
                   <TableCell className="w-12 px-4 print:hidden">
                     <button
                       type="button"
-                      onClick={(e) => toggleSelectMember(member.id, e)}
+                      onClick={(e) => toggleSelectMember(member, e)}
                       aria-label={`Select member ${member.ercs_id}`}
                       className={cn(
                         "h-5 w-5 rounded-md border flex items-center justify-center transition-all cursor-pointer",
@@ -1021,6 +1160,52 @@ export default function MembersPage() {
                     </div>
 
                     <div className="px-8 pb-8">
+                        {editing && (
+                            <form
+                                onSubmit={(e) => { e.preventDefault(); saveEdit(); }}
+                                className="mb-6 p-6 rounded-2xl border border-gray-200 bg-white grid grid-cols-1 sm:grid-cols-2 gap-4"
+                            >
+                                <h4 className="sm:col-span-2 text-[9px] font-black text-gray-400 uppercase tracking-widest">Edit Profile</h4>
+                                {([
+                                    ["first_name", "First name", "text"],
+                                    ["father_name", "Father name", "text"],
+                                    ["grandfather_name", "Grandfather name", "text"],
+                                    ["phone_number", "Phone", "tel"],
+                                    ["email", "Email", "email"],
+                                    ["date_of_birth", "Date of birth", "date"],
+                                ] as const).map(([key, label, type]) => (
+                                    <label key={key} className="flex flex-col gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        {label}
+                                        <input
+                                            type={type}
+                                            value={editForm[key]}
+                                            onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))}
+                                            className="h-10 rounded-lg bg-gray-50 border border-gray-200 px-3 text-xs font-bold text-black normal-case tracking-normal"
+                                        />
+                                    </label>
+                                ))}
+                                <label className="flex flex-col gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                    Gender
+                                    <select
+                                        value={editForm.gender}
+                                        onChange={(e) => setEditForm((f) => ({ ...f, gender: e.target.value }))}
+                                        className="h-10 rounded-lg bg-gray-50 border border-gray-200 px-3 text-xs font-bold text-black normal-case tracking-normal"
+                                    >
+                                        <option value="">Select</option>
+                                        <option value="MALE">Male</option>
+                                        <option value="FEMALE">Female</option>
+                                    </select>
+                                </label>
+                                <div className="sm:col-span-2 flex justify-end gap-3 pt-2">
+                                    <Button type="button" variant="outline" onClick={() => setEditing(false)} className="rounded-xl h-10 font-black text-[10px] uppercase tracking-widest border-gray-200">
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" disabled={savingEdit} className="rounded-xl h-10 bg-[#ED1C24] text-white font-black text-[10px] uppercase tracking-widest">
+                                        {savingEdit ? "Saving..." : "Save Changes"}
+                                    </Button>
+                                </div>
+                            </form>
+                        )}
                         <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
                             <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">System Metadata</h4>
                             <pre className="text-[10px] font-mono text-gray-500 overflow-auto max-h-48">
@@ -1031,8 +1216,12 @@ export default function MembersPage() {
                             <Button className="flex-1 bg-black text-white rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest">
                                 Print Audit Record
                             </Button>
-                            <Button variant="outline" className="flex-1 rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest border-gray-200">
-                                Edit Profile
+                            <Button
+                                variant="outline"
+                                onClick={() => (editing ? setEditing(false) : startEditing(selectedMember))}
+                                className="flex-1 rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest border-gray-200"
+                            >
+                                {editing ? "Cancel Edit" : "Edit Profile"}
                             </Button>
                         </div>
                     </div>
@@ -1042,31 +1231,78 @@ export default function MembersPage() {
 
         {/* Pagination Footer */}
         <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between print:hidden">
-           <p className="text-[10px] font-black text-black/30 uppercase tracking-widest">
-             <span className="text-black">{totalItems}</span> Records Compiled
-           </p>
+           <div className="flex items-center gap-4">
+             <p className="text-[10px] font-black text-black/30 uppercase tracking-widest">
+               {totalItems === 0 ? "0" : <><span className="text-black">{(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalItems)}</span> of <span className="text-black">{totalItems}</span></>} Records
+             </p>
+             <label className="flex items-center gap-2 text-[10px] font-black text-black/30 uppercase tracking-widest">
+               Per page
+               <select
+                 value={pageSize}
+                 onChange={(e) => setPageSize(Number(e.target.value))}
+                 className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-[11px] font-black text-black"
+               >
+                 {[10, 25, 50, 100].map((n) => (
+                   <option key={n} value={n}>{n}</option>
+                 ))}
+               </select>
+             </label>
+           </div>
 
-           <div className="flex items-center gap-1">
-             <Button 
+           <nav aria-label="Pagination" className="flex items-center gap-1">
+             <Button
+               disabled={page === 1 || loading}
+               onClick={() => setPage(1)}
+               variant="outline"
+               aria-label="First page"
+               className="h-8 px-2 rounded-lg border-gray-200 bg-white text-[11px] font-black"
+             >
+               «
+             </Button>
+             <Button
                disabled={page === 1 || loading}
                onClick={() => setPage(page - 1)}
-               variant="outline" 
-               className="h-8 w-8 p-0 rounded-lg border-gray-200 bg-white"
+               variant="outline"
+               aria-label="Previous page"
+               className="h-8 px-2 rounded-lg border-gray-200 bg-white text-[11px] font-black"
              >
-               <span className="rotate-180">➤</span>
+               ‹
              </Button>
-             <div className="flex items-center justify-center h-8 px-3 bg-black rounded-lg text-[10px] font-black text-white">
-                {page}
-             </div>
-             <Button 
+             {pageWindow(page, totalPages).map((entry, i) =>
+               entry === "…" ? (
+                 <span key={`gap-${i}`} className="px-1 text-[11px] font-black text-gray-400">…</span>
+               ) : (
+                 <Button
+                   key={entry}
+                   disabled={loading}
+                   onClick={() => setPage(entry)}
+                   variant={entry === page ? "default" : "outline"}
+                   aria-current={entry === page ? "page" : undefined}
+                   className={`h-8 min-w-8 px-2 rounded-lg text-[11px] font-black ${entry === page ? "bg-black text-white" : "border-gray-200 bg-white text-black"}`}
+                 >
+                   {entry}
+                 </Button>
+               )
+             )}
+             <Button
                disabled={page >= totalPages || loading}
                onClick={() => setPage(page + 1)}
-               variant="outline" 
-               className="h-8 w-8 p-0 rounded-lg border-gray-200 bg-white"
+               variant="outline"
+               aria-label="Next page"
+               className="h-8 px-2 rounded-lg border-gray-200 bg-white text-[11px] font-black"
              >
-               <span>➤</span>
+               ›
              </Button>
-           </div>
+             <Button
+               disabled={page >= totalPages || loading}
+               onClick={() => setPage(totalPages)}
+               variant="outline"
+               aria-label="Last page"
+               className="h-8 px-2 rounded-lg border-gray-200 bg-white text-[11px] font-black"
+             >
+               »
+             </Button>
+           </nav>
         </div>
       </div>
 

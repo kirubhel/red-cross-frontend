@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import { useLocale } from "next-intl";
 import { Sidebar } from "@/components/layout/sidebar";
 import { toast } from "sonner";
@@ -315,8 +316,17 @@ export default function AdminLayoutClient({
               </div>
 
               {/* Account Dropdown */}
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 py-1 opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible translate-y-2 group-hover/profile:translate-y-0 transition-all z-50 overflow-hidden">
-                  <button 
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 py-1 opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible group-focus-within/profile:opacity-100 group-focus-within/profile:visible translate-y-2 group-hover/profile:translate-y-0 group-focus-within/profile:translate-y-0 transition-all z-50 overflow-hidden">
+                  <Link
+                    href={`/${locale}/admin/profile`}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:text-[#ED1C24] hover:bg-red-50/50 transition-all text-xs font-bold border-l-2 border-transparent hover:border-[#ED1C24]"
+                  >
+                    <div className="h-6 w-6 rounded-md bg-gray-50 flex items-center justify-center shadow-sm">
+                      <User className="h-3 w-3" />
+                    </div>
+                    My Profile
+                  </Link>
+                  <button
                     onClick={() => {
                       localStorage.removeItem("token");
                       window.location.href = "/login";

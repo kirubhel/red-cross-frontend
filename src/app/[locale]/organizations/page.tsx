@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import Header from "@/components/layout/Header";
 import PhoneNumberInput, { buildFullPhoneNumber } from "@/components/ui/phone-number-input";
 import api from "@/lib/api";
+import { REGIONS } from "@/lib/constants";
 import { toast } from "sonner";
 
 export default function OrganizationsRegisterPage() {
@@ -32,6 +33,7 @@ export default function OrganizationsRegisterPage() {
     orgName: "",
     orgType: "NGO / Non-Profit",
     otherOrgType: "",
+    regionId: "",
     contactPerson: "",
     email: "",
     phone: "",
@@ -68,6 +70,10 @@ export default function OrganizationsRegisterPage() {
       toast.error("Please fill in all required fields.");
       return;
     }
+    if (!formData.regionId) {
+      toast.error("Please select your region.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -83,6 +89,7 @@ export default function OrganizationsRegisterPage() {
         password: formData.password,
         website: formData.website,
         description: formData.description,
+        region_id: Number(formData.regionId),
       });
 
       toast.success("Registration submitted. You can sign in once ERCS approves your organization.", { duration: 8000 });
@@ -192,6 +199,25 @@ export default function OrganizationsRegisterPage() {
                       <option key={t} value={t}>{t}</option>
                     ))}
                     <option value="other">Other (Specify)</option>
+                  </select>
+                </div>
+
+                {/* Region: decides which ERCS regional office manages this organization */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-gray-600">
+                    Region *
+                  </label>
+                  <select
+                    name="regionId"
+                    required
+                    value={formData.regionId}
+                    onChange={handleChange}
+                    className="w-full h-10 px-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20 focus:border-[#ED1C24] transition-all"
+                  >
+                    <option value="">Select your region</option>
+                    {REGIONS.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>

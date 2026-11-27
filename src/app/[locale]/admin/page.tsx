@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { Users, HandHeart, UserPlus, MapPinned, Search, RefreshCw, Bell, Newspaper, BarChart3, ArrowRight, AlertTriangle, IdCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getUserScope } from "@/lib/auth-scope";
-import { REGIONS } from "@/lib/constants";
+import { REGIONS, getWoredaName, getZoneName } from "@/lib/constants";
 import { REGION_NAME, SERIES, byRegion, formatNumber, loadRegistry, recentWindow, type RegistryLoad, type RegistryRecord } from "@/lib/registry-analytics";
 import { RegistryInsights } from "@/components/admin/analytics/RegistryInsights";
 import { Card, Empty, StatTile } from "@/components/admin/analytics/widgets";
@@ -53,6 +53,8 @@ export default function DashboardPage() {
   const [regionId, setRegionId] = useState<number | null>(null);
   const [regionLocked, setRegionLocked] = useState(false);
   const [scopeLabel, setScopeLabel] = useState("");
+  // Name of the narrower area a zonal/woreda/branch admin is limited to; empty for regional and national views.
+  const [areaName, setAreaName] = useState("");
   const [quickSearch, setQuickSearch] = useState("");
   const [searchTarget, setSearchTarget] = useState<"members" | "volunteers">("members");
 
@@ -64,10 +66,24 @@ export default function DashboardPage() {
       const scoped = !scope.isSuperAdmin;
       setRegionLocked(scoped && Boolean(scope.regionId));
       if (scoped && scope.regionNumber) setRegionId(scope.regionNumber);
-      setScopeLabel(scope.isSuperAdmin ? "National view" : scope.regionName || "Regional view");
+      const zoneName = scope.isZonalAdmin && scope.zoneId ? getZoneName(scope.zoneId, scope.regionId) : "";
+      const woredaName = scope.isWoredaAdmin && scope.woredaId ? getWoredaName(scope.woredaId, scope.zoneId) : "";
+      const branchName = scope.isBranchOfficer && scope.zoneId ? getZoneName(scope.zoneId, scope.regionId) : "";
+      const area = zoneName || woredaName || branchName;
+      setAreaName(area);
+      setScopeLabel(
+        scope.isSuperAdmin
+          ? "National view"
+          : area
+            ? `${scope.scopeBadgeTitle} · ${area}, ${scope.regionName}`
+            : scope.regionName || "Regional view"
+      );
       setData(
         await loadRegistry(
-          scoped ? { region: scope.regionId || undefined, zone: scope.zoneId || undefined, woreda: scope.woredaId || undefined, branchId: scope.branchId || undefined } : {}
+          // Only the region is sent. The server narrows further by role (a zonal admin to
+          // their zone, a woreda admin to their woreda); sending the zone/woreda/branch saved
+          // on the account would hide everyone for a regional admin who carries a leftover one.
+          scoped ? { region: scope.regionId || undefined } : {}
         )
       );
     } catch (e) {
@@ -110,7 +126,7 @@ export default function DashboardPage() {
         title="Dashboard"
         description={
           <>
-            {scopeLabel}. {loading ? "Loading the registry…" : `${formatNumber(scoped.length)} people in ${regionId ? REGION_NAME[regionId] : `${regionsCovered} of 14 regions`}.`}
+            {scopeLabel}. {loading ? "Loading the registry…" : `${formatNumber(scoped.length)} people in ${areaName || (regionId ? REGION_NAME[regionId] : `${regionsCovered} of 14 regions`)}.`}
           </>
         }
         actions={
@@ -163,14 +179,20 @@ export default function DashboardPage() {
           <option value="MEMBER">Members only</option>
           <option value="VOLUNTEER">Volunteers only</option>
         </select>
-        <select aria-label="Region" className={selectClass} value={regionId ?? ""} disabled={regionLocked} onChange={(e) => setRegionId(e.target.value ? Number(e.target.value) : null)}>
-          <option value="">All regions</option>
-          {REGIONS.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+        {areaName ? (
+          <select aria-label="Area" className={selectClass} value="area" disabled>
+            <option value="area">{areaName}</option>
+          </select>
+        ) : (
+          <select aria-label="Region" className={selectClass} value={regionId ?? ""} disabled={regionLocked} onChange={(e) => setRegionId(e.target.value ? Number(e.target.value) : null)}>
+            <option value="">All regions</option>
+            {REGIONS.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        )}
         <select aria-label="Gender" className={selectClass} value={gender} onChange={(e) => setGender(e.target.value)}>
           <option value="">All genders</option>
           <option value="FEMALE">Female</option>
@@ -208,13 +230,13 @@ export default function DashboardPage() {
         <StatTile label="New in the last 30 days" value={loading ? "…" : formatNumber(window30.current)} icon={UserPlus} delta={loading ? undefined : window30} />
       </div>
 
-      <RegistryInsights records={filtered} regionId={regionId} onRegionChange={setRegionId} regionLocked={regionLocked} />
+      <RegistryInsights records={filtered} regionId={regionId} onRegionChange={setRegionId} regionLocked={regionLocked} areaName={areaName} />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
         <Card
           className="xl:col-span-3"
           title="Latest registrations"
-          subtitle={regionId ? REGION_NAME[regionId] : "All regions"}
+          subtitle={areaName || (regionId ? REGION_NAME[regionId] : "All regions")}
           action={
             <Link href="/admin/members" className="inline-flex items-center gap-1 text-xs font-bold text-[#B5121B] hover:underline">
               Open members <ArrowRight className="h-3 w-3" />

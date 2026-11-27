@@ -35,11 +35,13 @@ type Props = {
   onRegionChange?: (regionId: number | null) => void;
   /** true when the viewer is scoped to one region and cannot change it */
   regionLocked?: boolean;
+  /** Narrower area (zone, woreda) a locked admin is limited to; shown instead of the region name. */
+  areaName?: string;
   /** adds the full regional table (reports page) */
   showTable?: boolean;
 };
 
-export function RegistryInsights({ records, regionId, onRegionChange, regionLocked, showTable }: Props) {
+export function RegistryInsights({ records, regionId, onRegionChange, regionLocked, areaName, showTable }: Props) {
   const [metric, setMetric] = useState<Metric>("total");
   const select = regionLocked ? undefined : onRegionChange;
 
@@ -65,7 +67,7 @@ export function RegistryInsights({ records, regionId, onRegionChange, regionLock
         <Card
           className="xl:col-span-3"
           title="Where the registry lives"
-          subtitle={regionLocked ? `Your scope: ${scopeName}` : "Click a region to focus every chart on it. Click it again to clear."}
+          subtitle={regionLocked ? `Your scope: ${areaName || scopeName}` : "Click a region to focus every chart on it. Click it again to clear."}
           action={
             <div className="flex rounded-lg bg-gray-100 p-0.5" role="tablist" aria-label="Map measure">
               {METRICS.map((m) => (

@@ -459,7 +459,13 @@ export default function UserManagementPage() {
         branch_id: form.branch,
       });
 
-      if (created.data?.sms_sent === false) {
+      if (created.data?.existing_account) {
+        // This phone already had an account: the server added the role to it instead of making a second one.
+        toast.success(created.data.message || "The existing account was updated.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" />, duration: 8000 });
+        if (created.data.sms_sent === false) {
+          toast.warning("The SMS could not be sent. Tell them they now have admin access and to sign in with their existing email and password.");
+        }
+      } else if (created.data?.sms_sent === false) {
         toast.warning("User created, but the sign-in SMS could not be sent. Check the phone number and ask them to use Forgot password.");
       } else {
         toast.success("User created. Sign-in details were sent by SMS.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> });
@@ -478,7 +484,8 @@ export default function UserManagementPage() {
       fetchUsers();
     } catch (err: any) {
       console.error(err);
-      const serverMsg = typeof err.response?.data === "string" ? err.response.data.trim() : "";
+      const data = err.response?.data;
+      const serverMsg = typeof data === "string" ? data.trim() : (data?.message || data?.error || "").trim();
       toast.error(serverMsg || "Failed to create user.", { icon: <XCircle className="h-5 w-5 text-[#ED1C24]" /> });
     } finally {
       setSaving(false);
@@ -524,14 +531,15 @@ export default function UserManagementPage() {
 
   const handleDeleteUser = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+    if (!confirm("Are you sure you want to permanently delete this user? This action cannot be undone.")) return;
     try {
       await api.delete(`/users/${id}`);
-      toast.success("User deleted.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> });
+      toast.success("User permanently deleted.", { icon: <CheckCircle2 className="h-5 w-5 text-green-500" /> });
       if (selectedUser?.id === id) setSelectedUser(null);
       fetchUsers();
-    } catch {
-      toast.error("Failed to delete user.", { icon: <XCircle className="h-5 w-5 text-[#ED1C24]" /> });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || (typeof err?.response?.data === "string" ? err.response.data : "") || "Failed to delete user.";
+      toast.error(msg, { icon: <XCircle className="h-5 w-5 text-[#ED1C24]" /> });
     }
   };
 
@@ -1126,10 +1134,11 @@ export default function UserManagementPage() {
                     <Button
                       onClick={e => handleDeleteUser(e as any, selectedUser.id)}
                       variant="outline"
-                      className="h-11 rounded-xl px-4 font-black text-xs uppercase tracking-widest border-red-200 text-red-600 hover:bg-red-50"
-                      title="Delete User"
+                      className="h-11 rounded-xl px-4 gap-2 font-black text-xs uppercase tracking-widest border-red-200 text-red-600 hover:bg-red-50"
+                      title="Permanent Delete User"
                     >
                       <UserX className="h-4 w-4" />
+                      Permanent Delete
                     </Button>
                   </div>
                 </div>

@@ -56,11 +56,14 @@ import {
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { getRegionName, getZoneName } from "@/lib/constants";
+import { getRegionName, getZoneName, REGIONS } from "@/lib/constants";
+import { getUserScope } from "@/lib/auth-scope";
 
 import { PageHeader } from "@/components/admin/page-ui";
 type Organization = {
   id: string;
+  /** 0 or missing: no region assigned yet. */
+  region_id?: number;
   name: string;
   type: string;
   contact_person: string;
@@ -202,6 +205,41 @@ export default function AdminOrganizationsPage() {
   const [orgSearch, setOrgSearch] = useState("");
   const [orgStatusFilter, setOrgStatusFilter] = useState("ALL");
   const [orgLoading, setOrgLoading] = useState(true);
+  const [canAssignRegion, setCanAssignRegion] = useState(false);
+  const [assigningRegionFor, setAssigningRegionFor] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCanAssignRegion(getUserScope().isSuperAdmin);
+  }, []);
+
+  // Only a super admin assigns an area. Organizations without one are invisible to
+  // regional and zonal admins until it is set. The update call replaces every profile
+  // field, so the organization's current values are sent back along with the region.
+  const assignRegion = async (org: any, regionId: number) => {
+    if (!regionId) return;
+    setAssigningRegionFor(org.id);
+    try {
+      await api.put("/organizations", {
+        id: org.id,
+        name: org.name,
+        type: org.type,
+        contact_person: org.contact_person,
+        email: org.email,
+        phone: org.phone,
+        website: org.website,
+        description: org.description,
+        volunteers_needed: org.volunteers_needed,
+        requirements: org.requirements,
+        region_id: regionId,
+      });
+      setOrganizations((prev: any[]) => prev.map((o) => (o.id === org.id ? { ...o, region_id: regionId } : o)));
+      toast.success(`${org.name} assigned to ${getRegionName(regionId) || `region ${regionId}`}`);
+    } catch (err: any) {
+      toast.error(typeof err?.response?.data === "string" ? err.response.data : "Could not assign the region");
+    } finally {
+      setAssigningRegionFor(null);
+    }
+  };
   const [orgPage, setOrgPage] = useState(1);
   const orgPageSize = 10;
 
@@ -624,6 +662,27 @@ export default function AdminOrganizationsPage() {
                             <span className="text-[#ED1C24] text-[9px] font-black uppercase tracking-wider">
                               {org.type || "PARTNER ORG"}
                             </span>
+                            {canAssignRegion ? (
+                              <select
+                                aria-label={`Region of ${org.name}`}
+                                value={org.region_id || ""}
+                                disabled={assigningRegionFor === org.id}
+                                onChange={(e) => assignRegion(org, Number(e.target.value))}
+                                className={cn(
+                                  "h-7 max-w-[11rem] rounded-lg border px-2 text-[10px] font-bold focus:outline-none focus:ring-2 focus:ring-[#ED1C24]/20",
+                                  org.region_id ? "border-gray-200 bg-white text-gray-700" : "border-amber-300 bg-amber-50 text-amber-800"
+                                )}
+                              >
+                                <option value="">No region — assign</option>
+                                {REGIONS.map((r) => (
+                                  <option key={r.id} value={r.id}>{r.name}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-[10px] font-bold text-gray-500">
+                                {org.region_id ? getRegionName(org.region_id) : "No region assigned"}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </TableCell>

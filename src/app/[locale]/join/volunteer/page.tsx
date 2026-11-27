@@ -290,8 +290,9 @@ export default function VolunteerJoinPage() {
                 const flab = (f.label || "").toLowerCase();
                 return fid.includes("study") || flab.includes("study") || fid.includes("background") || flab.includes("background") || fid.includes("fieldof");
             });
-            const studyVal = studyField ? String(formData[studyField.id] || "").trim() : String(formData.educationalBackground || "").trim();
-            if (!studyVal) {
+            const studyVal = studyField ? String(formData[studyField.id] || "").trim() : "";
+            // Only require it when the form actually shows a Field of Study input
+            if (studyField && !studyVal) {
                 setError(`Please fill in your Field of Study (${studyField?.label || "Educational Background"}) for ${eduVal}.`);
                 return;
             }
