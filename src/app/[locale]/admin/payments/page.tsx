@@ -14,13 +14,15 @@ import {
 import { 
   Search, Clock, CheckCircle2, XCircle, Download, 
   RefreshCw, Trophy, MapPin, TrendingUp, Building2, Filter, 
-  Copy, Check, ArrowUpDown, ChevronRight, X
+  Copy, Check, ArrowUpDown, ChevronRight, X, Wallet, HandCoins, Scale
 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { REGIONS } from "@/lib/constants";
 import { getUserScope, type UserScope } from "@/lib/auth-scope";
+import { paymentChannel, paymentMethodLabel } from "@/lib/payment-source";
 
 import { PageHeader } from "@/components/admin/page-ui";
 import { StatTile } from "@/components/admin/analytics/widgets";
@@ -92,6 +94,7 @@ function PaymentsContent() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [methodFilter, setMethodFilter] = useState<"ALL" | "ARIFPAY" | "MANUAL">("ALL");
   const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -193,7 +196,14 @@ function PaymentsContent() {
     const topRegion = activeRegions.length > 0 ? activeRegions[0] : null;
     const avgAmount = etbPaid.length > 0 ? Math.round(paidTotals.ETB / etbPaid.length) : 0;
 
+    const arifPaid = paid.filter((p) => paymentChannel(p.payment_method) !== "MANUAL");
+    const manualPaid = paid.filter((p) => paymentChannel(p.payment_method) === "MANUAL");
+
     return {
+      arifTotals: sumByCurrency(arifPaid),
+      arifCount: arifPaid.length,
+      manualTotals: sumByCurrency(manualPaid),
+      manualCount: manualPaid.length,
       paidTotals,
       paidCount: paid.length,
       totalCount: payments.length,
@@ -213,6 +223,10 @@ function PaymentsContent() {
       if (selectedRegion !== null && (p.region_id ?? 0) !== selectedRegion) {
         return false;
       }
+
+      // How it was paid
+      if (methodFilter === "MANUAL" && paymentChannel(p.payment_method) !== "MANUAL") return false;
+      if (methodFilter === "ARIFPAY" && paymentChannel(p.payment_method) === "MANUAL") return false;
 
       // Status filter
       if (statusFilter !== "ALL") {
@@ -236,7 +250,7 @@ function PaymentsContent() {
 
       return true;
     });
-  }, [payments, selectedRegion, statusFilter, search]);
+  }, [payments, selectedRegion, statusFilter, methodFilter, search]);
 
   const handleExport = async () => {
     if (filteredPayments.length === 0) {
@@ -249,6 +263,7 @@ function PaymentsContent() {
 
       const enrichedRecords = filteredPayments.map(p => ({
         ...p,
+        payment_method: paymentMethodLabel(p.payment_method),
         region_name: REGION_LOOKUP[p.region_id ?? 0]?.name || "National",
       }));
 
@@ -274,6 +289,12 @@ function PaymentsContent() {
         }
         actions={
           <>
+          <Link
+            href="/admin/payments/reconciliation"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-xs font-bold text-gray-700 hover:bg-gray-50"
+          >
+            <Scale className="h-3.5 w-3.5" /> Reconciliation
+          </Link>
           <Button
             variant="outline"
             onClick={fetchPayments}
@@ -299,6 +320,12 @@ function PaymentsContent() {
         <StatTile label="Top region" value={loading ? "…" : kpiData.topRegion ? kpiData.topRegion.name : "None yet"} icon={Trophy} hint={kpiData.topRegion ? `${kpiData.topRegion.totalAmount.toLocaleString()} ETB collected` : "No paid regional payments"} />
         <StatTile label="Pending" value={loading ? "…" : formatTotals(kpiData.pendingTotals)} icon={Clock} hint={`${kpiData.pendingCount.toLocaleString()} unpaid or awaiting confirmation${kpiData.failedCount ? `, ${kpiData.failedCount.toLocaleString()} failed` : ""}`} />
         <StatTile label="Regions contributing" value={loading ? "…" : `${kpiData.activeRegionsCount} of 14`} icon={Building2} hint={`Average payment ${kpiData.avgAmount.toLocaleString()} ETB`} />
+      </div>
+
+      {/* Where the money came from: ArifPay checkout versus fees an admin collected by hand */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <StatTile label="Paid through ArifPay" value={loading ? "…" : formatTotals(kpiData.arifTotals)} icon={Wallet} hint={`${kpiData.arifCount.toLocaleString()} online payments`} />
+        <StatTile label="Collected manually" value={loading ? "…" : formatTotals(kpiData.manualTotals)} icon={HandCoins} hint={`${kpiData.manualCount.toLocaleString()} fees recorded by an admin (cash or bank)`} />
       </div>
 
       {/* Revenue by region Section */}
@@ -424,6 +451,26 @@ function PaymentsContent() {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* How it was paid */}
+        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl shrink-0">
+          {([
+            { id: "ALL", label: "Any method" },
+            { id: "ARIFPAY", label: "ArifPay" },
+            { id: "MANUAL", label: "Manually collected" },
+          ] as const).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setMethodFilter(tab.id)}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-black transition-all",
+                methodFilter === tab.id ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-black"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Status Filter Tabs */}
@@ -565,8 +612,15 @@ function PaymentsContent() {
 
                     {/* Method */}
                     <TableCell>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                        {p.payment_method || "Not recorded"}
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-black uppercase tracking-wider",
+                          paymentChannel(p.payment_method) === "MANUAL"
+                            ? "border-amber-200 bg-amber-50 text-amber-700"
+                            : "border-blue-200 bg-blue-50 text-blue-700"
+                        )}
+                      >
+                        {paymentMethodLabel(p.payment_method)}
                       </span>
                     </TableCell>
 

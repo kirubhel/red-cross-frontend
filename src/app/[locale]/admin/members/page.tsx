@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin, Info, Copy, Check, Printer, Lock } from "lucide-react";
+import { Search, Users, Plus, Filter, Download, FileText, Table as TableIcon, X, Upload, ArrowUpRight, CreditCard, Phone, Mail, MapPin, Info, Copy, Check, Printer, Lock, UserPlus } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { AddMemberModal } from "@/components/admin/AddMemberModal";
@@ -24,6 +24,8 @@ import { memberImportConfig } from "@/lib/import-columns";
 import { getUserScope, type UserScope } from "@/lib/auth-scope";
 import { DateFilterControls } from "@/components/admin/DateFilterControls";
 import { dateBounds, validLocalDate, type DatePreset } from "@/lib/date-filters";
+import { memberPaymentChannel, registrationSource } from "@/lib/payment-source";
+import { ETHIOPIA_LOCATION_DATA, REGIONS as REGION_CATALOG, getWoredasForZone } from "@/lib/constants";
 
 type Member = {
   id: string;
@@ -42,7 +44,48 @@ type Member = {
   zone_id?: string;
   woreda_id?: string;
   created_at?: string;
+  registration_source?: string;
+  /** Method of the latest paid invoice (MANUAL, ARIFPAY); absent when nothing is paid yet. */
+  payment_method?: string;
 };
+
+const filterLabel = "mb-1 block text-xs font-semibold text-gray-600";
+const filterSelect =
+  "h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-200 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400";
+
+/** "Manually added" for admin entries and Excel imports; nothing for unknown origins. */
+function SourceBadge({ source }: { source?: string }) {
+  const tag = registrationSource(source);
+  if (!tag) return null;
+  return (
+    <span
+      title={tag.detail}
+      className={cn(
+        "mt-0.5 inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[9px] font-bold",
+        tag.manual ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-gray-50 text-gray-500 border border-gray-200"
+      )}
+    >
+      {tag.label}
+    </span>
+  );
+}
+
+/** Manual or ArifPay, from how the member's fee was settled; a dash while the fee is still owed. */
+function PaymentMethodBadge({ method, status }: { method?: string; status?: string }) {
+  const channel = memberPaymentChannel(method, status);
+  if (!channel) return <span className="text-xs text-gray-300">—</span>;
+  const manual = channel === "MANUAL";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-black uppercase tracking-wider",
+        manual ? "border-amber-200 bg-amber-50 text-amber-700" : "border-blue-200 bg-blue-50 text-blue-700"
+      )}
+    >
+      {manual ? "Manual" : "ArifPay"}
+    </span>
+  );
+}
 
 type Region = {
     id: number;
@@ -91,6 +134,7 @@ export default function MembersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [mainCategory, setMainCategory] = useState<string>("");
+  const [paymentFilter, setPaymentFilter] = useState<string>("");
   const [zoneFilter, setZoneFilter] = useState<string>("");
   const [woredaFilter, setWoredaFilter] = useState<string>("");
   const [registrationFilter, setRegistrationFilter] = useState<DatePreset>("");
@@ -163,6 +207,10 @@ export default function MembersPage() {
   const [userScope, setUserScope] = useState<UserScope | null>(null);
   const [isRegionLocked, setIsRegionLocked] = useState(false);
   const requestIdRef = useRef(0);
+  // Zones and woredas come from the same catalogue the registration form uses, so the values
+  // match what is stored on each person.
+  const zoneOptions = ETHIOPIA_LOCATION_DATA[REGION_CATALOG.find((r) => String(r.id) === regionFilter)?.value || ""]?.zones || [];
+  const woredaOptions = zoneFilter ? getWoredasForZone(zoneFilter) : [];
   const [pageSize, setPageSize] = useState(10);
   // Selected members can span pages, so keep their records here for copy/export.
   const selectedCache = useRef<Map<string, Member>>(new Map());
@@ -357,7 +405,7 @@ export default function MembersPage() {
         fetchMembers();
     }, 500); // Debounce search
     return () => clearTimeout(timer);
-  }, [searchReady, search, page, pageSize, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, userScope, registrationFilter, registeredFrom, registeredTo]);
+  }, [searchReady, search, page, pageSize, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, paymentFilter, userScope, registrationFilter, registeredFrom, registeredTo]);
 
   // A selection belongs to the search/filters it was made under. Drop it when they
   // change so a bulk action never reaches records that are no longer on screen.
@@ -365,7 +413,7 @@ export default function MembersPage() {
     selectedCache.current.clear();
     setSelectedMemberIds(new Set());
     setPage(1);
-  }, [search, pageSize, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, registrationFilter, registeredFrom, registeredTo]);
+  }, [search, pageSize, regionFilter, statusFilter, typeFilter, zoneFilter, woredaFilter, mainCategory, paymentFilter, registrationFilter, registeredFrom, registeredTo]);
 
   const fetchRegions = async () => {
     try {
@@ -385,7 +433,7 @@ export default function MembersPage() {
   const buildMemberParams = (pageNum: number, size: number) => {
     const scope = userScope || getUserScope();
     const effectiveRegion = (!scope.isSuperAdmin && scope.regionId) ? scope.regionId : regionFilter;
-    const params = new URLSearchParams({ page: String(pageNum), page_size: String(size), members_only: "true", search: search.trim(), region: effectiveRegion, status: statusFilter, type: typeFilter, zone: zoneFilter, woreda: woredaFilter, category: mainCategory });
+    const params = new URLSearchParams({ page: String(pageNum), page_size: String(size), members_only: "true", search: search.trim(), region: effectiveRegion, status: statusFilter, type: typeFilter, zone: zoneFilter, woreda: woredaFilter, category: mainCategory, payment_method: paymentFilter });
     const bounds = dateBounds(registrationFilter, registeredFrom, registeredTo);
     if (bounds) {
       params.set("registered_from", bounds.from);
@@ -398,7 +446,7 @@ export default function MembersPage() {
     const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
-      const url = `/person?${buildMemberParams(page, pageSize).toString()}`;
+      const url = `/person?${buildMemberParams(page, pageSize).toString()}&include=payment_method`;
       const res = await api.get(url);
       if (requestId !== requestIdRef.current) return;
       setMembers(res.data.people || []);
@@ -418,7 +466,7 @@ export default function MembersPage() {
   const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
   const markAsPaid = async (member: Member) => {
     const name = `${member.first_name} ${member.father_name}`.trim();
-    if (!window.confirm(`Mark ${name}'s membership fee as paid (or waived)? They will get their Member ID and an SMS.`)) return;
+    if (!window.confirm(`Record ${name}'s membership fee as collected manually? It will show on the Payments page as manually collected, and they will get their Member ID and an SMS.`)) return;
     setMarkingPaidId(member.id);
     try {
       const res = await api.post(`/admin/members/${member.id}/mark-paid`);
@@ -534,6 +582,7 @@ export default function MembersPage() {
     setZoneFilter("");
     setWoredaFilter("");
     setMainCategory("");
+    setPaymentFilter("");
     setStatusFilter("");
     setTypeFilter("");
     setRegistrationFilter("");
@@ -625,139 +674,121 @@ export default function MembersPage() {
         </div>
 
         {showFilters && (
-            <div className="space-y-4 p-6 bg-gray-50 rounded-2xl border border-gray-100 animate-in fade-in slide-in-from-top-2 duration-200">
-                {/* Master Category Row */}
-                <div className="grid md:grid-cols-4 gap-4 pb-4 border-b border-gray-200/50">
-                    <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-[#ED1C24] ml-1">Category</label>
-                        <select 
-                            value={mainCategory}
-                            onChange={(e) => { setMainCategory(e.target.value); setTypeFilter(""); }}
-                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
-                        >
-                            <option value="" className="bg-white text-black">All Groups</option>
-                            <option value="INDIVIDUAL" className="bg-white text-black">Individual</option>
-                            <option value="CORPORATE" className="bg-white text-black">Corporate</option>
-                        </select>
-                    </div>
+          <section aria-label="Member filters" className="space-y-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label htmlFor="mf-category" className={filterLabel}>Category</label>
+                <select id="mf-category" value={mainCategory} onChange={(e) => { setMainCategory(e.target.value); setTypeFilter(""); }} className={filterSelect}>
+                  <option value="">All groups</option>
+                  <option value="INDIVIDUAL">Individual</option>
+                  <option value="CORPORATE">Corporate</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="mf-type" className={filterLabel}>Type</label>
+                <select id="mf-type" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} disabled={!mainCategory} className={filterSelect}>
+                  <option value="">{mainCategory ? "All types" : "Choose a category first"}</option>
+                  {mainCategory === "INDIVIDUAL" && (
+                    <>
+                      <option value="ANNUAL">Annual</option>
+                      <option value="LIFE">Lifetime</option>
+                      <option value="YOUTH">Youth</option>
+                    </>
+                  )}
+                  {mainCategory === "CORPORATE" && (
+                    <>
+                      <option value="SILVER">Silver</option>
+                      <option value="GOLD">Gold</option>
+                      <option value="PLATINUM">Platinum</option>
+                    </>
+                  )}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="mf-status" className={filterLabel}>Status</label>
+                <select id="mf-status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={filterSelect}>
+                  <option value="">All statuses</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                  <option value="EXPIRED">Expired</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="PENDING_PAYMENT">Unpaid (no Member ID yet)</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="mf-payment" className={filterLabel}>Payment method</label>
+                <select id="mf-payment" value={paymentFilter} onChange={(e) => setPaymentFilter(e.target.value)} className={filterSelect}>
+                  <option value="">All methods</option>
+                  <option value="MANUAL">Manual</option>
+                  <option value="ARIFPAY">ArifPay</option>
+                </select>
+              </div>
 
-                    <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Type</label>
-                        <select 
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            disabled={!mainCategory}
-                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-                        >
-                            <option value="">Sub-Type...</option>
-                            {mainCategory === 'INDIVIDUAL' && (
-                                <>
-                                    <option value="ANNUAL">Annual</option>
-                                    <option value="LIFE">Lifetime</option>
-                                    <option value="YOUTH">Youth</option>
-                                </>
-                            )}
-                            {mainCategory === 'CORPORATE' && (
-                                <>
-                                    <option value="SILVER">Silver</option>
-                                    <option value="GOLD">Gold</option>
-                                    <option value="PLATINUM">Platinum</option>
-                                </>
-                            )}
-                        </select>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Status</label>
-                        <select 
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer"
-                        >
-                            <option value="" className="bg-white text-black">All Status</option>
-                            <option value="ACTIVE" className="bg-white text-black">Active</option>
-                            <option value="INACTIVE" className="bg-white text-black">Inactive</option>
-                            <option value="EXPIRED" className="bg-white text-black">Expired</option>
-                            <option value="PENDING" className="bg-white text-black">Pending</option>
-                            <option value="PENDING_PAYMENT" className="bg-white text-black">Unpaid (no Member ID yet)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="border-b border-gray-200/50 pb-4">
-                    <DateFilterControls id="members-registered" label="Registered date" value={registrationFilter} from={registeredFrom} to={registeredTo}
-                        onValueChange={(value) => { setRegistrationFilter(value); setSelectedMemberIds(new Set()); setPage(1); }}
-                        onFromChange={(value) => { setRegisteredFrom(value); setSelectedMemberIds(new Set()); setPage(1); }}
-                        onToChange={(value) => { setRegisteredTo(value); setSelectedMemberIds(new Set()); setPage(1); }} />
-                </div>
-
-                {/* Regional Hierarchy Row */}
-                <div className="grid md:grid-cols-4 gap-4 items-end">
-                    <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1 flex items-center gap-1">
-                            {isRegionLocked && <Lock className="w-2.5 h-2.5 text-[#ED1C24]" />}
-                            Region
-                        </label>
-                        <select 
-                            value={regionFilter}
-                            onChange={(e) => { setRegionFilter(e.target.value); setZoneFilter(""); setWoredaFilter(""); }}
-                            disabled={isRegionLocked}
-                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                             {isRegionLocked ? (
-                                 <option value={regionFilter}>{userScope?.regionName} (Locked)</option>
-                             ) : (
-                                 <>
-                                     <option value="" className="bg-white text-black">All Regions</option>
-                                     {regions.map(r => (
-                                         <option key={r.id} value={r.id} className="bg-white text-black">{r.name}</option>
-                                     ))}
-                                 </>
-                             )}
-                        </select>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Zone</label>
-                        <select 
-                            value={zoneFilter}
-                            onChange={(e) => { setZoneFilter(e.target.value); setWoredaFilter(""); }}
-                            disabled={!regionFilter}
-                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-                        >
-                            <option value="">Select Zone...</option>
-                            {regionFilter === "1" && ( 
-                                <>
-                                    <option value="bole">Bole</option>
-                                    <option value="arada">Arada</option>
-                                </>
-                            )}
-                        </select>
-                    </div>
-
-                    <div className="space-y-1">
-                        <label className="text-[9px] font-black uppercase tracking-widest text-black/40 ml-1">Woreda</label>
-                        <select 
-                            value={woredaFilter}
-                            onChange={(e) => setWoredaFilter(e.target.value)}
-                            disabled={!zoneFilter}
-                            className="w-full h-10 px-3 rounded-lg bg-white text-black border border-gray-200 font-black text-[10px] uppercase tracking-widest focus:border-[#ED1C24] transition-all outline-none disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
-                        >
-                            <option value="">Select...</option>
-                        </select>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <Button 
-                            onClick={resetFilters}
-                            variant="ghost" 
-                            className="h-10 flex-1 px-4 rounded-lg font-black text-[9px] uppercase tracking-widest text-gray-400 hover:text-[#ED1C24] hover:bg-white transition-all"
-                        >
-                            <X className="h-3.5 w-3.5 mr-1" /> Reset
-                        </Button>
-                    </div>
-                </div>
+              <div>
+                <label htmlFor="mf-region" className={cn(filterLabel, "flex items-center gap-1")}>
+                  {isRegionLocked && <Lock className="h-3 w-3 text-[#ED1C24]" />}
+                  Region
+                </label>
+                <select
+                  id="mf-region"
+                  value={regionFilter}
+                  onChange={(e) => { setRegionFilter(e.target.value); setZoneFilter(""); setWoredaFilter(""); }}
+                  disabled={isRegionLocked}
+                  className={filterSelect}
+                >
+                  {isRegionLocked ? (
+                    <option value={regionFilter}>{userScope?.regionName} (locked)</option>
+                  ) : (
+                    <>
+                      <option value="">All regions</option>
+                      {regions.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </>
+                  )}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="mf-zone" className={filterLabel}>Zone / sub-city</label>
+                <select
+                  id="mf-zone"
+                  value={zoneFilter}
+                  onChange={(e) => { setZoneFilter(e.target.value); setWoredaFilter(""); }}
+                  disabled={!regionFilter || zoneOptions.length === 0}
+                  className={filterSelect}
+                >
+                  <option value="">{!regionFilter ? "Choose a region first" : zoneOptions.length === 0 ? "No zones listed" : "All zones"}</option>
+                  {zoneOptions.map((z) => (
+                    <option key={z.id} value={z.id}>{z.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="mf-woreda" className={filterLabel}>Woreda</label>
+                <select id="mf-woreda" value={woredaFilter} onChange={(e) => setWoredaFilter(e.target.value)} disabled={!zoneFilter} className={filterSelect}>
+                  <option value="">{zoneFilter ? "All woredas" : "Choose a zone first"}</option>
+                  {woredaOptions.map((w) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
+
+            <div className="border-t border-gray-100 pt-4">
+              <div className="max-w-3xl">
+                <DateFilterControls id="members-registered" label="Registered date" value={registrationFilter} from={registeredFrom} to={registeredTo}
+                  onValueChange={(value) => { setRegistrationFilter(value); setSelectedMemberIds(new Set()); setPage(1); }}
+                  onFromChange={(value) => { setRegisteredFrom(value); setSelectedMemberIds(new Set()); setPage(1); }}
+                  onToChange={(value) => { setRegisteredTo(value); setSelectedMemberIds(new Set()); setPage(1); }} />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button type="button" onClick={resetFilters} className="inline-flex items-center gap-1 text-xs font-bold text-[#B5121B] hover:underline">
+                <X className="h-3.5 w-3.5" /> Reset filters
+              </button>
+            </div>
+          </section>
         )}
       </div>
 
@@ -861,6 +892,7 @@ export default function MembersPage() {
               <TableHead>Full Identity</TableHead>
               <TableHead>Region</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Payment method</TableHead>
               <TableHead>Registered date</TableHead>
               <TableHead>
                 <div className="flex items-center gap-1.5 group relative cursor-help">
@@ -880,7 +912,7 @@ export default function MembersPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-48 text-center">
+                <TableCell colSpan={9} className="h-48 text-center">
                   <div className="flex flex-col items-center justify-center space-y-3">
                      <div className="h-8 w-8 border-4 border-red-50 border-t-[#ED1C24] rounded-full animate-spin" />
                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Syncing Registry...</p>
@@ -889,7 +921,7 @@ export default function MembersPage() {
               </TableRow>
             ) : displayedMembers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-64 text-center">
+                <TableCell colSpan={9} className="h-64 text-center">
                    <p className="text-sm font-bold text-gray-400">{registrationFilter === "range" && !dateBounds(registrationFilter, registeredFrom, registeredTo) ? "Choose a valid start and end date." : "No members found matching your filters."}</p>
                 </TableCell>
               </TableRow>
@@ -950,6 +982,7 @@ export default function MembersPage() {
                   <TableCell>
                     <div className="flex flex-col">
                         <span className="font-bold text-gray-900 text-xs">{member.first_name} {member.father_name}</span>
+                        <SourceBadge source={member.registration_source} />
                     </div>
                   </TableCell>
                   <TableCell className="font-black text-[9px] uppercase tracking-wider text-gray-400">
@@ -957,6 +990,9 @@ export default function MembersPage() {
                   </TableCell>
                   <TableCell className="font-bold text-[11px] text-gray-500">
                     {(member as any).membership_type || (member as any).membershipType || "REGULAR"}
+                  </TableCell>
+                  <TableCell>
+                    <PaymentMethodBadge method={member.payment_method} status={member.status} />
                   </TableCell>
 
                   <TableCell className="whitespace-nowrap text-xs text-gray-500">
@@ -1080,6 +1116,18 @@ export default function MembersPage() {
                                             <p className="text-xs font-bold text-black">{selectedMember.national_id || "N/A"}</p>
                                         </div>
                                     </div>
+                                    {registrationSource(selectedMember.registration_source) && (
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><UserPlus className="h-4 w-4 text-gray-400" /></div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-gray-400 uppercase">Registered</p>
+                                                <p className="text-xs font-bold text-gray-900">
+                                                    {registrationSource(selectedMember.registration_source)!.label}
+                                                    {registrationSource(selectedMember.registration_source)!.detail ? ` · ${registrationSource(selectedMember.registration_source)!.detail}` : ""}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-3">
                                         <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center"><CreditCard className="h-4 w-4 text-gray-400" /></div>
                                         <div>
